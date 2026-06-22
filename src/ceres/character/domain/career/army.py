@@ -8,17 +8,18 @@ from ceres.character.domain.benefits import (
     ChoiceBenefit,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
+    AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
+    GainConnectionEntry,
     GainEnemyEffect,
-    GainRivalEffect,
     InjuryEffect,
     LifeEventEffect,
     MishapEntry,
@@ -385,17 +386,17 @@ class Army(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured in action (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
             effects=[CommonMishap1Handler()],
         ),
-        2: MishapEntry(
+        2: GainConnectionEntry(
             text='Your unit is slaughtered in a disastrous battle, for which you blame your commander. '
             'Gain them as an Enemy as they have you removed from the service.',
-            effects=[GainEnemyEffect()],
+            connection=ConnectionKind.ENEMY,
         ),
         3: MishapEntry(
             text='You are sent to a very unpleasant region (jungle, swamp, desert, icecap, urban) to battle against '
@@ -412,10 +413,10 @@ class Army(CareerData):
             defer_ejection=True,
             effects=[ArmyMishap4Handler()],
         ),
-        5: MishapEntry(
+        5: GainConnectionEntry(
             text='You are tormented by or quarrel with an officer or fellow soldier. '
             'Gain that officer as a Rival as they drive you out of the service.',
-            effects=[GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
         6: MishapEntry(
             text='Injured. Roll on the Injury table.',
@@ -423,7 +424,7 @@ class Army(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -438,9 +439,9 @@ class Army(CareerData):
             'Gain one of Stealth 1, Streetwise 1, Persuade 1 or Recon 1.',
             effects=[SkillChoiceEffect(options=[Stealth(), Streetwise(), Persuade(), Recon()], level=1)],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='You are given a special assignment or duty in your unit. Gain DM+1 to any one Benefit roll.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text='You are thrown into a brutal ground war. Roll EDU 8+ to avoid injury; '
@@ -456,10 +457,10 @@ class Army(CareerData):
             'Roll EDU 8+ to increase any one skill you already have by one level.',
             effects=[ArmyEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: AdvancementDmEntry(
             text='Surrounded and outnumbered by the enemy, you hold out until relief arrives. '
             'Gain DM+2 to your next advancement roll.',
-            effects=[AdvancementDmEffect(amount=2)],
+            amount=2,
         ),
         10: CareerEventEntry(
             text='You are assigned to a peacekeeping role. Gain one of Admin 1, Investigate 1, Deception 1 or Recon 1.',

@@ -13,13 +13,14 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
+    CharacteristicLossEntry,
     CharCheck,
-    DecreaseCharacteristicEffect,
     GainAllyEffect,
     GainEnemyEffect,
     GainRivalEffect,
@@ -346,15 +347,16 @@ class Noble(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: CharacteristicLossEntry(
             text='A family scandal forces you out of your position. Lose one SOC.',
-            effects=[DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)],
+            characteristic=Chars.SOC,
+            amount=1,
         ),
         3: MishapEntry(
             text='A disaster or war strikes. Roll Stealth 8+ or Deception 8+ to escape unhurt.',
@@ -376,7 +378,7 @@ class Noble(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table, but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -391,9 +393,9 @@ class Noble(CareerData):
                 SkillChoiceEffect(options=[Animals(), *skill_instances(ArtSkill), Carouse(), Streetwise()], level=1)
             ],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='You inherit a gift from a rich relative.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text='You become deeply involved in politics.',

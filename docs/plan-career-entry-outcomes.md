@@ -188,7 +188,16 @@ anonymous effects inside a generic table row.
   events 5/9 (`BenefitDmEntry`, `AdvancementDmEntry`), Drifter mishaps 3/4
   (`GainConnectionEntry`, `CharacteristicLossEntry`), Drifter event 5
   (`BenefitDmEntry`), Navy mishap 5 (`GainConnectionEntry`), and Navy event 4
-  (`BenefitDmEntry`).
+  (`BenefitDmEntry`), Citizen mishaps 2/3 (`GainConnectionEntry`,
+  `CharacteristicLossEntry`), Citizen events 5/9/11 (`BenefitDmEntry`,
+  `AdvancementDmEntry`, `GainConnectionEntry`), Prisoner mishaps 2/5
+  (`ParoleThresholdChangeEntry`, `CharacteristicLossEntry`), Prisoner events
+  8/11 (`ParoleThresholdChangeEntry`), Noble mishap 2
+  (`CharacteristicLossEntry`), Noble event 5 (`BenefitDmEntry`), Army mishaps
+  2/5 (`GainConnectionEntry`), and Army events 5/9 (`BenefitDmEntry`,
+  `AdvancementDmEntry`).
+- `CareerTableEntry` now carries `stay_in_career` and `defer_ejection` framing
+  flags so shared direct-outcome entries can be used directly in mishap tables.
 - Snapshot/approval experiments are intentionally deferred; use ordinary
   focused assertions unless a complex row genuinely needs full state-delta
   characterization.

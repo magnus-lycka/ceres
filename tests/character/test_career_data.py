@@ -66,6 +66,13 @@ def test_legacy_entry_types_share_table_entry_base():
     assert isinstance(MishapEntry(text='Mishap'), CareerTableEntry)
 
 
+def test_table_entries_can_carry_mishap_framing_flags():
+    entry = GainConnectionEntry(text='Stay in career.', connection=ConnectionKind.RIVAL, stay_in_career=True)
+
+    assert entry.stay_in_career is True
+    assert entry.defer_ejection is False
+
+
 def test_gain_skill_entry_grants_skill_and_returns_pending_index():
     p = _projection()
 

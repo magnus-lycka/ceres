@@ -17,7 +17,7 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.connection import Ally
+from ceres.character.domain.connection import Ally, Enemy, Rival
 from ceres.character.domain.health.health_events import (
     PendingInjuryTable,
 )
@@ -88,6 +88,36 @@ class TestArmyMishap1:
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+
+
+class TestArmyDirectOutcomeRows:
+    def test_mishap_2_adds_enemy_and_ends_career(self):
+        d = _enter_army()
+        d.survive(2)
+        d.mishap(2)
+
+        assert any(isinstance(c, Enemy) for c in d.projection.summary.connections)
+        assert d.projection.summary.current_career is None
+
+    def test_mishap_5_adds_rival_and_ends_career(self):
+        d = _enter_army()
+        d.survive(2)
+        d.mishap(5)
+
+        assert any(isinstance(c, Rival) for c in d.projection.summary.connections)
+        assert d.projection.summary.current_career is None
+
+    def test_event_5_adds_benefit_dm(self):
+        d = _through_term_event(5)
+
+        dms = d.projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+    def test_event_9_adds_advancement_dm(self):
+        d = _through_term_event(9)
+
+        assert d.projection.pending_advancement_dm == 2
 
 
 # ── mishap 3: skill choice and enemy ─────────────────────────────────────────

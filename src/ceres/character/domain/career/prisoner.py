@@ -20,14 +20,16 @@ from ceres.character.domain.career.career_data import (
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
+    CharacteristicLossEntry,
     CharCheck,
-    DecreaseCharacteristicEffect,
     GainEnemyEffect,
     InjuryEffect,
     MishapEntry,
     MusterOutData,
     MusterOutRow,
     ParoleThresholdChangeEffect,
+    ParoleThresholdChangeEntry,
     RankBonus,
     RankEntry,
     RollMishapEffect,
@@ -709,16 +711,16 @@ class Prisoner(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             stay_in_career=True,
             effects=[CommonMishap1Handler(stay_in_career=True)],
         ),
-        2: MishapEntry(
+        2: ParoleThresholdChangeEntry(
             text='You are accused of assaulting a prison guard. Parole Threshold +2.',
             stay_in_career=True,
-            effects=[ParoleThresholdChangeEffect(amount=2)],
+            amount=2,
         ),
         3: MishapEntry(
             text='A prison gang persecutes you.',
@@ -731,10 +733,11 @@ class Prisoner(CareerData):
             stay_in_career=True,
             effects=[GainEnemyEffect(), ParoleThresholdChangeEffect(amount=1)],
         ),
-        5: MishapEntry(
+        5: CharacteristicLossEntry(
             text='Disgraced. Word of your criminal past reaches your homeworld. Lose 1 SOC.',
             stay_in_career=True,
-            effects=[DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)],
+            characteristic=Chars.SOC,
+            amount=1,
         ),
         6: MishapEntry(
             text='Injured. Roll on the Injury table.',
@@ -743,7 +746,7 @@ class Prisoner(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -768,9 +771,9 @@ class Prisoner(CareerData):
             text='Prison Event.',
             effects=[PrisonerEvent7Handler()],
         ),
-        8: CareerEventEntry(
+        8: ParoleThresholdChangeEntry(
             text='Parole hearing. Reduce your Parole Threshold by -1.',
-            effects=[ParoleThresholdChangeEffect(amount=-1)],
+            amount=-1,
         ),
         9: CareerEventEntry(
             text='You have the opportunity to hire a new lawyer.',
@@ -785,9 +788,9 @@ class Prisoner(CareerData):
                 )
             ],
         ),
-        11: CareerEventEntry(
+        11: ParoleThresholdChangeEntry(
             text='The warden takes an interest in your case. Reduce your Parole Threshold by -2.',
-            effects=[ParoleThresholdChangeEffect(amount=-2)],
+            amount=-2,
         ),
         12: CareerEventEntry(
             text='Heroism.',

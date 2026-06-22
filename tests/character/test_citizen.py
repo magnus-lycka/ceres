@@ -28,8 +28,11 @@ from ceres.character.domain.career.citizen import (
 )
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
+    Ally,
     Contact,
+    Enemy,
     Rival,
 )
 from ceres.character.domain.skills import (
@@ -166,6 +169,41 @@ def _through_survive(assignment: str = 'Corporate', survive_roll: int = 7) -> li
 def _through_term_event(event_roll: int, assignment: str = 'Corporate') -> list:
     base = _through_survive(assignment)
     return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
+
+
+class TestCitizenDirectOutcomeRows:
+    def test_mishap_2_adds_enemy_and_ends_career(self):
+        base = _enter_citizen()
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))
+        projection = replay(1, [*base, survive, Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=2))])
+
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+        assert projection.summary.current_career is None
+
+    def test_mishap_3_decreases_soc_and_ends_career(self):
+        base = _enter_citizen()
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))
+        projection = replay(1, [*base, survive, Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=3))])
+
+        assert projection.summary.characteristics[Chars.SOC] == 4
+        assert projection.summary.current_career is None
+
+    def test_event_5_adds_benefit_dm(self):
+        projection = replay(1, _through_term_event(5))
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+    def test_event_9_adds_advancement_dm(self):
+        projection = replay(1, _through_term_event(9))
+
+        assert projection.pending_advancement_dm == 2
+
+    def test_event_11_adds_ally(self):
+        projection = replay(1, _through_term_event(11))
+
+        assert any(isinstance(c, Ally) for c in projection.summary.connections)
 
 
 # ── mishap 4: investigation by authorities ────────────────────────────────────

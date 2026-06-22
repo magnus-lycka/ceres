@@ -188,6 +188,34 @@ def _advancement_event(source: Event, roll: int) -> Event:
     return Event(fulfills=(source.id, 0), handler=AdvancementHandler(roll=roll))
 
 
+class TestPrisonerDirectOutcomeRows:
+    def test_mishap_2_increases_parole_threshold_and_stays_in_career(self):
+        base = _setup_to_mishap()
+        projection = replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))])
+
+        assert projection.summary.parole_threshold == 7
+        assert projection.summary.current_career is not None
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_mishap_5_decreases_soc_and_stays_in_career(self):
+        base = _setup_to_mishap()
+        projection = replay(1, [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))])
+
+        assert projection.summary.characteristics[Chars.SOC] == 4
+        assert projection.summary.current_career is not None
+        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+    def test_event_8_reduces_parole_threshold(self):
+        projection = replay(1, _through_term_event(8))
+
+        assert projection.summary.parole_threshold == 4
+
+    def test_event_11_reduces_parole_threshold_by_two(self):
+        projection = replay(1, _through_term_event(11))
+
+        assert projection.summary.parole_threshold == 3
+
+
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
 
 

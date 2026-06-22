@@ -230,6 +230,8 @@ class LoseAllCareerBenefitsEffect(BaseModel):
 
 class CareerTableEntry(BaseModel):
     text: str
+    stay_in_career: bool = False
+    defer_ejection: bool = False
 
     def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
         return pending_idx

@@ -8,18 +8,18 @@ from ceres.character.domain.benefits import (
     CharacteristicIncrease,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
+    AdvancementDmEntry,
     AssignmentData,
     AutoAdvanceEffect,
-    BenefitDmEffect,
+    BenefitDmEntry,
     CareerData,
     CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
+    CharacteristicLossEntry,
     CharCheck,
-    DecreaseCharacteristicEffect,
-    GainAllyEffect,
-    GainEnemyEffect,
+    GainConnectionEntry,
     InjuryEffect,
     LifeEventEffect,
     MishapEntry,
@@ -417,19 +417,20 @@ class Citizen(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
         1: MishapEntry(
             text='Severely injured.',
             effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: GainConnectionEntry(
             text='Harassed and your life ruined by a criminal gang. Gain the gang as an Enemy.',
-            effects=[GainEnemyEffect()],
+            connection=ConnectionKind.ENEMY,
         ),
-        3: MishapEntry(
+        3: CharacteristicLossEntry(
             text='Hard times caused by a lack of interstellar trade costs you your job. Lose one SOC.',
-            effects=[DecreaseCharacteristicEffect(characteristic=Chars.SOC, amount=1)],
+            characteristic=Chars.SOC,
+            amount=1,
         ),
         4: MishapEntry(
             text='Your business or colony is investigated or interfered with.',
@@ -447,7 +448,7 @@ class Citizen(CareerData):
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
             effects=[RollMishapEffect(leave=False)],
@@ -460,9 +461,9 @@ class Citizen(CareerData):
             text='You spend time maintaining and using heavy vehicles.',
             effects=[SkillChoiceEffect(options=[Mechanic(), Drive(), Electronics(), Flyer(), Engineer()], level=1)],
         ),
-        5: CareerEventEntry(
+        5: BenefitDmEntry(
             text='Your business expands, your corporation grows, or your colony thrives.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
         6: CareerEventEntry(
             text='You are given advanced training in a specialist field.',
@@ -476,17 +477,17 @@ class Citizen(CareerData):
             text='You learn something illegal but profitable.',
             effects=[CitizenEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: AdvancementDmEntry(
             text='You are rewarded for your diligence or cunning.',
-            effects=[AdvancementDmEffect(amount=2)],
+            amount=2,
         ),
         10: CareerEventEntry(
             text='You gain experience in a technical field.',
             effects=[SkillChoiceEffect(options=[Electronics(), Engineer()], level=1)],
         ),
-        11: CareerEventEntry(
+        11: GainConnectionEntry(
             text='You befriend a superior in the corporation, bureaucracy or colony.',
-            effects=[GainAllyEffect()],
+            connection=ConnectionKind.ALLY,
         ),
         12: CareerEventEntry(
             text='You rise to a position of power. You are automatically promoted.',

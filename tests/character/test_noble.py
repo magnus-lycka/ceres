@@ -68,6 +68,23 @@ def _through_term_event(event_roll: int, assignment: str = 'Administrator') -> l
     return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
 
 
+class TestNobleDirectOutcomeRows:
+    def test_mishap_2_decreases_soc_and_ends_career(self):
+        base = _enter_noble()
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))
+        projection = replay(1, [*base, survive, Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=2))])
+
+        assert projection.summary.characteristics[Chars.SOC] == 4
+        assert projection.summary.current_career is None
+
+    def test_event_5_adds_benefit_dm(self):
+        projection = replay(1, _through_term_event(5))
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+
 # ── mishap 3: disaster or war ─────────────────────────────────────────────────
 
 
