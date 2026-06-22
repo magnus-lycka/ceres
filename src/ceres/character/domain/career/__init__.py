@@ -1,33 +1,27 @@
-_CAREER_MODULE_NAMES: dict[str, str] = {
-    'AGENT': 'agent',
-    'ARMY': 'army',
-    'CITIZEN': 'citizen',
-    'DRIFTER': 'drifter',
-    'ENTERTAINER': 'entertainer',
-    'MARINES': 'marines',
-    'MERCHANT': 'merchant',
-    'NAVY': 'navy',
-    'NOBLE': 'noble',
-    'PRISONER': 'prisoner',
-    'PSION': 'psion',
-    'ROGUE': 'rogue',
-    'SCHOLAR': 'scholar',
-    'SCOUT': 'scout',
-}
-
-
 def __getattr__(name: str):
-    if name in _CAREER_MODULE_NAMES:
+    career_module_names: dict[str, str] = {
+        'AGENT': 'agent',
+        'ARMY': 'army',
+        'CITIZEN': 'citizen',
+        'DRIFTER': 'drifter',
+        'ENTERTAINER': 'entertainer',
+        'MARINES': 'marines',
+        'MERCHANT': 'merchant',
+        'NAVY': 'navy',
+        'NOBLE': 'noble',
+        'PRISONER': 'prisoner',
+        'PSION': 'psion',
+        'ROGUE': 'rogue',
+        'SCHOLAR': 'scholar',
+        'SCOUT': 'scout',
+    }
+    if name in career_module_names:
         import importlib
 
-        mod = importlib.import_module(f'ceres.character.domain.career.{_CAREER_MODULE_NAMES[name]}')
-        value = getattr(mod, name)
-        globals()[name] = value
-        return value
+        mod = importlib.import_module(f'ceres.character.domain.career.{career_module_names[name]}')
+        return getattr(mod, name)
     if name in ('load_careers', 'selectable_careers'):
         from ceres.character.domain.career.loader import load_careers as _lc, selectable_careers as _sc
 
-        globals()['load_careers'] = _lc
-        globals()['selectable_careers'] = _sc
-        return globals()[name]
+        return {'load_careers': _lc, 'selectable_careers': _sc}[name]
     raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

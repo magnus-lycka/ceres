@@ -5,15 +5,13 @@ from pathlib import Path
 
 from ceres.character.domain.career.career_data import CareerData
 
-_CAREERS_DIR = Path(__file__).parent
-
-_NON_CAREER_STEMS = {'__init__', 'career_data', 'common', 'common_pending', 'loader'}
-
 
 @cache
 def load_careers() -> tuple[CareerData, ...]:
-    for path in sorted(_CAREERS_DIR.glob('*.py')):
-        if path.stem in _NON_CAREER_STEMS:
+    careers_dir = Path(__file__).parent
+    non_career_stem = {'__init__', 'career_data', 'common', 'common_pending', 'loader'}
+    for path in sorted(careers_dir.glob('*.py')):
+        if path.stem in non_career_stem:
             continue
         importlib.import_module(f'ceres.character.domain.career.{path.stem}')
     return tuple(career_cls() for career_cls in CareerData._registry.values())
