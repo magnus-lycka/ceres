@@ -17,23 +17,20 @@ from ceres.character.domain.benefits import (
 from ceres.character.domain.career.career_data import (
     AssignmentData,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharacteristicLossEntry,
     CharCheck,
-    GainEnemyEffect,
-    InjuryEffect,
-    MishapEntry,
+    GainConnectionAndParoleThresholdChangeEntry,
+    InjuryEntry,
     MusterOutData,
     MusterOutRow,
-    ParoleThresholdChangeEffect,
     ParoleThresholdChangeEntry,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -712,26 +709,25 @@ class Prisoner(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured.',
             stay_in_career=True,
-            effects=[CommonMishap1Handler(stay_in_career=True)],
         ),
         2: ParoleThresholdChangeEntry(
             text='You are accused of assaulting a prison guard. Parole Threshold +2.',
             stay_in_career=True,
             amount=2,
         ),
-        3: MishapEntry(
+        3: PrisonerMishap3Handler(
             text='A prison gang persecutes you.',
             stay_in_career=True,
             defer_ejection=True,
-            effects=[PrisonerMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: GainConnectionAndParoleThresholdChangeEntry(
             text='A guard takes a dislike to you. Gain an Enemy and raise your Parole Threshold by +1.',
             stay_in_career=True,
-            effects=[GainEnemyEffect(), ParoleThresholdChangeEffect(amount=1)],
+            connection=ConnectionKind.ENEMY,
+            amount=1,
         ),
         5: CharacteristicLossEntry(
             text='Disgraced. Word of your criminal past reaches your homeworld. Lose 1 SOC.',
@@ -739,62 +735,51 @@ class Prisoner(CareerData):
             characteristic=Chars.SOC,
             amount=1,
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
             stay_in_career=True,
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: PrisonerEvent3Handler(
             text='You have the opportunity to escape the prison.',
-            effects=[PrisonerEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: PrisonerEvent4Handler(
             text='You are assigned to difficult or backbreaking labour.',
-            effects=[PrisonerEvent4Handler()],
         ),
-        5: CareerEventEntry(
+        5: PrisonerEvent5Handler(
             text='You have the opportunity to join a gang.',
-            effects=[PrisonerEvent5Handler()],
         ),
-        6: CareerEventEntry(
+        6: PrisonerEvent6Handler(
             text='Vocational Training.',
-            effects=[PrisonerEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: PrisonerEvent7Handler(
             text='Prison Event.',
-            effects=[PrisonerEvent7Handler()],
         ),
         8: ParoleThresholdChangeEntry(
             text='Parole hearing. Reduce your Parole Threshold by -1.',
             amount=-1,
         ),
-        9: CareerEventEntry(
+        9: PrisonerEvent9Handler(
             text='You have the opportunity to hire a new lawyer.',
-            effects=[PrisonerEvent9Handler()],
         ),
-        10: CareerEventEntry(
+        10: SkillChoiceEntry(
             text='Special Duty.',
-            effects=[
-                SkillChoiceEffect(
-                    options=[Admin(), Advocate(), Electronics(computers=Level(value=1)), Steward()],
-                    level=1,
-                )
-            ],
+            options=[Admin(), Advocate(), Electronics(computers=Level(value=1)), Steward()],
+            level=1,
         ),
         11: ParoleThresholdChangeEntry(
             text='The warden takes an interest in your case. Reduce your Parole Threshold by -2.',
             amount=-2,
         ),
-        12: CareerEventEntry(
+        12: PrisonerEvent12Handler(
             text='Heroism.',
-            effects=[PrisonerEvent12Handler()],
         ),
     }
 

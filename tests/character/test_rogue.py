@@ -28,7 +28,17 @@ from ceres.character.domain.career.rogue import (
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.connection import Contact, Enemy, Rival
-from ceres.character.domain.skills import Admin, Advocate, Athletics, Carouse, Drive, GunCombat, Stealth, Streetwise
+from ceres.character.domain.skills import (
+    Admin,
+    Advocate,
+    Athletics,
+    Carouse,
+    Drive,
+    Gambler,
+    GunCombat,
+    Stealth,
+    Streetwise,
+)
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
@@ -68,6 +78,21 @@ def _through_survive(assignment: str = 'Thief', survive_roll: int = 5) -> list:
 def _through_term_event(event_roll: int) -> list:
     base = _through_survive()
     return [*base, Event(fulfills=(base[-1].id, 0), handler=TermEventHandler(roll=event_roll))]
+
+
+class TestRogueDirectOutcomeRows:
+    def test_mishap_5_adds_enemy_and_ends_career(self):
+        base = _enter_rogue()
+        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=4))
+        projection = replay(1, [*base, survive, Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=5))])
+
+        assert any(isinstance(c, Enemy) for c in projection.summary.connections)
+        assert projection.summary.current_career is None
+
+    def test_event_10_grants_gambler_1(self):
+        projection = replay(1, _through_term_event(10))
+
+        assert projection.summary.skill_level(Gambler) == 1
 
 
 # ── mishap 2: arrested → Prisoner ────────────────────────────────────────────

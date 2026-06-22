@@ -10,25 +10,23 @@ from ceres.character.domain.benefits import (
 from ceres.character.domain.career.career_data import (
     AdvancementDmEntry,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionEntry,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
     _blank_ranks,
 )
@@ -418,9 +416,8 @@ class Citizen(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
         2: GainConnectionEntry(
@@ -432,66 +429,63 @@ class Citizen(CareerData):
             characteristic=Chars.SOC,
             amount=1,
         ),
-        4: MishapEntry(
+        4: CitizenMishap4Handler(
             text='Your business or colony is investigated or interfered with.',
             defer_ejection=True,
-            effects=[CitizenMishap4Handler()],
         ),
-        5: MishapEntry(
+        5: CitizenMishap5Handler(
             text='A revolution, attack or unusual event throws life into chaos, forcing you to leave the planet.',
             defer_ejection=True,
-            effects=[CitizenMishap5Handler()],
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: SkillChoiceEntry(
             text='Political upheaval strikes your homeworld or colony.',
-            effects=[SkillChoiceEffect(options=[Advocate(), Persuade(), Explosives(), Streetwise()], level=1)],
+            options=[Advocate(), Persuade(), Explosives(), Streetwise()],
+            level=1,
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='You spend time maintaining and using heavy vehicles.',
-            effects=[SkillChoiceEffect(options=[Mechanic(), Drive(), Electronics(), Flyer(), Engineer()], level=1)],
+            options=[Mechanic(), Drive(), Electronics(), Flyer(), Engineer()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='Your business expands, your corporation grows, or your colony thrives.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: CitizenEvent6Handler(
             text='You are given advanced training in a specialist field.',
-            effects=[CitizenEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: CitizenEvent8Handler(
             text='You learn something illegal but profitable.',
-            effects=[CitizenEvent8Handler()],
         ),
         9: AdvancementDmEntry(
             text='You are rewarded for your diligence or cunning.',
             amount=2,
         ),
-        10: CareerEventEntry(
+        10: SkillChoiceEntry(
             text='You gain experience in a technical field.',
-            effects=[SkillChoiceEffect(options=[Electronics(), Engineer()], level=1)],
+            options=[Electronics(), Engineer()],
+            level=1,
         ),
         11: GainConnectionEntry(
             text='You befriend a superior in the corporation, bureaucracy or colony.',
             connection=ConnectionKind.ALLY,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You rise to a position of power. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

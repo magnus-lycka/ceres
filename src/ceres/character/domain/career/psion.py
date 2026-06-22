@@ -8,27 +8,26 @@ from ceres.character.domain.benefits import (
     TAS_MEMBERSHIP,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
     AssignmentData,
-    AutoAdvanceEffect,
-    BenefitDmEffect,
+    AutoAdvanceEntry,
+    BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillOption,
     CareerSkillTables,
+    CareerTableEntry,
+    CharacteristicLossEntry,
     CharCheck,
-    DecreaseCharacteristicEffect,
-    GainAllyEffect,
-    GainContactEffect,
-    LifeEventEffect,
+    GainConnectionAndAdvancementDmEntry,
+    GainConnectionEntry,
+    LifeEventEntry,
     MishapEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
     _blank_ranks,
 )
@@ -555,90 +554,81 @@ class Psion(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
-        1: MishapEntry(
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
+        1: CommonMishap1Handler(
             text='Severely injured (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
-            effects=[CommonMishap1Handler()],
         ),
-        2: MishapEntry(
+        2: CharacteristicLossEntry(
             text='You telepathically contact something dangerous. Lose one PSI. '
             'You also suffer from persistent and terrifying nightmares.',
-            effects=[DecreaseCharacteristicEffect(characteristic=Chars.PSI)],
+            characteristic=Chars.PSI,
         ),
-        3: MishapEntry(
+        3: PsionMishap3Handler(
             text='An anti-psi cult or gang attempts to expose or attack you. Roll 1D: on a 1–2, you are injured, '
             'roll on the Injury table (see page 49). On a 3–4, lose one SOC. On a 5–6, nothing else happens '
             'but you still must leave this career.',
             defer_ejection=True,
-            effects=[PsionMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: PsionMishap4Handler(
             text='You are asked to use your psionic powers in an unethical fashion. Accept and you may continue in '
             'this career but gain an Enemy. Refuse and you must leave the career.',
             defer_ejection=True,
-            effects=[PsionMishap4Handler()],
         ),
         5: MishapEntry(
             text='You are experimented on by a corporation, government or other organisation. '
             'You escape but are forced to leave this career.',
         ),
-        6: MishapEntry(
+        6: PsionMishap6Handler(
             text='Your gift causes a former friend to turn on you and betray you. '
             'One Ally or Contact becomes an Enemy.',
-            effects=[PsionMishap6Handler()],
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        2: CareerEventEntry(
+    events: ClassVar[dict[int, CareerTableEntry]] = {
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: PsionEvent3Handler(
             text='Your psionic abilities make you uncomfortable to be around. One Contact or Ally becomes a Rival.',
-            effects=[PsionEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='Choose one of these skills, reflecting your time spent mastering mind and body. '
             'Gain one of Athletics 1, Stealth 1, Survival 1 or Art 1.',
-            effects=[
-                SkillChoiceEffect(options=[Athletics(), Stealth(), Survival(), *skill_instances(ArtSkill)], level=1)
-            ],
+            options=[Athletics(), Stealth(), Survival(), *skill_instances(ArtSkill)],
+            level=1,
         ),
-        5: CareerEventEntry(
+        5: PsionEvent5Handler(
             text='You have a chance to use your powers unethically to better your standing. If you accept, '
             'roll PSI 8+ If you succeed, gain an extra Benefit roll or +1 SOC. If you fail, lose one SOC.',
-            effects=[PsionEvent5Handler()],
         ),
-        6: CareerEventEntry(
+        6: GainConnectionEntry(
             text='You make an unexpected connection outside your normal circles. Gain a Contact.',
-            effects=[GainContactEffect()],
+            connection=ConnectionKind.CONTACT,
         ),
-        7: CareerEventEntry(text='Life Event. Roll on the Life Events table.', effects=[LifeEventEffect()]),
-        8: CareerEventEntry(
+        7: LifeEventEntry(text='Life Event. Roll on the Life Events table.'),
+        8: PsionIncreasePsiHandler(
             text='You achieve a new level of psionic strength. Increase your PSI by +1.',
-            effects=[PsionIncreasePsiHandler()],
         ),
-        9: CareerEventEntry(
+        9: PsionAdvancedTrainingHandler(
             text='You are given advanced training in a specialist field. '
             'Roll EDU 8+ to gain any one skill except Jack-of-all-Trades.',
-            effects=[PsionAdvancedTrainingHandler()],
         ),
-        10: CareerEventEntry(
+        10: BenefitDmEntry(
             text='You pick up potentially useful information using your '
             'psychic powers. Gain DM+1 to any one Benefit roll.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
-        11: CareerEventEntry(
+        11: GainConnectionAndAdvancementDmEntry(
             text='You gain a mentor. Gain an Ally and DM+4 to your next '
             'advancement roll (in any career) thanks to their aid.',
-            effects=[GainAllyEffect(), AdvancementDmEffect(amount=4)],
+            connection=ConnectionKind.ALLY,
+            amount=4,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You achieve a new level of discipline in your powers. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

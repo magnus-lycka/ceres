@@ -172,42 +172,27 @@ anonymous effects inside a generic table row.
 
 ### Current Status
 
-- Phase 1 is partially complete: direct projection verbs exist for
-  characteristic loss, advancement/qualification/benefit DMs, parole threshold
-  changes, auto-qualification, and forfeiting current-career benefits.
-- Phase 2 has started: `CareerTableEntry` and the first shared direct-outcome
-  entry classes exist beside legacy effects, and `TermEventHandler` /
-  `MishapHandler` can dispatch both typed entries and legacy `effects=[...]`.
-- Phase 3 has started with real career data. Migrated examples include:
-  Marines mishap 5 (`GainConnectionEntry`), Marines event 10
-  (`AdvancementDmEntry`), Entertainer mishaps 3/4/6
-  (`CharacteristicLossEntry`, `GainConnectionEntry`, `QualificationDmEntry`),
-  Entertainer event 5 (`BenefitDmEntry`), Agent mishap 4
-  (`GainSkillAndConnectionEntry`), Agent event 4 (`BenefitDmEntry`), and Agent
-  event 9 (`AdvancementDmEntry`), Scout event 5 (`BenefitDmEntry`), Scholar
-  events 5/9 (`BenefitDmEntry`, `AdvancementDmEntry`), Drifter mishaps 3/4
-  (`GainConnectionEntry`, `CharacteristicLossEntry`), Drifter event 5
-  (`BenefitDmEntry`), Navy mishap 5 (`GainConnectionEntry`), and Navy event 4
-  (`BenefitDmEntry`), Citizen mishaps 2/3 (`GainConnectionEntry`,
-  `CharacteristicLossEntry`), Citizen events 5/9/11 (`BenefitDmEntry`,
-  `AdvancementDmEntry`, `GainConnectionEntry`), Prisoner mishaps 2/5
-  (`ParoleThresholdChangeEntry`, `CharacteristicLossEntry`), Prisoner events
-  8/11 (`ParoleThresholdChangeEntry`), Noble mishap 2
-  (`CharacteristicLossEntry`), Noble event 5 (`BenefitDmEntry`), Army mishaps
-  2/5 (`GainConnectionEntry`), and Army events 5/9 (`BenefitDmEntry`,
-  `AdvancementDmEntry`).
-- `CareerTableEntry` now carries `stay_in_career` and `defer_ejection` framing
-  flags so shared direct-outcome entries can be used directly in mishap tables.
+- Phase 1 is complete for this refactor: projection verbs exist for the direct
+  state changes that used to sit behind small effect middlemen.
+- Phase 2 is complete: `CareerTableEntry` is the shared table-row base,
+  handlers dispatch typed entries directly, and `CareerEventEntry` /
+  `MishapEntry` retain compatibility fields only for non-career consumers and
+  any future deserialization cleanup.
+- Phase 3 is complete at the career table surface: career modules no longer use
+  `effects=[...]` rows. Direct outcomes, pending-input outcomes, no-op rows,
+  mixed common outcomes, and bespoke career rows are represented as
+  table entries.
+- `CareerTableEntry` carries `stay_in_career` and `defer_ejection` framing flags
+  so shared entries can be used directly in mishap tables.
 - Snapshot/approval experiments are intentionally deferred; use ordinary
   focused assertions unless a complex row genuinely needs full state-delta
   characterization.
-- Remaining direct-effect rows are now concentrated in Noble, Rogue, Army,
-  Citizen, Merchant, Psion, Prisoner, plus a few still-mixed rows in
-  Entertainer, Scholar, and Navy. Continue migrating single direct outcomes
-  with existing shared entries first. For mixed rows such as
-  connection+advancement DM, connection+benefit DM, connection+skill choice,
-  and benefit-forfeit+connection, add explicit shared entry classes instead of
-  recreating `effects=[...]` under a different name.
+- Career table effect rows are migrated:
+  `rg "effects=\[" src/ceres/character/domain/career`
+  returns no matches.
+- Bespoke career rows are direct `CareerHandlerBase` table entries. They no
+  longer sit behind `handler=...` payloads on `CareerEventEntry` /
+  `MishapEntry`.
 
 ### Phase 1: Add projection verbs
 

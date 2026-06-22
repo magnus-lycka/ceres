@@ -13,22 +13,20 @@ from ceres.character.domain.career.career_data import (
     AssignmentData,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharCheck,
+    GainConnectionAndSkillChoiceEntry,
     GainConnectionEntry,
-    GainEnemyEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -387,93 +385,91 @@ class Army(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured in action (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
-            effects=[CommonMishap1Handler()],
         ),
         2: GainConnectionEntry(
             text='Your unit is slaughtered in a disastrous battle, for which you blame your commander. '
             'Gain them as an Enemy as they have you removed from the service.',
             connection=ConnectionKind.ENEMY,
         ),
-        3: MishapEntry(
+        3: GainConnectionAndSkillChoiceEntry(
             text='You are sent to a very unpleasant region (jungle, swamp, desert, icecap, urban) to battle against '
             'guerrilla fighters and rebels. You are discharged because of stress, injury or because the '
             'government wishes to bury the whole incident. Increase Recon or Survival by one level but also gain '
             'the rebels as an Enemy.',
-            effects=[GainEnemyEffect(), SkillChoiceEffect(options=[Recon(), Survival()], level=1)],
+            connection=ConnectionKind.ENEMY,
+            options=[Recon(), Survival()],
+            level=1,
         ),
-        4: MishapEntry(
+        4: ArmyMishap4Handler(
             text='You discover that your commanding officer is engaged in some illegal activity, such as weapon '
             'smuggling. You can join their ring and gain them as an Ally before the inevitable investigation '
             'gets you discharged or you can co-operate with the military police – the official whitewash gets '
             'you discharged anyway but you may keep your Benefit roll from this term of service.',
             defer_ejection=True,
-            effects=[ArmyMishap4Handler()],
         ),
         5: GainConnectionEntry(
             text='You are tormented by or quarrel with an officer or fellow soldier. '
             'Gain that officer as a Rival as they drive you out of the service.',
             connection=ConnectionKind.RIVAL,
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: SkillChoiceEntry(
             text='You are assigned to a planet with a hostile or wild environment. '
             'Gain one of Vacc Suit 1, Engineer 1, Animals (riding or training) 1 or Recon 1.',
-            effects=[SkillChoiceEffect(options=[VaccSuit(), Engineer(), Animals(), Recon()], level=1)],
+            options=[VaccSuit(), Engineer(), Animals(), Recon()],
+            level=1,
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='You are assigned to an urbanised planet torn by war. '
             'Gain one of Stealth 1, Streetwise 1, Persuade 1 or Recon 1.',
-            effects=[SkillChoiceEffect(options=[Stealth(), Streetwise(), Persuade(), Recon()], level=1)],
+            options=[Stealth(), Streetwise(), Persuade(), Recon()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='You are given a special assignment or duty in your unit. Gain DM+1 to any one Benefit roll.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: ArmyEvent6Handler(
             text='You are thrown into a brutal ground war. Roll EDU 8+ to avoid injury; '
             'if you succeed, you gain one level in Gun Combat or Leadership.',
-            effects=[ArmyEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event. Roll on the Life Events table.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: ArmyEvent8Handler(
             text='You are given advanced training in a specialist field. '
             'Roll EDU 8+ to increase any one skill you already have by one level.',
-            effects=[ArmyEvent8Handler()],
         ),
         9: AdvancementDmEntry(
             text='Surrounded and outnumbered by the enemy, you hold out until relief arrives. '
             'Gain DM+2 to your next advancement roll.',
             amount=2,
         ),
-        10: CareerEventEntry(
+        10: SkillChoiceEntry(
             text='You are assigned to a peacekeeping role. Gain one of Admin 1, Investigate 1, Deception 1 or Recon 1.',
-            effects=[SkillChoiceEffect(options=[Admin(), Investigate(), Deception(), Recon()], level=1)],
+            options=[Admin(), Investigate(), Deception(), Recon()],
+            level=1,
         ),
-        11: CareerEventEntry(
+        11: ArmyEvent11Handler(
             text='Your commanding officer takes an interest in your career. Either gain Tactics (military) 1 or '
             'DM+4 to your next advancement roll thanks to their aid.',
-            effects=[ArmyEvent11Handler()],
         ),
-        12: CareerEventEntry(
+        12: ArmyEvent12Handler(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',
-            effects=[ArmyEvent12Handler()],
         ),
     }
 

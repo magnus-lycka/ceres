@@ -9,25 +9,24 @@ from ceres.character.domain.benefits import (
 )
 from ceres.character.domain.career.career_data import (
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionEntry,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
+    NoEffectEntry,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
     _blank_ranks,
 )
@@ -428,14 +427,13 @@ class Drifter(CareerData):
     }
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
         3: GainConnectionEntry(
             text='You run afoul of a criminal gang, corrupt bureaucrat or other foe. Gain an Enemy.',
@@ -446,62 +444,53 @@ class Drifter(CareerData):
             characteristic=Chars.END,
             amount=1,
         ),
-        5: MishapEntry(
+        5: DrifterMishap5Handler(
             text='Betrayed by a friend. Gain a Rival. Roll 2D — on a natural 2, '
             'you must take the Prisoner career next term.',
             defer_ejection=True,
-            effects=[DrifterMishap5Handler()],
         ),
-        6: MishapEntry(
+        6: NoEffectEntry(
             text='You do not know what happened to you. There is a gap in your memory.',
-            effects=[],
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: DrifterEvent3Handler(
             text='A patron offers you a chance at a job.',
-            effects=[DrifterEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='You pick up a few useful skills here and there.',
-            effects=[SkillChoiceEffect(options=[JackOfAllTrades(), Survival(), Streetwise(), Melee()], level=1)],
+            options=[JackOfAllTrades(), Survival(), Streetwise(), Melee()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='You manage to scavenge something of use.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: LifeEventEntry(
             text='You encounter something unusual.',
-            effects=[LifeEventEffect()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: DrifterEvent8Handler(
             text='You are attacked by enemies.',
-            effects=[DrifterEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: DrifterEvent9Handler(
             text='You are offered a chance to take part in a risky but rewarding adventure.',
-            effects=[DrifterEvent9Handler()],
         ),
-        10: CareerEventEntry(
+        10: DrifterEvent10Handler(
             text='Life on the edge hones your abilities. Increase any skill you already have by one level.',
-            effects=[DrifterEvent10Handler()],
         ),
-        11: CareerEventEntry(
+        11: DrifterEvent11Handler(
             text='You are forcibly drafted.',
-            effects=[DrifterEvent11Handler()],
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You thrive on adversity. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

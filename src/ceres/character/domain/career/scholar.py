@@ -10,25 +10,22 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharCheck,
-    GainAllyEffect,
-    GainRivalEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    GainConnectionEntry,
+    InjuryAndGainConnectionEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -346,6 +343,10 @@ class PendingScholarEvent11(CareerSkillChoicePendingBase):
 class ScholarEvent11Handler(CareerHandlerBase):
     type: Literal['scholar_event_11'] = 'scholar_event_11'
 
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_connection(ConnectionKind.ALLY, origin=self.text)
+        return self.handle(projection, event.id, pending_idx)
+
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
@@ -492,90 +493,80 @@ class Scholar(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
-        1: MishapEntry(
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: InjuryAndGainConnectionEntry(
             text='A disaster leaves several injured and others blame you, '
             'forcing you to leave your career. Gain a Rival.',
-            effects=[InjuryEffect(severity='from_table'), GainRivalEffect()],
+            severity='from_table',
+            connection=ConnectionKind.RIVAL,
         ),
-        3: MishapEntry(
+        3: ScholarMishap3Handler(
             text='The planetary government interferes with your research for political or religious reasons.',
             stay_in_career=True,
-            effects=[ScholarMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: SkillChoiceEntry(
             text='An expedition or voyage goes wrong, leaving you stranded in the wilderness.',
-            effects=[SkillChoiceEffect(options=[Survival(), Athletics()], level=1)],
+            options=[Survival(), Athletics()],
+            level=1,
         ),
-        5: MishapEntry(
+        5: ScholarMishap5Handler(
             text='Your work is sabotaged by unknown parties.',
             stay_in_career=True,
-            effects=[ScholarMishap5Handler()],
         ),
-        6: MishapEntry(
+        6: GainConnectionEntry(
             text=(
                 'A rival researcher blackens your name or steals your research. Gain a Rival but you do not have to '
                 'leave this career.'
             ),
             stay_in_career=True,
-            effects=[GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: ScholarEvent3Handler(
             text='You are called upon to perform research that goes against your conscience.',
-            effects=[ScholarEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='You are assigned to work on a secret project for a patron or organisation.',
-            effects=[
-                SkillChoiceEffect(
-                    options=[Medic(), *skill_instances(ScienceSkill), Engineer(), Electronics(), Investigate()],
-                    level=1,
-                )
-            ],
+            options=[Medic(), *skill_instances(ScienceSkill), Engineer(), Electronics(), Investigate()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='You win a prestigious prize for your work.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: ScholarEvent6Handler(
             text='You are given advanced training in a specialist field.',
-            effects=[ScholarEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: ScholarEvent8Handler(
             text='You have the opportunity to cheat in some fashion.',
-            effects=[ScholarEvent8Handler()],
         ),
         9: AdvancementDmEntry(
             text='You make a breakthrough in your field.',
             amount=2,
         ),
-        10: CareerEventEntry(
+        10: SkillChoiceEntry(
             text='You become entangled in a bureaucratic or legal morass.',
-            effects=[SkillChoiceEffect(options=[Admin(), Advocate(), Persuade(), Diplomat()], level=1)],
+            options=[Admin(), Advocate(), Persuade(), Diplomat()],
+            level=1,
         ),
-        11: CareerEventEntry(
+        11: ScholarEvent11Handler(
             text='You work for an eccentric but brilliant mentor, who becomes an Ally.',
-            effects=[GainAllyEffect(), ScholarEvent11Handler()],
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='Your work leads to a considerable breakthrough. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

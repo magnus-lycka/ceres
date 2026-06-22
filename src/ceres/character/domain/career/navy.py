@@ -10,30 +10,27 @@ from ceres.character.domain.benefits import (
     ChoiceBenefit,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CharacteristicLossChoiceEntry,
     CharCheck,
-    DecreaseCharacteristicChoiceEffect,
+    GainConnectionAndAdvancementDmEntry,
+    GainConnectionAndSkillChoiceEntry,
     GainConnectionEntry,
-    GainContactEffect,
-    GainEnemyEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -354,80 +351,80 @@ class Navy(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured in action.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: CharacteristicLossChoiceEntry(
             text='Placed in the frozen watch and revived improperly. Reduce STR, DEX or END. You are not ejected.',
             stay_in_career=True,
-            effects=[DecreaseCharacteristicChoiceEffect(options=[Chars.STR, Chars.DEX, Chars.END], amount=1)],
+            options=[Chars.STR, Chars.DEX, Chars.END],
+            amount=1,
         ),
-        3: MishapEntry(
+        3: NavyMishap3Handler(
             text='During a battle, defeat or victory depends on your actions.',
             defer_ejection=True,
-            effects=[NavyMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: NavyMishap4Handler(
             text='Blamed for an accident that causes the death of several crew members.',
             defer_ejection=True,
-            effects=[NavyMishap4Handler()],
         ),
         5: GainConnectionEntry(
             text='You quarrel with an officer or fellow crewman. Gain a Rival.',
             connection=ConnectionKind.RIVAL,
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: SkillChoiceEntry(
             text='You join a gambling circle on board.',
-            effects=[SkillChoiceEffect(options=[Gambler(), Deception()], level=1)],
+            options=[Gambler(), Deception()],
+            level=1,
         ),
         4: BenefitDmEntry(
             text='Given a special assignment or duty on board ship.',
             amount=1,
         ),
-        5: CareerEventEntry(
+        5: NavyEvent5Handler(
             text='Advanced training in a specialist field.',
-            effects=[NavyEvent5Handler()],
         ),
-        6: CareerEventEntry(
+        6: SkillChoiceEntry(
             text='Your vessel participates in a notable military engagement.',
-            effects=[SkillChoiceEffect(options=[Electronics(), Engineer(), Gunner(), Pilot()], level=1)],
+            options=[Electronics(), Engineer(), Gunner(), Pilot()],
+            level=1,
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: GainConnectionAndSkillChoiceEntry(
             text='Your vessel participates in a diplomatic mission.',
-            effects=[SkillChoiceEffect(options=[Recon(), Diplomat(), Steward()], level=1), GainContactEffect()],
+            connection=ConnectionKind.CONTACT,
+            options=[Recon(), Diplomat(), Steward()],
+            level=1,
         ),
-        9: CareerEventEntry(
+        9: GainConnectionAndAdvancementDmEntry(
             text='You foil an attempted crime on board. Gain an Enemy and DM+2 to next advancement.',
-            effects=[GainEnemyEffect(), AdvancementDmEffect(amount=2)],
+            connection=ConnectionKind.ENEMY,
+            amount=2,
         ),
-        10: CareerEventEntry(
+        10: NavyEvent10Handler(
             text='Opportunity to abuse your position for profit.',
-            effects=[NavyEvent10Handler()],
         ),
-        11: CareerEventEntry(
+        11: SkillChoiceEntry(
             text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=[Tactics(), AdvancementDmOption()], level=1)],
+            options=[Tactics(), AdvancementDmOption()],
+            level=1,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You display heroism in battle, saving the whole ship.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

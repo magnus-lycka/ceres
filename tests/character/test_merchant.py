@@ -22,6 +22,8 @@ from ceres.character.domain.career.merchant import (
 )
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.connection import (
+    Ally,
+    Contact,
     Enemy,
     Rival,
 )
@@ -291,6 +293,37 @@ class TestMerchantMishap1:
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+
+
+class TestMerchantDirectOutcomeRows:
+    def test_mishap_4_adds_enemy_and_ends_career(self):
+        d = CharacterDriver()
+        d.start(VILANI, MOCK_WORLD)
+        d.ucp('7869A5')
+        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        d.career('Merchant', 'Merchant Marine', roll=3)
+        d.survive(2)
+        d.mishap(4)
+
+        assert any(isinstance(c, Enemy) for c in d.projection.summary.connections)
+        assert d.projection.summary.current_career is None
+
+    def test_event_6_adds_contact(self):
+        projection = replay(1, _through_term_event(6))
+
+        assert any(isinstance(c, Contact) for c in projection.summary.connections)
+
+    def test_event_10_adds_benefit_dm(self):
+        projection = replay(1, _through_term_event(10))
+
+        dms = projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+    def test_event_11_adds_ally(self):
+        projection = replay(1, _through_term_event(11))
+
+        assert any(isinstance(c, Ally) for c in projection.summary.connections)
 
 
 # ── mishap 2: bankrupted by rival ────────────────────────────────────────────

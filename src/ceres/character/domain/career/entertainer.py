@@ -7,30 +7,28 @@ from ceres.character.domain.benefits import (
     CombinedBenefit,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharacteristicLossEntry,
     CharCheck,
-    GainAllyEffect,
+    GainConnectionAndAdvancementDmEntry,
+    GainConnectionAndSkillChoiceEntry,
     GainConnectionEntry,
-    GainConnectionsRolledEffect,
-    GainContactEffect,
-    LifeEventEffect,
-    MishapEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
+    NoEffectEntry,
     QualificationDmEntry,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RolledConnectionsEntry,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -320,14 +318,12 @@ class Entertainer(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: NoEffectEntry(
             text='You expose or are involved in a scandal of some sort.',
-            effects=[],
         ),
         3: CharacteristicLossEntry(
             text='Public opinion turns on you. Reduce SOC by 1.',
@@ -338,9 +334,10 @@ class Entertainer(CareerData):
             text='You are betrayed by a peer. Gain a Rival or Enemy.',
             connection=ConnectionKind.RIVAL,
         ),
-        5: MishapEntry(
+        5: SkillChoiceEntry(
             text='A project goes wrong, stranding you far from home.',
-            effects=[SkillChoiceEffect(options=[Survival(), Pilot(), Persuade(), Streetwise()], level=1)],
+            options=[Survival(), Pilot(), Persuade(), Streetwise()],
+            level=1,
         ),
         6: QualificationDmEntry(
             text='You are forced out because of censorship or controversy. What truth did you get too close to?',
@@ -349,49 +346,49 @@ class Entertainer(CareerData):
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: EntertainerEvent3Handler(
             text='You are invited to take part in a controversial event or exhibition.',
-            effects=[EntertainerEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: GainConnectionAndSkillChoiceEntry(
             text="You are part of your homeworld's celebrity circles.",
-            effects=[SkillChoiceEffect(options=[Carouse(), Persuade(), Steward()], level=1), GainContactEffect()],
+            connection=ConnectionKind.CONTACT,
+            options=[Carouse(), Persuade(), Steward()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='One of your works is especially well received and popular.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: GainConnectionAndAdvancementDmEntry(
             text='You gain a patron in the arts.',
-            effects=[AdvancementDmEffect(amount=2), GainAllyEffect()],
+            connection=ConnectionKind.ALLY,
+            amount=2,
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: EntertainerEvent8Handler(
             text='You have the opportunity to criticise or bring down a questionable political leader.',
-            effects=[EntertainerEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: RolledConnectionsEntry(
             text='You go on a tour of the sector, visiting several worlds.',
-            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice=DiceRoll.parse('d3'))],
+            connection=ConnectionKind.CONTACT,
+            dice=DiceRoll.parse('d3'),
         ),
-        10: CareerEventEntry(
+        10: SkillChoiceEntry(
             text='One of your pieces of art is stolen and the investigation brings you into the criminal underworld.',
-            effects=[SkillChoiceEffect(options=[Streetwise(), Investigate(), Recon(), Stealth()], level=1)],
+            options=[Streetwise(), Investigate(), Recon(), Stealth()],
+            level=1,
         ),
-        11: CareerEventEntry(
+        11: LifeEventEntry(
             text='As an artist, you lead a strange and charmed life.',
-            effects=[LifeEventEffect()],
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You win a prestigious prize. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

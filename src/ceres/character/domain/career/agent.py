@@ -13,25 +13,23 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharCheck,
-    GainConnectionsRolledEffect,
     GainSkillAndConnectionEntry,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RolledConnectionsEntry,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -488,13 +486,12 @@ class Agent(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured (this is the same as a result of 2 on the Injury table). '
             'Alternatively, roll twice on the Injury table and take the lower result.',
             defer_ejection=True,
-            effects=[CommonMishap1Handler()],
         ),
-        2: MishapEntry(
+        2: AgentMishap2Handler(
             text=(
                 'A criminal or other figure under investigation offers you a deal. Accept and you leave this career '
                 'without further penalty (although you lose the Benefit roll as normal). Refuse and you must roll '
@@ -502,16 +499,14 @@ class Agent(CareerData):
                 'you choose.'
             ),
             defer_ejection=True,
-            effects=[AgentMishap2Handler()],
         ),
-        3: MishapEntry(
+        3: AgentMishap3Handler(
             text=(
                 'An investigation goes critically wrong or leads to the top, ruining your career. Roll Advocate 8+. '
                 'If you succeed, you may keep the Benefit roll from this term. If you roll 2, you must take the '
                 'Prisoner career in your next term.'
             ),
             defer_ejection=True,
-            effects=[AgentMishap3Handler()],
         ),
         4: GainSkillAndConnectionEntry(
             text='You learn something you should not know and people want to kill you for it. '
@@ -519,75 +514,70 @@ class Agent(CareerData):
             skill=Deception(level=Level(value=1)),
             connection=ConnectionKind.ENEMY,
         ),
-        5: MishapEntry(
+        5: AgentMishap5Handler(
             text=(
                 'Your work ends up coming home with you and someone gets hurt. Choose one of your Contacts, Allies '
                 'or family members and roll twice on the Injury table for them, taking the lower result.'
             ),
             defer_ejection=True,
-            effects=[AgentMishap5Handler()],
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: AgentEvent3Handler(
             text=(
                 'An investigation takes on a dangerous turn. Roll Investigate 8+ or Streetwise 8+. If you fail, '
                 'roll on the Mishap table. If you succeed, increase one of these skills by one level: Deception, '
                 'Jack-of-all-Trades, Persuade or Tactics.'
             ),
-            effects=[AgentEvent3Handler()],
         ),
         4: BenefitDmEntry(
             text='You complete a mission for your superiors and are suitably rewarded. '
             'Gain DM+1 to any one Benefit roll from this career.',
             amount=1,
         ),
-        5: CareerEventEntry(
+        5: RolledConnectionsEntry(
             text='You establish a network of contacts. Gain D3 Contacts.',
-            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice=DiceRoll.parse('d3'))],
+            connection=ConnectionKind.CONTACT,
+            dice=DiceRoll.parse('d3'),
         ),
-        6: CareerEventEntry(
+        6: AgentEvent6Handler(
             text='You are given advanced training in a specialist field. '
             'Roll EDU 8+ to increase any one skill you already have by one level.',
-            effects=[AgentEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event. Roll on the Life Events table.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: AgentEvent8Handler(
             text=(
                 'You go undercover to investigate an enemy. Roll Deception 8+. If you succeed, roll immediately on '
                 'the Rogue or Citizen Events table and make one roll on any Specialist skill table for that career. '
                 'If you fail, roll immediately on the Rogue or Citizen Mishap table.'
             ),
-            effects=[AgentEvent8Handler()],
         ),
         9: AdvancementDmEntry(
             text='You go above and beyond the call of duty. Gain DM+2 to your next advancement roll.',
             amount=2,
         ),
-        10: CareerEventEntry(
+        10: SkillChoiceEntry(
             text='You are given specialist training in vehicles. Gain one of Drive 1, Flyer 1, Pilot 1 or Gunner 1.',
-            effects=[SkillChoiceEffect(options=[Drive(), Flyer(), Pilot(), Gunner()], level=1)],
+            options=[Drive(), Flyer(), Pilot(), Gunner()],
+            level=1,
         ),
-        11: CareerEventEntry(
+        11: AgentEvent11Handler(
             text='You are befriended by a senior agent. Either increase Investigate by one level or DM+4 to an '
             'advancement roll thanks to their aid.',
-            effects=[AgentEvent11Handler()],
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='Your efforts uncover a major conspiracy against your employers. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

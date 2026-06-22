@@ -9,24 +9,23 @@ from ceres.character.domain.benefits import (
 from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
-    BenefitDmEffect,
+    AutoAdvanceEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
-    GainEnemyEffect,
-    GainSkillEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    GainConnectionAndBenefitDmEntry,
+    GainConnectionEntry,
+    GainSkillEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -426,83 +425,80 @@ class Rogue(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
-        1: MishapEntry(
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: RogueMishap2Handler(
             text='Arrested. You must take the Prisoner career in your next term.',
-            effects=[RogueMishap2Handler()],
         ),
-        3: MishapEntry(
+        3: RogueMishap3Handler(
             text=(
                 'Betrayed by a friend. One of your Contacts or Allies betrays you, ending your career. '
                 'That Contact or Ally becomes a Rival or Enemy. If you have no Contacts or Allies, you still '
                 'gain a Rival or Enemy. Roll 2D — on a 2, you must take the Prisoner career next term.'
             ),
             defer_ejection=True,
-            effects=[RogueMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: SkillChoiceEntry(
             text='A job goes wrong, forcing you to flee off-planet.',
-            effects=[SkillChoiceEffect(options=[Deception(), Pilot(), Athletics(), Gunner()], level=1)],
+            options=[Deception(), Pilot(), Athletics(), Gunner()],
+            level=1,
         ),
-        5: MishapEntry(
+        5: GainConnectionEntry(
             text='A police detective or rival criminal forces you to flee and vows to hunt you down.',
-            effects=[GainEnemyEffect()],
+            connection=ConnectionKind.ENEMY,
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        2: CareerEventEntry(
+    events: ClassVar[dict[int, CareerTableEntry]] = {
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: RogueEvent3Handler(
             text='You are arrested and charged.',
-            effects=[RogueEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='You are involved in the planning of an impressive heist.',
-            effects=[SkillChoiceEffect(options=[Electronics(), Mechanic()], level=1)],
+            options=[Electronics(), Mechanic()],
+            level=1,
         ),
-        5: CareerEventEntry(
+        5: GainConnectionAndBenefitDmEntry(
             text='One of your crimes pays off.',
-            effects=[BenefitDmEffect(amount=2), GainEnemyEffect()],
+            connection=ConnectionKind.ENEMY,
+            amount=2,
         ),
-        6: CareerEventEntry(
+        6: RogueEvent6Handler(
             text='You have the opportunity to backstab a fellow rogue for personal gain.',
-            effects=[RogueEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: SkillChoiceEntry(
             text='You spend months in the dangerous criminal underworld.',
-            effects=[SkillChoiceEffect(options=[Streetwise(), Stealth(), Melee(), GunCombat()], level=1)],
+            options=[Streetwise(), Stealth(), Melee(), GunCombat()],
+            level=1,
         ),
-        9: CareerEventEntry(
+        9: RogueEvent9Handler(
             text='You become involved in a feud with a rival criminal organisation.',
-            effects=[RogueEvent9Handler()],
         ),
-        10: CareerEventEntry(
+        10: GainSkillEntry(
             text='You are involved in a gambling ring. Gain Gambler 1.',
-            effects=[GainSkillEffect(skill=Gambler(level=Level(value=1)))],
+            skill=Gambler(level=Level(value=1)),
         ),
-        11: CareerEventEntry(
+        11: SkillChoiceEntry(
             text='A crime lord considers you his protege.',
-            effects=[SkillChoiceEffect(options=[Tactics(), AdvancementDmOption()], level=1)],
+            options=[Tactics(), AdvancementDmOption()],
+            level=1,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You commit a legendary crime. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

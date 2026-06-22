@@ -9,28 +9,24 @@ from ceres.character.domain.benefits import (
 )
 from ceres.character.domain.career.career_data import (
     AssignmentData,
-    AutoAdvanceEffect,
-    AutoQualifyCareerEffect,
-    BenefitDmEffect,
+    AutoAdvanceEntry,
+    AutoQualifyCareerEntry,
+    BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
+    CareerTableEntry,
     CharCheck,
-    GainAllyEffect,
-    GainContactEffect,
-    GainEnemyEffect,
-    GainRivalEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    LoseAllCareerBenefitsEffect,
-    MishapEntry,
+    GainConnectionEntry,
+    InjuryEntry,
+    LifeEventEntry,
+    LoseAllCareerBenefitsAndGainConnectionEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -340,93 +336,83 @@ class Merchant(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
-        1: MishapEntry(
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: LoseAllCareerBenefitsAndGainConnectionEntry(
             text='You are bankrupted by a rival. You lose all Benefits from '
             'this career and gain the other trader as a Rival.',
-            effects=[LoseAllCareerBenefitsEffect(), GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
-        3: MishapEntry(
+        3: SkillChoiceEntry(
             text='A sudden war destroys your trade routes and contacts, forcing you to '
             'flee that region of space. Gain Gun Combat 1 or Pilot 1.',
-            effects=[SkillChoiceEffect(options=[GunCombat(), Pilot()], level=1)],
+            options=[GunCombat(), Pilot()],
+            level=1,
         ),
-        4: MishapEntry(
+        4: GainConnectionEntry(
             text='Your ship or starport is destroyed by criminals. Gain them as an Enemy.',
-            effects=[GainEnemyEffect()],
+            connection=ConnectionKind.ENEMY,
         ),
-        5: MishapEntry(
+        5: AutoQualifyCareerEntry(
             text='Imperial trade restrictions force you out of business. '
             'You may take the Rogue career for your next term without needing to roll for qualification.',
-            effects=[AutoQualifyCareerEffect(career=Rogue)],
+            career=Rogue,
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        2: CareerEventEntry(
+    events: ClassVar[dict[int, CareerTableEntry]] = {
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: MerchantEvent3Handler(
             text='You are offered the opportunity to smuggle illegal items onto a planet.',
-            effects=[MerchantEvent3Handler()],
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='Gain any one of these skills, reflecting your time spent dealing with suppliers and spacers.',
-            effects=[
-                SkillChoiceEffect(
-                    options=[
-                        *skill_instances(ProfessionSkill),
-                        Electronics(),
-                        Engineer(),
-                        Animals(),
-                        *skill_instances(ScienceSkill),
-                    ],
-                    level=1,
-                )
+            options=[
+                *skill_instances(ProfessionSkill),
+                Electronics(),
+                Engineer(),
+                Animals(),
+                *skill_instances(ScienceSkill),
             ],
+            level=1,
         ),
-        5: CareerEventEntry(
+        5: MerchantEvent5Handler(
             text='You have a chance to risk your fortune on a possibly lucrative deal.',
-            effects=[MerchantEvent5Handler()],
         ),
-        6: CareerEventEntry(
+        6: GainConnectionEntry(
             text='You make an unexpected connection outside your normal circles. Gain a Contact.',
-            effects=[GainContactEffect()],
+            connection=ConnectionKind.CONTACT,
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: MerchantEvent8Handler(
             text='You are embroiled in legal trouble. Gain a skill; roll 2D — '
             'on a natural 2 you must take Prisoner next term.',
-            effects=[MerchantEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: MerchantEvent9Handler(
             text='You are given advanced training in a specialist field.',
-            effects=[MerchantEvent9Handler()],
         ),
-        10: CareerEventEntry(
+        10: BenefitDmEntry(
             text='A good deal ensures you are living the high life for a few years. Gain DM+1 to any one Benefit roll.',
-            effects=[BenefitDmEffect(amount=1)],
+            amount=1,
         ),
-        11: CareerEventEntry(
+        11: GainConnectionEntry(
             text='You befriend a useful ally in one sphere.',
-            effects=[GainAllyEffect()],
+            connection=ConnectionKind.ALLY,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='Your business or ship thrives. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

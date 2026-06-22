@@ -240,6 +240,45 @@ class CareerTableEntry(BaseModel):
         return True
 
 
+class NoEffectEntry(CareerTableEntry):
+    pass
+
+
+def _queue_injury(
+    projection: CharacterProjection,
+    event: Any,
+    pending_idx: int,
+    severity: Literal['normal', 'severe', 'from_table'],
+) -> None:
+    from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
+
+    if severity == 'normal':
+        projection.pending_inputs.append(
+            PendingCharacteristicChoice(
+                pending_id=(event.id, pending_idx),
+                instruction='Injured: choose STR, DEX, or END to reduce by 1',
+                options=[Chars.STR, Chars.DEX, Chars.END],
+                amount=1,
+            )
+        )
+    elif severity == 'severe':
+        projection.pending_inputs.append(
+            PendingCharacteristicChoice(
+                pending_id=(event.id, pending_idx),
+                instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
+                options=[Chars.STR, Chars.DEX, Chars.END],
+                amount=2,
+            )
+        )
+    elif severity == 'from_table':
+        projection.pending_inputs.append(
+            PendingInjuryTable(
+                pending_id=(event.id, pending_idx),
+                instruction='Roll 1D on Injury table',
+            )
+        )
+
+
 class GainSkillEntry(CareerTableEntry):
     skill: AnySkill
 
@@ -259,12 +298,172 @@ class CharacteristicLossEntry(CareerTableEntry):
         return pending_idx
 
 
+class CharacteristicLossOutcome(BaseModel):
+    characteristic: Chars
+    amount: int = 1
+
+
+class CharacteristicLossesAndConnectionEntry(CareerTableEntry):
+    connection: ConnectionKind
+    losses: list[CharacteristicLossOutcome]
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_connection(self.connection, origin=self.text)
+        for loss in self.losses:
+            projection.decrease_characteristic(loss.characteristic, loss.amount)
+        return pending_idx
+
+
+class CharacteristicLossChoiceEntry(CareerTableEntry):
+    options: list[Chars]
+    amount: int = 1
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.health.health_events import PendingCharacteristicChoice
+
+        characteristic = ', '.join(c.value for c in self.options)
+        projection.pending_inputs.append(
+            PendingCharacteristicChoice(
+                pending_id=(event.id, pending_idx),
+                instruction=f'Choose characteristic to decrease by {self.amount}: {characteristic}',
+                options=self.options,
+                amount=self.amount,
+            )
+        )
+        return pending_idx + 1
+
+
 class GainConnectionEntry(CareerTableEntry):
     connection: ConnectionKind
 
     def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
         projection.add_connection(self.connection, origin=self.text)
         return pending_idx
+
+
+class RolledConnectionsEntry(CareerTableEntry):
+    connection: ConnectionKind
+    dice: DiceRoll
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.connection_events import PendingConnectionsRoll
+
+        projection.pending_inputs.append(
+            PendingConnectionsRoll(
+                pending_id=(event.id, pending_idx),
+                connection_type=self.connection,
+                instruction=f'Roll {self.dice} for number of {self.connection}s',
+                options=self.dice.roll_options(),
+                origin=self.text,
+            )
+        )
+        return pending_idx + 1
+
+
+class RolledConnectionOutcome(BaseModel):
+    connection: ConnectionKind
+    dice: DiceRoll
+
+
+class RolledConnectionsGroupEntry(CareerTableEntry):
+    rolls: list[RolledConnectionOutcome]
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.connection_events import PendingConnectionsRoll
+
+        for offset, roll in enumerate(self.rolls):
+            projection.pending_inputs.append(
+                PendingConnectionsRoll(
+                    pending_id=(event.id, pending_idx + offset),
+                    connection_type=roll.connection,
+                    instruction=f'Roll {roll.dice} for number of {roll.connection}s',
+                    options=roll.dice.roll_options(),
+                    origin=self.text,
+                )
+            )
+        return pending_idx + len(self.rolls)
+
+
+class SkillChoiceEntry(CareerTableEntry):
+    options: list[AnySkill | AdvancementDmOption]
+    level: int = 1
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.skill_events import PendingSkillChoice
+
+        projection.pending_inputs.append(
+            PendingSkillChoice(
+                pending_id=(event.id, pending_idx),
+                instruction=f'Choose one skill at level {self.level}',
+                options=cast(Any, self.options),
+                level=self.level,
+            )
+        )
+        return pending_idx + 1
+
+    def continues_career_progress(self) -> bool:
+        return False
+
+
+class InjuryEntry(CareerTableEntry):
+    severity: Literal['normal', 'severe', 'from_table'] = Field(default='normal')
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        _queue_injury(projection, event, pending_idx, self.severity)
+        return pending_idx + 1
+
+
+class RollMishapEntry(CareerTableEntry):
+    leave: bool = True
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.career.career_events import PendingMishap
+
+        instruction = (
+            'Roll 1D on Mishap table (you are not ejected from this career)'
+            if not self.leave
+            else 'Roll 1D on Mishap table'
+        )
+        projection.pending_inputs.append(
+            PendingMishap(
+                pending_id=(event.id, pending_idx),
+                instruction=instruction,
+                stay_in_career=not self.leave,
+            )
+        )
+        return pending_idx + 1
+
+    def continues_career_progress(self) -> bool:
+        return False
+
+
+class LifeEventEntry(CareerTableEntry):
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.life_events import PendingLifeEvent
+
+        projection.pending_inputs.append(
+            PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table')
+        )
+        return pending_idx + 1
+
+    def continues_career_progress(self) -> bool:
+        return False
+
+
+class AutoAdvanceEntry(CareerTableEntry):
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.career.advancement import apply_auto_advance
+
+        career = projection.summary.current_career
+        if career is None and projection.summary.career_terms:
+            career = projection.summary.career_terms[-1].career
+        apply_auto_advance(projection, career, event.id)
+        return pending_idx
+
+    def continues_career_progress(self) -> bool:
+        return False
 
 
 class GainSkillAndConnectionEntry(CareerTableEntry):
@@ -277,6 +476,123 @@ class GainSkillAndConnectionEntry(CareerTableEntry):
         projection.grant_skill(self.skill)
         projection.add_connection(self.connection, origin=self.text)
         return pending_idx
+
+
+class GainConnectionAndAdvancementDmEntry(CareerTableEntry):
+    connection: ConnectionKind
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_connection(self.connection, origin=self.text)
+        projection.add_advancement_dm(self.amount)
+        return pending_idx
+
+
+class GainConnectionAndBenefitDmEntry(CareerTableEntry):
+    connection: ConnectionKind
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_connection(self.connection, origin=self.text)
+        projection.add_benefit_dm(self.amount)
+        return pending_idx
+
+
+class GainConnectionAndParoleThresholdChangeEntry(CareerTableEntry):
+    connection: ConnectionKind
+    amount: int
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.add_connection(self.connection, origin=self.text)
+        projection.adjust_parole_threshold(self.amount)
+        return pending_idx
+
+
+class GainConnectionAndSkillChoiceEntry(CareerTableEntry):
+    connection: ConnectionKind
+    options: list[AnySkill | AdvancementDmOption]
+    level: int = 1
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.skill_events import PendingSkillChoice
+
+        projection.add_connection(self.connection, origin=self.text)
+        projection.pending_inputs.append(
+            PendingSkillChoice(
+                pending_id=(event.id, pending_idx),
+                instruction=f'Choose one skill at level {self.level}',
+                options=cast(Any, self.options),
+                level=self.level,
+            )
+        )
+        return pending_idx + 1
+
+    def continues_career_progress(self) -> bool:
+        return False
+
+
+class GainConnectionsAndSkillChoiceEntry(CareerTableEntry):
+    connections: list[ConnectionKind]
+    options: list[AnySkill | AdvancementDmOption]
+    level: int = 1
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.skill_events import PendingSkillChoice
+
+        for connection in self.connections:
+            projection.add_connection(connection, origin=self.text)
+        projection.pending_inputs.append(
+            PendingSkillChoice(
+                pending_id=(event.id, pending_idx),
+                instruction=f'Choose one skill at level {self.level}',
+                options=cast(Any, self.options),
+                level=self.level,
+            )
+        )
+        return pending_idx + 1
+
+    def continues_career_progress(self) -> bool:
+        return False
+
+
+class InjuryAndGainConnectionEntry(CareerTableEntry):
+    severity: Literal['normal', 'severe', 'from_table'] = Field(default='normal')
+    connection: ConnectionKind
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
+
+        if self.severity == 'normal':
+            projection.pending_inputs.append(
+                PendingCharacteristicChoice(
+                    pending_id=(event.id, pending_idx),
+                    instruction='Injured: choose STR, DEX, or END to reduce by 1',
+                    options=[Chars.STR, Chars.DEX, Chars.END],
+                    amount=1,
+                )
+            )
+        elif self.severity == 'severe':
+            projection.pending_inputs.append(
+                PendingCharacteristicChoice(
+                    pending_id=(event.id, pending_idx),
+                    instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
+                    options=[Chars.STR, Chars.DEX, Chars.END],
+                    amount=2,
+                )
+            )
+        elif self.severity == 'from_table':
+            projection.pending_inputs.append(
+                PendingInjuryTable(
+                    pending_id=(event.id, pending_idx),
+                    instruction='Roll 1D on Injury table',
+                )
+            )
+        projection.add_connection(self.connection, origin=self.text)
+        return pending_idx + 1
 
 
 class AdvancementDmEntry(CareerTableEntry):
@@ -327,18 +643,34 @@ class LoseAllCareerBenefitsEntry(CareerTableEntry):
         return pending_idx
 
 
-class CareerHandlerBase(BaseModel):
-    """Base for career-specific event/mishap effect handlers.
+class LoseAllCareerBenefitsAndGainConnectionEntry(CareerTableEntry):
+    connection: ConnectionKind
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        projection.forfeit_current_career_benefits()
+        projection.add_connection(self.connection, origin=self.text)
+        return pending_idx
+
+
+class CareerHandlerBase(CareerTableEntry):
+    """Base for career-specific event/mishap table rows.
 
     Subclasses declare ``type: Literal['handler_key'] = 'handler_key'`` and implement
     ``handle()`` to append career-specific pending inputs.
     """
 
+    text: str = ''
     type: str
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return pending_idx
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        return self.handle(projection, event.id, pending_idx)
+
+    def continues_career_progress(self) -> bool:
+        return False
 
 
 type AnyEffect = (

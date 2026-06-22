@@ -9,28 +9,26 @@ from ceres.character.domain.benefits import (
 from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CharacteristicLossChoiceEntry,
     CharCheck,
-    DecreaseCharacteristicChoiceEffect,
-    GainConnectionsRolledEffect,
-    GainEnemyEffect,
-    GainRivalEffect,
-    GainSkillEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    GainSkillAndConnectionEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
+    NoEffectEntry,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RolledConnectionOutcome,
+    RolledConnectionsGroupEntry,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -104,6 +102,11 @@ class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
 
 class ScoutEvent3Handler(CareerHandlerBase):
     type: Literal['scout_event_3'] = 'scout_event_3'
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        next_idx = self.handle(projection, event.id, pending_idx)
+        projection.add_connection(ConnectionKind.ENEMY, origin=self.text)
+        return next_idx
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -400,110 +403,97 @@ class Scout(CareerData):
         }
     )
 
-    mishaps: ClassVar[dict[int, MishapEntry]] = {
-        1: MishapEntry(
+    mishaps: ClassVar[dict[int, CareerTableEntry]] = {
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: CharacteristicLossChoiceEntry(
             text='Psychologically damaged by your time in the scouts. Reduce your INT or SOC by 1.',
-            effects=[DecreaseCharacteristicChoiceEffect(options=[Chars.INT, Chars.SOC], amount=1)],
+            options=[Chars.INT, Chars.SOC],
+            amount=1,
         ),
-        3: MishapEntry(
+        3: RolledConnectionsGroupEntry(
             text=(
                 'Your ship is damaged and you have to hitch-hike your way back across the stars. '
                 'Gain 1D Contacts and D3 Enemies.'
             ),
-            effects=[
-                GainConnectionsRolledEffect(connection_type=ConnectionKind.CONTACT, dice=DiceRoll.parse('1d6')),
-                GainConnectionsRolledEffect(connection_type=ConnectionKind.ENEMY, dice=DiceRoll.parse('d3')),
+            rolls=[
+                RolledConnectionOutcome(connection=ConnectionKind.CONTACT, dice=DiceRoll.parse('1d6')),
+                RolledConnectionOutcome(connection=ConnectionKind.ENEMY, dice=DiceRoll.parse('d3')),
             ],
         ),
-        4: MishapEntry(
+        4: GainSkillAndConnectionEntry(
             text=(
                 'You inadvertently cause a conflict between the Imperium and a minor world or species. '
                 'Gain a Rival and Diplomat 1.'
             ),
-            effects=[
-                GainSkillEffect(skill=Diplomat(level=Level(value=1))),
-                GainRivalEffect(),
-            ],
+            skill=Diplomat(level=Level(value=1)),
+            connection=ConnectionKind.RIVAL,
         ),
-        5: MishapEntry(
+        5: NoEffectEntry(
             text='You have no idea what happened to you — they found '
             'your ship drifting on the fringes of friendly space.',
-            effects=[],
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: ScoutEvent3Handler(
             text=(
                 'Your ship is ambushed by enemy vessels. Either run and roll Pilot 8+ to escape, or treat with them '
                 'and roll Persuade 10+ to bargain with them. If you fail the check, then your ship is destroyed and '
                 'you may not re-enlist in the Scouts at the end of this term. If you succeed, you survive and gain '
                 'Electronics (sensors) 1. Either way, gain an Enemy.'
             ),
-            effects=[ScoutEvent3Handler(), GainEnemyEffect()],
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='You survey an alien world.',
-            effects=[SkillChoiceEffect(options=[Animals(), Survival(), Recon(), SpaceScience()], level=1)],
+            options=[Animals(), Survival(), Recon(), SpaceScience()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='You perform an exemplary service for the scouts.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: SkillChoiceEntry(
             text=(
                 'You spend several years jumping from world to world in your scout ship. Gain one of Astrogation 1, '
                 'Electronics 1, Navigation 1, Pilot (small craft) 1 or Mechanic 1.'
             ),
-            effects=[
-                SkillChoiceEffect(
-                    options=[
-                        Astrogation(),
-                        Electronics(),
-                        Navigation(),
-                        Pilot(small_craft=Level(value=1)),
-                        Mechanic(),
-                    ],
-                    level=1,
-                )
+            options=[
+                Astrogation(),
+                Electronics(),
+                Navigation(),
+                Pilot(small_craft=Level(value=1)),
+                Mechanic(),
             ],
+            level=1,
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: ScoutEvent8Handler(
             text='When dealing with an alien species, you have an opportunity to gather extra intelligence.',
-            effects=[ScoutEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: ScoutEvent9Handler(
             text='Your scout ship is one of the first on the scene to rescue the survivors of a disaster.',
-            effects=[ScoutEvent9Handler()],
         ),
-        10: CareerEventEntry(
+        10: ScoutEvent10Handler(
             text='You spend a great deal of time on the fringes of Charted Space.',
-            effects=[ScoutEvent10Handler()],
         ),
-        11: CareerEventEntry(
+        11: ScoutEvent11Handler(
             text='You serve as the courier for an important message from the Imperium.',
-            effects=[ScoutEvent11Handler()],
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You discover a world, item or information of worth to the Imperium. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

@@ -9,30 +9,27 @@ from ceres.character.domain.benefits import (
     CombinedBenefit,
 )
 from ceres.character.domain.career.career_data import (
-    AdvancementDmEffect,
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     BenefitDmEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
     CharacteristicLossEntry,
     CharCheck,
-    GainAllyEffect,
-    GainEnemyEffect,
-    GainRivalEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    GainConnectionAndAdvancementDmEntry,
+    GainConnectionAndSkillChoiceEntry,
+    GainConnectionsAndSkillChoiceEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -348,9 +345,8 @@ class Noble(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
         2: CharacteristicLossEntry(
@@ -358,79 +354,76 @@ class Noble(CareerData):
             characteristic=Chars.SOC,
             amount=1,
         ),
-        3: MishapEntry(
+        3: NobleMishap3Handler(
             text='A disaster or war strikes. Roll Stealth 8+ or Deception 8+ to escape unhurt.',
             defer_ejection=True,
-            effects=[NobleMishap3Handler()],
         ),
-        4: MishapEntry(
+        4: GainConnectionAndSkillChoiceEntry(
             text='Political manoeuvrings usurp your position. Increase Diplomat or Advocate and gain a Rival.',
-            effects=[SkillChoiceEffect(options=[Diplomat(), Advocate()], level=1), GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
+            options=[Diplomat(), Advocate()],
+            level=1,
         ),
-        5: MishapEntry(
+        5: NobleMishap5Handler(
             text='An assassin attempts to end your life. Roll END 8+ or roll on the Injury table.',
             defer_ejection=True,
-            effects=[NobleMishap5Handler()],
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table, but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: SkillChoiceEntry(
             text='You are challenged to a duel for your honour and standing.',
-            effects=[SkillChoiceEffect(options=[Melee(), Leadership(), Tactics(), Deception()], level=1)],
+            options=[Melee(), Leadership(), Tactics(), Deception()],
+            level=1,
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='Your time as a ruler or playboy gives you a wide range of experiences.',
-            effects=[
-                SkillChoiceEffect(options=[Animals(), *skill_instances(ArtSkill), Carouse(), Streetwise()], level=1)
-            ],
+            options=[Animals(), *skill_instances(ArtSkill), Carouse(), Streetwise()],
+            level=1,
         ),
         5: BenefitDmEntry(
             text='You inherit a gift from a rich relative.',
             amount=1,
         ),
-        6: CareerEventEntry(
+        6: GainConnectionAndSkillChoiceEntry(
             text='You become deeply involved in politics.',
-            effects=[
-                SkillChoiceEffect(options=[Advocate(), Admin(), Diplomat(), Persuade()], level=1),
-                GainRivalEffect(),
-            ],
+            connection=ConnectionKind.RIVAL,
+            options=[Advocate(), Admin(), Diplomat(), Persuade()],
+            level=1,
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: NobleEvent8Handler(
             text='A conspiracy of nobles attempts to recruit you.',
-            effects=[NobleEvent8Handler()],
         ),
-        9: CareerEventEntry(
+        9: GainConnectionAndAdvancementDmEntry(
             text='Your reign is acclaimed as fair and wise.',
-            effects=[GainEnemyEffect(), AdvancementDmEffect(amount=2)],
+            connection=ConnectionKind.ENEMY,
+            amount=2,
         ),
-        10: CareerEventEntry(
+        10: GainConnectionsAndSkillChoiceEntry(
             text='You manipulate and charm your way through high society.',
-            effects=[
-                SkillChoiceEffect(options=[Carouse(), Diplomat(), Persuade(), Steward()], level=1),
-                GainRivalEffect(),
-                GainAllyEffect(),
-            ],
+            connections=[ConnectionKind.RIVAL, ConnectionKind.ALLY],
+            options=[Carouse(), Diplomat(), Persuade(), Steward()],
+            level=1,
         ),
-        11: CareerEventEntry(
+        11: GainConnectionAndSkillChoiceEntry(
             text='You make an alliance with a powerful noble.',
-            effects=[GainAllyEffect(), SkillChoiceEffect(options=[Leadership(), AdvancementDmOption()], level=1)],
+            connection=ConnectionKind.ALLY,
+            options=[Leadership(), AdvancementDmOption()],
+            level=1,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='Your efforts do not go unnoticed by the Imperium. You are automatically promoted.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 

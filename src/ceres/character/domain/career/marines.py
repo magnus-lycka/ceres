@@ -11,25 +11,23 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmEntry,
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     CareerData,
-    CareerEventEntry,
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CharacteristicLossesAndConnectionEntry,
+    CharacteristicLossOutcome,
     CharCheck,
-    DecreaseCharacteristicEffect,
     GainConnectionEntry,
-    GainEnemyEffect,
-    InjuryEffect,
-    LifeEventEffect,
-    MishapEntry,
+    InjuryEntry,
+    LifeEventEntry,
     MusterOutData,
     MusterOutRow,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
@@ -380,82 +378,80 @@ class Marines(CareerData):
     )
 
     mishaps: ClassVar[dict[int, CareerTableEntry]] = {
-        1: MishapEntry(
+        1: CommonMishap1Handler(
             text='Severely injured.',
-            effects=[CommonMishap1Handler()],
             defer_ejection=True,
         ),
-        2: MishapEntry(
+        2: CharacteristicLossesAndConnectionEntry(
             text='Captured and mistreated by the enemy. Gain your jailer as an Enemy and reduce STR and DEX by one.',
-            effects=[
-                GainEnemyEffect(),
-                DecreaseCharacteristicEffect(characteristic=Chars.STR, amount=1),
-                DecreaseCharacteristicEffect(characteristic=Chars.DEX, amount=1),
+            connection=ConnectionKind.ENEMY,
+            losses=[
+                CharacteristicLossOutcome(characteristic=Chars.STR, amount=1),
+                CharacteristicLossOutcome(characteristic=Chars.DEX, amount=1),
             ],
         ),
-        3: MishapEntry(
+        3: SkillChoiceEntry(
             text='Stranded behind enemy lines. Increase Stealth or Survival but you are ejected.',
-            effects=[SkillChoiceEffect(options=[Stealth(), Survival()], level=1)],
+            options=[Stealth(), Survival()],
+            level=1,
         ),
-        4: MishapEntry(
+        4: MarinesMishap4Handler(
             text='Ordered to take part in a black ops mission that goes against your conscience.',
             defer_ejection=True,
-            effects=[MarinesMishap4Handler()],
         ),
         5: GainConnectionEntry(
             text='You quarrel with an officer or fellow marine. Gain a Rival.',
             connection=ConnectionKind.RIVAL,
         ),
-        6: MishapEntry(
+        6: InjuryEntry(
             text='Injured. Roll on the Injury table.',
-            effects=[InjuryEffect(severity='from_table')],
+            severity='from_table',
         ),
     }
 
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(
+        2: RollMishapEntry(
             text='Disaster! Roll on the Mishap table but you are not ejected from this career.',
-            effects=[RollMishapEffect(leave=False)],
+            leave=False,
         ),
-        3: CareerEventEntry(
+        3: SkillChoiceEntry(
             text='Trapped behind enemy lines.',
-            effects=[SkillChoiceEffect(options=[Survival(), Stealth(), Deception(), Streetwise()], level=1)],
+            options=[Survival(), Stealth(), Deception(), Streetwise()],
+            level=1,
         ),
-        4: CareerEventEntry(
+        4: SkillChoiceEntry(
             text='Assigned to the security staff of a space station.',
-            effects=[SkillChoiceEffect(options=[VaccSuit(), Athletics()], level=1)],
+            options=[VaccSuit(), Athletics()],
+            level=1,
         ),
-        5: CareerEventEntry(
+        5: MarinesEvent5Handler(
             text='Advanced training in a specialist field.',
-            effects=[MarinesEvent5Handler()],
         ),
-        6: CareerEventEntry(
+        6: MarinesEvent6Handler(
             text='Assault on an enemy fortress.',
-            effects=[MarinesEvent6Handler()],
         ),
-        7: CareerEventEntry(
+        7: LifeEventEntry(
             text='Life Event.',
-            effects=[LifeEventEffect()],
         ),
-        8: CareerEventEntry(
+        8: SkillChoiceEntry(
             text='Front lines of a planetary assault and occupation.',
-            effects=[SkillChoiceEffect(options=[Recon(), GunCombat(), Leadership(), Electronics()], level=1)],
+            options=[Recon(), GunCombat(), Leadership(), Electronics()],
+            level=1,
         ),
-        9: CareerEventEntry(
+        9: MarinesEvent9Handler(
             text="A mission goes disastrously wrong due to your commander's error.",
-            effects=[MarinesEvent9Handler()],
         ),
         10: AdvancementDmEntry(
             text='Assigned to a black ops mission.',
             amount=2,
         ),
-        11: CareerEventEntry(
+        11: SkillChoiceEntry(
             text='Your commanding officer takes an interest in your career.',
-            effects=[SkillChoiceEffect(options=[Tactics(), AdvancementDmOption()], level=1)],
+            options=[Tactics(), AdvancementDmOption()],
+            level=1,
         ),
-        12: CareerEventEntry(
+        12: AutoAdvanceEntry(
             text='You display heroism in battle. You may gain a promotion or a commission automatically.',
-            effects=[AutoAdvanceEffect()],
         ),
     }
 
