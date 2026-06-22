@@ -471,8 +471,11 @@ class CharacterDriver:
     def connections_roll_options(self, kind: ConnectionKind) -> list[int]:
         """Return the dice options of the PendingConnectionsRoll for the given connection kind."""
         pending = next(
-            (p for p in self.projection.pending_inputs
-             if isinstance(p, PendingConnectionsRoll) and p.connection_type == kind),
+            (
+                p
+                for p in self.projection.pending_inputs
+                if isinstance(p, PendingConnectionsRoll) and p.connection_type == kind
+            ),
             None,
         )
         if pending is None:
