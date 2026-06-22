@@ -50,7 +50,7 @@ def _full_setup():
 
 class TestCareerClass:
     def test_career_equality_by_type(self):
-        assert load_careers()['Scout'] == SCOUT
+        assert type(SCOUT)() == SCOUT
 
     def test_career_inequality_different_name(self):
         assert SCOUT != ARMY
@@ -124,27 +124,25 @@ class TestCareerConstants:
             SCHOLAR,
             SCOUT,
         ]
-        registry_names = set(careers.keys())
+        registry_names = {career.name for career in careers}
         constant_names = {c.name for c in constants}
         assert constant_names == registry_names
 
 
 class TestCareerDataCareerField:
     def test_career_data_name_matches(self):
-        careers = load_careers()
-        assert careers['Scout'].name == 'Scout'
-        assert careers['Prisoner'].name == 'Prisoner'
+        assert SCOUT.name == 'Scout'
+        assert PRISONER.name == 'Prisoner'
 
     def test_career_data_source_is_core(self):
-        careers = load_careers()
-        for career_data in careers.values():
+        for career_data in load_careers():
             assert career_data.source == 'Core'
 
     def test_career_data_equals_constant(self):
         careers = load_careers()
-        assert careers['Scout'] == SCOUT
-        assert careers['Prisoner'] == PRISONER
-        assert careers['Marines'] == MARINES
+        assert SCOUT in careers
+        assert PRISONER in careers
+        assert MARINES in careers
 
 
 class TestCareerInState:
@@ -271,7 +269,7 @@ class TestCareerDataCoverageGaps:
         assert result == 3
 
     def test_officer_skill_table_returns_table(self):
-        army = load_careers()['Army']
+        army = ARMY
         table = army.skill_table('officer')
         assert table is not None
 
@@ -279,7 +277,7 @@ class TestCareerDataCoverageGaps:
         from ceres.character.domain.career.career_data import CareerTerm
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
-        army = load_careers()['Army']
+        army = ARMY
         infantry = army.assignment('Infantry')
         assert infantry is not None
         proj = CharacterProjection(
@@ -294,7 +292,7 @@ class TestCareerDataCoverageGaps:
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.characteristics import Chars
 
-        army = load_careers()['Army']
+        army = ARMY
         infantry = army.assignment('Infantry')
         assert infantry is not None
         proj = CharacterProjection(
@@ -319,7 +317,7 @@ class TestCareerDataCoverageGaps:
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.characteristics import Chars
 
-        merchant = load_careers()['Merchant']
+        merchant = MERCHANT
         merchant_marine = merchant.assignment('Merchant Marine')
         assert merchant_marine is not None
         proj = CharacterProjection(

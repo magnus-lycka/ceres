@@ -26,7 +26,6 @@ from ceres.character.domain.career.citizen import (
     CitizenMishap4Resist,
     PendingCitizenMishap5SkillRoll,
 )
-from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
@@ -76,7 +75,7 @@ def _after_scout_term() -> list:
 
 
 def test_citizen_career_loads_from_yaml():
-    citizen = load_careers()['Citizen']
+    citizen = CITIZEN
     worker = citizen.assignment('Worker')
     colonist = citizen.assignment('Colonist')
 

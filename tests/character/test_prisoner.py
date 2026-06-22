@@ -20,7 +20,7 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.career.loader import load_careers, selectable_careers
+from ceres.character.domain.career.loader import selectable_careers
 from ceres.character.domain.career.prisoner import (
     PendingPrisonerEvent3EscapeSkillRoll,
     PendingPrisonerEvent4SkillRoll,
@@ -89,10 +89,7 @@ def _setup() -> list:
 
 
 def test_prisoner_career_loads_but_is_not_selectable():
-    careers = load_careers()
-
-    assert 'Prisoner' in careers
-    assert 'Prisoner' not in selectable_careers()
+    assert PRISONER not in selectable_careers()
 
 
 def test_prisoner_is_not_listed_after_background_skills():
@@ -713,12 +710,23 @@ class TestPrisonerAdvancement:
 
 
 class TestPrisonerMishap1:
+    def _enter_prisoner(self, driver: CharacterDriver) -> None:
+        pending = next(p for p in driver.projection.pending_inputs if isinstance(p, PendingCareerChoice))
+        inmate = PRISONER.assignment('Inmate')
+        assert inmate is not None
+        driver._add(
+            Event(
+                fulfills=pending.pending_id,
+                handler=CareerEntryHandler(career=PRISONER, assignment=inmate, qualification_roll=0),
+            )
+        )
+
     def test_uses_common_handler(self):
         d = CharacterDriver()
         d.start(VILANI, MOCK_WORLD)
         d.ucp('7869A5')
         d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
-        d.career('Prisoner', 'Inmate', roll=0)
+        self._enter_prisoner(d)
         d.initial_training(WorkerProfession())
         d.survive(2)
         d.mishap(1)
@@ -731,7 +739,7 @@ class TestPrisonerMishap1:
         d.start(VILANI, MOCK_WORLD)
         d.ucp('7869A5')
         d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
-        d.career('Prisoner', 'Inmate', roll=0)
+        self._enter_prisoner(d)
         d.initial_training(WorkerProfession())
         d.survive(2)
         d.mishap(1)

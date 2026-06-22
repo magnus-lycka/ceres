@@ -16,38 +16,30 @@ _DEFAULT_HOST = 'http://localhost:11434'
 
 def _career_context_lines(summary: CharacterSummary) -> str:
     """Build career/assignment description lines for all distinct (career, assignment) pairs in history."""
-    from ceres.character.domain.career.loader import load_careers
-
-    careers_data = load_careers()
     seen: set[tuple[str, str | None]] = set()
-    pairs: list[tuple[str, str | None]] = []
+    pairs = []
     for term in summary.career_terms:
         key = (term.career.name, term.assignment.name)
         if key not in seen:
             seen.add(key)
-            pairs.append(key)
+            pairs.append((term.career, term.assignment))
     current = summary.current_career or summary.last_career
     current_assignment_obj = summary.current_assignment or summary.last_assignment
     current_assignment = current_assignment_obj.name if current_assignment_obj else None
     if current:
         key = (current.name, current_assignment)
         if key not in seen:
-            pairs.append(key)
+            pairs.append((current, current_assignment_obj))
 
     if not pairs:
         return ''
 
     lines: list[str] = []
-    for career_name, assignment_name in pairs:
-        career_data = careers_data.get(career_name)
-        if career_data is None:
-            continue
-        if career_data.description:
-            lines.append(f'{career_name}: {career_data.description}')
-        if assignment_name:
-            asgn = career_data.assignment(assignment_name)
-            if asgn and asgn.description:
-                lines.append(f'  {assignment_name}: {asgn.description}')
+    for career, assignment in pairs:
+        if career.description:
+            lines.append(f'{career.name}: {career.description}')
+        if assignment and assignment.description:
+            lines.append(f'  {assignment.name}: {assignment.description}')
 
     return '\n'.join(lines)
 

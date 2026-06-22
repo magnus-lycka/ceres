@@ -1,4 +1,4 @@
-from ceres.character.domain.career import ARMY, MERCHANT
+from ceres.character.domain.career import ARMY, MARINES, MERCHANT, NAVY
 from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     CommissionHandler,
@@ -31,12 +31,10 @@ def _setup(ucp: str = '7869A5') -> list:
 
 
 def test_new_core_careers_load():
-    careers = load_careers()
-
-    assert careers['Merchant'].assignment('Merchant Marine') is not None
-    assert careers['Army'].assignment('Infantry') is not None
-    assert careers['Marines'].assignment('Star Marine') is not None
-    assert careers['Navy'].assignment('Line/Crew') is not None
+    assert MERCHANT.assignment('Merchant Marine') is not None
+    assert ARMY.assignment('Infantry') is not None
+    assert MARINES.assignment('Star Marine') is not None
+    assert NAVY.assignment('Line/Crew') is not None
 
 
 def test_failed_qualification_creates_draft_choice():
@@ -59,10 +57,9 @@ def test_failed_qualification_creates_draft_choice():
 
 
 def test_draftable_careers_tell_whether_this_character_can_be_drafted():
-    careers = load_careers()
     replay(1, _setup())
 
-    draft_careers = [career.name for career in careers.values() if career.does_draft()]
+    draft_careers = [career.name for career in load_careers() if career.does_draft()]
 
     assert {'Navy', 'Army', 'Marines', 'Merchant', 'Scout', 'Agent'} <= set(draft_careers)
     assert 'Citizen' not in draft_careers
@@ -208,8 +205,7 @@ def test_qualification_dm_is_consumed_on_career_entry():
     from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
     from ceres.character.domain.characteristics import Chars
 
-    careers = load_careers()
-    army = careers['Army']
+    army = ARMY
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(

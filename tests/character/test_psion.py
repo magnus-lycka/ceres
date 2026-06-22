@@ -6,6 +6,7 @@ import pytest
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import COMBAT_IMPLANT, CONTACT, GUN, SHIP_SHARE, TAS_MEMBERSHIP
+from ceres.character.domain.career import ARMY, PSION
 from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     PendingAdvancement,
@@ -25,7 +26,7 @@ from ceres.character.domain.career.career_events import (
     SkillTableHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.career.loader import load_careers, selectable_careers
+from ceres.character.domain.career.loader import selectable_careers
 from ceres.character.domain.career.psion import (
     PendingPsionConnectionConversion,
     PendingPsionMishap3Roll,
@@ -112,7 +113,7 @@ class PsionDriver(CharacterDriver):
         return self
 
     def enter_psion(self, assignment: str = 'Wild Talent') -> PsionDriver:
-        career = load_careers()['Psion']
+        career = PSION
         assignment_data = career.assignment(assignment)
         assert assignment_data is not None
         self._add(Event(handler=CareerEntryHandler(career=career, assignment=assignment_data, qualification_roll=7)))
@@ -145,7 +146,7 @@ def _enter_psion(
     homeworld: TravellerMapWorld = MOCK_WORLD,
     psi: int = 9,
 ) -> list[Event]:
-    psion = load_careers()['Psion']
+    psion = PSION
     resolved_assignment = psion.assignment(assignment)
     assert resolved_assignment is not None
     return [
@@ -162,7 +163,7 @@ def _enter_psion(
 
 class TestPsionCareer:
     def test_registered_with_core_assignments(self):
-        psion = load_careers()['Psion']
+        psion = PSION
 
         assert [assignment.name for assignment in psion.assignments] == ['Wild Talent', 'Adept', 'Psi-Warrior']
         assert psion.qualification.characteristic is Chars.PSI
@@ -174,9 +175,9 @@ class TestPsionCareer:
         low_psi = replay(1, _setup(psi=8))
         eligible = replay(1, _setup(psi=9))
 
-        assert 'Psion' not in selectable_careers(without_psi)
-        assert 'Psion' not in selectable_careers(low_psi)
-        assert 'Psion' in selectable_careers(eligible)
+        assert PSION not in selectable_careers(without_psi)
+        assert PSION not in selectable_careers(low_psi)
+        assert PSION in selectable_careers(eligible)
 
     def test_failed_qualification_returns_to_career_choice_without_draft(self):
         projection = replay(1, _enter_psion(qualification_roll=2))
@@ -250,7 +251,7 @@ class TestPsionCareer:
         assert driver._find(PendingSkillTable)
 
     def test_army_rank_zero_offers_one_gun_combat_specialisation(self):
-        army = load_careers()['Army']
+        army = ARMY
         infantry = army.assignment('Infantry')
         assert infantry is not None
         events = [
@@ -303,7 +304,7 @@ class TestPsionHomeworldRule:
         assert not any(isinstance(p, PendingHomeworldChangeOffered) for p in projection.pending_inputs)
 
     def test_every_new_term_on_starport_world_offers_relocation(self):
-        psion = load_careers()['Psion']
+        psion = PSION
         assignment = psion.assignment('Wild Talent')
         assert assignment is not None
         projection = replay(1, _enter_psion())
@@ -376,7 +377,7 @@ class TestPsionCoreTables:
         assert driver._find(PendingSurvive)
 
     def test_assignment_progress_checks_match_core(self):
-        psion = load_careers()['Psion']
+        psion = PSION
 
         assert {
             assignment.name: (
@@ -393,7 +394,7 @@ class TestPsionCoreTables:
         }
 
     def test_muster_out_table_matches_core(self):
-        rows = load_careers()['Psion'].muster_out.rows
+        rows = PSION.muster_out.rows
 
         assert [(rows[roll].cash, rows[roll].benefit, rows[roll].count) for roll in range(1, 8)] == [
             (1000, GUN, 1),
@@ -406,7 +407,7 @@ class TestPsionCoreTables:
         ]
 
     def test_rank_titles_match_core(self):
-        psion = load_careers()['Psion']
+        psion = PSION
 
         assert [psion.assignment_ranks(1)[rank].title or '' for rank in range(7)] == [
             '',

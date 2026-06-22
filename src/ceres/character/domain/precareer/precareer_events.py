@@ -3,6 +3,7 @@ from typing import Any, Literal, cast
 from pydantic import Field
 
 from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
@@ -40,19 +41,18 @@ def _expand_skill_to_spec_instances(skill: AnySkill) -> list[AnySkill]:
 
 class PreCareerEntryHandler(EventHandlerBase):
     kind: Literal['precareer_entry_event'] = 'precareer_entry_event'
-    precareer: str
+    precareer: PreCareerData
     roll: int  # 2D result for entry check (before characteristic DM)
+
+    model_config = {'arbitrary_types_allowed': True}
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice
         from ceres.character.domain.characteristics import Chars, characteristic_dm
-        from ceres.character.domain.precareer.loader import load_precareers
 
-        precareer = load_precareers().get(self.precareer)
-        if precareer is None:
-            raise ReplayError(f'Unknown pre-career: {self.precareer!r}')
+        precareer = self.precareer
         if not precareer.is_available(projection.summary):
-            raise ReplayError(f'Pre-career {self.precareer!r} is not available to this character')
+            raise ReplayError(f'Pre-career {precareer.name!r} is not available to this character')
         terms_started = projection.summary.terms_started_in_pre_and_careers
         if terms_started >= 3:
             raise ReplayError('Pre-career education is only available in terms 1–3')

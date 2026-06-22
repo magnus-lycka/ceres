@@ -20,9 +20,9 @@ def _deserialise_precareer(v: Any) -> Any:
 
     if isinstance(v, PreCareerData):
         return v
-    from ceres.character.domain.precareer.loader import load_precareers
+    from ceres.character.domain.precareer.loader import precareer_from_user_input_name
 
-    pc = load_precareers().get(str(v))
+    pc = precareer_from_user_input_name(str(v))
     if pc is None:
         raise ValueError(f'Unknown pre-career: {v!r}')
     return pc

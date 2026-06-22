@@ -84,7 +84,6 @@ from ceres.character.domain.career.career_events import (
     muster_out_setup,
     queue_reenlist_or_aging,
 )
-from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
     FinishCreationHandler,
@@ -109,6 +108,8 @@ from ceres.character.domain.health.health_events import (
     PendingSeverelyInjured,
     complete_aging,
 )
+from ceres.character.domain.precareer.loader import precareer_of_type
+from ceres.character.domain.precareer.merchant_academy import MerchantAcademyBusinessPreCareer
 from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerEvent,
     PendingPreCareerGraduation,
@@ -118,6 +119,7 @@ from ceres.character.domain.precareer.precareer_events import (
     PreCareerGraduationHandler,
     PreCareerSkillChoiceHandler,
 )
+from ceres.character.domain.precareer.university import UniversityPreCareer
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import CareerChoice, InfoText, NumberEntry, Reference, Select
 from ceres.character.mechanism.errors import ReplayError
@@ -252,7 +254,6 @@ def test_assignment_helper_errors_are_reported():
 
 def test_mishap_ejection_queues_aging_for_older_character():
     projection = _projection(age=30, current_career=SCOUT, current_assignment='Courier', term_count=1)
-    load_careers()['Scout']
 
     next_idx = _apply_mishap_ejection(projection, source_event_id=7, pending_idx=2)
 
@@ -369,22 +370,23 @@ def test_commission_event_skip_failure_success_and_unsupported_career():
 
 
 def test_precareer_entry_error_and_failure_branches():
-    with pytest.raises(ReplayError, match="Unknown pre-career: 'Nope'"):
-        Event(handler=PreCareerEntryHandler(precareer='Nope', roll=7)).apply(_projection())
+    university = precareer_of_type(UniversityPreCareer)
+    merchant_academy = precareer_of_type(MerchantAcademyBusinessPreCareer)
+
     with pytest.raises(ReplayError, match='only available in terms'):
-        Event(handler=PreCareerEntryHandler(precareer='University', roll=7)).apply(_projection(term_count=3))
+        Event(handler=PreCareerEntryHandler(precareer=university, roll=7)).apply(_projection(term_count=3))
     with pytest.raises(ReplayError, match='may only attend one pre-career'):
-        Event(handler=PreCareerEntryHandler(precareer='University', roll=7)).apply(
+        Event(handler=PreCareerEntryHandler(precareer=university, roll=7)).apply(
             _projection(precareer_completed='University')
         )
 
     failed = _projection(characteristics={Chars.EDU: 0})
-    Event(handler=PreCareerEntryHandler(precareer='University', roll=2)).apply(failed)
+    Event(handler=PreCareerEntryHandler(precareer=university, roll=2)).apply(failed)
     assert any(isinstance(p, PendingCareerChoice) for p in failed.pending_inputs)
     assert failed.summary.precareer is None
 
     soc_bonus = _projection(characteristics={Chars.INT: 12, Chars.SOC: 12})
-    Event(handler=PreCareerEntryHandler(precareer='Merchant Academy (Business)', roll=7)).apply(soc_bonus)
+    Event(handler=PreCareerEntryHandler(precareer=merchant_academy, roll=7)).apply(soc_bonus)
     assert soc_bonus.summary.precareer is not None
     assert soc_bonus.summary.precareer.name == 'Merchant Academy (Business)'
     assert any(isinstance(p, PendingPreCareerEvent) for p in soc_bonus.pending_inputs)
@@ -514,7 +516,6 @@ def test_queue_reenlist_or_aging_handles_freed_prisoner_paths():
 
 
 def test_muster_out_setup_and_complete_aging_helper_branches():
-    load_careers()['Scout']
     projection = _projection(
         current_career=SCOUT,
         current_assignment='Courier',
@@ -574,13 +575,13 @@ def test_pending_background_skills_builds_form_and_specs():
 
 def test_pending_career_choice_form_and_specs():
     projection = _projection(term_count=4)
-    pending = PendingCareerChoice(pending_id=(3, 0), instruction='Choose career', options=[load_careers()['Scout']])
+    pending = PendingCareerChoice(pending_id=(3, 0), instruction='Choose career', options=[SCOUT])
 
     assert isinstance(pending.event_from_form(Form(kind='finish_creation')).handler, FinishCreationHandler)
 
     pre_career = pending.event_from_form(Form(kind='precareer_entry', precareer='University', roll='9'))
     assert isinstance(pre_career.handler, PreCareerEntryHandler)
-    assert pre_career.precareer == 'University'
+    assert pre_career.precareer == precareer_of_type(UniversityPreCareer)
     assert pre_career.roll == 9
 
     career = pending.event_from_form(Form(career='Scout', assignment='Courier', roll='12'))
@@ -658,9 +659,7 @@ def test_pending_draft_choice_input_specs_no_can_draft_omits_draft_elements():
 def test_pending_draft_assignment_choice_event_from_form_and_specs():
     from ceres.character.domain.career.army import Army
 
-    assignment = PendingDraftAssignmentChoice(
-        pending_id=(4, 0), instruction='Assignment', career=load_careers()['Army']
-    )
+    assignment = PendingDraftAssignmentChoice(pending_id=(4, 0), instruction='Assignment', career=ARMY)
     form_event = assignment.event_from_form(Form(assignment='Support'))
     specs = assignment.input_specs(_projection())
 
@@ -1074,7 +1073,6 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     from typing import Literal
 
     from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase
-    from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.career.scholar import PendingScholarScienceChoice
 
     class _PendingSkillChoice(CareerSkillChoicePendingBase):
@@ -1084,7 +1082,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
         id = 10
         skill = character_skills.Admin()
 
-    scout = load_careers()['Scout']
+    scout = SCOUT
 
     # Without advancement_precreated — should queue career progress
     pending = _PendingSkillChoice(pending_id=(1, 0), instruction='Choose', options=[], advancement_precreated=False)
@@ -1419,7 +1417,6 @@ def test_life_event_crime_take_prisoner_sets_forced_next_career():
 
 
 def test_muster_out_setup_zero_rolls_queues_career_choice():
-    load_careers()['Scout']
     # term_count=0 and rank=0 → roll_count = 0 → career choice directly
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=0, rank=0)
     muster_out_setup(projection, source_event_id=9, pending_idx=0)

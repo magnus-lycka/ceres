@@ -10,7 +10,9 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.character_start import CharacterStartedHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.precareer.loader import precareer_of_type
 from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
+from ceres.character.domain.precareer.psionic_community import PsionicCommunityPreCareer
 from ceres.character.domain.psionics import (
     PSIONIC_TALENT_LEARNING_DMS,
     Awareness,
@@ -323,7 +325,7 @@ def test_psionic_community_requires_established_psionic_strength() -> None:
     events = [
         (started := _started_on(MOCK_WORLD)),
         Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707')),
-        Event(handler=PreCareerEntryHandler(precareer='Psionic Community', roll=12)),
+        Event(handler=PreCareerEntryHandler(precareer=precareer_of_type(PsionicCommunityPreCareer), roll=12)),
     ]
 
     with pytest.raises(ReplayError, match='not available'):
@@ -334,7 +336,7 @@ def test_psionic_community_starts_institute_training_for_an_untrained_psion() ->
     projection = CharacterProjection(character_id=1, summary=_summary())
     projection.summary.characteristics[Chars.PSI] = 9
     projection.summary.psionics = Psionics()
-    handler = PreCareerEntryHandler(precareer='Psionic Community', roll=12)
+    handler = PreCareerEntryHandler(precareer=precareer_of_type(PsionicCommunityPreCareer), roll=12)
 
     handler.apply(projection, Event(handler=handler))
 

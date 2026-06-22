@@ -290,10 +290,10 @@ class CharacterDriver:
         return self._add(Event(fulfills=pending.pending_id, handler=BackgroundSkillsHandler(skills=skills)))
 
     def career(self, career_name: str, assignment: str, roll: int = 7) -> CharacterDriver:
-        from ceres.character.domain.career.loader import load_careers
-
         pending = self._find(PendingCareerChoice)
-        career_obj = next((c for c in pending.options if c.name == career_name), None) or load_careers()[career_name]
+        career_obj = next((c for c in pending.options if c.name == career_name), None)
+        if career_obj is None:
+            raise ValueError(f'Career {career_name!r} is not available in the current pending choice')
         assignment_obj = career_obj.assignment(assignment)
         if assignment_obj is None:
             raise ValueError(f'Unknown assignment {assignment!r} for career {career_name!r}')

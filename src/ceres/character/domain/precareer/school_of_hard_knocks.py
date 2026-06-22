@@ -1,13 +1,52 @@
-from typing import Any
+from typing import Any, ClassVar
 
+from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
-from ceres.character.domain.skills import AnySkill, Carouse, GunCombat, Level
+from ceres.character.domain.skills import (
+    AnySkill,
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    Gambler,
+    GunCombat,
+    Level,
+    Melee,
+    Persuade,
+    Stealth,
+    Streetwise,
+)
 
 
 class SchoolOfHardKnocksPreCareer(PreCareerData):
+    name: ClassVar[str] = 'School of Hard Knocks'
+    source: ClassVar[str] = 'Companion'
+    entry_requirement: ClassVar[str] = 'Automatic if SOC 6-'
+    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
+        PrecareerSkillEntry(skill=Streetwise(), level=1),
+        PrecareerSkillEntry(skill=Athletics(), level=0),
+        PrecareerSkillEntry(skill=Deception(), level=0),
+        PrecareerSkillEntry(skill=Drive(), level=0),
+        PrecareerSkillEntry(skill=Gambler(), level=0),
+        PrecareerSkillEntry(skill=Melee(), level=0),
+        PrecareerSkillEntry(skill=Persuade(), level=0),
+        PrecareerSkillEntry(skill=Stealth(), level=0),
+    ]
+    entry_pick_count: ClassVar[int] = 2
+    graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=7)
+    graduation_dms: ClassVar[dict[str, int]] = {'END_9+': 1}
+    honours_target: ClassVar[int] = 11
+    graduation_benefits: ClassVar[list[str]] = [
+        'Gain any three other listed skills at level 0',
+        'Gain Gun Combat 0',
+        'Honours graduates gain Carouse 1 and may increase another level 0 skill to level 1',
+        'Decrease SOC by -1',
+        'DM-2 on promotion or commission checks in first career unless leaving by choice',
+    ]
+
     def apply_graduation(
         self,
         projection: CharacterProjection,

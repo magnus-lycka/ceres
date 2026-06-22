@@ -7,7 +7,12 @@ from ceres.character.domain.career.career_events import PendingCareerChoice
 from ceres.character.domain.character_start import CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import Enemy, Rival
-from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
+from ceres.character.domain.precareer.loader import precareer_of_type
+from ceres.character.domain.precareer.merchant_academy import (
+    MerchantAcademyBusinessPreCareer,
+    MerchantAcademyShipboardPreCareer,
+)
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerEvent,
@@ -18,6 +23,10 @@ from ceres.character.domain.precareer.precareer_events import (
     PreCareerGraduationHandler,
     PreCareerSkillChoiceHandler,
 )
+from ceres.character.domain.precareer.psionic_community import PsionicCommunityPreCareer
+from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
+from ceres.character.domain.precareer.spacer_community import SpacerCommunityPreCareer
+from ceres.character.domain.precareer.university import UniversityPreCareer
 from ceres.character.domain.psionics import (
     Clairvoyance,
     PendingPsionicTalentLevelChoice,
@@ -95,7 +104,12 @@ def _skill_level(projection, name: str) -> int:
     return max((getattr(skill, f).value for f in fields), default=0)
 
 
-def _precareer_entry_events(precareer: str, roll: int, base_events: list[Event] | None = None) -> list[Event]:
+def _precareer_entry_events(
+    precareer_type: type[PreCareerData],
+    roll: int,
+    base_events: list[Event] | None = None,
+) -> list[Event]:
+    precareer = precareer_of_type(precareer_type)
     return [
         *(base_events or _base()),
         _event(handler=PreCareerEntryHandler(precareer=precareer, roll=roll)),
@@ -103,7 +117,7 @@ def _precareer_entry_events(precareer: str, roll: int, base_events: list[Event] 
 
 
 def _precareer_graduation_events(
-    precareer: str,
+    precareer_type: type[PreCareerData],
     *,
     entry_roll: int,
     skills: list,
@@ -111,7 +125,7 @@ def _precareer_graduation_events(
     graduation_roll: int,
     base_events: list[Event] | None = None,
 ) -> list[Event]:
-    events = _precareer_entry_events(precareer, entry_roll, base_events)
+    events = _precareer_entry_events(precareer_type, entry_roll, base_events)
     entry = events[-1]
     for index, skill in enumerate(skills):
         events.append(_event(fulfills=_pending(entry, index), handler=PreCareerSkillChoiceHandler(skill=skill)))
@@ -129,12 +143,12 @@ def _precareer_graduation_events(
 
 
 def _colonial_entry_events() -> list[Event]:
-    return _precareer_entry_events('Colonial Upbringing', 5)
+    return _precareer_entry_events(ColonialUprbringingPreCareer, 5)
 
 
 def _colonial_graduation_events(graduation_roll: int = 10) -> list[Event]:
     return _precareer_graduation_events(
-        'Colonial Upbringing',
+        ColonialUprbringingPreCareer,
         entry_roll=5,
         skills=[ColonistProfession()],
         graduation_roll=graduation_roll,
@@ -263,21 +277,21 @@ class TestColonialUpbringing:
 
 class TestMerchantAcademy:
     def test_entry_business_grants_broker_table_skills_at_level_zero(self):
-        events = _precareer_entry_events('Merchant Academy (Business)', 12)
+        events = _precareer_entry_events(MerchantAcademyBusinessPreCareer, 12)
         projection = replay(1, events)
 
         for name in ('Admin', 'Advocate', 'Broker', 'Streetwise', 'Deception', 'Persuade'):
             assert _skill_level(projection, name) >= 0, f'{name} should be granted at level 0'
 
     def test_entry_shipboard_grants_merchant_marine_skills_at_level_zero(self):
-        events = _precareer_entry_events('Merchant Academy (Shipboard)', 12)
+        events = _precareer_entry_events(MerchantAcademyShipboardPreCareer, 12)
         projection = replay(1, events)
 
         for name in ('Pilot', 'Vacc Suit', 'Athletics', 'Mechanic', 'Engineer', 'Electronics'):
             assert _skill_level(projection, name) >= 0, f'{name} should be granted at level 0'
 
     def test_entry_queues_one_service_skill_pick_at_level_one(self):
-        events = _precareer_entry_events('Merchant Academy (Business)', 12)
+        events = _precareer_entry_events(MerchantAcademyBusinessPreCareer, 12)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -285,14 +299,14 @@ class TestMerchantAcademy:
         assert picks[0].level == 1
 
     def test_entry_service_skill_options_are_merchant_service_skills(self):
-        events = _precareer_entry_events('Merchant Academy (Business)', 12)
+        events = _precareer_entry_events(MerchantAcademyBusinessPreCareer, 12)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
         assert any(isinstance(o, Drive) for o in picks[0].options)
 
     def test_shipboard_entry_grants_pilot_not_broker_skills(self):
-        events = _precareer_entry_events('Merchant Academy (Shipboard)', 12)
+        events = _precareer_entry_events(MerchantAcademyShipboardPreCareer, 12)
         projection = replay(1, events)
 
         assert _skill_level(projection, 'Pilot') >= 0
@@ -300,7 +314,7 @@ class TestMerchantAcademy:
 
     def test_graduation_increases_edu_by_one(self):
         events = _precareer_graduation_events(
-            'Merchant Academy (Business)', entry_roll=12, skills=[Drive()], graduation_roll=9
+            MerchantAcademyBusinessPreCareer, entry_roll=12, skills=[Drive()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -308,7 +322,7 @@ class TestMerchantAcademy:
 
     def test_graduation_queues_one_curriculum_skill_pick_at_level_one(self):
         events = _precareer_graduation_events(
-            'Merchant Academy (Business)', entry_roll=12, skills=[Drive()], graduation_roll=9
+            MerchantAcademyBusinessPreCareer, entry_roll=12, skills=[Drive()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -318,7 +332,7 @@ class TestMerchantAcademy:
 
     def test_graduation_adds_advancement_dm_plus_one_note(self):
         events = _precareer_graduation_events(
-            'Merchant Academy (Business)', entry_roll=12, skills=[Drive()], graduation_roll=9
+            MerchantAcademyBusinessPreCareer, entry_roll=12, skills=[Drive()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -326,7 +340,7 @@ class TestMerchantAcademy:
 
     def test_graduation_queues_career_choice_with_distinct_id(self):
         events = _precareer_graduation_events(
-            'Merchant Academy (Business)', entry_roll=12, skills=[Drive()], graduation_roll=9
+            MerchantAcademyBusinessPreCareer, entry_roll=12, skills=[Drive()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -337,7 +351,7 @@ class TestMerchantAcademy:
 
     def test_honours_graduation_gives_advancement_dm_plus_two_note(self):
         events = _precareer_graduation_events(
-            'Merchant Academy (Business)', entry_roll=12, skills=[Drive()], graduation_roll=11
+            MerchantAcademyBusinessPreCareer, entry_roll=12, skills=[Drive()], graduation_roll=11
         )
         projection = replay(1, events)
 
@@ -345,7 +359,7 @@ class TestMerchantAcademy:
 
     def test_honours_graduation_adds_rank_two_problem_message(self):
         events = _precareer_graduation_events(
-            'Merchant Academy (Business)', entry_roll=12, skills=[Drive()], graduation_roll=11
+            MerchantAcademyBusinessPreCareer, entry_roll=12, skills=[Drive()], graduation_roll=11
         )
         projection = replay(1, events)
 
@@ -358,7 +372,7 @@ class TestMerchantAcademy:
 
 class TestPsionicCommunity:
     def test_entry_and_graduation_use_psi_checks_with_int_bonus(self):
-        precareer = load_precareers()['Psionic Community']
+        precareer = precareer_of_type(PsionicCommunityPreCareer)
 
         assert precareer.entry == CharCheck(characteristic=Chars.PSI, target=8)
         assert precareer.entry_dms == {'INT_8+': 1}
@@ -366,7 +380,7 @@ class TestPsionicCommunity:
         assert precareer.graduation_dms == {'INT_8+': 1}
 
     def test_failed_entry_returns_to_career_choice(self):
-        events = _precareer_entry_events('Psionic Community', 2, _psionic_base())
+        events = _precareer_entry_events(PsionicCommunityPreCareer, 2, _psionic_base())
 
         projection = replay(1, events)
 
@@ -375,14 +389,14 @@ class TestPsionicCommunity:
 
     def test_entry_auto_grants_streetwise(self):
         # 'Profession' and 'Science' are broad skill categories — they become pending picks, not auto-granted
-        events = _precareer_entry_events('Psionic Community', 7, _psionic_base())
+        events = _precareer_entry_events(PsionicCommunityPreCareer, 7, _psionic_base())
         projection = replay(1, events)
 
         assert _skill_level(projection, 'Streetwise') >= 0, 'Streetwise should be auto-granted at entry'
 
     def test_entry_queues_two_picks_for_profession_and_science_categories(self):
         # 'Profession' and 'Science' in skill_choices are categories; player picks a specialisation each
-        events = _precareer_entry_events('Psionic Community', 7, _psionic_base())
+        events = _precareer_entry_events(PsionicCommunityPreCareer, 7, _psionic_base())
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -394,14 +408,14 @@ class TestPsionicCommunity:
         assert any('Science' in type(o).name() for o in all_options)
 
     def test_entry_queues_graduation_pending(self):
-        events = _precareer_entry_events('Psionic Community', 7, _psionic_base())
+        events = _precareer_entry_events(PsionicCommunityPreCareer, 7, _psionic_base())
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingPreCareerGraduation) for p in projection.pending_inputs)
 
     def test_failed_graduation_does_not_grant_graduation_benefits(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), LifeScience()],
             graduation_roll=2,
@@ -418,7 +432,7 @@ class TestPsionicCommunity:
 
     def test_graduation_grants_psionicology_and_queues_possessed_talent_at_level_one(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), LifeScience()],
             graduation_roll=10,
@@ -433,7 +447,7 @@ class TestPsionicCommunity:
 
     def test_honours_graduation_raises_all_talents_to_one_and_offers_one_at_level_two(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), LifeScience()],
             graduation_roll=12,
@@ -461,7 +475,7 @@ class TestPsionicCommunity:
 
     def test_graduation_adds_rival_connection(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), SpaceScience()],
             graduation_roll=10,
@@ -474,7 +488,7 @@ class TestPsionicCommunity:
 
     def test_honours_graduation_adds_enemy_not_rival(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), SpaceScience()],
             graduation_roll=12,
@@ -487,7 +501,7 @@ class TestPsionicCommunity:
 
     def test_graduation_increases_psi_and_auto_qualifies_for_psion(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), SpaceScience()],
             graduation_roll=10,
@@ -502,7 +516,7 @@ class TestPsionicCommunity:
 
     def test_graduation_queues_career_choice(self):
         events = _precareer_graduation_events(
-            'Psionic Community',
+            PsionicCommunityPreCareer,
             entry_roll=7,
             skills=[ColonistProfession(), SpaceScience()],
             graduation_roll=10,
@@ -518,13 +532,13 @@ class TestPsionicCommunity:
 
 class TestSchoolOfHardKnocks:
     def test_entry_auto_grants_streetwise_at_level_one(self):
-        events = _precareer_entry_events('School of Hard Knocks', 5)
+        events = _precareer_entry_events(SchoolOfHardKnocksPreCareer, 5)
         projection = replay(1, events)
 
         assert _skill_level(projection, 'Streetwise') >= 1
 
     def test_entry_queues_two_skill_picks_at_level_zero(self):
-        events = _precareer_entry_events('School of Hard Knocks', 5)
+        events = _precareer_entry_events(SchoolOfHardKnocksPreCareer, 5)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -532,7 +546,7 @@ class TestSchoolOfHardKnocks:
         assert all(p.level == 0 for p in picks)
 
     def test_entry_pick_pool_excludes_auto_granted_streetwise(self):
-        events = _precareer_entry_events('School of Hard Knocks', 5)
+        events = _precareer_entry_events(SchoolOfHardKnocksPreCareer, 5)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -541,7 +555,7 @@ class TestSchoolOfHardKnocks:
 
     def test_graduation_grants_gun_combat(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -549,7 +563,7 @@ class TestSchoolOfHardKnocks:
 
     def test_graduation_decreases_soc_by_one(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -557,7 +571,7 @@ class TestSchoolOfHardKnocks:
 
     def test_graduation_queues_three_skill_picks_at_level_zero(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -567,7 +581,7 @@ class TestSchoolOfHardKnocks:
 
     def test_graduation_queues_career_choice_with_distinct_id(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -578,7 +592,7 @@ class TestSchoolOfHardKnocks:
 
     def test_graduation_adds_dm_minus_two_problem(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -586,7 +600,7 @@ class TestSchoolOfHardKnocks:
 
     def test_honours_graduation_grants_carouse_at_level_one(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=11
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=11
         )
         projection = replay(1, events)
 
@@ -594,7 +608,7 @@ class TestSchoolOfHardKnocks:
 
     def test_honours_graduation_queues_four_picks_including_one_at_level_one(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=11
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=11
         )
         projection = replay(1, events)
 
@@ -604,7 +618,7 @@ class TestSchoolOfHardKnocks:
 
     def test_honours_career_choice_id_distinct_from_four_picks(self):
         events = _precareer_graduation_events(
-            'School of Hard Knocks', entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=11
+            SchoolOfHardKnocksPreCareer, entry_roll=5, skills=[Athletics(), Deception()], graduation_roll=11
         )
         projection = replay(1, events)
 
@@ -619,13 +633,13 @@ class TestSchoolOfHardKnocks:
 
 class TestSpacerCommunity:
     def test_entry_auto_grants_vacc_suit_at_level_one(self):
-        events = _precareer_entry_events('Spacer Community', 5)
+        events = _precareer_entry_events(SpacerCommunityPreCareer, 5)
         projection = replay(1, events)
 
         assert _skill_level(projection, 'Vacc Suit') >= 1
 
     def test_entry_queues_two_skill_picks_at_level_zero(self):
-        events = _precareer_entry_events('Spacer Community', 5)
+        events = _precareer_entry_events(SpacerCommunityPreCareer, 5)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -633,7 +647,7 @@ class TestSpacerCommunity:
         assert all(p.level == 0 for p in picks)
 
     def test_entry_pick_pool_excludes_auto_granted_vacc_suit(self):
-        events = _precareer_entry_events('Spacer Community', 5)
+        events = _precareer_entry_events(SpacerCommunityPreCareer, 5)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -643,7 +657,7 @@ class TestSpacerCommunity:
     def test_graduation_grants_pilot(self):
         # DEX=7 (>=6) → graduation_dms DEX_6+ applies: effective = roll + DM(INT=7) + 1 = roll+1
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -651,7 +665,7 @@ class TestSpacerCommunity:
 
     def test_graduation_increases_dex_by_one(self):
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -659,7 +673,7 @@ class TestSpacerCommunity:
 
     def test_graduation_decreases_soc_by_two(self):
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -667,7 +681,7 @@ class TestSpacerCommunity:
 
     def test_graduation_queues_two_level_zero_and_one_level_one_pick(self):
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -678,7 +692,7 @@ class TestSpacerCommunity:
 
     def test_graduation_adds_qualification_dm(self):
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -686,7 +700,7 @@ class TestSpacerCommunity:
 
     def test_graduation_queues_career_choice_with_distinct_id(self):
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=9
         )
         projection = replay(1, events)
 
@@ -697,7 +711,7 @@ class TestSpacerCommunity:
 
     def test_honours_graduation_grants_jack_of_all_trades(self):
         events = _precareer_graduation_events(
-            'Spacer Community', entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=11
+            SpacerCommunityPreCareer, entry_roll=5, skills=[Astrogation(), Electronics()], graduation_roll=11
         )
         projection = replay(1, events)
 
@@ -709,7 +723,7 @@ class TestUniversity:
     # a roll of 9 yields effective 6, which just passes. All tests use roll=9 for entry.
 
     def test_entry_queues_level_zero_and_level_one_skill_picks(self):
-        events = _precareer_entry_events('University', 9)
+        events = _precareer_entry_events(UniversityPreCareer, 9)
         projection = replay(1, events)
 
         picks = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
@@ -717,7 +731,7 @@ class TestUniversity:
         assert sum(1 for p in picks if p.level == 1) == 1
 
     def test_level_one_options_contain_specialisation_labels_not_base_names(self):
-        events = _precareer_entry_events('University', 9)
+        events = _precareer_entry_events(UniversityPreCareer, 9)
         projection = replay(1, events)
 
         level1_picks = [
@@ -735,7 +749,7 @@ class TestUniversity:
         assert any(o.jumpspace_physics.value > 0 for o in ps_opts)
 
     def test_level_zero_options_contain_base_skill_names(self):
-        events = _precareer_entry_events('University', 9)
+        events = _precareer_entry_events(UniversityPreCareer, 9)
         projection = replay(1, events)
 
         level0_picks = [
@@ -751,7 +765,7 @@ class TestUniversity:
 
     def test_choosing_specialised_skill_at_level_one_grants_only_that_spec(self):
         # Selecting 'Physical Science (Chemistry)' at level 1 must not grant all Physical Science specs.
-        events = _precareer_entry_events('University', 9)
+        events = _precareer_entry_events(UniversityPreCareer, 9)
         entry = events[-1]
         events.append(_event(fulfills=_pending(entry, 0), handler=PreCareerSkillChoiceHandler(skill=Admin())))
         events.append(
@@ -772,7 +786,7 @@ class TestUniversity:
     def test_graduation_increments_chosen_specialisation_not_all(self):
         # After graduation, Physical Science (Chemistry) 1 should become Chemistry 2, not all specs 2.
         events = _precareer_graduation_events(
-            'University',
+            UniversityPreCareer,
             entry_roll=9,
             skills=[Admin(), PhysicalScience(chemistry=Level(value=1))],
             graduation_roll=8,
@@ -791,7 +805,7 @@ class TestUniversity:
 
 
 def test_precareer_in_progress_is_typed_object():
-    events = _precareer_entry_events('University', 9)
+    events = _precareer_entry_events(UniversityPreCareer, 9)
     projection = replay(1, events)
     assert isinstance(projection.summary.precareer, PreCareerData)
     assert projection.summary.precareer.name == 'University'
@@ -799,7 +813,7 @@ def test_precareer_in_progress_is_typed_object():
 
 def test_precareer_completed_is_typed_object():
     events = _precareer_graduation_events(
-        'University', entry_roll=9, skills=[Admin(), Electronics()], graduation_roll=9
+        UniversityPreCareer, entry_roll=9, skills=[Admin(), Electronics()], graduation_roll=9
     )
     projection = replay(1, events)
     assert isinstance(projection.summary.precareer_completed, PreCareerData)

@@ -42,6 +42,16 @@ add a `CharacterDriver` method.
 
 ## Current State
 
+### Career-Entry Refactor Status
+
+The `plan-career-entry-outcomes.md` migration is complete for career tables.
+Career modules no longer use `effects=[...]`, and bespoke rows are direct table
+entries rather than `handler=...` payloads on generic entries.
+
+Legacy effect classes and compatibility paths still exist because pre-career
+event tables still use them. Treat that as separate follow-up work, not as
+unfinished career-entry migration.
+
 ### Completed
 
 - `test_scout.py` raw `Event(fulfills=(x.id, N), ...)` construction was migrated
@@ -315,12 +325,17 @@ Single-effect entries should use ordinary assertions.
 
 ## After `plan-career-entry-outcomes.md`
 
-Do these only after the old `effects=[...]` model and legacy support are gone.
+Career-table `effects=[...]` rows are gone, so career-specific cleanup in this
+section is now valid. Global deletion of effect classes and compatibility paths
+must still wait until pre-career event tables are migrated too.
 
 ### 1. Delete Old Effect Tests
 
-Remove any tests whose only purpose was to verify deleted `*Effect.apply()`
-methods.
+Remove any career tests whose only purpose was to verify deleted
+`*Effect.apply()` methods.
+
+Keep tests for effect classes that still have live pre-career callers until
+that separate migration removes the callers.
 
 The remaining tests should target:
 
@@ -395,9 +410,9 @@ During the refactor:
 - each shared entry class has focused tests
 - old effect tests disappear as replacement entry/projection tests appear
 
-After the refactor:
+After the career-entry refactor:
 
-- tests no longer preserve the old `effects=[...]` model
+- career tests no longer preserve the old `effects=[...]` model
 - career tests assert observable behavior only
 - mechanics tests are in mechanics files
 - complex multi-effect rows use the chosen snapshot/approval style where useful

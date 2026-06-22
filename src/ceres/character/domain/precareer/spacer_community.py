@@ -1,13 +1,48 @@
-from typing import Any
+from typing import Any, ClassVar
 
+from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
-from ceres.character.domain.skills import AnySkill, JackOfAllTrades, Level, Pilot
+from ceres.character.domain.skills import (
+    AnySkill,
+    Astrogation,
+    Electronics,
+    Engineer,
+    JackOfAllTrades,
+    Level,
+    Pilot,
+    ProfessionSkill,
+    VaccSuit,
+    skill_instances,
+)
 
 
 class SpacerCommunityPreCareer(PreCareerData):
+    name: ClassVar[str] = 'Spacer Community'
+    source: ClassVar[str] = 'Companion'
+    entry_requirement: ClassVar[str] = 'Automatic if homeworld size code 0; INT 4+, DM+1 if DEX 8+'
+    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
+        PrecareerSkillEntry(skill=VaccSuit(), level=1),
+        PrecareerSkillEntry(skill=Astrogation(), level=0),
+        PrecareerSkillEntry(skill=Electronics(), level=0),
+        PrecareerSkillEntry(skill=Engineer(), level=0),
+        PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
+    ]
+    entry_pick_count: ClassVar[int] = 2
+    graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=8)
+    graduation_dms: ClassVar[dict[str, int]] = {'DEX_6+': 1}
+    honours_target: ClassVar[int] = 12
+    graduation_benefits: ClassVar[list[str]] = [
+        'Gain any two other listed skills at level 0',
+        'Gain any listed skill at level 1',
+        'Gain Pilot 0',
+        'Honours graduates gain Jack-of-all-Trades 1',
+        'Increase DEX by +1 and decrease SOC by -2',
+        'DM+1 to enlist, gain commission or promotion in Merchant (Free Trader)',
+    ]
+
     def apply_graduation(
         self,
         projection: CharacterProjection,

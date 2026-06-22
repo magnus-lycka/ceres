@@ -10,6 +10,7 @@ from ceres.character.domain.characteristics import Chars, ConnectionKind, charac
 from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
+from ceres.character.domain.term_data import TermData
 from ceres.character.mechanism.errors import ReplayError
 
 if TYPE_CHECKING:
@@ -700,12 +701,6 @@ type AnyEffect = (
 class CareerEventEntry(CareerTableEntry):
     text: str
     effects: list[AnyEffect] = []
-
-
-class TermData(BaseModel):
-    """Base class for both CareerData and PreCareerData, capturing their common interface."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class MishapEntry(CareerTableEntry):

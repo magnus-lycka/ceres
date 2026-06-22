@@ -1,6 +1,6 @@
 """Tests for index-based career/assignment identity (replacing string identity checks)."""
 
-from ceres.character.domain.career import NOBLE, SCOUT
+from ceres.character.domain.career import NOBLE, PRISONER, PSION, SCOUT
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
     CareerEntryHandler,
@@ -33,75 +33,63 @@ def _full_setup():
 
 class TestCareerDataAdvancementIsSpecial:
     def test_base_career_advancement_not_special(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         assert scout.advancement_is_special() is False
 
     def test_prisoner_advancement_is_special(self):
-        careers = load_careers()
-        prisoner = careers['Prisoner']
+        prisoner = PRISONER
         assert prisoner.advancement_is_special() is True
 
     def test_all_non_prisoner_careers_not_special(self):
-        careers = load_careers()
-        non_prisoner = [c for name, c in careers.items() if name != 'Prisoner']
+        non_prisoner = [career for career in load_careers() if not isinstance(career, type(PRISONER))]
         for career in non_prisoner:
             assert career.advancement_is_special() is False, f'{career.name} should not be special'
 
 
 class TestCareerDataAssignmentIndex:
     def test_assignment_by_index_returns_first_assignment(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         result = scout.assignment_by_index(1)
         assert result is not None
         assert result.name == 'Courier'
 
     def test_assignment_by_index_returns_second_assignment(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         result = scout.assignment_by_index(2)
         assert result is not None
         assert result.name == 'Surveyor'
 
     def test_assignment_by_index_returns_third_assignment(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         result = scout.assignment_by_index(3)
         assert result is not None
         assert result.name == 'Explorer'
 
     def test_assignment_by_index_returns_none_for_zero(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         assert scout.assignment_by_index(0) is None
 
     def test_assignment_by_index_returns_none_for_out_of_range(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         assert scout.assignment_by_index(4) is None
 
     def test_assignment_index_returns_one_for_first(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         assignment = scout.assignments[0]
         assert scout.assignment_index(assignment) == 1
 
     def test_assignment_index_returns_two_for_second(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         assignment = scout.assignments[1]
         assert scout.assignment_index(assignment) == 2
 
     def test_assignment_index_returns_three_for_third(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         assignment = scout.assignments[2]
         assert scout.assignment_index(assignment) == 3
 
     def test_assignment_by_index_round_trips(self):
-        careers = load_careers()
-        for career in careers.values():
+        for career in load_careers():
             for i, assignment in enumerate(career.assignments, 1):
                 by_index = career.assignment_by_index(i)
                 assert by_index is assignment, f'{career.name} index {i} did not round-trip'
@@ -110,22 +98,20 @@ class TestCareerDataAssignmentIndex:
 
 class TestAssignmentRanksByIndex:
     def test_assignment_ranks_accepts_int_index(self):
-        careers = load_careers()
-        noble = careers['Noble']
+        noble = NOBLE
         # Noble has ranks_by_assignment with 3 assignments
         result = noble.assignment_ranks(1)
         # Assignment 1 is Administrator; rank 1 title is 'Clerk'
         assert result[1].title == 'Clerk'
 
     def test_assignment_ranks_falls_back_to_default_for_unknown_index(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         # Scout has no ranks_by_assignment, should return default ranks
         result = scout.assignment_ranks(1)
         assert result is scout.ranks
 
     def test_rank_title_retains_latest_assignment_title_until_replaced(self):
-        psion = load_careers()['Psion']
+        psion = PSION
         adept = psion.assignment('Adept')
         assert adept is not None
 
@@ -136,15 +122,14 @@ class TestAssignmentRanksByIndex:
         assert psion.rank_title(False, 6, adept) == ('6', 'Master')
 
     def test_rank_title_before_first_assignment_title_is_empty(self):
-        psion = load_careers()['Psion']
+        psion = PSION
         wild_talent = psion.assignment('Wild Talent')
         assert wild_talent is not None
 
         assert psion.rank_title(False, 0, wild_talent) == ('0', '')
 
     def test_available_tables_uses_assignment_object(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         courier = scout.assignment_by_index(1)
         edu = 7
         tables = scout.available_tables(edu, courier)
@@ -156,8 +141,7 @@ class TestAssignmentRanksByIndex:
         assert 'Courier' in labels
 
     def test_available_tables_different_assignments_return_different_tables(self):
-        careers = load_careers()
-        scout = careers['Scout']
+        scout = SCOUT
         courier = scout.assignment_by_index(1)
         surveyor = scout.assignment_by_index(2)
         tables_courier = scout.available_tables(7, courier)

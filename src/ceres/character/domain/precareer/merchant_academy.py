@@ -1,5 +1,6 @@
-from typing import Any
+from typing import Any, ClassVar
 
+from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.merchant import Merchant
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
@@ -17,6 +18,21 @@ def _skill_instances_from_table(table) -> list[AnySkill]:
 
 
 class MerchantAcademyPreCareer(PreCareerData):
+    source: ClassVar[str] = 'Companion'
+    entry: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=9)
+    entry_soc_bonus_min: ClassVar[int] = 8
+    entry_soc_bonus: ClassVar[int] = 1
+    graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=7)
+    graduation_dms: ClassVar[dict[str, int]] = {'EDU_8+': 1, 'SOC_8+': 1}
+    honours_target: ClassVar[int] = 11
+    graduation_benefits: ClassVar[list[str]] = [
+        'Increase one skill from the chosen Broker or Merchant Marine table to level 1',
+        'Increase EDU by +1',
+        'Automatic entry into Merchant or Citizen at rank 1 if first career and appropriate branch',
+        'Honours graduates may enter those careers at rank 2',
+        'DM+1 to advancement checks in Merchant or Citizen; DM+2 with honours',
+    ]
+
     def apply_entry(
         self,
         projection: CharacterProjection,
@@ -78,3 +94,13 @@ class MerchantAcademyPreCareer(PreCareerData):
             f'{self.name} graduation: DM+{adv_dm} on all advancement checks in Merchant or Citizen. Apply manually.'
         )
         return pending_idx
+
+
+class MerchantAcademyBusinessPreCareer(MerchantAcademyPreCareer):
+    name: ClassVar[str] = 'Merchant Academy (Business)'
+    curriculum_table: ClassVar[str] = 'assignment3'
+
+
+class MerchantAcademyShipboardPreCareer(MerchantAcademyPreCareer):
+    name: ClassVar[str] = 'Merchant Academy (Shipboard)'
+    curriculum_table: ClassVar[str] = 'assignment1'

@@ -604,11 +604,10 @@ class TestScholarMishap5:
         from types import SimpleNamespace
 
         from ceres.character.domain.career.career_data import CareerTerm
-        from ceres.character.domain.career.loader import load_careers
         from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
         from ceres.character.domain.health.health_events import PendingAgingRoll
 
-        scholar = load_careers()['Scholar']
+        scholar = SCHOLAR
         field_researcher = scholar.assignment('Field Researcher')
         assert field_researcher is not None
         proj = CharacterProjection(

@@ -60,16 +60,21 @@ class PendingCareerChoice(PendingInputBase):
 
     def event_from_form(self, form: Any) -> Event:
         from ceres.character.domain.character_start import FinishCreationHandler
+        from ceres.character.domain.precareer.loader import precareer_from_user_input_name
         from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
 
         kind = form_str(form, 'kind', '')
         if kind == 'finish_creation':
             return Event(fulfills=self.pending_id, handler=FinishCreationHandler())
         if kind == 'precareer_entry':
+            precareer_name = form_str(form, 'precareer', 'University')
+            precareer = precareer_from_user_input_name(precareer_name)
+            if precareer is None:
+                raise ReplayError(f'Unknown pre-career {precareer_name!r}')
             return Event(
                 fulfills=self.pending_id,
                 handler=PreCareerEntryHandler(
-                    precareer=form_str(form, 'precareer', 'University'),
+                    precareer=precareer,
                     roll=form_int(form, 'roll', 7),
                 ),
             )
@@ -212,7 +217,7 @@ def queue_career_choice_indexed(
         options = [forced]
         instruction = f'Next career: {forced.name} (mandatory)'
     else:
-        options = sorted(selectable_careers(projection).values(), key=lambda career: career.name)
+        options = sorted(selectable_careers(projection), key=lambda career: career.name)
     projection.pending_inputs.append(
         PendingCareerChoice(
             pending_id=(event_id, idx),

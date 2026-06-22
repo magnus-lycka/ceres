@@ -206,7 +206,7 @@ This plan is a concrete slice of the broader todo "Replace `ScheduledEffect`
 with domain-owned term state" in `docs/todo_maybe.md`.
 
 It also supports
-[`docs/plan-event-and-pending-input-rethink.md`](plan-event-and-pending-input-rethink.md):
+[`docs/archive/plan-event-and-pending-input-rethink.md`](plan-event-and-pending-input-rethink.md):
 
 - self-addressed pending inputs can route user choices to the current term
 - career terms can own career-specific state and rule handling

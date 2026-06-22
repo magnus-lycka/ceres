@@ -29,7 +29,7 @@ from ceres.character.domain.career.drifter import (
     PendingDrifterEvent9RollSkillRoll,
     PendingDrifterMishap5SkillRoll,
 )
-from ceres.character.domain.career.loader import load_careers, selectable_careers
+from ceres.character.domain.career.loader import selectable_careers
 from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
@@ -85,9 +85,9 @@ def _through_term_event(event_roll: int, assignment: str = 'Wanderer') -> list:
 
 
 def test_drifter_career_loads_and_is_selectable():
-    drifter = load_careers()['Drifter']
+    drifter = DRIFTER
 
-    assert 'Drifter' in selectable_careers()
+    assert drifter in selectable_careers()
     assert [assignment.name for assignment in drifter.assignments] == ['Barbarian', 'Wanderer', 'Scavenger']
 
 

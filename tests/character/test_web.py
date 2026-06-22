@@ -7,6 +7,7 @@ from typing import Any, Literal
 from fastapi.testclient import TestClient
 import pytest
 
+from ceres.character.domain.career import CITIZEN, SCOUT
 from ceres.character.domain.career.career_events import CareerEntryHandler, ReenlistHandler
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
@@ -76,13 +77,12 @@ def test_character_list_shows_characters(client_with_backend):
 
 def test_character_list_shows_ucp_latest_career_and_rank(client_with_backend, monkeypatch):
     from ceres.character.domain.career.career_data import CareerTerm
-    from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.character_state import CharacterSummary
     from ceres.character.domain.characteristics import Chars
 
     client, backend = client_with_backend
     row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Aria')
-    citizen = load_careers()['Citizen']
+    citizen = CITIZEN
     assignment = citizen.assignment('Colonist')
     assert assignment is not None
     monkeypatch.setattr(
@@ -116,12 +116,11 @@ def test_character_list_shows_ucp_latest_career_and_rank(client_with_backend, mo
 
 
 def test_character_list_shows_last_career_after_leaving_it(client_with_backend, monkeypatch):
-    from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.character_state import CharacterSummary
 
     client, backend = client_with_backend
     backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Retired')
-    scout = load_careers()['Scout']
+    scout = SCOUT
     monkeypatch.setattr(
         backend,
         'get_summary',
@@ -671,11 +670,10 @@ def test_wizard_shows_ucp_pending(client_with_backend):
 
 def test_wizard_shows_career_name_not_repr(client_with_backend, monkeypatch):
     from ceres.character.domain.career.career_data import AssignmentData, CareerTerm
-    from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
-    citizen = load_careers()['Citizen']
+    citizen = CITIZEN
     _colonist = citizen.assignment('Colonist')
     assert _colonist is not None
     colonist: AssignmentData = _colonist
@@ -918,11 +916,10 @@ def test_character_sheet_shows_name(client_with_backend):
 
 def test_character_sheet_shows_career_name_not_repr(client_with_backend, monkeypatch):
     from ceres.character.domain.career.career_data import AssignmentData, CareerTerm
-    from ceres.character.domain.career.loader import load_careers
     from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 
     client, backend = client_with_backend
-    citizen = load_careers()['Citizen']
+    citizen = CITIZEN
     _colonist = citizen.assignment('Colonist')
     assert _colonist is not None
     colonist: AssignmentData = _colonist

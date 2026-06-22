@@ -1,14 +1,38 @@
-from typing import Any
+from typing import Any, ClassVar
 
+from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.psion import Psion
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.domain.psionics import PendingPsionicTalentLevelChoice, queue_psionic_institute_training
-from ceres.character.domain.skills import Level, LifeScience
+from ceres.character.domain.skills import Level, LifeScience, ProfessionSkill, ScienceSkill, Streetwise, skill_instances
 
 
 class PsionicCommunityPreCareer(PreCareerData):
+    name: ClassVar[str] = 'Psionic Community'
+    source: ClassVar[str] = 'Companion'
+    entry: ClassVar[CharCheck] = CharCheck(characteristic=Chars.PSI, target=8)
+    entry_requirement: ClassVar[str] = 'PSI 8+, DM+1 if INT 8+'
+    entry_dms: ClassVar[dict[str, int]] = {'INT_8+': 1}
+    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
+        PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
+        PrecareerSkillEntry(skill=skill_instances(ScienceSkill), level=0),
+        PrecareerSkillEntry(skill=Streetwise(), level=0),
+    ]
+    graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.PSI, target=6)
+    graduation_requirement: ClassVar[str] = 'PSI 6+, DM+1 if INT 8+'
+    graduation_dms: ClassVar[dict[str, int]] = {'INT_8+': 1}
+    honours_target: ClassVar[int] = 12
+    graduation_benefits: ClassVar[list[str]] = [
+        'Increase PSI by +1',
+        'Skill level 1 in any one talent possessed',
+        'Science (psionicology) 1',
+        'Honours graduates gain all acquired talents at level 1 and may advance one to level 2',
+        'Automatic enlistment in Psion career, even after intervening careers',
+        'Gain a Rival, or an Enemy with honours',
+    ]
+
     def is_available(self, summary: CharacterSummary) -> bool:
         return summary.psionics is not None
 

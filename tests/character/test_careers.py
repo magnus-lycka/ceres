@@ -2,7 +2,7 @@
 
 import pytest
 
-from ceres.character.domain.career import AGENT, MERCHANT, SCHOLAR, SCOUT
+from ceres.character.domain.career import AGENT, ENTERTAINER, MERCHANT, NOBLE, ROGUE, SCHOLAR, SCOUT
 from ceres.character.domain.career.career_data import BenefitRollDm
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
@@ -103,21 +103,17 @@ class TestCoreCareerCoverage:
             'Rogue',
             'Scholar',
             'Scout',
-        } <= set(load_careers())
+        } <= {career.name for career in load_careers()}
 
     @pytest.mark.parametrize(
-        ('career_name', 'assignments'),
+        ('career', 'assignments'),
         [
-            ('Entertainer', {'Artist', 'Journalist', 'Performer'}),
-            ('Noble', {'Administrator', 'Diplomat', 'Dilettante'}),
-            ('Rogue', {'Thief', 'Enforcer', 'Pirate'}),
+            (ENTERTAINER, {'Artist', 'Journalist', 'Performer'}),
+            (NOBLE, {'Administrator', 'Diplomat', 'Dilettante'}),
+            (ROGUE, {'Thief', 'Enforcer', 'Pirate'}),
         ],
     )
-    def test_remaining_core_careers_have_assignments(self, career_name, assignments):
-        from ceres.character.domain.career.loader import load_careers
-
-        career = load_careers()[career_name]
-
+    def test_remaining_core_careers_have_assignments(self, career, assignments):
         assert {assignment.name for assignment in career.assignments} == assignments
         assert career.skill_table('personal_development') is not None
         assert career.skill_table('service_skills') is not None

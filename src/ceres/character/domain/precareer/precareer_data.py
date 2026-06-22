@@ -1,10 +1,23 @@
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from ceres.character.domain.career.career_data import CareerEventEntry, CharCheck, TermData
+from ceres.character.domain.career.career_data import (
+    CareerEventEntry,
+    CharCheck,
+    GainAllyEffect,
+    GainConnectionsRolledEffect,
+    GainEnemyEffect,
+    GainRivalEffect,
+    GainSkillEffect,
+    LifeEventEffect,
+    SkillChoiceEffect,
+)
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.skills import AnySkill, Level, level_fields
+from ceres.character.domain.characteristics import ConnectionKind
+from ceres.character.domain.dice import DiceRoll
+from ceres.character.domain.skills import AnySkill, Carouse, Level, level_fields
+from ceres.character.domain.term_data import TermData
 
 
 class PrecareerSkillEntry(BaseModel):
@@ -57,28 +70,55 @@ def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
 
 
 class PreCareerData(TermData):
-    events: dict[int, CareerEventEntry]
-    name: str
-    source: str
-    duration_years: int = 4
-    entry: CharCheck | None = None
-    entry_requirement: str | None = None
-    entry_dms: dict[str, int] = {}
-    entry_term_dms: dict[int, int] = {}
-    entry_soc_bonus_min: int | None = None
-    entry_soc_bonus: int = 0
-    curriculum_table: str | None = None
-    skill_choices: list[PrecareerSkillEntry] = []
+    events: ClassVar[dict[int, CareerEventEntry]] = {
+        2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),
+        3: CareerEventEntry(text='Your time in education is not happy and you fail to graduate.', effects=[]),
+        4: CareerEventEntry(text='A prank goes wrong and someone gets hurt.', effects=[]),
+        5: CareerEventEntry(
+            text='Taking advantage of youth, you party as much as you study.',
+            effects=[GainSkillEffect(skill=Carouse())],
+        ),
+        6: CareerEventEntry(
+            text='You become involved in a tightly knit clique or group.',
+            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.ALLY, dice=DiceRoll.parse('d3'))],
+        ),
+        7: CareerEventEntry(text='Life Event.', effects=[LifeEventEffect()]),
+        8: CareerEventEntry(
+            text='You join a political movement.',
+            effects=[GainAllyEffect(), GainEnemyEffect()],
+        ),
+        9: CareerEventEntry(
+            text='You develop a healthy interest in a hobby or other area of study.',
+            effects=[SkillChoiceEffect(options=[], level=0)],
+        ),
+        10: CareerEventEntry(
+            text='A tutor rubs you up the wrong way and you overturn their conclusions.',
+            effects=[GainRivalEffect()],
+        ),
+        11: CareerEventEntry(text='War comes and a wide-ranging draft is instigated.', effects=[]),
+        12: CareerEventEntry(text='You gain wide-ranging recognition.', effects=[]),
+    }
+    name: ClassVar[str]
+    source: ClassVar[str]
+    duration_years: ClassVar[int] = 4
+    entry: ClassVar[CharCheck | None] = None
+    entry_requirement: ClassVar[str | None] = None
+    entry_dms: ClassVar[dict[str, int]] = {}
+    entry_term_dms: ClassVar[dict[int, int]] = {}
+    entry_soc_bonus_min: ClassVar[int | None] = None
+    entry_soc_bonus: ClassVar[int] = 0
+    curriculum_table: ClassVar[str | None] = None
+    skill_choices: ClassVar[list[PrecareerSkillEntry]] = []
     # entry_pick_count > 0: level>=1 skills in skill_choices are auto-granted; player
     # picks entry_pick_count from the level==0 skills. If 0, all skill_choices are auto-granted.
     # University and military academies handle their own entry logic separately.
-    entry_pick_count: int = 0
-    tied_career: str | None = None
-    graduation: CharCheck | None = None
-    graduation_requirement: str | None = None
-    graduation_dms: dict[str, int] = {}
-    honours_target: int | None = None
-    graduation_benefits: list[str] = []
+    entry_pick_count: ClassVar[int] = 0
+    tied_career: ClassVar[str | None] = None
+    graduation: ClassVar[CharCheck | None] = None
+    graduation_requirement: ClassVar[str | None] = None
+    graduation_dms: ClassVar[dict[str, int]] = {}
+    honours_target: ClassVar[int | None] = None
+    graduation_benefits: ClassVar[list[str]] = []
 
     def is_available(self, summary: CharacterSummary) -> bool:
         """Return True if this precareer is available for the given character."""

@@ -2,7 +2,7 @@
 
 ## Problem
 
-The career tables still carry a YAML-era shape:
+The career tables used to carry a YAML-era shape:
 
 ```python
 CareerEventEntry(text='...', effects=[AdvancementDmEffect(amount=2)])
@@ -26,15 +26,15 @@ class GainSkillEffect(BaseModel):
 It adds a class, discriminator, import, and `apply()` method around one direct
 projection operation. Several other effects have the same smell.
 
-The current model is also internally inconsistent:
+The old mixed model was also internally inconsistent:
 
-- Some effects apply themselves with `effect.apply(...)`.
-- Other effects are interpreted with `isinstance(...)` branches inside
+- Some effects applied themselves with `effect.apply(...)`.
+- Other effects were interpreted with `isinstance(...)` branches inside
   `MishapHandler`, `TermEventHandler`, and `PreCareerEventHandler`.
-- `CareerHandlerBase` subclasses are already closer to "custom table rows" than
-  effects.
+- `CareerHandlerBase` subclasses were already closer to "custom table rows"
+  than effects.
 
-The result is neither a clean declarative data model nor clean polymorphism.
+The result was neither a clean declarative data model nor clean polymorphism.
 
 ## Goal
 
@@ -301,6 +301,88 @@ classes so the handlers no longer need large `isinstance(effect, ...)` loops.
 
 Status: **not complete globally**. Career tables no longer use legacy effects,
 but pre-career events still do.
+
+#### Pre-career effect inventory
+
+Inspection shows the remaining live table data is concentrated in
+`src/ceres/character/domain/precareer/loader.py`, in the shared
+`_PRECAREER_EVENTS` table used by all pre-careers.
+
+The desired migration direction is to make pre-careers follow the same broad
+pattern as careers: term data should be owned by `TermData`-derived classes,
+not assembled as mostly-anonymous instances in a loader. `TermData` lives in
+`src/ceres/character/domain/term_data.py`; anything genuinely shared by careers
+and pre-careers belongs there rather than in `career_data.py`.
+
+That does not mean one flat class per current row of data. Commonality should
+inform the inheritance tree:
+
+- a shared `PreCareerData` base owns mechanics common to all pre-careers
+- intermediate subclasses such as military academy or merchant academy own
+  genuinely shared entry/graduation behavior
+- concrete pre-careers such as University, Army Academy, Navy Academy, and
+  Colonial Upbringing own their named table data
+- shared pre-career event row classes represent repeated event-table outcomes
+  in the same spirit as shared career table entries
+
+Avoid a separate mixin layer unless a real second inheritance axis appears.
+Shared pre-career behavior should live on `PreCareerData` or an intermediate
+pre-career superclass. Shared career/pre-career behavior should move to
+`TermData`.
+
+Rows still using generic `CareerEventEntry(..., effects=[...])`:
+
+- roll 2: no effects; `PreCareerEventHandler` appends the manual psionics note
+- roll 3: no effects; terminal "fail to graduate" branch
+- roll 4: no effects; `PreCareerEventHandler` appends the manual SOC/Rival/Enemy
+  note
+- roll 5: `GainSkillEffect(Carouse())`
+- roll 6: `GainConnectionsRolledEffect(ALLY, d3)`
+- roll 7: `LifeEventEffect()`
+- roll 8: `GainAllyEffect()` and `GainEnemyEffect()`
+- roll 9: `SkillChoiceEffect(options=[], level=0)`
+- roll 10: `GainRivalEffect()`
+- roll 11: no effects; terminal draft/fail-to-graduate branch
+- roll 12: no effects; `PreCareerEventHandler` increases SOC by 1
+
+Most of these can reuse existing typed career table entries:
+
+- roll 5 -> `GainSkillEntry`
+- roll 6 -> `RolledConnectionsEntry`
+- roll 7 -> `LifeEventEntry`
+- roll 8 -> a connection-combination entry or small pre-career-specific entry
+- roll 9 -> `SkillChoiceEntry` with "any skill at level 0" behavior preserved
+- roll 10 -> `GainConnectionEntry`
+- roll 12 -> likely a small `CharacteristicGainEntry` or pre-career-specific
+  recognition entry
+
+Rolls 2, 3, 4, and 11 are not simple effect replacements. They encode
+pre-career-specific manual notes or terminal flow and should become explicit
+pre-career event rows instead of being hidden in post-effect `if self.roll`
+branches.
+
+Current test touchpoints:
+
+- `tests/character/test_events_pending_inputs.py` covers the pending-input,
+  manual-note, and terminal branches for `PreCareerEventHandler`.
+- `tests/character/test_precareers.py` still asserts that loaded pre-career
+  event rows contain `GainSkillEffect` and `LifeEventEffect`; those assertions
+  should be rewritten when the table is migrated.
+- `tests/character/test_career_data.py` still contains transitional effect
+  tests. Keep only the ones with live pre-career callers until the pre-career
+  migration removes those callers.
+
+Progress:
+
+- `TermData` now lives in `src/ceres/character/domain/term_data.py`, so
+  pre-careers no longer import the shared term base from `career_data.py`.
+- All loaded named pre-careers now have distinct concrete `PreCareerData`
+  subclasses. Military and merchant academies still share behavior through
+  intermediate academy superclasses.
+- Named pre-career configuration now lives on concrete classes; `loader.py`
+  instantiates those classes instead of passing rule data through constructors.
+- The next step is to replace the remaining pre-career `effects=[...]` event
+  rows with typed pre-career event rows.
 
 When all career and pre-career tables are migrated:
 

@@ -30,7 +30,7 @@
         <select name="precareer" id="precareer-select"
                 onchange="updatePrecareerDetails(this)"
                 class="bg-gray-900 border border-gray-700 text-gray-100 px-3 py-2 focus:outline-none focus:border-amber-500">
-          {% for pc in precareers.values() %}
+          {% for pc in precareers %}
           <option value="{{ pc.name }}"
                   data-entry="{{ pc.entry.characteristic ~ ' ' ~ pc.entry.target ~ '+' if pc.entry else (pc.entry_requirement or 'Automatic') }}"
                   data-curricula="{{ pc.curricula | join(',') }}">

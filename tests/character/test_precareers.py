@@ -1,21 +1,37 @@
+from typing import ClassVar
+
 from ceres.character.domain.career.career_data import CharCheck, GainSkillEffect, LifeEventEffect
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.loader import load_precareers
-from ceres.character.domain.precareer.military_academy import MilitaryAcademyPreCareer
+from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
+from ceres.character.domain.precareer.loader import load_precareers, precareer_of_type
+from ceres.character.domain.precareer.merchant_academy import (
+    MerchantAcademyBusinessPreCareer,
+    MerchantAcademyShipboardPreCareer,
+)
+from ceres.character.domain.precareer.military_academy import (
+    ArmyAcademyPreCareer,
+    MarineAcademyPreCareer,
+    MilitaryAcademyPreCareer,
+    NavyAcademyPreCareer,
+)
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
+from ceres.character.domain.precareer.psionic_community import PsionicCommunityPreCareer
+from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
+from ceres.character.domain.precareer.spacer_community import SpacerCommunityPreCareer
+from ceres.character.domain.precareer.university import UniversityPreCareer
 from ceres.character.domain.skills import Admin, Electronics, Pilot, ScienceSkill, skill_instances
 from ceres.character.mechanism.event_base import Event
 
 
-def _entry(name: str) -> CharCheck:
-    entry = load_precareers()[name].entry
+def _entry(precareer_type: type[PreCareerData]) -> CharCheck:
+    entry = precareer_of_type(precareer_type).entry
     assert entry is not None
     return entry
 
 
-def _graduation(name: str) -> CharCheck:
-    graduation = load_precareers()[name].graduation
+def _graduation(precareer_type: type[PreCareerData]) -> CharCheck:
+    graduation = precareer_of_type(precareer_type).graduation
     assert graduation is not None
     return graduation
 
@@ -34,20 +50,20 @@ def test_core_precareers_are_loaded():
         'School of Hard Knocks',
         'Spacer Community',
         'University',
-    } == set(precareers)
+    } == {precareer.name for precareer in precareers}
 
 
 def test_all_precareers_are_four_years():
-    assert {precareer.duration_years for precareer in load_precareers().values()} == {4}
+    assert {precareer.duration_years for precareer in load_precareers()} == {4}
 
 
 def test_university_entry_and_graduation_rules_are_loaded():
-    university = load_precareers()['University']
+    university = precareer_of_type(UniversityPreCareer)
 
-    assert _entry('University').characteristic == Chars.EDU
-    assert _entry('University').target == 6
-    assert _graduation('University').characteristic == Chars.INT
-    assert _graduation('University').target == 6
+    assert _entry(UniversityPreCareer).characteristic == Chars.EDU
+    assert _entry(UniversityPreCareer).target == 6
+    assert _graduation(UniversityPreCareer).characteristic == Chars.INT
+    assert _graduation(UniversityPreCareer).target == 6
     assert university.honours_target == 10
     assert [type(s).name() for s in university.skill_choices[0].skill_options] == ['Admin']
     assert {type(s).name() for s in university.skill_choices[-1].skill_options} == {
@@ -60,27 +76,25 @@ def test_university_entry_and_graduation_rules_are_loaded():
 
 
 def test_military_academies_have_distinct_entry_and_same_graduation():
-    precareers = load_precareers()
+    assert _entry(ArmyAcademyPreCareer).characteristic == Chars.END
+    assert _entry(ArmyAcademyPreCareer).target == 7
+    assert _entry(MarineAcademyPreCareer).characteristic == Chars.END
+    assert _entry(MarineAcademyPreCareer).target == 8
+    assert _entry(NavyAcademyPreCareer).characteristic == Chars.INT
+    assert _entry(NavyAcademyPreCareer).target == 8
 
-    assert _entry('Army Academy').characteristic == Chars.END
-    assert _entry('Army Academy').target == 7
-    assert _entry('Marine Academy').characteristic == Chars.END
-    assert _entry('Marine Academy').target == 8
-    assert _entry('Navy Academy').characteristic == Chars.INT
-    assert _entry('Navy Academy').target == 8
-
-    for name in ('Army Academy', 'Marine Academy', 'Navy Academy'):
-        academy = precareers[name]
+    for academy_type in (ArmyAcademyPreCareer, MarineAcademyPreCareer, NavyAcademyPreCareer):
+        academy = precareer_of_type(academy_type)
         assert isinstance(academy, MilitaryAcademyPreCareer)
-        assert _graduation(name).characteristic == Chars.INT
-        assert _graduation(name).target == 7
+        assert _graduation(academy_type).characteristic == Chars.INT
+        assert _graduation(academy_type).target == 7
         assert academy.honours_target == 11
         assert academy.tied_career is not None
         assert academy.service_skills_from.name == academy.tied_career
 
 
 def test_precareer_events_are_loaded_once_for_all_precareers():
-    university = load_precareers()['University']
+    university = precareer_of_type(UniversityPreCareer)
 
     assert set(university.events) == set(range(2, 13))
     assert isinstance(university.events[5].effects[0], GainSkillEffect)
@@ -88,29 +102,32 @@ def test_precareer_events_are_loaded_once_for_all_precareers():
 
 
 def test_companion_precareers_are_loaded():
-    precareers = load_precareers()
+    colonial = precareer_of_type(ColonialUprbringingPreCareer)
+    merchant_business = precareer_of_type(MerchantAcademyBusinessPreCareer)
+    merchant_shipboard = precareer_of_type(MerchantAcademyShipboardPreCareer)
+    psionic = precareer_of_type(PsionicCommunityPreCareer)
+    hard_knocks = precareer_of_type(SchoolOfHardKnocksPreCareer)
+    spacer = precareer_of_type(SpacerCommunityPreCareer)
 
-    assert precareers['Colonial Upbringing'].entry_requirement == 'Automatic if homeworld is TL8-'
-    assert _graduation('Colonial Upbringing').target == 8
-    assert [type(s).name() for s in precareers['Colonial Upbringing'].skill_choices[-1].skill_options] == ['Survival']
+    assert colonial.entry_requirement == 'Automatic if homeworld is TL8-'
+    assert _graduation(ColonialUprbringingPreCareer).target == 8
+    assert [type(s).name() for s in colonial.skill_choices[-1].skill_options] == ['Survival']
 
-    assert _entry('Merchant Academy (Business)').characteristic == Chars.INT
-    assert _entry('Merchant Academy (Business)').target == 9
-    assert precareers['Merchant Academy (Business)'].curriculum_table == 'assignment3'
-    assert _entry('Merchant Academy (Shipboard)').characteristic == Chars.INT
-    assert _entry('Merchant Academy (Shipboard)').target == 9
-    assert precareers['Merchant Academy (Shipboard)'].curriculum_table == 'assignment1'
+    assert _entry(MerchantAcademyBusinessPreCareer).characteristic == Chars.INT
+    assert _entry(MerchantAcademyBusinessPreCareer).target == 9
+    assert merchant_business.curriculum_table == 'assignment3'
+    assert _entry(MerchantAcademyShipboardPreCareer).characteristic == Chars.INT
+    assert _entry(MerchantAcademyShipboardPreCareer).target == 9
+    assert merchant_shipboard.curriculum_table == 'assignment1'
 
-    assert precareers['Psionic Community'].entry_requirement == 'PSI 8+, DM+1 if INT 8+'
-    assert precareers['Psionic Community'].graduation_requirement == 'PSI 6+, DM+1 if INT 8+'
+    assert psionic.entry_requirement == 'PSI 8+, DM+1 if INT 8+'
+    assert psionic.graduation_requirement == 'PSI 6+, DM+1 if INT 8+'
 
-    assert precareers['School of Hard Knocks'].entry_requirement == 'Automatic if SOC 6-'
-    assert _graduation('School of Hard Knocks').target == 7
+    assert hard_knocks.entry_requirement == 'Automatic if SOC 6-'
+    assert _graduation(SchoolOfHardKnocksPreCareer).target == 7
 
-    assert (
-        precareers['Spacer Community'].entry_requirement == 'Automatic if homeworld size code 0; INT 4+, DM+1 if DEX 8+'
-    )
-    assert _graduation('Spacer Community').target == 8
+    assert spacer.entry_requirement == 'Automatic if homeworld size code 0; INT 4+, DM+1 if DEX 8+'
+    assert _graduation(SpacerCommunityPreCareer).target == 8
 
 
 # ── PrecareerSkillEntry properties ───────────────────────────────────────────
@@ -153,21 +170,22 @@ def test_precareer_apply_entry_pick_count_0_list_skill_queues_choice():
     from tests.character.helpers import MOCK_WORLD
 
     sciences = skill_instances(ScienceSkill)
-    precareer = PreCareerData(
-        name='TestPrecareer',
-        source='test',
-        events={},
-        entry_pick_count=0,
-        skill_choices=[
+
+    class TestPrecareer(PreCareerData):
+        name: ClassVar[str] = 'TestPrecareer'
+        source: ClassVar[str] = 'test'
+        entry_pick_count: ClassVar[int] = 0
+        skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
             PrecareerSkillEntry(skill=Admin(), level=1),  # fixed grant
             PrecareerSkillEntry(skill=sciences, level=1),  # list → queued choice
-        ],
-    )
+        ]
+
+    precareer = TestPrecareer()
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = Event(handler=PreCareerEntryHandler(precareer='TestPrecareer', roll=9))
+    event = Event(handler=PreCareerEntryHandler(precareer=precareer, roll=9))
     pending_idx = precareer.apply_entry(proj, event, 0)
 
     assert proj.summary.skill_level(Admin) == 1
@@ -187,23 +205,24 @@ def test_precareer_apply_entry_pick_count_nonzero_with_list_and_pool():
     from tests.character.helpers import MOCK_WORLD
 
     sciences = skill_instances(ScienceSkill)
-    precareer = PreCareerData(
-        name='TestPrecareer2',
-        source='test',
-        events={},
-        entry_pick_count=2,
-        skill_choices=[
+
+    class TestPrecareer2(PreCareerData):
+        name: ClassVar[str] = 'TestPrecareer2'
+        source: ClassVar[str] = 'test'
+        entry_pick_count: ClassVar[int] = 2
+        skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
             PrecareerSkillEntry(skill=Admin(), level=1),  # fixed grant (level >= 1)
             PrecareerSkillEntry(skill=sciences, level=1),  # list at level 1 → queued choice
             PrecareerSkillEntry(skill=Electronics(), level=0),  # level 0 → choice pool
             PrecareerSkillEntry(skill=Pilot(), level=0),  # level 0 → choice pool
-        ],
-    )
+        ]
+
+    precareer = TestPrecareer2()
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    event = Event(handler=PreCareerEntryHandler(precareer='TestPrecareer2', roll=9))
+    event = Event(handler=PreCareerEntryHandler(precareer=precareer, roll=9))
     precareer.apply_entry(proj, event, 0)
 
     assert proj.summary.skill_level(Admin) == 1
@@ -223,21 +242,21 @@ def test_precareer_apply_entry_skips_none_skill_entries():
     from ceres.character.domain.sophont import VILANI
     from tests.character.helpers import MOCK_WORLD
 
-    precareer = PreCareerData(
-        name='TestNoneSkill',
-        source='test',
-        events={},
-        entry_pick_count=0,
-        skill_choices=[
+    class TestNoneSkill(PreCareerData):
+        name: ClassVar[str] = 'TestNoneSkill'
+        source: ClassVar[str] = 'test'
+        entry_pick_count: ClassVar[int] = 0
+        skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
             PrecareerSkillEntry(skill=None, level=1),
             PrecareerSkillEntry(skill=Admin(), level=1),
-        ],
-    )
+        ]
+
+    precareer = TestNoneSkill()
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    precareer.apply_entry(proj, Event(handler=PreCareerEntryHandler(precareer='TestNoneSkill', roll=9)), 0)
+    precareer.apply_entry(proj, Event(handler=PreCareerEntryHandler(precareer=precareer, roll=9)), 0)
     assert proj.summary.skill_level(Admin) == 1
 
 
@@ -246,21 +265,21 @@ def test_precareer_apply_entry_pick_count_nonzero_skips_none_skill():
     from ceres.character.domain.sophont import VILANI
     from tests.character.helpers import MOCK_WORLD
 
-    precareer = PreCareerData(
-        name='TestNoneSkill2',
-        source='test',
-        events={},
-        entry_pick_count=1,
-        skill_choices=[
+    class TestNoneSkill2(PreCareerData):
+        name: ClassVar[str] = 'TestNoneSkill2'
+        source: ClassVar[str] = 'test'
+        entry_pick_count: ClassVar[int] = 1
+        skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
             PrecareerSkillEntry(skill=None, level=1),
             PrecareerSkillEntry(skill=Pilot(), level=0),
-        ],
-    )
+        ]
+
+    precareer = TestNoneSkill2()
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
     )
-    precareer.apply_entry(proj, Event(handler=PreCareerEntryHandler(precareer='TestNoneSkill2', roll=9)), 0)
+    precareer.apply_entry(proj, Event(handler=PreCareerEntryHandler(precareer=precareer, roll=9)), 0)
     assert len(proj.pending_inputs) == 1
 
 
@@ -272,7 +291,11 @@ def test_precareer_apply_graduation_base_returns_zero():
     from ceres.character.domain.sophont import VILANI
     from tests.character.helpers import MOCK_WORLD
 
-    precareer = PreCareerData(name='TestGrad', source='test', events={})
+    class TestGrad(PreCareerData):
+        name: ClassVar[str] = 'TestGrad'
+        source: ClassVar[str] = 'test'
+
+    precareer = TestGrad()
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
@@ -289,7 +312,11 @@ def test_precareer_apply_failed_graduation_base_is_noop():
     from ceres.character.domain.sophont import VILANI
     from tests.character.helpers import MOCK_WORLD
 
-    precareer = PreCareerData(name='TestPrecareer3', source='test', events={})
+    class TestPrecareer3(PreCareerData):
+        name: ClassVar[str] = 'TestPrecareer3'
+        source: ClassVar[str] = 'test'
+
+    precareer = TestPrecareer3()
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),

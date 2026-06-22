@@ -152,7 +152,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         'character_id': character_id,
         'enriched_inputs': enriched_inputs,
         'careers': careers,
-        'precareers': {name: pc for name, pc in load_precareers().items() if pc.is_available(projection.summary)},
+        'precareers': tuple(pc for pc in load_precareers() if pc.is_available(projection.summary)),
         'select_world_url': _select_world_url,
     }
 
@@ -578,8 +578,9 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.get('/careers/{career_name}/assignments', response_class=HTMLResponse)
     def get_career_assignments(request: Request, career_name: str) -> Any:
-        careers = load_careers()
-        career = careers.get(career_name)
+        from ceres.character.domain.career.loader import career_from_user_input_name
+
+        career = career_from_user_input_name(career_name)
         if career is None:
             return HTMLResponse('')
         assignments = [a.name for a in career.assignments]

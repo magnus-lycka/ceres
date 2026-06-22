@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career import ARMY
@@ -8,7 +8,12 @@ from ceres.character.domain.career.marines import Marines
 from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.loader import precareer_of_type
+from ceres.character.domain.precareer.military_academy import (
+    ArmyAcademyPreCareer,
+    MarineAcademyPreCareer,
+    NavyAcademyPreCareer,
+)
 from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
@@ -45,13 +50,13 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
                 },
             )()
 
-    monkeypatch.setattr('ceres.character.domain.career.loader.load_careers', lambda: {'Army': FakeCareer()})
+    monkeypatch.setattr(ArmyAcademyPreCareer, 'service_skills_from', cast(Any, FakeCareer))
     projection = _projection()
-    academy = load_precareers()['Army Academy']
+    academy = precareer_of_type(ArmyAcademyPreCareer)
 
     next_pending_idx = academy.apply_entry(
         projection,
-        Event(handler=PreCareerEntryHandler(precareer='Army Academy', roll=9)),
+        Event(handler=PreCareerEntryHandler(precareer=academy, roll=9)),
         pending_idx=3,
     )
 
@@ -69,7 +74,7 @@ def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(m
 
 def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_benefits():
     projection = _projection(characteristics={Chars.EDU: 7, Chars.SOC: 6})
-    academy = load_precareers()['Navy Academy']
+    academy = precareer_of_type(NavyAcademyPreCareer)
 
     next_pending_idx = academy.apply_graduation(
         projection,
@@ -91,7 +96,7 @@ def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_ben
 
 def test_graduation_with_honours_also_increases_soc_and_marks_automatic_commission_note():
     projection = _projection(characteristics={Chars.EDU: 7, Chars.SOC: 6})
-    academy = load_precareers()['Marine Academy']
+    academy = precareer_of_type(MarineAcademyPreCareer)
 
     academy.apply_graduation(
         projection,
@@ -107,7 +112,7 @@ def test_graduation_with_honours_also_increases_soc_and_marks_automatic_commissi
 
 def test_failed_graduation_above_natural_two_allows_auto_entry_without_commission():
     projection = _projection()
-    academy = load_precareers()['Army Academy']
+    academy = precareer_of_type(ArmyAcademyPreCareer)
 
     academy.apply_failed_graduation(
         projection,
@@ -123,7 +128,7 @@ def test_failed_graduation_above_natural_two_allows_auto_entry_without_commissio
 
 def test_failed_graduation_on_natural_two_has_no_auto_entry_effect():
     projection = _projection()
-    academy = load_precareers()['Army Academy']
+    academy = precareer_of_type(ArmyAcademyPreCareer)
 
     academy.apply_failed_graduation(
         projection,
