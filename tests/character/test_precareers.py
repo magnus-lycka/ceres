@@ -1,6 +1,12 @@
 from typing import ClassVar
 
-from ceres.character.domain.career.career_data import CharCheck, GainSkillEffect, LifeEventEffect
+from ceres.character.domain.career.career_data import (
+    CharCheck,
+    GainConnectionEntry,
+    GainSkillEntry,
+    LifeEventEntry,
+    RolledConnectionsEntry,
+)
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
 from ceres.character.domain.precareer.loader import load_precareers, precareer_of_type
@@ -97,8 +103,10 @@ def test_precareer_events_are_loaded_once_for_all_precareers():
     university = precareer_of_type(UniversityPreCareer)
 
     assert set(university.events) == set(range(2, 13))
-    assert isinstance(university.events[5].effects[0], GainSkillEffect)
-    assert isinstance(university.events[7].effects[0], LifeEventEffect)
+    assert isinstance(university.events[5], GainSkillEntry)
+    assert isinstance(university.events[6], RolledConnectionsEntry)
+    assert isinstance(university.events[7], LifeEventEntry)
+    assert isinstance(university.events[10], GainConnectionEntry)
 
 
 def test_companion_precareers_are_loaded():

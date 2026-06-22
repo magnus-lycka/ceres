@@ -8,7 +8,6 @@ def test_audit_discriminator_literals_repo_wide() -> None:
     result = audit_discriminator_literals(
         declaration_paths=[
             repo_root / 'src' / 'ceres',
-            # repo_root / 'src' / 'ceres' / 'character',
         ],
         scan_paths=[
             repo_root / 'src' / 'ceres' / 'character',

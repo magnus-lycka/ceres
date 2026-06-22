@@ -28,6 +28,29 @@ Possible work:
 - look for more complex character state transitions where it would improve
   coverage of unexpected side effects
 
+## Tighten character event typing
+
+Several character-domain APIs still use broad `Any` annotations such as
+`projection: Any`, `event: Any`, `form: Any`, `fulfilled_pending: Any`, and
+some `career: Any`. These are mostly historical, and they make architectural
+boundaries too soft.
+
+Defer this until after the current pre-career effect migration. When picked up:
+
+- introduce a small form-data protocol near `input_specs.py` and use it for
+  `form_str`, `form_int`, and `PendingInputBase.event_from_form(...)`
+- type character event handlers with `CharacterProjection`, `Event`, and
+  `PendingInputBase | None`
+- type `ChoiceBase.handle()` and `PendingInputBase.resolve()` with
+  `CharacterProjection` and `Event`
+- replace `career: Any` with `CareerData`, `type[CareerData]`, or a narrow
+  protocol as appropriate
+- avoid spending effort typing legacy `*Effect` classes; migrate or delete
+  them instead
+- consider a later scan test preventing new `projection: Any` / `form: Any`
+  annotations in character-domain code, with temporary allowlists while the
+  existing code is cleaned up
+
 ## Google Sheet fuel mismatch
 
 We should keep an eye out for any remaining Google Sheet / export-based fuel

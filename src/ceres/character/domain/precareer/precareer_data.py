@@ -4,13 +4,14 @@ from pydantic import BaseModel, ConfigDict
 
 from ceres.character.domain.career.career_data import (
     CareerEventEntry,
+    CareerTableEntry,
     CharCheck,
     GainAllyEffect,
-    GainConnectionsRolledEffect,
+    GainConnectionEntry,
     GainEnemyEffect,
-    GainRivalEffect,
-    GainSkillEffect,
-    LifeEventEffect,
+    GainSkillEntry,
+    LifeEventEntry,
+    RolledConnectionsEntry,
     SkillChoiceEffect,
 )
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
@@ -70,19 +71,20 @@ def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
 
 
 class PreCareerData(TermData):
-    events: ClassVar[dict[int, CareerEventEntry]] = {
+    events: ClassVar[dict[int, CareerTableEntry]] = {
         2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),
         3: CareerEventEntry(text='Your time in education is not happy and you fail to graduate.', effects=[]),
         4: CareerEventEntry(text='A prank goes wrong and someone gets hurt.', effects=[]),
-        5: CareerEventEntry(
+        5: GainSkillEntry(
             text='Taking advantage of youth, you party as much as you study.',
-            effects=[GainSkillEffect(skill=Carouse())],
+            skill=Carouse(),
         ),
-        6: CareerEventEntry(
+        6: RolledConnectionsEntry(
             text='You become involved in a tightly knit clique or group.',
-            effects=[GainConnectionsRolledEffect(connection_type=ConnectionKind.ALLY, dice=DiceRoll.parse('d3'))],
+            connection=ConnectionKind.ALLY,
+            dice=DiceRoll.parse('d3'),
         ),
-        7: CareerEventEntry(text='Life Event.', effects=[LifeEventEffect()]),
+        7: LifeEventEntry(text='Life Event.'),
         8: CareerEventEntry(
             text='You join a political movement.',
             effects=[GainAllyEffect(), GainEnemyEffect()],
@@ -91,9 +93,9 @@ class PreCareerData(TermData):
             text='You develop a healthy interest in a hobby or other area of study.',
             effects=[SkillChoiceEffect(options=[], level=0)],
         ),
-        10: CareerEventEntry(
+        10: GainConnectionEntry(
             text='A tutor rubs you up the wrong way and you overturn their conclusions.',
-            effects=[GainRivalEffect()],
+            connection=ConnectionKind.RIVAL,
         ),
         11: CareerEventEntry(text='War comes and a wide-ranging draft is instigated.', effects=[]),
         12: CareerEventEntry(text='You gain wide-ranging recognition.', effects=[]),

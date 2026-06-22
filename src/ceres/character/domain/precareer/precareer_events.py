@@ -131,6 +131,7 @@ class PreCareerEventHandler(EventHandlerBase):
         from ceres.character.domain.career.career_data import (
             AutoAdvanceEffect,
             CareerHandlerBase,
+            CareerTableEntry,
             DecreaseCharacteristicChoiceEffect,
             GainConnectionsRolledEffect,
             InjuryEffect,
@@ -169,7 +170,9 @@ class PreCareerEventHandler(EventHandlerBase):
             projection.summary.precareer = None
             queue_career_choice(projection, event.id, 'Pre-career ended (no graduation) — choose a career')
             return
-        for effect in term_event.effects:
+        if isinstance(term_event, CareerTableEntry) and not getattr(term_event, 'effects', ()):
+            pending_idx = term_event.apply(projection, event, pending_idx)
+        for effect in getattr(term_event, 'effects', ()):
             if isinstance(effect, GainConnectionsRolledEffect):
                 projection.pending_inputs.append(
                     PendingConnectionsRoll(

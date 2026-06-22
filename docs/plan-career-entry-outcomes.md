@@ -304,9 +304,9 @@ but pre-career events still do.
 
 #### Pre-career effect inventory
 
-Inspection shows the remaining live table data is concentrated in
-`src/ceres/character/domain/precareer/loader.py`, in the shared
-`_PRECAREER_EVENTS` table used by all pre-careers.
+Inspection shows the remaining live pre-career event effect data is
+concentrated in `PreCareerData.events`, the shared event table used by all
+pre-careers. The loader no longer owns rule data.
 
 The desired migration direction is to make pre-careers follow the same broad
 pattern as careers: term data should be owned by `TermData`-derived classes,
@@ -330,29 +330,30 @@ Shared pre-career behavior should live on `PreCareerData` or an intermediate
 pre-career superclass. Shared career/pre-career behavior should move to
 `TermData`.
 
-Rows still using generic `CareerEventEntry(..., effects=[...])`:
+Pre-career event rows already migrated to typed entries:
+
+- roll 5: `GainSkillEntry(Carouse())`
+- roll 6: `RolledConnectionsEntry(ALLY, d3)`
+- roll 7: `LifeEventEntry`
+- roll 10: `GainConnectionEntry(RIVAL)`
+
+Rows still using generic `CareerEventEntry(..., effects=[...])` or handler
+branches:
 
 - roll 2: no effects; `PreCareerEventHandler` appends the manual psionics note
 - roll 3: no effects; terminal "fail to graduate" branch
 - roll 4: no effects; `PreCareerEventHandler` appends the manual SOC/Rival/Enemy
   note
-- roll 5: `GainSkillEffect(Carouse())`
-- roll 6: `GainConnectionsRolledEffect(ALLY, d3)`
-- roll 7: `LifeEventEffect()`
 - roll 8: `GainAllyEffect()` and `GainEnemyEffect()`
 - roll 9: `SkillChoiceEffect(options=[], level=0)`
-- roll 10: `GainRivalEffect()`
 - roll 11: no effects; terminal draft/fail-to-graduate branch
 - roll 12: no effects; `PreCareerEventHandler` increases SOC by 1
 
-Most of these can reuse existing typed career table entries:
+Most of the remaining rows can reuse existing typed career table entries or
+small pre-career-specific entries:
 
-- roll 5 -> `GainSkillEntry`
-- roll 6 -> `RolledConnectionsEntry`
-- roll 7 -> `LifeEventEntry`
 - roll 8 -> a connection-combination entry or small pre-career-specific entry
 - roll 9 -> `SkillChoiceEntry` with "any skill at level 0" behavior preserved
-- roll 10 -> `GainConnectionEntry`
 - roll 12 -> likely a small `CharacteristicGainEntry` or pre-career-specific
   recognition entry
 
@@ -381,8 +382,10 @@ Progress:
   intermediate academy superclasses.
 - Named pre-career configuration now lives on concrete classes; `loader.py`
   instantiates those classes instead of passing rule data through constructors.
-- The next step is to replace the remaining pre-career `effects=[...]` event
-  rows with typed pre-career event rows.
+- Pre-career event rows 5, 6, 7, and 10 now use typed entries instead of
+  effect wrappers.
+- The next step is to replace the remaining pre-career `effects=[...]` rows
+  and manual handler branches with typed pre-career event rows.
 
 When all career and pre-career tables are migrated:
 
