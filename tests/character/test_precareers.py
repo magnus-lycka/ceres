@@ -3,9 +3,12 @@ from typing import ClassVar
 from ceres.character.domain.career.career_data import (
     CharCheck,
     GainConnectionEntry,
+    GainConnectionsEntry,
     GainSkillEntry,
     LifeEventEntry,
+    NoEffectEntry,
     RolledConnectionsEntry,
+    SkillChoiceEntry,
 )
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
@@ -103,10 +106,18 @@ def test_precareer_events_are_loaded_once_for_all_precareers():
     university = precareer_of_type(UniversityPreCareer)
 
     assert set(university.events) == set(range(2, 13))
+    assert isinstance(university.events[2], NoEffectEntry)
+    assert isinstance(university.events[3], NoEffectEntry)
+    assert isinstance(university.events[4], NoEffectEntry)
     assert isinstance(university.events[5], GainSkillEntry)
     assert isinstance(university.events[6], RolledConnectionsEntry)
     assert isinstance(university.events[7], LifeEventEntry)
+    assert isinstance(university.events[8], GainConnectionsEntry)
+    assert isinstance(university.events[9], SkillChoiceEntry)
     assert isinstance(university.events[10], GainConnectionEntry)
+    assert isinstance(university.events[11], NoEffectEntry)
+    assert isinstance(university.events[12], NoEffectEntry)
+    assert all(not hasattr(entry, 'effects') for entry in university.events.values())
 
 
 def test_companion_precareers_are_loaded():

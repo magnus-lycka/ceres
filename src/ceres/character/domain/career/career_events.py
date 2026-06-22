@@ -133,6 +133,7 @@ __all__ = [
     'PendingMusterOut',
     'PendingParoleRoll',
     'PendingRankBonusChoice',
+    'PendingSkillChoice',
     'queue_career_choice',
     'queue_career_choice_indexed',
 ]
@@ -165,17 +166,7 @@ class MishapHandler(EventHandlerBase):
     stay_in_career: bool = False
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.career_data import (
-            DecreaseCharacteristicChoiceEffect,
-            GainConnectionsRolledEffect,
-            InjuryEffect,
-            SkillChoiceEffect,
-        )
-        from ceres.character.domain.health.health_events import (
-            PendingAgingRoll,
-            PendingCharacteristicChoice,
-            PendingInjuryTable,
-        )
+        from ceres.character.domain.health.health_events import PendingAgingRoll
 
         career = projection.get_current_career()
         mishap = career.mishaps.get(self.roll)
@@ -183,78 +174,7 @@ class MishapHandler(EventHandlerBase):
         if mishap:
             projection.summary.problems.append(mishap.text)
             projection.summary.narrative.append(f'Mishap ({career.name}): {mishap.text}')
-            legacy_effects = getattr(mishap, 'effects', None)
-            if legacy_effects is None:
-                pending_idx = mishap.apply(projection, event, pending_idx)
-            else:
-                for effect in legacy_effects:
-                    if isinstance(effect, DecreaseCharacteristicChoiceEffect):
-                        characteristic = ', '.join(c.value for c in effect.options)
-                        projection.pending_inputs.append(
-                            PendingCharacteristicChoice(
-                                pending_id=(event.id, pending_idx),
-                                instruction=(f'Choose characteristic to decrease by {effect.amount}: {characteristic}'),
-                                options=effect.options,
-                                amount=effect.amount,
-                            )
-                        )
-                        pending_idx += 1
-                    elif isinstance(effect, GainConnectionsRolledEffect):
-                        projection.pending_inputs.append(
-                            PendingConnectionsRoll(
-                                pending_id=(event.id, pending_idx),
-                                connection_type=effect.connection_type,
-                                instruction=f'Roll {effect.dice} for number of {effect.connection_type}s',
-                                options=effect.dice.roll_options(),
-                            )
-                        )
-                        pending_idx += 1
-                    elif isinstance(effect, SkillChoiceEffect):
-                        projection.pending_inputs.append(
-                            PendingSkillChoice(
-                                pending_id=(event.id, pending_idx),
-                                instruction=f'Choose one skill at level {effect.level}',
-                                options=effect.options,
-                                level=effect.level,
-                            )
-                        )
-                        pending_idx += 1
-                    elif isinstance(effect, InjuryEffect):
-                        if effect.severity == 'normal':
-                            projection.pending_inputs.append(
-                                PendingCharacteristicChoice(
-                                    pending_id=(event.id, pending_idx),
-                                    instruction='Injured: choose STR, DEX, or END to reduce by 1',
-                                    options=[Chars.STR, Chars.DEX, Chars.END],
-                                    amount=1,
-                                )
-                            )
-                            pending_idx += 1
-                        elif effect.severity == 'severe':
-                            projection.pending_inputs.append(
-                                PendingCharacteristicChoice(
-                                    pending_id=(event.id, pending_idx),
-                                    instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
-                                    options=[Chars.STR, Chars.DEX, Chars.END],
-                                    amount=2,
-                                )
-                            )
-                            pending_idx += 1
-                        elif effect.severity == 'from_table':
-                            projection.pending_inputs.append(
-                                PendingInjuryTable(
-                                    pending_id=(event.id, pending_idx),
-                                    instruction='Roll 1D on Injury table',
-                                )
-                            )
-                            pending_idx += 1
-                    else:
-                        from ceres.character.domain.career.career_data import CareerHandlerBase
-
-                        if isinstance(effect, CareerHandlerBase):
-                            pending_idx = effect.handle(projection, event.id, pending_idx)
-                        else:
-                            effect.apply(projection, source=mishap.text, source_event_id=event.id)
+            pending_idx = mishap.apply(projection, event, pending_idx)
         defer = mishap is not None and getattr(mishap, 'defer_ejection', False)
         if defer:
             pass
@@ -287,20 +207,8 @@ class TermEventHandler(EventHandlerBase):
     roll: int  # sum of 2D
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.career_data import (
-            AutoAdvanceEffect,
-            GainConnectionsRolledEffect,
-            LifeEventEffect,
-            RollMishapEffect,
-            SkillChoiceEffect,
-        )
-
         career = projection.get_current_career()
         term_event = career.events.get(self.roll)
-        skill_choice_effect = None
-        roll_mishap_effect = None
-        auto_advance = False
-        life_event_pending = False
         pending_idx = 0
         career_handler_invoked = False
         if term_event:
@@ -309,67 +217,9 @@ class TermEventHandler(EventHandlerBase):
             )
             if projection.summary.career_terms:
                 projection.summary.career_terms[-1].event = term_event.text
-            legacy_effects = getattr(term_event, 'effects', None)
-            if legacy_effects is None:
-                pending_idx = term_event.apply(projection, event, pending_idx)
-                career_handler_invoked = not term_event.continues_career_progress()
-            else:
-                for effect in legacy_effects:
-                    if isinstance(effect, SkillChoiceEffect):
-                        skill_choice_effect = effect
-                    elif isinstance(effect, RollMishapEffect):
-                        roll_mishap_effect = effect
-                    elif isinstance(effect, AutoAdvanceEffect):
-                        auto_advance = True
-                    elif isinstance(effect, LifeEventEffect):
-                        life_event_pending = True
-                    elif isinstance(effect, GainConnectionsRolledEffect):
-                        projection.pending_inputs.append(
-                            PendingConnectionsRoll(
-                                pending_id=(event.id, pending_idx),
-                                connection_type=effect.connection_type,
-                                instruction=f'Roll {effect.dice} for number of {effect.connection_type}s',
-                                options=effect.dice.roll_options(),
-                            )
-                        )
-                        pending_idx += 1
-                    else:
-                        from ceres.character.domain.career.career_data import CareerHandlerBase
-
-                        if isinstance(effect, CareerHandlerBase):
-                            pending_idx = effect.handle(projection, event.id, pending_idx)
-                            career_handler_invoked = True
-                        else:
-                            effect.apply(projection, source=term_event.text, source_event_id=event.id)
-        if roll_mishap_effect is not None:
-            instruction = (
-                'Roll 1D on Mishap table (you are not ejected from this career)'
-                if not roll_mishap_effect.leave
-                else 'Roll 1D on Mishap table'
-            )
-            projection.pending_inputs.append(
-                PendingMishap(
-                    pending_id=(event.id, pending_idx),
-                    instruction=instruction,
-                    stay_in_career=not roll_mishap_effect.leave,
-                )
-            )
-        elif auto_advance:
-            _apply_auto_advance(projection, career, event.id)
-        elif life_event_pending:
-            projection.pending_inputs.append(
-                PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table')
-            )
-        elif skill_choice_effect is not None:
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    pending_id=(event.id, pending_idx),
-                    instruction=f'Choose one skill at level {skill_choice_effect.level}',
-                    options=skill_choice_effect.options,
-                    level=skill_choice_effect.level,
-                )
-            )
-        elif not career_handler_invoked:
+            pending_idx = term_event.apply(projection, event, pending_idx)
+            career_handler_invoked = not term_event.continues_career_progress()
+        if not career_handler_invoked:
             projection.pending_inputs.append(career_progress_pending(projection, career, event.id, pending_idx))
 
 

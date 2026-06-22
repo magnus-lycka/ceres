@@ -77,73 +77,6 @@ def _blank_ranks() -> dict[int, RankEntry]:
     return {i: RankEntry(rank=i) for i in range(7)}
 
 
-class GainSkillEffect(BaseModel):
-    type: Literal['gain_skill'] = 'gain_skill'
-    skill: AnySkill
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.grant_skill(self.skill)
-
-
-class DecreaseCharacteristicEffect(BaseModel):
-    type: Literal['decrease_characteristic'] = 'decrease_characteristic'
-    characteristic: Chars
-    amount: int = 1
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.decrease_characteristic(self.characteristic, self.amount)
-
-
-class DecreaseCharacteristicChoiceEffect(BaseModel):
-    type: Literal['decrease_characteristic_choice'] = 'decrease_characteristic_choice'
-    options: list[Chars]
-    amount: int = 1
-
-
-class GainContactEffect(BaseModel):
-    type: Literal['gain_contact'] = 'gain_contact'
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        from ceres.character.domain.characteristics import ConnectionKind
-
-        projection.add_connection(ConnectionKind.CONTACT, origin=source)
-
-
-class GainAllyEffect(BaseModel):
-    type: Literal['gain_ally'] = 'gain_ally'
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        from ceres.character.domain.characteristics import ConnectionKind
-
-        projection.add_connection(ConnectionKind.ALLY, origin=source)
-
-
-class GainRivalEffect(BaseModel):
-    type: Literal['gain_rival'] = 'gain_rival'
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        from ceres.character.domain.characteristics import ConnectionKind
-
-        projection.add_connection(ConnectionKind.RIVAL, origin=source)
-
-
-class GainEnemyEffect(BaseModel):
-    type: Literal['gain_enemy'] = 'gain_enemy'
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        from ceres.character.domain.characteristics import ConnectionKind
-
-        projection.add_connection(ConnectionKind.ENEMY, origin=source)
-
-
-class GainConnectionsRolledEffect(BaseModel):
-    type: Literal['gain_connections_rolled'] = 'gain_connections_rolled'
-    connection_type: ConnectionKind
-    dice: DiceRoll
-
-
 class AdvancementDmOption(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
@@ -152,81 +85,6 @@ class AdvancementDmOption(BaseModel):
 
     def label(self) -> str:
         return f'DM+{self.amount} to next advancement roll'
-
-
-class SkillChoiceEffect(BaseModel):
-    type: Literal['skill_choice'] = 'skill_choice'
-    options: list[AnySkill | AdvancementDmOption] = []
-    level: int = 1
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-
-class InjuryEffect(BaseModel):
-    type: Literal['injury'] = 'injury'
-    severity: Literal['normal', 'severe', 'from_table'] = Field(default='normal')
-
-
-class RollMishapEffect(BaseModel):
-    type: Literal['roll_mishap'] = 'roll_mishap'
-    leave: bool = True
-
-
-class AutoAdvanceEffect(BaseModel):
-    type: Literal['auto_advance'] = 'auto_advance'
-
-
-class LifeEventEffect(BaseModel):
-    type: Literal['life_event'] = 'life_event'
-
-
-class AdvancementDmEffect(BaseModel):
-    type: Literal['advancement_dm'] = 'advancement_dm'
-    amount: int
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.add_advancement_dm(self.amount)
-
-
-class QualificationDmEffect(BaseModel):
-    type: Literal['qualification_dm'] = 'qualification_dm'
-    amount: int
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.add_qualification_dm(self.amount)
-
-
-class BenefitDmEffect(BaseModel):
-    type: Literal['benefit_dm'] = 'benefit_dm'
-    amount: int
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.add_benefit_dm(self.amount)
-
-
-class ParoleThresholdChangeEffect(BaseModel):
-    type: Literal['parole_threshold_change'] = 'parole_threshold_change'
-    amount: int  # positive = increase PT, negative = decrease PT
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.adjust_parole_threshold(self.amount)
-
-
-class AutoQualifyCareerEffect(BaseModel):
-    type: Literal['auto_qualify_career'] = 'auto_qualify_career'
-    # Pydantic cannot use `type[CareerData]` here: the field named `type` shadows the builtin
-    # during annotation evaluation. Any is used; the value is always a CareerData subclass.
-    career: Any
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.auto_qualify(self.career)
-
-
-class LoseAllCareerBenefitsEffect(BaseModel):
-    type: Literal['lose_all_career_benefits'] = 'lose_all_career_benefits'
-
-    def apply(self, projection: Any, source: str = '', source_event_id: int = 0) -> None:
-        projection.forfeit_current_career_benefits()
 
 
 class CareerTableEntry(BaseModel):
@@ -342,6 +200,15 @@ class GainConnectionEntry(CareerTableEntry):
         return pending_idx
 
 
+class GainConnectionsEntry(CareerTableEntry):
+    connections: list[ConnectionKind]
+
+    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        for connection in self.connections:
+            projection.add_connection(connection, origin=self.text)
+        return pending_idx
+
+
 class RolledConnectionsEntry(CareerTableEntry):
     connection: ConnectionKind
     dice: DiceRoll
@@ -386,19 +253,27 @@ class RolledConnectionsGroupEntry(CareerTableEntry):
 
 
 class SkillChoiceEntry(CareerTableEntry):
-    options: list[AnySkill | AdvancementDmOption]
+    options: list[AnySkill | AdvancementDmOption] = []
     level: int = 1
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
         from ceres.character.domain.skill_events import PendingSkillChoice
+        from ceres.character.domain.skills import JackOfAllTrades, _skill_classes
+
+        options = self.options
+        if not options:
+            options = sorted(
+                [cast(AnySkill, cls()) for cls in _skill_classes(AnySkill) if cls is not JackOfAllTrades],
+                key=lambda skill: type(skill).name(),
+            )
 
         projection.pending_inputs.append(
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
-                options=cast(Any, self.options),
+                options=cast(Any, options),
                 level=self.level,
             )
         )
@@ -674,40 +549,12 @@ class CareerHandlerBase(CareerTableEntry):
         return False
 
 
-type AnyEffect = (
-    GainSkillEffect
-    | DecreaseCharacteristicEffect
-    | DecreaseCharacteristicChoiceEffect
-    | GainContactEffect
-    | GainAllyEffect
-    | GainRivalEffect
-    | GainEnemyEffect
-    | GainConnectionsRolledEffect
-    | SkillChoiceEffect
-    | InjuryEffect
-    | RollMishapEffect
-    | AutoAdvanceEffect
-    | LifeEventEffect
-    | AdvancementDmEffect
-    | QualificationDmEffect
-    | BenefitDmEffect
-    | ParoleThresholdChangeEffect
-    | AutoQualifyCareerEffect
-    | LoseAllCareerBenefitsEffect
-    | CareerHandlerBase
-)
-
-
 class CareerEventEntry(CareerTableEntry):
-    text: str
-    effects: list[AnyEffect] = []
+    pass
 
 
 class MishapEntry(CareerTableEntry):
-    text: str
-    stay_in_career: bool = False
-    defer_ejection: bool = False  # handler owns ejection flow; no auto-purge or advancement pending
-    effects: list[AnyEffect] = []
+    pass
 
 
 class AssignmentData(BaseModel):

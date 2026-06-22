@@ -417,7 +417,7 @@ class TestMusterOut:
 def _agent_one_term_muster_out() -> list:
     """Agent/Intelligence one term, then muster out.
     STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5. Age=22 after one term.
-    Event 4: BenefitDmEffect — no pending input created.
+    Event 4: benefit DM entry — no pending input created.
     Advancement: INT 5+, DM+1, roll=3 → 4 < 5 → fail.
     1 term rank 0 → 1 muster-out roll.
     Career choice is pending after the benefit roll.

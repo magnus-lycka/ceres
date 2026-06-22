@@ -128,25 +128,8 @@ class PreCareerEventHandler(EventHandlerBase):
     roll: int  # 2D result (2-12)
 
     def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        from ceres.character.domain.career.career_data import (
-            AutoAdvanceEffect,
-            CareerHandlerBase,
-            CareerTableEntry,
-            DecreaseCharacteristicChoiceEffect,
-            GainConnectionsRolledEffect,
-            InjuryEffect,
-            LifeEventEffect,
-            RollMishapEffect,
-            SkillChoiceEffect,
-        )
-        from ceres.character.domain.career.career_events import (
-            PendingConnectionsRoll,
-            PendingLifeEvent,
-            PendingSkillChoice,
-            queue_career_choice,
-        )
+        from ceres.character.domain.career.career_events import queue_career_choice
         from ceres.character.domain.characteristics import Chars
-        from ceres.character.domain.skills import AnySkill as _AnySkill, JackOfAllTrades, _skill_classes
 
         precareer = projection.summary.precareer
         if precareer is None:
@@ -170,54 +153,7 @@ class PreCareerEventHandler(EventHandlerBase):
             projection.summary.precareer = None
             queue_career_choice(projection, event.id, 'Pre-career ended (no graduation) — choose a career')
             return
-        if isinstance(term_event, CareerTableEntry) and not getattr(term_event, 'effects', ()):
-            pending_idx = term_event.apply(projection, event, pending_idx)
-        for effect in getattr(term_event, 'effects', ()):
-            if isinstance(effect, GainConnectionsRolledEffect):
-                projection.pending_inputs.append(
-                    PendingConnectionsRoll(
-                        pending_id=(event.id, pending_idx),
-                        connection_type=effect.connection_type,
-                        instruction=f'Roll {effect.dice} for number of {effect.connection_type}s gained',
-                        options=effect.dice.roll_options(),
-                    )
-                )
-                pending_idx += 1
-            elif isinstance(effect, SkillChoiceEffect):
-                all_skills: list[_AnySkill] = sorted(
-                    [cast(_AnySkill, cls()) for cls in _skill_classes(_AnySkill) if cls is not JackOfAllTrades],
-                    key=lambda s: type(s).name(),
-                )
-                opts: list[_AnySkill] = cast(list[_AnySkill], effect.options) if effect.options else all_skills
-                projection.pending_inputs.append(
-                    PendingSkillChoice(
-                        pending_id=(event.id, pending_idx),
-                        instruction='Choose any skill at level 0',
-                        options=opts,
-                    )
-                )
-                pending_idx += 1
-            elif isinstance(effect, LifeEventEffect):
-                projection.pending_inputs.append(
-                    PendingLifeEvent(
-                        pending_id=(event.id, pending_idx),
-                        instruction='Roll 2D on Life Events table',
-                    )
-                )
-                pending_idx += 1
-            elif isinstance(
-                effect,
-                (
-                    DecreaseCharacteristicChoiceEffect,
-                    InjuryEffect,
-                    RollMishapEffect,
-                    AutoAdvanceEffect,
-                    CareerHandlerBase,
-                ),
-            ):
-                pass
-            else:
-                effect.apply(projection, source=term_event.text, source_event_id=event.id)
+        pending_idx = term_event.apply(projection, event, pending_idx)
         if self.roll == 12:
             projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
         elif self.roll == 2:

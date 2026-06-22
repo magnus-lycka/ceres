@@ -176,8 +176,7 @@ anonymous effects inside a generic table row.
   state changes that used to sit behind small effect middlemen.
 - Phase 2 is complete: `CareerTableEntry` is the shared table-row base,
   handlers dispatch typed entries directly, and `CareerEventEntry` /
-  `MishapEntry` retain compatibility fields only for non-career consumers and
-  any future deserialization cleanup.
+  `MishapEntry` are now thin aliases of the shared entry base.
 - Phase 3 is complete at the career table surface: career modules no longer use
   `effects=[...]` rows. Direct outcomes, pending-input outcomes, no-op rows,
   mixed common outcomes, and bespoke career rows are represented as
@@ -193,6 +192,9 @@ anonymous effects inside a generic table row.
 - Bespoke career rows are direct `CareerHandlerBase` table entries. They no
   longer sit behind `handler=...` payloads on `CareerEventEntry` /
   `MishapEntry`.
+- Phase 5 is complete for career and pre-career tables: legacy `*Effect`
+  classes, `AnyEffect`, `effects` fields, and effect-dispatch branches have
+  been removed from the character domain.
 
 ### Phase 1: Add projection verbs
 
@@ -299,8 +301,7 @@ classes so the handlers no longer need large `isinstance(effect, ...)` loops.
 
 ### Phase 5: Remove legacy effect support
 
-Status: **not complete globally**. Career tables no longer use legacy effects,
-but pre-career events still do.
+Status: **complete**.
 
 #### Pre-career effect inventory
 
@@ -330,48 +331,38 @@ Shared pre-career behavior should live on `PreCareerData` or an intermediate
 pre-career superclass. Shared career/pre-career behavior should move to
 `TermData`.
 
-Pre-career event rows already migrated to typed entries:
+Pre-career event rows migrated to typed entries:
 
+- roll 2: `NoEffectEntry`, with the existing manual psionics note still handled
+  by `PreCareerEventHandler`
+- roll 3: `NoEffectEntry`, with terminal "fail to graduate" flow still handled
+  by `PreCareerEventHandler`
+- roll 4: `NoEffectEntry`, with the existing manual SOC/Rival/Enemy note still
+  handled by `PreCareerEventHandler`
 - roll 5: `GainSkillEntry(Carouse())`
 - roll 6: `RolledConnectionsEntry(ALLY, d3)`
 - roll 7: `LifeEventEntry`
+- roll 8: `GainConnectionsEntry([ALLY, ENEMY])`
+- roll 9: `SkillChoiceEntry(level=0)` with empty options meaning "any skill"
 - roll 10: `GainConnectionEntry(RIVAL)`
-
-Rows still using generic `CareerEventEntry(..., effects=[...])` or handler
-branches:
-
-- roll 2: no effects; `PreCareerEventHandler` appends the manual psionics note
-- roll 3: no effects; terminal "fail to graduate" branch
-- roll 4: no effects; `PreCareerEventHandler` appends the manual SOC/Rival/Enemy
-  note
-- roll 8: `GainAllyEffect()` and `GainEnemyEffect()`
-- roll 9: `SkillChoiceEffect(options=[], level=0)`
-- roll 11: no effects; terminal draft/fail-to-graduate branch
-- roll 12: no effects; `PreCareerEventHandler` increases SOC by 1
-
-Most of the remaining rows can reuse existing typed career table entries or
-small pre-career-specific entries:
-
-- roll 8 -> a connection-combination entry or small pre-career-specific entry
-- roll 9 -> `SkillChoiceEntry` with "any skill at level 0" behavior preserved
-- roll 12 -> likely a small `CharacteristicGainEntry` or pre-career-specific
-  recognition entry
+- roll 11: `NoEffectEntry`, with terminal draft/fail-to-graduate flow still
+  handled by `PreCareerEventHandler`
+- roll 12: `NoEffectEntry`, with the existing SOC increase still handled by
+  `PreCareerEventHandler`
 
 Rolls 2, 3, 4, and 11 are not simple effect replacements. They encode
 pre-career-specific manual notes or terminal flow and should become explicit
 pre-career event rows instead of being hidden in post-effect `if self.roll`
-branches.
+branches if we want to continue flattening `PreCareerEventHandler`.
 
 Current test touchpoints:
 
 - `tests/character/test_events_pending_inputs.py` covers the pending-input,
   manual-note, and terminal branches for `PreCareerEventHandler`.
-- `tests/character/test_precareers.py` still asserts that loaded pre-career
-  event rows contain `GainSkillEffect` and `LifeEventEffect`; those assertions
-  should be rewritten when the table is migrated.
-- `tests/character/test_career_data.py` still contains transitional effect
-  tests. Keep only the ones with live pre-career callers until the pre-career
-  migration removes those callers.
+- `tests/character/test_precareers.py` asserts that the shared pre-career event
+  rows are typed entries and have no `effects` payloads.
+- `tests/character/test_career_data.py` now covers table entries, not legacy
+  effect internals.
 
 Progress:
 
@@ -384,16 +375,9 @@ Progress:
   instantiates those classes instead of passing rule data through constructors.
 - Pre-career event rows 5, 6, 7, and 10 now use typed entries instead of
   effect wrappers.
-- The next step is to replace the remaining pre-career `effects=[...]` rows
-  and manual handler branches with typed pre-career event rows.
-
-When all career and pre-career tables are migrated:
-
-- delete `AnyEffect`
-- delete old `*Effect` classes that no longer have callers
-- remove legacy `effects` handling from handlers
-- simplify tests that were only guarding effect internals
-- update docs and architecture notes
+- Pre-career event rows 2, 3, 4, 8, 9, 11, and 12 are now typed entries as well.
+- `AnyEffect`, the old `*Effect` classes, the `effects` fields, legacy handler
+  dispatch, and tests guarding effect internals have been removed.
 
 ## Testing Strategy
 
@@ -435,9 +419,9 @@ nothing else changed" is an important invariant.
 - Career modules read as typed rule tables, not generic entries with effect
   lists. **Done.**
 - `MishapHandler` and `TermEventHandler` no longer need legacy effect
-  interpretation for career tables. **Done for career table data.**
-- `PreCareerEventHandler` still contains legacy effect interpretation because
-  pre-career event tables still use effects. **Separate follow-up.**
+  interpretation. **Done.**
+- `PreCareerEventHandler` no longer contains legacy effect interpretation.
+  **Done.**
 - Direct career-table state changes are named projection methods or typed entry
   outcomes, not tiny effect wrappers. **Done.**
 - Custom career rows are direct `CareerHandlerBase` table entries with domain

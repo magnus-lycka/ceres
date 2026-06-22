@@ -3,16 +3,15 @@ from typing import Any, ClassVar, cast
 from pydantic import BaseModel, ConfigDict
 
 from ceres.character.domain.career.career_data import (
-    CareerEventEntry,
     CareerTableEntry,
     CharCheck,
-    GainAllyEffect,
     GainConnectionEntry,
-    GainEnemyEffect,
+    GainConnectionsEntry,
     GainSkillEntry,
     LifeEventEntry,
+    NoEffectEntry,
     RolledConnectionsEntry,
-    SkillChoiceEffect,
+    SkillChoiceEntry,
 )
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import ConnectionKind
@@ -72,9 +71,9 @@ def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
 
 class PreCareerData(TermData):
     events: ClassVar[dict[int, CareerTableEntry]] = {
-        2: CareerEventEntry(text='Approached by an illegal psionic group.', effects=[]),
-        3: CareerEventEntry(text='Your time in education is not happy and you fail to graduate.', effects=[]),
-        4: CareerEventEntry(text='A prank goes wrong and someone gets hurt.', effects=[]),
+        2: NoEffectEntry(text='Approached by an illegal psionic group.'),
+        3: NoEffectEntry(text='Your time in education is not happy and you fail to graduate.'),
+        4: NoEffectEntry(text='A prank goes wrong and someone gets hurt.'),
         5: GainSkillEntry(
             text='Taking advantage of youth, you party as much as you study.',
             skill=Carouse(),
@@ -85,20 +84,20 @@ class PreCareerData(TermData):
             dice=DiceRoll.parse('d3'),
         ),
         7: LifeEventEntry(text='Life Event.'),
-        8: CareerEventEntry(
+        8: GainConnectionsEntry(
             text='You join a political movement.',
-            effects=[GainAllyEffect(), GainEnemyEffect()],
+            connections=[ConnectionKind.ALLY, ConnectionKind.ENEMY],
         ),
-        9: CareerEventEntry(
+        9: SkillChoiceEntry(
             text='You develop a healthy interest in a hobby or other area of study.',
-            effects=[SkillChoiceEffect(options=[], level=0)],
+            level=0,
         ),
         10: GainConnectionEntry(
             text='A tutor rubs you up the wrong way and you overturn their conclusions.',
             connection=ConnectionKind.RIVAL,
         ),
-        11: CareerEventEntry(text='War comes and a wide-ranging draft is instigated.', effects=[]),
-        12: CareerEventEntry(text='You gain wide-ranging recognition.', effects=[]),
+        11: NoEffectEntry(text='War comes and a wide-ranging draft is instigated.'),
+        12: NoEffectEntry(text='You gain wide-ranging recognition.'),
     }
     name: ClassVar[str]
     source: ClassVar[str]

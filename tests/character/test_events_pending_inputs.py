@@ -8,18 +8,17 @@ from ceres.character.domain.career import ARMY, PRISONER, SCOUT
 from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
-    AutoAdvanceEffect,
+    AutoAdvanceEntry,
     CareerData,
-    CareerEventEntry,
     CareerTableEntry,
     CareerTerm,
     CharCheck,
     GainSkillEntry,
-    LifeEventEffect,
+    LifeEventEntry,
     RankBonus,
     RankEntry,
-    RollMishapEffect,
-    SkillChoiceEffect,
+    RollMishapEntry,
+    SkillChoiceEntry,
     SkillTableOption,
 )
 from ceres.character.domain.career.career_events import (
@@ -1264,29 +1263,20 @@ class _FakeEventCareer(CareerData):
 
 
 class _LifeEventCareer(_FakeEventCareer):
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        1: CareerEventEntry(text='Life event', effects=[LifeEventEffect()])
-    }
+    events: ClassVar[dict[int, CareerTableEntry]] = {1: LifeEventEntry(text='Life event')}
 
 
 class _AutoAdvanceCareer(_FakeEventCareer):
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        1: CareerEventEntry(text='Auto advance', effects=[AutoAdvanceEffect()])
-    }
+    events: ClassVar[dict[int, CareerTableEntry]] = {1: AutoAdvanceEntry(text='Auto advance')}
 
 
 class _MishapStayCareer(_FakeEventCareer):
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        1: CareerEventEntry(text='Mishap stay', effects=[RollMishapEffect(leave=False)])
-    }
+    events: ClassVar[dict[int, CareerTableEntry]] = {1: RollMishapEntry(text='Mishap stay', leave=False)}
 
 
 class _SkillChoiceCareer(_FakeEventCareer):
-    events: ClassVar[dict[int, CareerEventEntry]] = {
-        1: CareerEventEntry(
-            text='Skill choice',
-            effects=[SkillChoiceEffect(options=[character_skills.Admin()], level=1)],
-        )
+    events: ClassVar[dict[int, CareerTableEntry]] = {
+        1: SkillChoiceEntry(text='Skill choice', options=[character_skills.Admin()], level=1)
     }
 
 
@@ -1322,7 +1312,7 @@ def _fake_career_projection(career_class: type[_FakeEventCareer]) -> CharacterPr
     )
 
 
-def test_term_event_handler_life_event_effect_queues_life_event_pending():
+def test_term_event_handler_life_event_entry_queues_life_event_pending():
     projection = _fake_career_projection(_LifeEventCareer)
     Event(handler=TermEventHandler(roll=1)).apply(projection)
 
@@ -1346,7 +1336,7 @@ def test_term_event_handler_roll_mishap_stay_in_career_queues_mishap_with_flag()
     assert mishap_pendings[0].stay_in_career is True
 
 
-def test_term_event_handler_skill_choice_effect_queues_skill_choice():
+def test_term_event_handler_skill_choice_entry_queues_skill_choice():
     projection = _fake_career_projection(_SkillChoiceCareer)
     Event(handler=TermEventHandler(roll=1)).apply(projection)
 
