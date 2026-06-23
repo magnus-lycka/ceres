@@ -1000,27 +1000,21 @@ def test_choose_career_shows_career_qualification_and_assignment_descriptions(cl
 
 
 def test_event_from_form_ucp():
-    from starlette.datastructures import FormData
-
     from ceres.character.domain.character_start import PendingUcp
 
     pi = PendingUcp(pending_id=(1, 0), instruction='')
-    form = FormData({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
-    event = pi.event_from_form(form)
+    event = pi.event_from_form({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
     assert isinstance(event.handler, UcpHandler)
     assert event.ucp == '7869A5'
     assert event.fulfills == (1, 0)
 
 
 def test_event_from_form_career_choice():
-    from starlette.datastructures import FormData
-
     from ceres.character.domain.career import SCOUT
     from ceres.character.domain.career.career_events import PendingCareerChoice
 
     pi = PendingCareerChoice(pending_id=(3, 0), instruction='', options=[SCOUT])
-    form = FormData({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
-    event = pi.event_from_form(form)
+    event = pi.event_from_form({'career': 'Scout', 'assignment': 'Courier', 'roll': '8'})
     assert isinstance(event.handler, CareerEntryHandler)
     assert event.career.name == 'Scout'
     assert event.assignment.name == 'Courier'
@@ -1028,37 +1022,28 @@ def test_event_from_form_career_choice():
 
 
 def test_event_from_form_career_choice_missing_assignment_raises():
-    from starlette.datastructures import FormData
-
     from ceres.character.domain.career import CITIZEN
     from ceres.character.domain.career.career_events import PendingCareerChoice
 
     pi = PendingCareerChoice(pending_id=(3, 0), instruction='', options=[CITIZEN])
-    form = FormData({'career': 'Citizen', 'assignment': '', 'roll': '8'})
     with pytest.raises(ReplayError, match='Unknown assignment'):
-        pi.event_from_form(form)
+        pi.event_from_form({'career': 'Citizen', 'assignment': '', 'roll': '8'})
 
 
 def test_event_from_form_reenlist_true():
-    from starlette.datastructures import FormData
-
     from ceres.character.domain.career.career_events import PendingReenlist
 
     pi = PendingReenlist(pending_id=(5, 1), instruction='')
-    form = FormData({'reenlist': 'true'})
-    event = pi.event_from_form(form)
+    event = pi.event_from_form({'reenlist': 'true'})
     assert isinstance(event.handler, ReenlistHandler)
     assert event.reenlist is True
 
 
 def test_event_from_form_reenlist_false():
-    from starlette.datastructures import FormData
-
     from ceres.character.domain.career.career_events import PendingReenlist
 
     pi = PendingReenlist(pending_id=(5, 1), instruction='')
-    form = FormData({'reenlist': 'false'})
-    event = pi.event_from_form(form)
+    event = pi.event_from_form({'reenlist': 'false'})
     assert isinstance(event.handler, ReenlistHandler)
     assert event.reenlist is False
 

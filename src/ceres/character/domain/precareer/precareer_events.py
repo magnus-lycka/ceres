@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, Literal, cast
 
 from pydantic import Field
@@ -46,7 +47,9 @@ class PreCareerEntryHandler(EventHandlerBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice
         from ceres.character.domain.characteristics import Chars, characteristic_dm
 
@@ -114,7 +117,9 @@ class PreCareerSkillChoiceHandler(EventHandlerBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         level = fulfilled_pending.level if isinstance(fulfilled_pending, PendingPreCareerSkillChoice) else 0
         if level == 0:
             projection.grant_skill(self.skill)
@@ -127,7 +132,9 @@ class PreCareerEventHandler(EventHandlerBase):
     kind: Literal['precareer_event'] = 'precareer_event'
     roll: int  # 2D result (2-12)
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice
         from ceres.character.domain.characteristics import Chars
 
@@ -172,7 +179,9 @@ class PreCareerGraduationHandler(EventHandlerBase):
     kind: Literal['precareer_graduation'] = 'precareer_graduation'
     roll: int  # 2D result for graduation check (before characteristic DM)
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice_indexed
 
         precareer = projection.summary.precareer
@@ -227,7 +236,7 @@ class PendingPreCareerSkillChoice(PendingInputBase):
             result.extend(_expand_skill_to_spec_instances(skill))
         return result
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from pydantic import TypeAdapter
 
         from ceres.character.domain.skills import AnySkill as _AnySkill
@@ -247,7 +256,7 @@ class PendingPreCareerSkillChoice(PendingInputBase):
 class PendingPreCareerEvent(PendingInputBase):
     kind: Literal['precareer_event'] = 'precareer_event'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=PreCareerEventHandler(roll=form_int(form, 'roll', 7)))
@@ -259,7 +268,7 @@ class PendingPreCareerEvent(PendingInputBase):
 class PendingPreCareerGraduation(PendingInputBase):
     kind: Literal['precareer_graduation'] = 'precareer_graduation'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=PreCareerGraduationHandler(roll=form_int(form, 'roll', 7)))

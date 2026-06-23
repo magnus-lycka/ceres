@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, cast
 
 from pydantic import Field, TypeAdapter
@@ -73,9 +73,12 @@ class SkillChoiceHandler(EventHandlerBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        if fulfilled_pending is not None and hasattr(fulfilled_pending, 'on_skill_chosen'):
-            fulfilled_pending.on_skill_chosen(projection, event)
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        on_skill_chosen = getattr(fulfilled_pending, 'on_skill_chosen', None)
+        if on_skill_chosen is not None:
+            on_skill_chosen(projection, event)
             return
         projection.grant_skill(self.skill)
         if projection.summary.current_career is not None:
@@ -93,7 +96,7 @@ class PendingSkillChoice(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         parsed = _advancement_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
             return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())

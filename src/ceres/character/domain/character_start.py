@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 import re
 from typing import Any, Literal, cast
 
@@ -79,7 +80,9 @@ class UcpHandler(EventHandlerBase):
             raise ReplayError(f'Invalid UCP: {self.ucp!r} — expected {len(ucp_stats)} hex digits')
         return {stat: int(digit, 16) for stat, digit in zip(ucp_stats, self.ucp, strict=True)}
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         projection.summary.characteristics = self._parse_characteristics(projection.summary.sophont)
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         count = _background_skill_count(edu)
@@ -105,7 +108,9 @@ class BackgroundSkillsHandler(EventHandlerBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.psionics import queue_initial_psi_test_or_career_choice
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
@@ -123,7 +128,9 @@ class BackgroundSkillsHandler(EventHandlerBase):
 class FinishCreationHandler(EventHandlerBase):
     kind: Literal['finish_career_creation'] = 'finish_career_creation'
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
 
         projection.pending_inputs = [
@@ -138,7 +145,7 @@ class PendingUcp(PendingInputBase):
     kind: Literal['ucp_pending'] = 'ucp_pending'
     stat_names: list[str] = Field(default_factory=lambda: [s.value for s in UCP_STATS])
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         ucp = ''.join(f'{form_int(form, stat, 0):X}' for stat in self.stat_names)
         return Event(fulfills=self.pending_id, handler=UcpHandler(ucp=ucp))
 
@@ -152,8 +159,9 @@ class PendingBackgroundSkills(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Any:
-        raw = form.getlist('skill')
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        get_list = getattr(form, 'getlist', None)
+        raw: list[str] = get_list('skill') if callable(get_list) else ([form['skill']] if 'skill' in form else [])
         skills = [_skill_adapter.validate_json(j) for j in raw]
         return Event(fulfills=self.pending_id, handler=BackgroundSkillsHandler(skills=skills))
 

@@ -3,6 +3,7 @@
 Career modules should subclass these and implement the abstract logic.
 """
 
+from collections.abc import Mapping
 from typing import Any, Literal
 
 from pydantic import Field
@@ -104,7 +105,7 @@ class CareerSkillRollPendingBase(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Any:
         from ceres.character.domain.career.career_events import SkillRollHandler
         from ceres.character.input_specs import form_int, form_str
         from ceres.character.mechanism.event_base import Event
@@ -179,7 +180,7 @@ class CareerSkillChoicePendingBase(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Any:
         from typing import Annotated, cast
 
         from pydantic import Field as _Field, TypeAdapter

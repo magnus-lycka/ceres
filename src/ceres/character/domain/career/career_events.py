@@ -4,7 +4,7 @@ All handlers here correspond to EventBase subclasses from events.py and implemen
 the EventHandlerBase interface.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, ClassVar, Literal, cast
 
 from pydantic import Field, TypeAdapter
@@ -152,7 +152,9 @@ class SurviveHandler(EventHandlerBase):
     kind: Literal['survive'] = 'survive'
     roll: int  # sum of 2D, before characteristic DM
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if fulfilled_pending is not None:
             fulfilled_pending.resolve(projection, event)
 
@@ -165,7 +167,9 @@ class MishapHandler(EventHandlerBase):
     roll: int  # 1D result
     stay_in_career: bool = False
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.health.health_events import PendingAgingRoll
 
         career = projection.get_current_career()
@@ -206,7 +210,9 @@ class TermEventHandler(EventHandlerBase):
     kind: Literal['term_event'] = 'term_event'
     roll: int  # sum of 2D
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         career = projection.get_current_career()
         term_event = career.events.get(self.roll)
         pending_idx = 0
@@ -234,7 +240,9 @@ class ReenlistHandler(EventHandlerBase):
     kind: Literal['reenlist_event'] = 'reenlist_event'
     reenlist: bool
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
 
         if self.reenlist:
             career = projection.get_current_career()
@@ -252,7 +260,9 @@ class SkillTableHandler(EventHandlerBase):
     table: str
     roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_data import AdvancementDmOption
         from ceres.character.domain.characteristics import Chars as _Chars
         from ceres.character.domain.health.health_events import PendingAgingRoll
@@ -278,7 +288,7 @@ class SkillTableHandler(EventHandlerBase):
         if isinstance(entry, list):
             choices = [
                 option
-                for option in cast(list[CareerSkillOption], list(entry))
+                for option in list(entry)
                 if career.skill_table_option_is_available(projection, self.table, option)
             ]
         elif isinstance(entry, Psi):
@@ -333,7 +343,9 @@ class SkillRollHandler(EventHandlerBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
 
         career = projection.get_current_career()
         blocking_count_before = sum(1 for p in projection.pending_inputs if p.blocking)
@@ -356,7 +368,9 @@ class AssignmentChangeChoiceHandler(EventHandlerBase):
     kind: Literal['assignment_change_choice'] = 'assignment_change_choice'
     choice: Literal['same', 'switch', 'muster_out']
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
 
         career = projection.get_current_career()
         if self.choice == 'same':
@@ -384,7 +398,9 @@ class SwitchAssignmentHandler(EventHandlerBase):
     assignment: AssignmentData
     qualification_roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
 
         career = projection.get_current_career()
         char = career.qualification.characteristic
@@ -394,12 +410,15 @@ class SwitchAssignmentHandler(EventHandlerBase):
             purge_career_pendings(projection)
             career.start_new_term(projection, self.assignment, event.id, is_continuation=True)
         else:
+            current = projection.summary.current_assignment
+            if current is None:
+                raise ReplayError('SwitchAssignmentHandler: no current assignment')
             projection.pending_inputs.append(
                 PendingReenlist(
                     pending_id=(event.id, 0),
                     instruction=(
                         f'Assignment change to {self.assignment.name!r} failed — reenlist with '
-                        f'{projection.summary.current_assignment.name!r} or muster out?'
+                        f'{current.name!r} or muster out?'
                     ),
                 )
             )
@@ -440,15 +459,15 @@ def _rank_bonus_skill(bonus: Any) -> AnySkill:
     return rank_bonus_skill(bonus)
 
 
-def _apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
+def _apply_auto_advance(projection: CharacterProjection, career: Any, event_id: int) -> None:
     apply_auto_advance(projection, career, event_id)
 
 
-def _apply_forced_commission(projection: Any, career: Any, event_id: int) -> None:
+def _apply_forced_commission(projection: CharacterProjection, career: Any, event_id: int) -> None:
     apply_forced_commission(projection, career, event_id)
 
 
-def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
+def _start_new_career_term(projection: CharacterProjection, career: Any, event_id: int) -> None:
     purge_career_pendings(projection)
     assignment = projection.summary.current_assignment
     if assignment is None:
@@ -456,17 +475,17 @@ def _start_new_career_term(projection: Any, career: Any, event_id: int) -> None:
     career.start_new_term(projection, assignment, event_id, is_continuation=True)
 
 
-def _survive_pending(career: Any, assignment: Any, event_id: int) -> Any:
+def _survive_pending(career: Any, assignment: AssignmentData | None, event_id: int) -> Any:
     if assignment is None:
         raise ReplayError(f'No current assignment in career {career.name!r}')
     return career.survival_pending(assignment, event_id)
 
 
-def _advancement_pending(career: Any, assignment: Any, event_id: int, pending_idx: int = 0) -> Any:
+def _advancement_pending(career: Any, assignment: AssignmentData | None, event_id: int, pending_idx: int = 0) -> Any:
     return advancement_pending(career, assignment, event_id, pending_idx)
 
 
-def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
+def _apply_skill_table_entry(projection: CharacterProjection, entry: Any) -> None:
     from ceres.character.domain.characteristics import Chars as _Chars
 
     if isinstance(entry, _Chars):
@@ -477,16 +496,16 @@ def _apply_skill_table_entry(projection: Any, entry: Any) -> None:
         projection.increment_skill(entry)
 
 
-def _set_forced_prison_career(projection: Any, description: str) -> None:
+def _set_forced_prison_career(projection: CharacterProjection, description: str) -> None:
     set_forced_prison_career(projection, description)
 
 
-def _apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> None:
+def _apply_prisoner_advancement(projection: CharacterProjection, event: Event, career: Any) -> None:
     apply_prisoner_advancement(projection, event, career)
 
 
 def _apply_mishap_ejection(
-    projection: Any,
+    projection: CharacterProjection,
     source_event_id: int,
     pending_idx: int,
     lose_current_term: bool = True,
@@ -576,7 +595,7 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
 
 
 def muster_out_setup(
-    projection: Any,
+    projection: CharacterProjection,
     source_event_id: int,
     pending_idx: int = 0,
     clear_career: bool = True,
@@ -586,7 +605,7 @@ def muster_out_setup(
 
 
 def career_progress_pending(
-    projection: Any, career: CareerData, event_id: int, pending_idx: int = 0
+    projection: CharacterProjection, career: CareerData, event_id: int, pending_idx: int = 0
 ) -> PendingAdvancement | PendingCommissionChoice:
     from ceres.character.domain.career.advancement import career_progress_pending as build_pending
 
@@ -599,7 +618,7 @@ def career_progress_pending(
 class PendingSurvive(PendingInputBase):
     kind: Literal['survive'] = 'survive'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=SurviveHandler(roll=form_int(form, 'roll', 2)))
@@ -607,7 +626,7 @@ class PendingSurvive(PendingInputBase):
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='2D roll (2–12)', min=2, max=12)]
 
-    def resolve(self, projection: Any, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         assignment = projection.summary.current_assignment
         if assignment is None:
             raise ReplayError('No current assignment')
@@ -632,7 +651,7 @@ class PendingSurvive(PendingInputBase):
 class PendingTermEvent(PendingInputBase):
     kind: Literal['term_event'] = 'term_event'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=TermEventHandler(roll=form_int(form, 'roll', 2)))
@@ -645,7 +664,7 @@ class PendingMishap(PendingInputBase):
     kind: Literal['mishap'] = 'mishap'
     stay_in_career: bool = False
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -661,7 +680,7 @@ class PendingSkillTable(PendingInputBase):
     kind: Literal['skill_table'] = 'skill_table'
     options: list[SkillTableOption] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -686,7 +705,7 @@ class PendingReenlist(PendingInputBase):
     def template_fragment(self) -> str:
         return 'reenlist'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         reenlist = form_str(form, 'reenlist', 'false').lower() in ('true', '1', 'yes')
@@ -709,7 +728,7 @@ class PendingAssignmentChangeChoice(PendingInputBase):
     def _choices(self) -> list[str]:
         return ['same', 'switch', 'muster_out'] if self.muster_out else ['same', 'switch']
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         raw = literal(form_str(form, 'choice', 'same'), tuple(self._choices()), 'same')
@@ -728,7 +747,7 @@ class PendingSwitchAssignment(PendingInputBase):
     kind: Literal['switch_assignment'] = 'switch_assignment'
     options: list[AssignmentData] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         name = form_str(form, 'assignment', self.options[0].name if self.options else '')
@@ -754,7 +773,7 @@ class PendingInitialTrainingChoice(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
@@ -781,17 +800,17 @@ class PendingInitialTrainingChoice(PendingInputBase):
             )
         return specs
 
-    def on_skill_chosen(self, projection: Any, event: Any) -> None:
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
         remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
         if not remaining and projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
 
-    def on_psi_chosen(self, projection: Any, event: Any) -> None:
+    def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
         self._complete_training(projection, event)
 
-    def _complete_training(self, projection: Any, event: Any) -> None:
+    def _complete_training(self, projection: CharacterProjection, event: Event) -> None:
         remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
         if not remaining and projection.summary.current_career is not None:
             career = projection.get_current_career()
@@ -805,7 +824,7 @@ class PendingSkillTableChoice(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
@@ -832,13 +851,13 @@ class PendingSkillTableChoice(PendingInputBase):
             )
         return specs
 
-    def on_skill_chosen(self, projection: Any, event: Any) -> None:
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
         if projection.summary.current_career is not None and not self.reenlist_queued:
             career = projection.get_current_career()
             projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
 
-    def on_psi_chosen(self, projection: Any, event: Any) -> None:
+    def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
         if projection.summary.current_career is not None and not self.reenlist_queued:
             career = projection.get_current_career()
             projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))

@@ -335,6 +335,8 @@ class AutoAdvanceEntry(CareerTableEntry):
         career = projection.summary.current_career
         if career is None and projection.summary.career_terms:
             career = projection.summary.career_terms[-1].career
+        if career is None:
+            raise ReplayError('AutoAdvanceEntry: no career found')
         apply_auto_advance(projection, career, event.id)
         return pending_idx
 

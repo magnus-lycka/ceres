@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,6 +14,7 @@ from ceres.character.input_specs import InputSpec
 
 if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
+    from ceres.character.mechanism.event_base import Event
 
 
 class ChoiceBase(BaseModel):
@@ -21,7 +23,7 @@ class ChoiceBase(BaseModel):
     kind: str
     label: str = ''
 
-    def handle(self, projection: Any, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         raise NotImplementedError(f'{type(self).__name__}.handle() not implemented')
 
 
@@ -50,13 +52,13 @@ class PendingInputBase(BaseModel):
             return self.pending_id
         return f'{self.pending_id[0]}.{self.pending_id[1]}'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         raise NotImplementedError(f'{type(self).__name__}.event_from_form() not implemented')
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         raise NotImplementedError(f'{type(self).__name__}.input_specs() not implemented')
 
-    def resolve(self, projection: Any, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         pass
 
     @property

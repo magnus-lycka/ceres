@@ -1,7 +1,12 @@
+from collections.abc import Mapping
 import itertools
-from typing import Annotated, Any, ClassVar, Literal, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal, get_args, get_origin
 
 from pydantic import BaseModel, BeforeValidator, Field, SerializeAsAny
+
+if TYPE_CHECKING:
+    from ceres.character.domain.character_state import CharacterProjection
+    from ceres.character.mechanism.pending_input import PendingInputBase
 
 _id_counter = itertools.count(1_000_000)
 
@@ -22,7 +27,9 @@ class EventHandlerBase(BaseModel):
             if args and isinstance(args[0], str):
                 EventHandlerBase._registry[args[0]] = cls
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         raise NotImplementedError(f'{type(self).__name__}.apply() not implemented')
 
     def init_replay(self, character_id: int, event_id: int) -> Any:
@@ -50,7 +57,7 @@ class Event(BaseModel):
     def kind(self) -> str:
         return getattr(self.handler, 'kind', '')
 
-    def apply(self, projection: Any, fulfilled_pending: Any = None) -> None:
+    def apply(self, projection: CharacterProjection, fulfilled_pending: PendingInputBase | None = None) -> None:
         self.handler.apply(projection, self, fulfilled_pending)
 
     def __getattr__(self, name: str) -> Any:
@@ -77,13 +84,13 @@ class PendingHandlerBase(BaseModel):
             if args and isinstance(args[0], str):
                 PendingHandlerBase._registry[args[0]] = cls
 
-    def resolve(self, projection: Any, event: Event) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         pass
 
     def input_specs(self) -> list:
         return []
 
-    def event_from_form(self, form: Any, pending_id: tuple[int, int]) -> Event:
+    def event_from_form(self, form: Mapping[str, str], pending_id: tuple[int, int]) -> Event:
         raise NotImplementedError(f'{type(self).__name__}.event_from_form() not implemented')
 
 

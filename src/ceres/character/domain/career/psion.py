@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, ClassVar, Literal, cast
 
 from ceres.character.domain.benefits import (
@@ -171,7 +172,9 @@ class PsionMishap3RollHandler(EventHandlerBase):
     kind: Literal['psion_mishap_3_roll_result'] = 'psion_mishap_3_roll_result'
     roll: int
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         pending_idx = 0
         if self.roll <= 2:
             projection.pending_inputs.append(
@@ -188,7 +191,7 @@ class PsionMishap3RollHandler(EventHandlerBase):
 class PendingPsionMishap3Roll(PendingInputBase):
     kind: Literal['psion_mishap_3_roll'] = 'psion_mishap_3_roll'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=PsionMishap3RollHandler(roll=form_int(form, 'roll', 1)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -215,7 +218,9 @@ class PsionConnectionConvertedHandler(EventHandlerBase):
     new_kind: ConnectionKind
     continue_term: bool = False
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         connections = projection.summary.connections
         if 0 <= self.connection_index < len(connections) and isinstance(
             connections[self.connection_index], (Contact, Ally)
@@ -238,7 +243,7 @@ class PendingPsionConnectionConversion(PendingInputBase):
     new_kind: ConnectionKind
     continue_term: bool = False
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(
             fulfills=self.pending_id,
             handler=PsionConnectionConvertedHandler(

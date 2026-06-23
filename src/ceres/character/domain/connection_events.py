@@ -1,4 +1,5 @@
-from typing import Any, Literal
+from collections.abc import Mapping
+from typing import Literal
 
 from pydantic import Field
 
@@ -15,7 +16,9 @@ class ConnectionsRollHandler(EventHandlerBase):
     count: int
     origin: str = ''
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         for _ in range(self.count):
             projection.add_connection(self.connection_type, origin=self.origin)
 
@@ -26,7 +29,7 @@ class PendingConnectionsRoll(PendingInputBase):
     options: list[int] = Field(default_factory=list)
     origin: str = ''
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         raw_connection_type = literal(
             form_str(form, 'connection_type', ConnectionKind.CONTACT),
             tuple(ConnectionKind),
@@ -59,7 +62,9 @@ class ConnectionNameHandler(EventHandlerBase):
     name: str = ''
     note: str = ''
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         conn = projection.summary.connections[self.connection_index]
         conn.name = self.name
         conn.note = self.note
@@ -72,7 +77,7 @@ class PendingConnectionName(PendingInputBase):
     connection_kind: ConnectionKind
     note_prefill: str = ''
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(
             fulfills=self.pending_id,
             handler=ConnectionNameHandler(

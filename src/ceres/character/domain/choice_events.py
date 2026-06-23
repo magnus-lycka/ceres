@@ -1,4 +1,5 @@
-from typing import Any, Literal
+from collections.abc import Mapping
+from typing import Literal
 
 from pydantic import Field, SerializeAsAny
 
@@ -13,7 +14,9 @@ class ChoiceHandler(EventHandlerBase):
     kind: Literal['career_decision'] = 'career_decision'
     choice: str
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if fulfilled_pending is None:
             raise ReplayError('Choice event has no matching pending input')
         if not isinstance(fulfilled_pending, PendingChoices):
@@ -28,7 +31,7 @@ class PendingChoices(PendingInputBase):
     kind: Literal['choices'] = 'choices'
     choices: list[SerializeAsAny[ChoiceBase]] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=ChoiceHandler(choice=form_str(form, 'choice', '')))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:

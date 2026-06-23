@@ -1,5 +1,7 @@
-from typing import Any, Literal
+from collections.abc import Mapping
+from typing import Literal
 
+from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.character.input_specs import InputSpec, NumberEntry, form_int
@@ -12,7 +14,9 @@ class ParoleRollHandler(EventHandlerBase):
     kind: Literal['parole_roll'] = 'parole_roll'
     roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         threshold = self.roll + 2
         projection.summary.parole_threshold = threshold
         projection.summary.narrative.append(f'Prisoner: Parole Threshold set to {threshold} (rolled {self.roll}+2)')
@@ -21,14 +25,14 @@ class ParoleRollHandler(EventHandlerBase):
 class PendingParoleRoll(PendingInputBase):
     kind: Literal['parole_roll'] = 'parole_roll'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=ParoleRollHandler(roll=form_int(form, 'roll', 1)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='1D roll (1–6)', min=1, max=6)]
 
 
-def set_forced_prison_career(projection: Any, description: str) -> None:
+def set_forced_prison_career(projection: CharacterProjection, description: str) -> None:
     from ceres.character.domain.career.prisoner import PRISONER
 
     projection.forced_next_career = PRISONER
@@ -36,7 +40,7 @@ def set_forced_prison_career(projection: Any, description: str) -> None:
         projection.summary.career_terms[-1].prison = description
 
 
-def apply_prisoner_advancement(projection: Any, event: Any, career: Any) -> None:
+def apply_prisoner_advancement(projection: CharacterProjection, event: Event, career: CareerData) -> None:
     from ceres.character.domain.career.career_events import (
         PendingRankBonusChoice,
         PendingSkillTable,

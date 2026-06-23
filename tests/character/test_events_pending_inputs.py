@@ -1438,14 +1438,11 @@ def test_queue_reenlist_or_aging_forced_leave_triggers_muster_out():
 def test_pending_initial_training_choice_on_skill_chosen_queues_survive():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
 
-    class _FakeEvent:
-        id = 5
-        skill = character_skills.Admin()
-
+    skill_event = Event(id=5, handler=SkillChoiceHandler(skill=character_skills.Admin()))
     pending = PendingInitialTrainingChoice(
         pending_id=(1, 0), instruction='Training', options=[character_skills.Admin()]
     )
-    pending.on_skill_chosen(projection, _FakeEvent())
+    pending.on_skill_chosen(projection, skill_event)
 
     assert projection.summary.skill_level(character_skills.Admin) is not None
     assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
@@ -1454,14 +1451,11 @@ def test_pending_initial_training_choice_on_skill_chosen_queues_survive():
 def test_pending_skill_table_choice_on_skill_chosen_without_reenlist_queues_survive():
     projection = _projection(current_career=SCOUT, current_assignment='Courier', term_count=1)
 
-    class _FakeEvent:
-        id = 5
-        skill = character_skills.Admin()
-
+    skill_event = Event(id=5, handler=SkillChoiceHandler(skill=character_skills.Admin()))
     pending = PendingSkillTableChoice(
         pending_id=(1, 0), instruction='Choose skill', reenlist_queued=False, options=[character_skills.Admin()]
     )
-    pending.on_skill_chosen(projection, _FakeEvent())
+    pending.on_skill_chosen(projection, skill_event)
 
     assert projection.summary.skill_level(character_skills.Admin) is not None
     assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
@@ -1476,14 +1470,11 @@ def test_pending_rank_bonus_choice_on_skill_chosen_queues_skill_table_and_reenli
         rank=1,
     )
 
-    class _FakeEvent:
-        id = 5
-        skill = character_skills.Admin()
-
     pending = PendingRankBonusChoice(
         pending_id=(1, 0), instruction='Rank bonus', level=1, options=[character_skills.Admin()]
     )
-    pending.on_skill_chosen(projection, _FakeEvent())
+    skill_event = Event(id=5, handler=SkillChoiceHandler(skill=character_skills.Admin()))
+    pending.on_skill_chosen(projection, skill_event)
 
     assert any(isinstance(p, PendingSkillTable) for p in projection.pending_inputs)
     assert any(isinstance(p, (PendingAssignmentChangeChoice, PendingReenlist)) for p in projection.pending_inputs)

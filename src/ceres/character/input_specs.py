@@ -3,8 +3,8 @@
 The pending layer says *what it needs*; the web layer decides *how to render it*.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any
 
 
 @dataclass
@@ -151,14 +151,14 @@ class CareerChoice:
 InputSpec = NumberEntry | Select | Reference | TextEntry | InfoText | SelectWorld | CareerChoice
 
 
-def form_str(form: Any, key: str, default: str = '') -> str:
+def form_str(form: Mapping[str, str], key: str, default: str = '') -> str:
     value = form.get(key, default)
     if not isinstance(value, str):
         return default
     return value
 
 
-def form_int(form: Any, key: str, default: int) -> int:
+def form_int(form: Mapping[str, str], key: str, default: int) -> int:
     value = form_str(form, key, str(default))
     return int(value or default)
 

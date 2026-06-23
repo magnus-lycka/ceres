@@ -5,7 +5,7 @@ handler auto-registration, deserialization, Event proxying, PendingInput identit
 and the default method implementations on the base classes.
 """
 
-from typing import Any, Literal
+from typing import Literal
 
 import pytest
 
@@ -22,15 +22,25 @@ from ceres.character.mechanism.event_base import (
 from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
 from tests.character.helpers import MOCK_WORLD
 
+
+def _make_projection() -> CharacterProjection:
+    summary = CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD)
+    return CharacterProjection(character_id=1, summary=summary)
+
+
 # ── Test-only handler stubs ──────────────────────────────────────────────────
+
+_alpha_calls: list[int] = []
 
 
 class _AlphaHandler(EventHandlerBase):
     kind: Literal['_test_alpha'] = '_test_alpha'
     value: int = 0
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
-        projection['applied'] = self.value
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        _alpha_calls.append(self.value)
 
 
 class _BetaHandler(EventHandlerBase):
@@ -122,23 +132,28 @@ class TestEvent:
         assert event.fulfills == pending_id
 
     def test_apply_calls_handler_apply(self):
-        projection: dict[str, Any] = {}
+        _alpha_calls.clear()
         event = Event(handler=_AlphaHandler(value=42))
-        event.apply(projection)
-        assert projection['applied'] == 42
+        event.apply(_make_projection())
+        assert _alpha_calls == [42]
 
     def test_apply_passes_fulfilled_pending(self):
-        calls: list[Any] = []
+        calls: list[PendingInputBase | None] = []
 
         class _RecordHandler(EventHandlerBase):
             kind: Literal['_test_record'] = '_test_record'
 
-            def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+            def apply(
+                self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+            ) -> None:
                 calls.append(fulfilled_pending)
 
+        class _SentinelPending(PendingInputBase):
+            kind: Literal['_test_sentinel_pending'] = '_test_sentinel_pending'
+
+        sentinel = _SentinelPending(pending_id=(0, 0), instruction='sentinel')
         event = Event(handler=_RecordHandler())
-        sentinel = object()
-        event.apply({}, fulfilled_pending=sentinel)
+        event.apply(_make_projection(), fulfilled_pending=sentinel)
         assert calls == [sentinel]
 
     def test_getattr_proxies_handler_field(self):
@@ -171,7 +186,7 @@ class TestEventHandlerBaseApply:
 
         handler = _NoApply()
         with pytest.raises(NotImplementedError, match='apply\\(\\) not implemented'):
-            handler.apply({}, Event(handler=handler))
+            handler.apply(_make_projection(), Event(handler=handler))
 
     def test_base_init_replay_returns_none(self):
         handler = _BetaHandler()
@@ -195,7 +210,7 @@ class TestPendingHandlerRegistration:
 class TestPendingHandlerBaseDefaults:
     def test_resolve_is_a_no_op(self):
         handler = _AlphaPendingHandler()
-        handler.resolve({}, Event(handler=_AlphaHandler()))
+        handler.resolve(_make_projection(), Event(handler=_AlphaHandler()))
 
     def test_input_specs_returns_empty_list(self):
         handler = _AlphaPendingHandler()

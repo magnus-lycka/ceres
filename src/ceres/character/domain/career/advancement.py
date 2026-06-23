@@ -1,9 +1,15 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, Literal, cast
 
 from pydantic import Field
 
-from ceres.character.domain.career.career_data import AdvancementDmOption, CareerData, CareerSkillOption
+from ceres.character.domain.career.career_data import (
+    AdvancementDmOption,
+    AssignmentData,
+    CareerData,
+    CareerSkillOption,
+    RankBonus,
+)
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.character.domain.psionics import Psi, PsionicTalentTrainingHandler
@@ -18,7 +24,9 @@ class AdvancementHandler(EventHandlerBase):
     kind: Literal['advancement_event'] = 'advancement_event'
     roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import queue_reenlist_or_aging
         from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
 
@@ -49,7 +57,9 @@ class CommissionHandler(EventHandlerBase):
     attempt: bool
     roll: int = 0
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         career = projection.get_current_career()
         if not self.attempt:
             projection.pending_inputs.append(
@@ -71,7 +81,9 @@ class CommissionHandler(EventHandlerBase):
 class AdvancementDmChoiceHandler(EventHandlerBase):
     kind: Literal['advancement_dm_choice'] = 'advancement_dm_choice'
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         projection.pending_advancement_dm += 4
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
@@ -83,7 +95,7 @@ class AdvancementDmChoiceHandler(EventHandlerBase):
 class PendingAdvancement(PendingInputBase):
     kind: Literal['advancement_pending'] = 'advancement_pending'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=AdvancementHandler(roll=form_int(form, 'roll', 2)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -94,7 +106,7 @@ class PendingCommissionChoice(PendingInputBase):
     kind: Literal['commission_choice'] = 'commission_choice'
     options: tuple[Literal['attempt'], Literal['skip']] = ('attempt', 'skip')
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         if form_str(form, 'choice', 'skip') == 'attempt':
             return Event(
                 fulfills=self.pending_id,
@@ -121,7 +133,7 @@ class PendingRankBonusChoice(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.domain.career.career_events import (
             AdvancementDmChoiceHandler,
             SkillChoiceHandler,
@@ -161,14 +173,14 @@ class PendingRankBonusChoice(PendingInputBase):
             )
         return specs
 
-    def on_skill_chosen(self, projection: Any, event: Any) -> None:
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
         self._continue(projection, event)
 
-    def on_psi_chosen(self, projection: Any, event: Any) -> None:
+    def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
         self._continue(projection, event)
 
-    def _continue(self, projection: Any, event: Any) -> None:
+    def _continue(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTable, queue_reenlist_or_aging
 
         if not self.continue_career_progress:
@@ -184,20 +196,23 @@ class PendingRankBonusChoice(PendingInputBase):
         queue_reenlist_or_aging(projection, event.id, 1)
 
 
-def rank_bonus_skill(bonus: Any) -> AnySkill:
+def rank_bonus_skill(bonus: RankBonus) -> AnySkill:
     from ceres.character.domain.skills import Level
 
-    skill_cls = type(bonus.skill)
+    skill = bonus.skill
+    if skill is None:
+        raise ReplayError('rank_bonus_skill: bonus has no skill')
+    skill_cls: Any = type(skill)  # dynamic dispatch; field name resolved at runtime
     fields = level_fields(skill_cls)
     if len(fields) == 1:
         return skill_cls(**{fields[0]: Level(value=bonus.level)})
-    active_fields = [field for field in fields if getattr(bonus.skill, field).value > 0]
+    active_fields = [field for field in fields if getattr(skill, field).value > 0]
     if len(active_fields) != 1:
         raise ReplayError(f'Specialised rank bonus {skill_cls.name()} requires one chosen specialisation')
     return skill_cls(**{active_fields[0]: Level(value=bonus.level)})
 
 
-def _apply_promotion(projection: Any, career: Any, event_id: int) -> None:
+def _apply_promotion(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     from ceres.character.domain.career.career_events import PendingSkillTable, queue_reenlist_or_aging
 
     new_rank = (projection.summary.rank or 0) + 1
@@ -215,7 +230,7 @@ def _apply_promotion(projection: Any, career: Any, event_id: int) -> None:
     queue_reenlist_or_aging(projection, event_id, 1)
 
 
-def _apply_rank_bonus(projection: Any, career: Any, rank: int, event_id: int) -> bool:
+def _apply_rank_bonus(projection: CharacterProjection, career: CareerData, rank: int, event_id: int) -> bool:
     entry = career.current_ranks(projection).get(rank)
     if not entry or not entry.bonus:
         return False
@@ -239,11 +254,11 @@ def _apply_rank_bonus(projection: Any, career: Any, rank: int, event_id: int) ->
     return False
 
 
-def apply_auto_advance(projection: Any, career: Any, event_id: int) -> None:
+def apply_auto_advance(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     _apply_promotion(projection, career, event_id)
 
 
-def apply_forced_commission(projection: Any, career: Any, event_id: int) -> None:
+def apply_forced_commission(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     projection.summary.rank = 1
     if projection.summary.career_terms:
         projection.summary.career_terms[-1].commission = True
@@ -251,7 +266,7 @@ def apply_forced_commission(projection: Any, career: Any, event_id: int) -> None
     _apply_promotion_after_existing_rank(projection, career, event_id)
 
 
-def _apply_promotion_after_existing_rank(projection: Any, career: Any, event_id: int) -> None:
+def _apply_promotion_after_existing_rank(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     from ceres.character.domain.career.career_events import PendingSkillTable, queue_reenlist_or_aging
 
     if _apply_rank_bonus(projection, career, 1, event_id):
@@ -266,7 +281,9 @@ def _apply_promotion_after_existing_rank(projection: Any, career: Any, event_id:
     queue_reenlist_or_aging(projection, event_id, 1)
 
 
-def advancement_pending(career: CareerData, assignment: Any, event_id: int, pending_idx: int = 0) -> PendingAdvancement:
+def advancement_pending(
+    career: CareerData, assignment: AssignmentData | None, event_id: int, pending_idx: int = 0
+) -> PendingAdvancement:
     if assignment is None:
         raise ReplayError('No current assignment')
     return PendingAdvancement(
@@ -276,7 +293,7 @@ def advancement_pending(career: CareerData, assignment: Any, event_id: int, pend
 
 
 def career_progress_pending(
-    projection: Any,
+    projection: CharacterProjection,
     career: CareerData,
     event_id: int,
     pending_idx: int = 0,

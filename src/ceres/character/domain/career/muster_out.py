@@ -1,4 +1,5 @@
-from typing import Any, Literal, cast
+from collections.abc import Mapping
+from typing import Literal, cast
 
 from ceres.character.domain.benefits import AnyBenefit
 from ceres.character.domain.character_state import CharacterProjection
@@ -13,7 +14,9 @@ class MusterOutHandler(EventHandlerBase):
     table: Literal['cash', 'benefits']
     roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if not projection.summary.career_terms:
             raise ReplayError('No muster out career set')
         career = projection.summary.career_terms[-1].career
@@ -55,7 +58,9 @@ class BenefitChoiceHandler(EventHandlerBase):
     kind: Literal['benefit_choice'] = 'benefit_choice'
     choice_index: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if not isinstance(fulfilled_pending, PendingBenefitChoice):
             raise ReplayError('BenefitChoiceEvent must fulfill a PendingBenefitChoice')
         options = fulfilled_pending.benefit_options
@@ -74,7 +79,7 @@ class PendingMusterOut(PendingInputBase):
     instruction: str = 'Muster out: choose cash or benefits table'
     options: tuple[Literal['cash'], Literal['benefits']] = ('cash', 'benefits')
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         table = cast(
             Literal['cash', 'benefits'],
             literal(form_str(form, 'table', 'benefits'), ('cash', 'benefits'), 'benefits'),
@@ -104,7 +109,7 @@ class PendingBenefitChoice(PendingInputBase):
     muster_out_remaining: int = 0
     is_muster_out: bool = False
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(
             fulfills=self.pending_id,
             handler=BenefitChoiceHandler(choice_index=form_int(form, 'choice_index', 0)),
@@ -120,7 +125,7 @@ class PendingBenefitChoice(PendingInputBase):
         ]
 
 
-def finalize_muster_out(projection: Any, event_id: int) -> None:
+def finalize_muster_out(projection: CharacterProjection, event_id: int) -> None:
     from ceres.character.domain.career.career_events import queue_career_choice_indexed
 
     if projection.summary.career_terms:
@@ -130,7 +135,7 @@ def finalize_muster_out(projection: Any, event_id: int) -> None:
 
 
 def setup_muster_out(
-    projection: Any,
+    projection: CharacterProjection,
     source_event_id: int,
     pending_idx: int = 0,
     clear_career: bool = True,

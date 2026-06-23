@@ -1,7 +1,9 @@
-from typing import Any, Literal
+from collections.abc import Mapping
+from typing import Literal
 
 from pydantic import Field
 
+from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.domain.psionics import PendingLifeEventPsionicsRoll
@@ -12,7 +14,9 @@ from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase
 
 
-def _queue_advancement(projection: Any, career: Any, event_id: int, pending_idx: int = 0) -> None:
+def _queue_advancement(
+    projection: CharacterProjection, career: CareerData, event_id: int, pending_idx: int = 0
+) -> None:
     from ceres.character.domain.career.career_events import _advancement_pending
 
     projection.pending_inputs.append(
@@ -24,7 +28,9 @@ class ConnectionKindChoiceHandler(EventHandlerBase):
     kind: Literal['connection_kind_choice'] = 'connection_kind_choice'
     connection_kind: ConnectionKind
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
 
         if isinstance(fulfilled_pending, PendingLifeEventChoice):
             source = f'Life event roll {fulfilled_pending.roll}'
@@ -51,7 +57,9 @@ class LifeEventHandler(EventHandlerBase):
     kind: Literal['life_event'] = 'life_event'
     roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_data import BenefitRollDm
         from ceres.character.domain.career.career_events import PendingChoices
         from ceres.character.domain.connection import Ally, Contact
@@ -169,7 +177,9 @@ class LifeEventUnusualHandler(EventHandlerBase):
     kind: Literal['life_event_unusual'] = 'life_event_unusual'
     roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
 
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Life event unusual roll must be 1-6, got {self.roll}')
@@ -209,7 +219,9 @@ class BetrayalConvertHandler(EventHandlerBase):
     connection_index: int
     new_kind: ConnectionKind
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.connection import make_connection
 
         if self.connection_index >= len(projection.summary.connections):
@@ -247,7 +259,7 @@ class LifeEventCrimeTakePrisoner(ChoiceBase):
 class PendingLifeEvent(PendingInputBase):
     kind: Literal['life_event'] = 'life_event'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=LifeEventHandler(roll=form_int(form, 'roll', 2)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -259,7 +271,7 @@ class PendingLifeEventChoice(PendingInputBase):
     roll: int
     options: list[ConnectionKind] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         raw_kind = literal(
             form_str(form, 'connection_kind', ConnectionKind.RIVAL),
             tuple(ConnectionKind),
@@ -284,7 +296,7 @@ class PendingLifeEventUnusual(PendingInputBase):
     kind: Literal['life_event_unusual'] = 'life_event_unusual'
     instruction: str = 'Roll 1D on Unusual Events table'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=LifeEventUnusualHandler(roll=form_int(form, 'roll', 1)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -294,7 +306,7 @@ class PendingLifeEventUnusual(PendingInputBase):
 class PendingLifeEventBetrayalConvert(PendingInputBase):
     kind: Literal['life_event_betrayal_convert'] = 'life_event_betrayal_convert'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         raw = form_str(form, 'betrayal_choice', f'0|{ConnectionKind.RIVAL.value}')
         index, kind = raw.split('|', 1)
         return Event(
@@ -319,7 +331,7 @@ class PendingLifeEventBetrayalConvert(PendingInputBase):
 class PendingLifeEventAlienScience(PendingInputBase):
     kind: Literal['life_event_alien_science'] = 'life_event_alien_science'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.domain.career.career_events import SkillChoiceHandler, _skill_adapter
 
         skill = _skill_adapter.validate_json(form_str(form, 'skill', '{}'))
@@ -338,5 +350,5 @@ class PendingLifeEventAlienScience(PendingInputBase):
             )
         ]
 
-    def on_skill_chosen(self, projection: Any, event: Any) -> None:
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)

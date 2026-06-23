@@ -1,7 +1,5 @@
 """Unit tests for muster-out benefit types and constants."""
 
-from types import SimpleNamespace
-
 from ceres.character.domain.benefits import (
     ALLY,
     ARMOR,
@@ -160,13 +158,7 @@ class TestCombinedBenefit:
         assert isinstance(combined, CombinedBenefit)
 
     def test_apply_increments_all_characteristics(self):
-        projection = SimpleNamespace(
-            summary=SimpleNamespace(
-                characteristics={Chars.SOC: 5, Chars.EDU: 10},
-                benefits=[],
-            ),
-            pending_inputs=[],
-        )
+        projection = _projection_with_term({Chars.SOC: 5, Chars.EDU: 10})
         combined = CombinedBenefit(
             benefits=[
                 CharacteristicIncrease(char=Chars.SOC, amount=1),

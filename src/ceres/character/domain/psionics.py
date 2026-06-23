@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, get_args, get_origin
 
 from pydantic import BaseModel, Field, RootModel, TypeAdapter
@@ -97,7 +97,9 @@ class PsionicTalentTrainingHandler(EventHandlerBase):
     talent: PsionicTalentSkills
     roll: int
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         psionics = projection.summary.psionics
         if psionics is None:
             raise ReplayError('Cannot train a psionic talent without Psionic Strength')
@@ -115,8 +117,9 @@ class PsionicTalentTrainingHandler(EventHandlerBase):
             projection.summary.narrative.append(
                 f'Psionic training: {talent_cls.name()} {existing_level} → {psionics.talent_level(talent_cls)}'
             )
-        if fulfilled_pending is not None and hasattr(fulfilled_pending, 'on_psi_chosen'):
-            fulfilled_pending.on_psi_chosen(projection, event)
+        on_psi_chosen = getattr(fulfilled_pending, 'on_psi_chosen', None)
+        if on_psi_chosen is not None:
+            on_psi_chosen(projection, event)
 
 
 class PsionicTalentLevelHandler(EventHandlerBase):
@@ -124,7 +127,9 @@ class PsionicTalentLevelHandler(EventHandlerBase):
     talent: PsionicTalentSkills
     level: int
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         psionics = projection.summary.psionics
         if psionics is None:
             raise ReplayError('Cannot improve a psionic talent without Psionic Strength')
@@ -135,7 +140,7 @@ class PendingPsionicTalentLevelChoice(PendingInputBase):
     kind: Literal['psionic_talent_level_choice'] = 'psionic_talent_level_choice'
     level: int
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         talent = _talent_adapter.validate_json(form_str(form, 'talent', '{}'))
         return Event(
             fulfills=self.pending_id,
@@ -157,7 +162,9 @@ class PendingPsionicTalentLevelChoice(PendingInputBase):
 class FinishPsionicInstituteTrainingHandler(EventHandlerBase):
     kind: Literal['finish_psionic_institute_training'] = 'finish_psionic_institute_training'
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         projection.summary.narrative.append('Psionic institute training complete')
 
 
@@ -168,7 +175,7 @@ class PendingPsionicInstituteTraining(PendingInputBase):
     kind: Literal['psionic_institute_training'] = 'psionic_institute_training'
     remaining_talents: list[PsionicTalentSkills] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         choice = form_str(form, 'talent', 'finish')
         if choice == 'finish':
             return Event(fulfills=self.pending_id, handler=FinishPsionicInstituteTrainingHandler())
@@ -209,7 +216,9 @@ class PsiStrengthTestHandler(EventHandlerBase):
     kind: Literal['psi_strength_test'] = 'psi_strength_test'
     roll: int
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         psi = projection.summary.test_psionic_strength(
             raw_roll=self.roll,
             terms_served=projection.summary.terms_started_in_pre_and_careers,
@@ -225,7 +234,7 @@ class PsiStrengthTestHandler(EventHandlerBase):
 class PendingLifeEventPsionicsRoll(PendingInputBase):
     kind: Literal['life_event_psionics_roll'] = 'life_event_psionics_roll'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=PsiStrengthTestHandler(roll=form_int(form, 'roll', 2)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -235,7 +244,9 @@ class PendingLifeEventPsionicsRoll(PendingInputBase):
 class InitialPsiTestDeclinedHandler(EventHandlerBase):
     kind: Literal['initial_psi_test_declined'] = 'initial_psi_test_declined'
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice
 
         queue_career_choice(projection, event.id, 'Choose a career')
@@ -244,7 +255,9 @@ class InitialPsiTestDeclinedHandler(EventHandlerBase):
 class InitialPsiTestAcceptedHandler(EventHandlerBase):
     kind: Literal['initial_psi_test_accepted'] = 'initial_psi_test_accepted'
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         projection.pending_inputs.append(
             PendingInitialPsiStrengthRoll(
                 pending_id=(event.id, 0),
@@ -257,7 +270,9 @@ class InitialPsiTestHandler(EventHandlerBase):
     kind: Literal['initial_psi_test'] = 'initial_psi_test'
     roll: int
 
-    def apply(self, projection: CharacterProjection, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice
 
         projection.summary.test_psionic_strength(raw_roll=self.roll, terms_served=0)
@@ -268,7 +283,7 @@ class PendingInitialPsiTest(PendingInputBase):
     kind: Literal['initial_psi_test_pending'] = 'initial_psi_test_pending'
     instruction: str = 'Psionic testing is available. Test Psionic Strength?'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         if form_str(form, 'test', 'no') == 'yes':
             return Event(fulfills=self.pending_id, handler=InitialPsiTestAcceptedHandler())
         return Event(fulfills=self.pending_id, handler=InitialPsiTestDeclinedHandler())
@@ -282,7 +297,7 @@ class PendingInitialPsiTest(PendingInputBase):
 class PendingInitialPsiStrengthRoll(PendingInputBase):
     kind: Literal['initial_psi_strength_roll'] = 'initial_psi_strength_roll'
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         return Event(fulfills=self.pending_id, handler=InitialPsiTestHandler(roll=form_int(form, 'roll', 2)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:

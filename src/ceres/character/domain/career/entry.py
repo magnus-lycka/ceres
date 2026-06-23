@@ -1,4 +1,5 @@
-from typing import Any, Literal
+from collections.abc import Mapping
+from typing import Literal
 
 from pydantic import Field
 
@@ -28,7 +29,9 @@ class CareerEntryHandler(EventHandlerBase):
     assignment: AssignmentData
     qualification_roll: int
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         self.career.start_career(projection, self.assignment, event.id, self.qualification_roll)
 
 
@@ -37,7 +40,9 @@ class DraftHandler(EventHandlerBase):
     career: CareerData
     assignment: AssignmentData | None = None
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if projection.summary.drafted:
             raise ReplayError('A character may only enter the draft once')
         self.career.start_draft(projection, event.id, self.assignment)
@@ -48,7 +53,9 @@ class DraftAssignmentHandler(EventHandlerBase):
     career: CareerData
     assignment: AssignmentData
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         self.career.start_draft(projection, event.id, self.assignment)
 
 
@@ -58,7 +65,7 @@ class PendingCareerChoice(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.domain.character_start import FinishCreationHandler
         from ceres.character.domain.precareer.loader import precareer_from_user_input_name
         from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
@@ -122,7 +129,7 @@ class PendingDraftChoice(PendingInputBase):
     kind: Literal['draft_choice'] = 'draft_choice'
     can_draft: bool = True
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.domain.career.draft import build_draft_table, get_draft_alternative
         from ceres.character.domain.career.loader import load_careers
 
@@ -182,7 +189,7 @@ class PendingDraftAssignmentChoice(PendingInputBase):
 
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Any) -> Event:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         assignment_name = form_str(form, 'assignment')
         assignment = self.career.assignment(assignment_name)
         if assignment is None:

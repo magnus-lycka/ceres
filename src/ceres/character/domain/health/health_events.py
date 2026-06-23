@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, Literal
 
 from pydantic import Field
@@ -15,7 +16,9 @@ class CharacteristicChoiceHandler(EventHandlerBase):
     characteristic: Chars
     amount: int = 1
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         char = self.characteristic
         current = projection.summary.characteristics.get(char, 0)
         projection.summary.characteristics[char] = max(0, current - self.amount)
@@ -41,7 +44,9 @@ class AgingRollHandler(EventHandlerBase):
     kind: Literal['aging_roll'] = 'aging_roll'
     roll: int  # 2D result (2-12) before the term-count DM
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Aging roll must be 2-12, got {self.roll}')
 
@@ -129,7 +134,9 @@ class InjuryTableHandler(EventHandlerBase):
     kind: Literal['injury_table'] = 'injury_table'
     roll: int  # 1D result (1-6) on the Injury table
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Injury table roll must be 1-6, got {self.roll}')
         _apply_injury_table_result(projection, self.roll, event.id)
@@ -140,7 +147,9 @@ class DoubleInjuryTableHandler(EventHandlerBase):
     roll1: int  # first 1D result (1-6)
     roll2: int  # second 1D result (1-6)
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         for roll in (self.roll1, self.roll2):
             if not (1 <= roll <= 6):
                 raise ReplayError(f'Double injury roll must be 1-6, got {roll}')
@@ -152,7 +161,9 @@ class AgingCrisisHandler(EventHandlerBase):
     paid: bool
     medical_roll: int = 0  # 1D result for medical cost; 0 if not paying
 
-    def apply(self, projection: Any, event: Event, fulfilled_pending: Any = None) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.career_events import muster_out_setup
 
         career = projection.summary.current_career
@@ -180,7 +191,7 @@ class AgingCrisisHandler(EventHandlerBase):
 # ── Health helper functions ───────────────────────────────────────────────────
 
 
-def _apply_injury_table_result(projection: Any, roll: int, event_id: int) -> None:
+def _apply_injury_table_result(projection: CharacterProjection, roll: int, event_id: int) -> None:
     if roll == 6:
         return
     from ceres.character.domain.career.career_events import (
@@ -307,7 +318,7 @@ class PendingCharacteristicChoice(PendingInputBase):
     options: list[Chars] = Field(default_factory=list)
     amount: int = 1
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -326,7 +337,7 @@ class PendingCharacteristicChoice(PendingInputBase):
 class PendingSeverelyInjured(PendingInputBase):
     kind: Literal['severely_injured'] = 'severely_injured'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -348,7 +359,7 @@ class PendingSeverelyInjured(PendingInputBase):
 class PendingNearlyKilled(PendingInputBase):
     kind: Literal['nearly_killed'] = 'nearly_killed'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -370,7 +381,7 @@ class PendingNearlyKilled(PendingInputBase):
 class PendingInjuryTable(PendingInputBase):
     kind: Literal['injury_table'] = 'injury_table'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=InjuryTableHandler(roll=form_int(form, 'roll', 1)))
@@ -382,7 +393,7 @@ class PendingInjuryTable(PendingInputBase):
 class PendingDoubleInjuryRoll(PendingInputBase):
     kind: Literal['double_injury_roll'] = 'double_injury_roll'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -400,7 +411,7 @@ class PendingDoubleInjuryRoll(PendingInputBase):
 class PendingAgingRoll(PendingInputBase):
     kind: Literal['aging_roll'] = 'aging_roll'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=AgingRollHandler(roll=form_int(form, 'roll', 2)))
@@ -413,7 +424,7 @@ class PendingAgingChoice(PendingInputBase):
     kind: Literal['aging_choice'] = 'aging_choice'
     options: list[Chars] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -430,7 +441,7 @@ class PendingAgingChoiceMental(PendingInputBase):
     kind: Literal['aging_choice_mental'] = 'aging_choice_mental'
     options: list[Chars] = Field(default_factory=list)
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         return Event(
@@ -446,7 +457,7 @@ class PendingAgingChoiceMental(PendingInputBase):
 class PendingAgingCrisis(PendingInputBase):
     kind: Literal['aging_crisis'] = 'aging_crisis'
 
-    def event_from_form(self, form: Any) -> Any:
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         from ceres.character.mechanism.event_base import Event
 
         paid = form_str(form, 'paid', 'false').lower() in ('true', '1', 'yes')
