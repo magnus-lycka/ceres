@@ -80,9 +80,9 @@ class RogueMishap2Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        from ceres.character.domain.career.career_events import _set_forced_prison_career
+        from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 
-        _set_forced_prison_career(projection, 'Arrested. You must take the Prisoner career in your next term.')
+        set_forced_prison_career(projection, 'Arrested. You must take the Prisoner career in your next term.')
         return pending_idx
 
 
@@ -94,9 +94,9 @@ class RogueMishap3RollTwo(ChoiceBase):
     label: str = '2 (sent to Prisoner career next term)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _set_forced_prison_career
+        from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 
-        _set_forced_prison_career(
+        set_forced_prison_career(
             projection,
             'Betrayed by a friend. Rolled 2 — must take the Prisoner career next term.',
         )
@@ -147,16 +147,14 @@ class RogueEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_3_skill_roll'] = 'rogue_event_3_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        from ceres.character.domain.career.career_events import (
-            _apply_mishap_ejection,
-            _set_forced_prison_career,
-        )
+        from ceres.character.domain.career.career_events import _apply_mishap_ejection
+        from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 
         if event.modified_roll >= 8:
             pass  # cleared — _apply_skill_roll auto-queues advancement
         else:
             projection.get_current_career()
-            _set_forced_prison_career(
+            set_forced_prison_career(
                 projection, 'Arrested and charged. Failed to avoid conviction — sent to Prisoner career.'
             )
             _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)

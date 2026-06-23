@@ -6,6 +6,7 @@ from ceres.character.domain.benefits import (
     SHIP_SHARE,
     CharacteristicIncrease,
 )
+from ceres.character.domain.career.advancement import advancement_pending
 from ceres.character.domain.career.career_data import (
     AdvancementDmEntry,
     AdvancementDmOption,
@@ -33,7 +34,6 @@ from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingConnectionsRoll,
     PendingSkillChoice,
-    _advancement_pending,
     muster_out_setup,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
@@ -206,7 +206,7 @@ class ScholarEvent3Accept(ChoiceBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id, 3)
+                advancement_pending(career, projection.summary.current_assignment, event.id, 3)
             )
 
 
@@ -218,7 +218,7 @@ class ScholarEvent3Decline(ChoiceBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id)
+                advancement_pending(career, projection.summary.current_assignment, event.id)
             )
 
 
@@ -315,7 +315,7 @@ class ScholarEvent8Refuse(ChoiceBase):
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id)
+                advancement_pending(career, projection.summary.current_assignment, event.id)
             )
 
 

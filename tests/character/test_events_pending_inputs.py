@@ -5,6 +5,7 @@ import pytest
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.benefits import SHIP_SHARE, WEAPON
 from ceres.character.domain.career import ARMY, PRISONER, SCOUT
+from ceres.character.domain.career.advancement import advancement_pending, apply_auto_advance
 from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
@@ -72,10 +73,7 @@ from ceres.character.domain.career.career_events import (
     SurviveHandler,
     SwitchAssignmentHandler,
     TermEventHandler,
-    _advancement_pending,
-    _apply_auto_advance,
     _apply_mishap_ejection,
-    _apply_prisoner_advancement,
     _apply_skill_table_entry,
     _start_new_career_term,
     _survive_pending,
@@ -83,6 +81,7 @@ from ceres.character.domain.career.career_events import (
     muster_out_setup,
     queue_reenlist_or_aging,
 )
+from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
     FinishCreationHandler,
@@ -233,7 +232,7 @@ def test_auto_advance_can_apply_characteristic_rank_bonus():
     projection = _projection(characteristics={Chars.SOC: 7})
     career = FakeCareer(rank_bonus=RankBonus(characteristic=Chars.SOC, level=2))
 
-    _apply_auto_advance(projection, career, 5)
+    apply_auto_advance(projection, career, 5)
 
     assert projection.summary.rank == 1
     assert projection.summary.characteristics[Chars.SOC] == 9
@@ -250,7 +249,7 @@ def test_assignment_helper_errors_are_reported():
     with pytest.raises(ReplayError, match='No current assignment'):
         _survive_pending(career, None, 1)
     with pytest.raises(ReplayError, match='No current assignment'):
-        _advancement_pending(career, None, 1)
+        advancement_pending(career, None, 1)
 
 
 def test_mishap_ejection_queues_aging_for_older_character():
@@ -449,9 +448,7 @@ def test_precareer_graduation_error_and_failure_branches():
 def test_prisoner_advancement_special_cases():
     missing_assignment = _projection()
     with pytest.raises(ReplayError, match='No current assignment'):
-        _apply_prisoner_advancement(
-            missing_assignment, Event(handler=AdvancementHandler(roll=12)), FakePrisonerCareer()
-        )
+        apply_prisoner_advancement(missing_assignment, Event(handler=AdvancementHandler(roll=12)), FakePrisonerCareer())
 
     choice_bonus = _projection(
         current_career=PRISONER,
@@ -460,7 +457,7 @@ def test_prisoner_advancement_special_cases():
         parole_threshold=6,
     )
     choice_bonus.pending_advancement_dm = 1
-    _apply_prisoner_advancement(
+    apply_prisoner_advancement(
         choice_bonus,
         Event(handler=AdvancementHandler(roll=12)),
         FakePrisonerCareer(rank_bonus=RankBonus(choices=[character_skills.Admin()], level=1)),
@@ -478,7 +475,7 @@ def test_prisoner_advancement_special_cases():
         characteristics={Chars.INT: 12, Chars.SOC: 7, Chars.EDU: 10},
         parole_threshold=20,
     )
-    _apply_prisoner_advancement(
+    apply_prisoner_advancement(
         characteristic_bonus,
         Event(handler=AdvancementHandler(roll=12)),
         FakePrisonerCareer(rank_bonus=RankBonus(characteristic=Chars.SOC, level=2)),
@@ -1250,14 +1247,14 @@ class _FakeEventCareer(CareerData):
     ranks: ClassVar[dict[int, RankEntry]] = {}
     allows_assignment_change: ClassVar[bool] = False
 
-    def update_current_term_rank(self, projection: Any) -> None:
+    def update_current_term_rank(self, projection: CharacterProjection) -> None:
         if projection.summary.career_terms:
             projection.summary.career_terms[-1].rank_after_term = projection.summary.rank or 0
 
-    def current_ranks(self, projection: Any) -> dict[int, RankEntry]:
+    def current_ranks(self, projection: CharacterProjection) -> dict[int, RankEntry]:
         return {}
 
-    def available_tables(self, edu: int, assignment: Any) -> list:
+    def available_tables(self, edu: int, assignment: AssignmentData | None) -> list:
         return [SkillTableOption(label='Service Skills', key='service_skills')]
 
 
@@ -1291,7 +1288,7 @@ class _TypedMishapCareer(_FakeEventCareer):
     class _TypedMishapEntry(CareerTableEntry):
         stay_in_career: bool = True
 
-        def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+        def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
             projection.grant_skill(character_skills.Admin(level=character_skills.Level(value=1)))
             return pending_idx
 

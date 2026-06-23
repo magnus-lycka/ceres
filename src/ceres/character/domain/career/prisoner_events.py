@@ -41,10 +41,10 @@ def set_forced_prison_career(projection: CharacterProjection, description: str) 
 
 
 def apply_prisoner_advancement(projection: CharacterProjection, event: Event, career: CareerData) -> None:
+    from ceres.character.domain.career.advancement import rank_bonus_skill
     from ceres.character.domain.career.career_events import (
         PendingRankBonusChoice,
         PendingSkillTable,
-        _rank_bonus_skill,
         queue_reenlist_or_aging,
     )
 
@@ -77,7 +77,7 @@ def apply_prisoner_advancement(projection: CharacterProjection, event: Event, ca
                     options=choices,
                 )
             elif bonus.skill:
-                projection.grant_skill(_rank_bonus_skill(bonus))
+                projection.grant_skill(rank_bonus_skill(bonus))
             elif bonus.characteristic:
                 char = bonus.characteristic
                 projection.summary.characteristics[char] = projection.summary.characteristics.get(char, 0) + bonus.level

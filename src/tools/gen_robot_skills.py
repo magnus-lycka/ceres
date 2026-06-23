@@ -20,7 +20,7 @@ def generate_facade_class(char_skill_cls: type[Skill]) -> str:
     fields = level_fields(char_skill_cls)
     lines = [
         f'class {name}(_RobotSkill):',
-        f"    type: Literal['{disc}'] = '{disc}'",
+        f"    kind: Literal['{disc}'] = '{disc}'",
         f'    _char_cls: ClassVar = _char.{name}',
     ]
     if fields:
@@ -66,7 +66,7 @@ _ROBOT_PROFESSION_SPEC_LABELS: dict[str, str] = {
 class RobotProfession(_RobotSkill):
     """Robot-specific profession skill with no character domain equivalent."""
 
-    type: Literal['robot_pkg.RobotProfession'] = 'robot_pkg.RobotProfession'
+    kind: Literal['robot_pkg.RobotProfession'] = 'robot_pkg.RobotProfession'
     _char_cls: ClassVar = None  # type: ignore[assignment]
     belter: int = 0
     cleaning: int = 0
@@ -108,7 +108,7 @@ class RobotProfession(_RobotSkill):
 
 def _union_trailer(class_names: list[str]) -> str:
     union_lines = '\n    | '.join([*class_names, 'RobotProfession'])
-    return f"\n\nAnyRobotSkill = Annotated[\n    {union_lines},\n    Field(discriminator='type'),\n]\n"
+    return f"\n\nAnyRobotSkill = Annotated[\n    {union_lines},\n    Field(discriminator='kind'),\n]\n"
 
 
 def generate_module() -> str:

@@ -8,6 +8,7 @@ from ceres.character.domain.benefits import (
     SHIP_SHARE,
     TAS_MEMBERSHIP,
 )
+from ceres.character.domain.career.advancement import advancement_pending
 from ceres.character.domain.career.career_data import (
     AssignmentData,
     AutoAdvanceEntry,
@@ -35,7 +36,6 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingSkillChoice,
-    _advancement_pending,
     _apply_mishap_ejection,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
@@ -101,7 +101,7 @@ class PsionIncreasePsiHandler(CareerHandlerBase):
         projection.summary.characteristics[Chars.PSI] = psi + 1
         career = projection.get_current_career()
         projection.pending_inputs.append(
-            _advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx)
+            advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx)
         )
         return pending_idx + 1
 
@@ -142,7 +142,7 @@ class PsionMishap4Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.add_connection(ConnectionKind.ENEMY, origin='Unethical psionic work')
         career = projection.get_current_career()
-        projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionMishap4Refuse(ChoiceBase):
@@ -234,7 +234,7 @@ class PsionConnectionConvertedHandler(EventHandlerBase):
         if self.continue_term and projection.summary.current_career is not None:
             career = projection.get_current_career()
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id)
+                advancement_pending(career, projection.summary.current_assignment, event.id)
             )
 
 
@@ -302,7 +302,7 @@ class PsionEvent5Benefit(ChoiceBase):
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
         career = projection.get_current_career()
-        projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionEvent5Soc(ChoiceBase):
@@ -314,7 +314,7 @@ class PsionEvent5Soc(ChoiceBase):
             15, projection.summary.characteristics.get(Chars.SOC, 0) + 1
         )
         career = projection.get_current_career()
-        projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PendingPsionEvent5Roll(CareerSkillRollPendingBase):
@@ -355,7 +355,7 @@ class PsionEvent5Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionEvent5Handler(CareerHandlerBase):

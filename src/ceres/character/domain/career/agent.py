@@ -128,11 +128,11 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         projection.get_current_career()
 
-        from ceres.character.domain.career.career_events import _set_forced_prison_career
+        from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 
         succeed = event.modified_roll >= 8
         if event.modified_roll <= 2:
-            _set_forced_prison_career(projection, 'Exposed as an agent — sent to Prisoner career.')
+            set_forced_prison_career(projection, 'Exposed as an agent — sent to Prisoner career.')
         if not succeed and projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
         muster_out_setup(projection, event.id, 0)

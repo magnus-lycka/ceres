@@ -864,9 +864,9 @@ class CareerData(TermData):
                 )
             return
         if bonus.skill:
-            from ceres.character.domain.career.career_events import _rank_bonus_skill
+            from ceres.character.domain.career.advancement import rank_bonus_skill
 
-            projection.grant_skill(_rank_bonus_skill(bonus))
+            projection.grant_skill(rank_bonus_skill(bonus))
         elif bonus.characteristic:
             current = projection.summary.characteristics.get(bonus.characteristic, 0)
             projection.summary.characteristics[bonus.characteristic] = current + bonus.level

@@ -151,13 +151,13 @@ class PendingRankBonusChoice(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.domain.career.career_events import _build_skill_select_options
+        from ceres.character.domain.skill_events import build_skill_select_options
 
         specs: list[InputSpec] = [
             Select(
                 name='skill',
                 label='Choose a skill',
-                options=_build_skill_select_options(projection, self.options, self.level),
+                options=build_skill_select_options(projection, self.options, self.level),
             )
         ]
         from ceres.character.domain.psionics import talent_acquisition_roll_required

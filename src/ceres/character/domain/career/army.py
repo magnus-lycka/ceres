@@ -7,6 +7,7 @@ from ceres.character.domain.benefits import (
     CharacteristicIncrease,
     ChoiceBenefit,
 )
+from ceres.character.domain.career.advancement import apply_auto_advance, apply_forced_commission
 from ceres.character.domain.career.career_data import (
     AdvancementDmEntry,
     AdvancementDmOption,
@@ -32,8 +33,6 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingSkillChoice,
-    _apply_auto_advance,
-    _apply_forced_commission,
     _apply_mishap_ejection,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
@@ -113,7 +112,7 @@ class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            from ceres.character.domain.career.career_events import _advancement_pending
+            from ceres.character.domain.career.advancement import advancement_pending
             from ceres.character.domain.health.health_events import PendingInjuryTable
 
             career = projection.get_current_career()
@@ -124,7 +123,7 @@ class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
+                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
 
 
@@ -141,7 +140,7 @@ class ArmyEvent12CommissionChoice(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        _apply_forced_commission(projection, career, event.id)
+        apply_forced_commission(projection, career, event.id)
 
 
 class ArmyEvent12PromoteChoice(ChoiceBase):
@@ -150,7 +149,7 @@ class ArmyEvent12PromoteChoice(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        _apply_auto_advance(projection, career, event.id)
+        apply_auto_advance(projection, career, event.id)
 
 
 # ── mishap 1: severely injured ────────────────────────────────────────────────
@@ -239,7 +238,7 @@ class ArmyEvent12Handler(CareerHandlerBase):
                 )
             )
             return pending_idx + 1
-        _apply_auto_advance(projection, career, event_id)
+        apply_auto_advance(projection, career, event_id)
         return pending_idx
 
 

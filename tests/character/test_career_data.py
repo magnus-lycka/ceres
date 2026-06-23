@@ -248,7 +248,7 @@ def test_gain_connection_entry_adds_connection_with_text_as_origin():
         p, event=_event(), pending_idx=0
     )
 
-    rival = next(c for c in p.summary.connections if c.kind == ConnectionKind.RIVAL.value)
+    rival = next(c for c in p.summary.connections if c.kind == ConnectionKind.RIVAL)
     assert rival.origin == 'You gain a Rival.'
 
 
@@ -262,7 +262,7 @@ def test_gain_skill_and_connection_entry_applies_both_outcomes():
     ).apply(p, event=_event(), pending_idx=0)
 
     assert p.summary.skill_level(Admin) == 1
-    assert any(c.kind == ConnectionKind.ENEMY.value for c in p.summary.connections)
+    assert any(c.kind == ConnectionKind.ENEMY for c in p.summary.connections)
 
 
 def test_characteristic_losses_and_connection_entry_applies_all_outcomes():
@@ -281,7 +281,7 @@ def test_characteristic_losses_and_connection_entry_applies_all_outcomes():
 
     assert p.summary.characteristics[Chars.STR] == 7
     assert p.summary.characteristics[Chars.DEX] == 5
-    assert any(connection.kind == ConnectionKind.ENEMY.value for connection in p.summary.connections)
+    assert any(connection.kind == ConnectionKind.ENEMY for connection in p.summary.connections)
 
 
 def test_gain_connection_and_advancement_dm_entry_applies_both_outcomes():
@@ -293,7 +293,7 @@ def test_gain_connection_and_advancement_dm_entry_applies_both_outcomes():
         amount=2,
     ).apply(p, event=_event(), pending_idx=0)
 
-    assert any(c.kind == ConnectionKind.ALLY.value for c in p.summary.connections)
+    assert any(c.kind == ConnectionKind.ALLY for c in p.summary.connections)
     assert p.pending_advancement_dm == 2
 
 
@@ -307,7 +307,7 @@ def test_gain_connection_and_benefit_dm_entry_applies_both_outcomes():
     ).apply(p, event=_event(), pending_idx=0)
 
     dms = p.summary.career_terms[-1].require_muster_out().benefit_roll_dms
-    assert any(c.kind == ConnectionKind.ENEMY.value for c in p.summary.connections)
+    assert any(c.kind == ConnectionKind.ENEMY for c in p.summary.connections)
     assert [dm.amount for dm in dms] == [2]
 
 
@@ -321,7 +321,7 @@ def test_gain_connection_and_parole_threshold_change_entry_applies_both_outcomes
         amount=1,
     ).apply(p, event=_event(), pending_idx=0)
 
-    assert any(c.kind == ConnectionKind.ENEMY.value for c in p.summary.connections)
+    assert any(c.kind == ConnectionKind.ENEMY for c in p.summary.connections)
     assert p.summary.parole_threshold == 6
 
 
@@ -335,7 +335,7 @@ def test_gain_connection_and_skill_choice_entry_queues_choice_without_immediate_
         level=1,
     ).apply(p, event=_event(12), pending_idx=0)
 
-    assert any(c.kind == ConnectionKind.ALLY.value for c in p.summary.connections)
+    assert any(c.kind == ConnectionKind.ALLY for c in p.summary.connections)
     assert next_idx == 1
     assert (
         GainConnectionAndSkillChoiceEntry(
@@ -364,8 +364,8 @@ def test_gain_connections_and_skill_choice_entry_adds_connections_and_queues_cho
 
     assert next_idx == 1
     assert [connection.kind for connection in p.summary.connections] == [
-        ConnectionKind.RIVAL.value,
-        ConnectionKind.ALLY.value,
+        ConnectionKind.RIVAL,
+        ConnectionKind.ALLY,
     ]
     assert any(isinstance(pending, PendingSkillChoice) for pending in p.pending_inputs)
     assert (

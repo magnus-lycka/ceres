@@ -80,13 +80,13 @@ class PrisonerMishap3Submit(ChoiceBase):
     label: str = 'Submit (lose Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        from ceres.character.domain.career.career_events import _advancement_pending
+        from ceres.character.domain.career.advancement import advancement_pending
 
         career = projection.get_current_career()
         projection.summary.problems.append(
             'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
         )
-        projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PrisonerMishap3Fight(ChoiceBase):
@@ -107,14 +107,14 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_mishap_3_fight_skill_roll'] = 'prisoner_mishap_3_fight_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        from ceres.character.domain.career.career_events import _advancement_pending
+        from ceres.character.domain.career.advancement import advancement_pending
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
             projection.add_connection(ConnectionKind.ENEMY, origin='The prison gang leader you stood up to')
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id)
+                advancement_pending(career, projection.summary.current_assignment, event.id)
             )
         else:
             projection.pending_inputs.append(
@@ -124,7 +124,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
+                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
 
 
@@ -392,7 +392,7 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_7_riot_skill_roll'] = 'prisoner_event_7_riot_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        from ceres.character.domain.career.career_events import _advancement_pending
+        from ceres.character.domain.career.advancement import advancement_pending
 
         career = projection.get_current_career()
         if event.modified_roll < 8:
@@ -403,7 +403,7 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
+                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
         # Success: _apply_skill_roll auto-queues advancement
 
@@ -559,7 +559,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_12_heroism_skill_roll'] = 'prisoner_event_12_heroism_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        from ceres.character.domain.career.career_events import _advancement_pending
+        from ceres.character.domain.career.advancement import advancement_pending
 
         career = projection.get_current_career()
         if event.modified_roll >= 8:
@@ -574,7 +574,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
                 )
             )
             projection.pending_inputs.append(
-                _advancement_pending(career, projection.summary.current_assignment, event.id, 1)
+                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
             )
 
 

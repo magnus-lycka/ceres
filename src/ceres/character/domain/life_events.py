@@ -17,10 +17,10 @@ from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase
 def _queue_advancement(
     projection: CharacterProjection, career: CareerData, event_id: int, pending_idx: int = 0
 ) -> None:
-    from ceres.character.domain.career.career_events import _advancement_pending
+    from ceres.character.domain.career.advancement import advancement_pending
 
     projection.pending_inputs.append(
-        _advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx)
+        advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx)
     )
 
 
@@ -338,7 +338,7 @@ class PendingLifeEventAlienScience(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=skill))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.domain.career.career_events import _build_skill_select_options
+        from ceres.character.domain.skill_events import build_skill_select_options
         from ceres.character.domain.skills import LifeScience, PhysicalScience, SocialScience
 
         skills: list[AnySkill] = [LifeScience(), PhysicalScience(), SocialScience(), SpaceScience()]
@@ -346,7 +346,7 @@ class PendingLifeEventAlienScience(PendingInputBase):
             Select(
                 name='skill',
                 label='Choose a science skill (alien encounter)',
-                options=_build_skill_select_options(projection, skills, None),
+                options=build_skill_select_options(projection, skills, None),
             )
         ]
 
