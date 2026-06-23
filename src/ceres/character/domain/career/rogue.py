@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -69,13 +69,14 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────
 
 
 class RogueMishap2Handler(CareerHandlerBase):
-    type: Literal['rogue_mishap_2'] = 'rogue_mishap_2'
+    kind: Literal['rogue_mishap_2'] = 'rogue_mishap_2'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -115,7 +116,7 @@ class RogueMishap3RollOther(ChoiceBase):
 
 
 class RogueMishap3Handler(CareerHandlerBase):
-    type: Literal['rogue_mishap_3'] = 'rogue_mishap_3'
+    kind: Literal['rogue_mishap_3'] = 'rogue_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -145,7 +146,7 @@ class RogueMishap3Handler(CareerHandlerBase):
 class RogueEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_3_skill_roll'] = 'rogue_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import (
             _apply_mishap_ejection,
             _set_forced_prison_career,
@@ -189,7 +190,7 @@ class RogueEvent3Lawyer(ChoiceBase):
 
 
 class RogueEvent3Handler(CareerHandlerBase):
-    type: Literal['rogue_event_3'] = 'rogue_event_3'
+    kind: Literal['rogue_event_3'] = 'rogue_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -232,7 +233,7 @@ class RogueEvent6Refuse(ChoiceBase):
 
 
 class RogueEvent6Handler(CareerHandlerBase):
-    type: Literal['rogue_event_6'] = 'rogue_event_6'
+    kind: Literal['rogue_event_6'] = 'rogue_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -253,7 +254,7 @@ class RogueEvent6Handler(CareerHandlerBase):
 class PendingRogueEvent9SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['rogue_event_9_skill_roll'] = 'rogue_event_9_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # no pending added — _apply_skill_roll auto-queues advancement
@@ -264,7 +265,7 @@ class PendingRogueEvent9SkillRoll(CareerSkillRollPendingBase):
 
 
 class RogueEvent9Handler(CareerHandlerBase):
-    type: Literal['rogue_event_9'] = 'rogue_event_9'
+    kind: Literal['rogue_event_9'] = 'rogue_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -279,7 +280,7 @@ class RogueEvent9Handler(CareerHandlerBase):
 
 
 class Rogue(CareerData):
-    type: Literal['ROGUE_CAREER'] = 'ROGUE_CAREER'
+    kind: Literal['ROGUE_CAREER'] = 'ROGUE_CAREER'
 
     name: ClassVar[str] = 'Rogue'
     description: ClassVar[str] = (

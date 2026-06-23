@@ -15,32 +15,32 @@ if TYPE_CHECKING:
 
 
 class Telepathy(Skill):
-    type: Literal['TELEPATHY'] = 'TELEPATHY'
+    kind: Literal['TELEPATHY'] = 'TELEPATHY'
     level: Level = _level()
 
 
 class Clairvoyance(Skill):
-    type: Literal['CLAIRVOYANCE'] = 'CLAIRVOYANCE'
+    kind: Literal['CLAIRVOYANCE'] = 'CLAIRVOYANCE'
     level: Level = _level()
 
 
 class Telekinesis(Skill):
-    type: Literal['TELEKINESIS'] = 'TELEKINESIS'
+    kind: Literal['TELEKINESIS'] = 'TELEKINESIS'
     level: Level = _level()
 
 
 class Awareness(Skill):
-    type: Literal['AWARENESS'] = 'AWARENESS'
+    kind: Literal['AWARENESS'] = 'AWARENESS'
     level: Level = _level()
 
 
 class Teleportation(Skill):
-    type: Literal['TELEPORTATION'] = 'TELEPORTATION'
+    kind: Literal['TELEPORTATION'] = 'TELEPORTATION'
     level: Level = _level()
 
 
 PsionicTalentSkillModels = Telepathy | Clairvoyance | Telekinesis | Awareness | Teleportation
-type PsionicTalentSkills = Annotated[PsionicTalentSkillModels, Field(discriminator='type')]
+type PsionicTalentSkills = Annotated[PsionicTalentSkillModels, Field(discriminator='kind')]
 type PsionicTalentSkillClass = (
     type[Telepathy] | type[Clairvoyance] | type[Telekinesis] | type[Awareness] | type[Teleportation]
 )

@@ -12,6 +12,7 @@ from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.domain.term_data import TermData
 from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.event_base import Event
 
 if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
@@ -92,7 +93,7 @@ class CareerTableEntry(BaseModel):
     stay_in_career: bool = False
     defer_ejection: bool = False
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         return pending_idx
 
     def continues_career_progress(self) -> bool:
@@ -105,7 +106,7 @@ class NoEffectEntry(CareerTableEntry):
 
 def _queue_injury(
     projection: CharacterProjection,
-    event: Any,
+    event: Event,
     pending_idx: int,
     severity: Literal['normal', 'severe', 'from_table'],
 ) -> None:
@@ -143,7 +144,7 @@ class GainSkillEntry(CareerTableEntry):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.grant_skill(self.skill)
         return pending_idx
 
@@ -152,7 +153,7 @@ class CharacteristicLossEntry(CareerTableEntry):
     characteristic: Chars
     amount: int = 1
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.decrease_characteristic(self.characteristic, self.amount)
         return pending_idx
 
@@ -166,7 +167,7 @@ class CharacteristicLossesAndConnectionEntry(CareerTableEntry):
     connection: ConnectionKind
     losses: list[CharacteristicLossOutcome]
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_connection(self.connection, origin=self.text)
         for loss in self.losses:
             projection.decrease_characteristic(loss.characteristic, loss.amount)
@@ -177,7 +178,7 @@ class CharacteristicLossChoiceEntry(CareerTableEntry):
     options: list[Chars]
     amount: int = 1
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.health.health_events import PendingCharacteristicChoice
 
         characteristic = ', '.join(c.value for c in self.options)
@@ -195,7 +196,7 @@ class CharacteristicLossChoiceEntry(CareerTableEntry):
 class GainConnectionEntry(CareerTableEntry):
     connection: ConnectionKind
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_connection(self.connection, origin=self.text)
         return pending_idx
 
@@ -203,7 +204,7 @@ class GainConnectionEntry(CareerTableEntry):
 class GainConnectionsEntry(CareerTableEntry):
     connections: list[ConnectionKind]
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         for connection in self.connections:
             projection.add_connection(connection, origin=self.text)
         return pending_idx
@@ -213,7 +214,7 @@ class RolledConnectionsEntry(CareerTableEntry):
     connection: ConnectionKind
     dice: DiceRoll
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
         projection.pending_inputs.append(
@@ -236,7 +237,7 @@ class RolledConnectionOutcome(BaseModel):
 class RolledConnectionsGroupEntry(CareerTableEntry):
     rolls: list[RolledConnectionOutcome]
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
         for offset, roll in enumerate(self.rolls):
@@ -258,7 +259,7 @@ class SkillChoiceEntry(CareerTableEntry):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.skill_events import PendingSkillChoice
         from ceres.character.domain.skills import JackOfAllTrades, _skill_classes
 
@@ -286,7 +287,7 @@ class SkillChoiceEntry(CareerTableEntry):
 class InjuryEntry(CareerTableEntry):
     severity: Literal['normal', 'severe', 'from_table'] = Field(default='normal')
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         _queue_injury(projection, event, pending_idx, self.severity)
         return pending_idx + 1
 
@@ -294,7 +295,7 @@ class InjuryEntry(CareerTableEntry):
 class RollMishapEntry(CareerTableEntry):
     leave: bool = True
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.career.career_events import PendingMishap
 
         instruction = (
@@ -316,7 +317,7 @@ class RollMishapEntry(CareerTableEntry):
 
 
 class LifeEventEntry(CareerTableEntry):
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.life_events import PendingLifeEvent
 
         projection.pending_inputs.append(
@@ -329,7 +330,7 @@ class LifeEventEntry(CareerTableEntry):
 
 
 class AutoAdvanceEntry(CareerTableEntry):
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.career.advancement import apply_auto_advance
 
         career = projection.summary.current_career
@@ -350,7 +351,7 @@ class GainSkillAndConnectionEntry(CareerTableEntry):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.grant_skill(self.skill)
         projection.add_connection(self.connection, origin=self.text)
         return pending_idx
@@ -360,7 +361,7 @@ class GainConnectionAndAdvancementDmEntry(CareerTableEntry):
     connection: ConnectionKind
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_connection(self.connection, origin=self.text)
         projection.add_advancement_dm(self.amount)
         return pending_idx
@@ -370,7 +371,7 @@ class GainConnectionAndBenefitDmEntry(CareerTableEntry):
     connection: ConnectionKind
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_connection(self.connection, origin=self.text)
         projection.add_benefit_dm(self.amount)
         return pending_idx
@@ -380,7 +381,7 @@ class GainConnectionAndParoleThresholdChangeEntry(CareerTableEntry):
     connection: ConnectionKind
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_connection(self.connection, origin=self.text)
         projection.adjust_parole_threshold(self.amount)
         return pending_idx
@@ -393,7 +394,7 @@ class GainConnectionAndSkillChoiceEntry(CareerTableEntry):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.skill_events import PendingSkillChoice
 
         projection.add_connection(self.connection, origin=self.text)
@@ -418,7 +419,7 @@ class GainConnectionsAndSkillChoiceEntry(CareerTableEntry):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.skill_events import PendingSkillChoice
 
         for connection in self.connections:
@@ -441,7 +442,7 @@ class InjuryAndGainConnectionEntry(CareerTableEntry):
     severity: Literal['normal', 'severe', 'from_table'] = Field(default='normal')
     connection: ConnectionKind
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
 
         if self.severity == 'normal':
@@ -476,7 +477,7 @@ class InjuryAndGainConnectionEntry(CareerTableEntry):
 class AdvancementDmEntry(CareerTableEntry):
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_advancement_dm(self.amount)
         return pending_idx
 
@@ -484,7 +485,7 @@ class AdvancementDmEntry(CareerTableEntry):
 class QualificationDmEntry(CareerTableEntry):
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_qualification_dm(self.amount)
         return pending_idx
 
@@ -492,7 +493,7 @@ class QualificationDmEntry(CareerTableEntry):
 class BenefitDmEntry(CareerTableEntry):
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_benefit_dm(self.amount)
         return pending_idx
 
@@ -500,23 +501,21 @@ class BenefitDmEntry(CareerTableEntry):
 class ParoleThresholdChangeEntry(CareerTableEntry):
     amount: int
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.adjust_parole_threshold(self.amount)
         return pending_idx
 
 
 class AutoQualifyCareerEntry(CareerTableEntry):
-    # Pydantic cannot use `type[CareerData]` here: the field named `type` shadows the builtin
-    # during annotation evaluation. Any is used; the value is always a CareerData subclass.
-    career: Any
+    career: type[CareerData]
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.auto_qualify(self.career)
         return pending_idx
 
 
 class LoseAllCareerBenefitsEntry(CareerTableEntry):
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.forfeit_current_career_benefits()
         return pending_idx
 
@@ -524,7 +523,7 @@ class LoseAllCareerBenefitsEntry(CareerTableEntry):
 class LoseAllCareerBenefitsAndGainConnectionEntry(CareerTableEntry):
     connection: ConnectionKind
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.forfeit_current_career_benefits()
         projection.add_connection(self.connection, origin=self.text)
         return pending_idx
@@ -533,18 +532,18 @@ class LoseAllCareerBenefitsAndGainConnectionEntry(CareerTableEntry):
 class CareerHandlerBase(CareerTableEntry):
     """Base for career-specific event/mishap table rows.
 
-    Subclasses declare ``type: Literal['handler_key'] = 'handler_key'`` and implement
+    Subclasses declare ``kind: Literal['handler_key'] = 'handler_key'`` and implement
     ``handle()`` to append career-specific pending inputs.
     """
 
     text: str = ''
-    type: str
+    kind: str
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         return pending_idx
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         return self.handle(projection, event.id, pending_idx)
 
     def continues_career_progress(self) -> bool:
@@ -582,26 +581,26 @@ class BasicTrainingPlan(BaseModel):
 
 
 class CareerData(TermData):
-    type: str = ''  # discriminator; set in concrete subclasses as Literal['X_CAREER']
+    kind: str = ''  # discriminator; set in concrete subclasses as Literal['X_CAREER']
 
     _registry: ClassVar[dict[str, type[CareerData]]] = {}
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        type_val = cls.__dict__.get('type')
-        if isinstance(type_val, str) and type_val:
-            CareerData._registry[type_val] = cls
+        kind_val = cls.__dict__.get('kind')
+        if isinstance(kind_val, str) and kind_val:
+            CareerData._registry[kind_val] = cls
 
     @model_validator(mode='wrap')
     @classmethod
     def _from_registry(cls, data: Any, handler: ModelWrapValidatorHandler) -> CareerData:
         if isinstance(data, CareerData):
             return data
-        if isinstance(data, dict) and 'type' in data:
+        if isinstance(data, dict) and 'kind' in data:
             from ceres.character.domain.career.loader import load_careers
 
             load_careers()
-            concrete = CareerData._registry.get(data['type'])
+            concrete = CareerData._registry.get(data['kind'])
             if concrete is not None:
                 return concrete()
         return handler(data)

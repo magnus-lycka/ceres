@@ -26,7 +26,6 @@ from ceres.character.domain.skills import (
     WorkerProfession,
     _skill_classes,
     gain_skills,
-    skill_list,
     skill_spec,
 )
 from ceres.character.domain.sophont import VILANI
@@ -85,28 +84,15 @@ def test_specialised_skill_has_one_level_per_speciality():
 
 
 def test_all_skills_can_be_listed_from_the_any_skill_union():
-    skills = skill_list(AnySkill)
-
     assert Admin in _skill_classes(AnySkill)
-    assert next(info for info in skills if info.type == Electronics.model_fields['type'].default).specialities == (
-        'Comms',
-        'Computers',
-        'Remote Ops',
-        'Sensors',
-    )
-    assert next(info for info in skills if info.type == SpaceScience.model_fields['type'].default).specialities == (
-        'Astronomy',
-        'Cosmology',
-        'Planetology',
-    )
+    assert Electronics.specialities() == ('Comms', 'Computers', 'Remote Ops', 'Sensors')
+    assert SpaceScience.specialities() == ('Astronomy', 'Cosmology', 'Planetology')
 
 
 def test_melee_includes_companion_specialities():
-    melee = next(info for info in skill_list(AnySkill) if info.type == Melee.model_fields['type'].default)
-
-    assert 'Grapple' in melee.specialities
-    assert 'Striking' in melee.specialities
-    assert 'Fencing' in melee.specialities
+    assert 'Grapple' in Melee.specialities()
+    assert 'Striking' in Melee.specialities()
+    assert 'Fencing' in Melee.specialities()
 
 
 def test_melee_companion_specialities_are_independent_levels():

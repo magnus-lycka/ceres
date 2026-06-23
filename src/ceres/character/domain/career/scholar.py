@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal, cast
+from typing import ClassVar, Literal, cast
 
 from ceres.character.domain.benefits import (
     LAB_SHIP,
@@ -66,6 +66,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 _SCIENCES = skill_instances(ScienceSkill)
@@ -109,7 +110,7 @@ class ScholarMishap3Secretly(ChoiceBase):
 
 
 class ScholarMishap3Handler(CareerHandlerBase):
-    type: Literal['scholar_mishap_3'] = 'scholar_mishap_3'
+    kind: Literal['scholar_mishap_3'] = 'scholar_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -154,7 +155,7 @@ class ScholarMishap5StartAgain(ChoiceBase):
 
 
 class ScholarMishap5Handler(CareerHandlerBase):
-    type: Literal['scholar_mishap_5'] = 'scholar_mishap_5'
+    kind: Literal['scholar_mishap_5'] = 'scholar_mishap_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -222,7 +223,7 @@ class ScholarEvent3Decline(ChoiceBase):
 
 
 class ScholarEvent3Handler(CareerHandlerBase):
-    type: Literal['scholar_event_3'] = 'scholar_event_3'
+    kind: Literal['scholar_event_3'] = 'scholar_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -242,7 +243,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
 class PendingScholarEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scholar_event_6_skill_roll'] = 'scholar_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -255,7 +256,7 @@ class PendingScholarEvent6SkillRoll(CareerSkillRollPendingBase):
 
 
 class ScholarEvent6Handler(CareerHandlerBase):
-    type: Literal['scholar_event_6'] = 'scholar_event_6'
+    kind: Literal['scholar_event_6'] = 'scholar_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -275,7 +276,7 @@ class ScholarEvent6Handler(CareerHandlerBase):
 class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scholar_event_8_skill_roll'] = 'scholar_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.add_connection(
                 ConnectionKind.ENEMY, origin='A colleague who knows you cheated your way to results'
@@ -319,7 +320,7 @@ class ScholarEvent8Refuse(ChoiceBase):
 
 
 class ScholarEvent8Handler(CareerHandlerBase):
-    type: Literal['scholar_event_8'] = 'scholar_event_8'
+    kind: Literal['scholar_event_8'] = 'scholar_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -341,9 +342,9 @@ class PendingScholarEvent11(CareerSkillChoicePendingBase):
 
 
 class ScholarEvent11Handler(CareerHandlerBase):
-    type: Literal['scholar_event_11'] = 'scholar_event_11'
+    kind: Literal['scholar_event_11'] = 'scholar_event_11'
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_connection(ConnectionKind.ALLY, origin=self.text)
         return self.handle(projection, event.id, pending_idx)
 
@@ -361,7 +362,7 @@ class ScholarEvent11Handler(CareerHandlerBase):
 
 
 class Scholar(CareerData):
-    type: Literal['SCHOLAR_CAREER'] = 'SCHOLAR_CAREER'
+    kind: Literal['SCHOLAR_CAREER'] = 'SCHOLAR_CAREER'
 
     name: ClassVar[str] = 'Scholar'
     description: ClassVar[str] = (

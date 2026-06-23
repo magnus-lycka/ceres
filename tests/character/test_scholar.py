@@ -533,7 +533,7 @@ class TestScholarMishap5:
 
         last_career = diff['type_changes'].pop("root['summary']['last_career']")
         assert last_career['old_value'] is None
-        assert last_career['new_value'] == {'type': SCHOLAR.type}
+        assert isinstance(d.projection.summary.last_career, type(SCHOLAR))
 
         last_assignment = diff['type_changes'].pop("root['summary']['last_assignment']")
         assert last_assignment['old_value'] is None
@@ -669,11 +669,12 @@ class TestScholarEvent3:
 
         choices_kind = PendingChoices.model_fields['kind'].default
         advancement_kind = PendingAdvancement.model_fields['kind'].default
-        life_science_type = LifeScience.model_fields['type'].default
         extra_benefit_txt = 'You gain an extra benefit roll at muster out (accepted research against your conscience).'
         # pending_id[0] is an auto-generated event ID — assert it changed without asserting the value
         pending_id_0_change = diff.get('values_changed', {}).pop("root['pending_inputs'][0]['pending_id'][0]", None)
         assert pending_id_0_change is not None and pending_id_0_change['old_value'] != pending_id_0_change['new_value']
+        diff['iterable_item_added'].pop("root['summary']['skills'][9]")
+        assert any(isinstance(s, LifeScience) and s.biology.value == 1 for s in d.projection.summary.skills)
         expected_diff = {
             'dictionary_item_removed': ["root['pending_inputs'][0]['choices']"],
             'iterable_item_added': {
@@ -686,14 +687,6 @@ class TestScholarEvent3:
                     'term': 1,
                 },
                 "root['summary']['narrative'][1]": extra_benefit_txt,
-                "root['summary']['skills'][9]": {
-                    'biology': {'display_label': None, 'value': 1},
-                    'display_label': None,
-                    'genetics': {'display_label': None, 'value': 0},
-                    'psionicology': {'display_label': None, 'value': 0},
-                    'type': life_science_type,
-                    'xenology': {'display_label': None, 'value': 0},
-                },
             },
             'values_changed': {
                 "root['pending_inputs'][0]['instruction']": {

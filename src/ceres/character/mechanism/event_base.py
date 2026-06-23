@@ -36,7 +36,7 @@ class EventHandlerBase(BaseModel):
         return None
 
 
-def _deserialise_event_handler(v: Any) -> EventHandlerBase:
+def _deserialise_event_handler(v: object) -> EventHandlerBase:
     if isinstance(v, EventHandlerBase):
         return v
     if isinstance(v, dict):
@@ -94,7 +94,7 @@ class PendingHandlerBase(BaseModel):
         raise NotImplementedError(f'{type(self).__name__}.event_from_form() not implemented')
 
 
-def _deserialise_pending_handler(v: Any) -> PendingHandlerBase:
+def _deserialise_pending_handler(v: object) -> PendingHandlerBase:
     if isinstance(v, PendingHandlerBase):
         return v
     if isinstance(v, dict):

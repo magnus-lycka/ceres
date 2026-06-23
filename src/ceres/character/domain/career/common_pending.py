@@ -13,6 +13,7 @@ from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skill_events import PendingSkillChoice
 from ceres.character.domain.skills import AnySkill, Level, level_fields, skill_instances
 from ceres.character.input_specs import NumberEntry, Select
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import PendingInputBase
 
 
@@ -37,7 +38,7 @@ def _build_career_skill_select_options(
     return [
         (
             opt.value if isinstance(opt, Chars) else type(opt).name(),
-            opt.value if isinstance(opt, Chars) else type(opt).model_fields['type'].default,
+            opt.value if isinstance(opt, Chars) else type(opt).model_fields['kind'].default,
         )
         for opt in options
     ]
@@ -118,7 +119,7 @@ class CareerSkillRollPendingBase(PendingInputBase):
             from pydantic import TypeAdapter
 
             adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
-            skill = adapter.validate_python({'type': skill_str})
+            skill = adapter.validate_python({'kind': skill_str})
         return Event(fulfills=self.pending_id, handler=SkillRollHandler(skill=skill, modified_roll=modified_roll))
 
     def input_specs(self, projection: CharacterProjection) -> list[Any]:
@@ -140,7 +141,7 @@ class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['advanced_training_skill_roll'] = 'advanced_training_skill_roll'
     threshold: int = 8
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= self.threshold:
             append_increment_existing_skill_pending(
                 projection,
@@ -156,7 +157,7 @@ class PendingAnySkillAtLevelOnSuccessRoll(CareerSkillRollPendingBase):
     threshold: int = 8
     success_instruction: str
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= self.threshold:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -203,7 +204,7 @@ class CareerSkillChoicePendingBase(PendingInputBase):
         opts = _build_skill_choice_select_options(projection, self.options, None)
         return [Select(name='skill', label='Choose a skill', options=opts)]
 
-    def on_skill_chosen(self, projection: CharacterProjection, event: Any) -> None:
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         """Called when a SkillChoiceEvent fulfills this pending input."""
         projection.grant_skill(event.skill)
         if not self.advancement_precreated and projection.summary.current_career is not None:

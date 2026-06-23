@@ -64,10 +64,29 @@ possible, integrating roundtrip verification into the feature test rather than
 treating it as a separate concern.
 
 Polymorphic fields use Pydantic discriminated unions so the correct concrete
-type is resolved during deserialization. `armour` and `stealth` on `Hull` use
-`description` as the discriminator. Any new polymorphic field must follow the
-same pattern — add a `Literal` discriminator field to each subclass and annotate
-the union with `Field(discriminator=...)`.
+type is resolved during deserialization. Any new polymorphic field must add a
+`Literal` discriminator field to each concrete subclass and annotate the union
+with `Field(discriminator=...)`.
+
+**Discriminator field naming.** The canonical name for a pure Pydantic
+discriminator is `kind`. Use `kind: Literal['value'] = 'value'` when the field
+has no purpose other than letting Pydantic resolve the concrete type. Fields
+that carry independent semantic meaning — human-readable labels, domain
+identifiers — may keep their natural name even when they also serve as a
+discriminator (e.g. `description` on sensor or armour types). The character and
+robot domains follow the `kind` convention throughout. The ship domain has a
+mixed legacy state: some unions use `kind`, others use model-specific names
+(`screen_type`, `package`, `occupant_type`, etc.); new ship-domain unions should
+use `kind`.
+
+**The discriminator is invisible to application code.** No production code reads
+or compares `.kind` at runtime — use `isinstance()` for type dispatch, never
+string comparison against a discriminator value. Tests assert on concrete type
+(`isinstance`) or observable behaviour, not on `.kind` values. A discriminator
+literal audit (`tools/discriminator_literal_audit.py`, run by
+`tests/tools/test_discriminator_literal_audit.py`) enforces that bare
+discriminator strings do not appear outside their canonical `Literal[...]`
+declaration.
 
 ### Derived data in model JSON
 
@@ -436,7 +455,8 @@ Event(handler=SurviveHandler(roll=5), fulfills=survive_pending_id)
 ```
 
 The `kind` literal exists solely as a Pydantic discriminator for
-serialisation. No application code ever references it as a string.
+serialisation. No application code ever references it as a string. See the
+JSON roundtripping section for the codebase-wide convention.
 
 #### PendingInput and pending handler
 

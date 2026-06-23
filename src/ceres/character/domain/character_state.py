@@ -5,17 +5,18 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSeriali
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career.career_data import AssignmentData, BenefitRollDm, CareerData, CareerTerm
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import AnyConnection
 from ceres.character.domain.psionics import Psionics
 from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
 from ceres.shared import int_to_ehex
 
 
-def _deserialise_precareer(v: Any) -> Any:
+def _deserialise_precareer(v: object) -> object:
     from ceres.character.domain.precareer.precareer_data import PreCareerData
 
     if isinstance(v, PreCareerData):
@@ -244,7 +245,7 @@ class CharacterProjection(BaseModel):
     forced_stay: bool = False  # natural 12 on advancement: character must stay this term
     forced_leave: bool = False  # advancement roll ≤ terms: character must leave this term
 
-    def add_connection(self, kind: Any, *, origin: str = '') -> None:
+    def add_connection(self, kind: ConnectionKind, *, origin: str = '') -> None:
         from ceres.character.domain.connection import make_connection
         from ceres.character.domain.connection_events import PendingConnectionName
 
@@ -313,7 +314,7 @@ class CharacterProjection(BaseModel):
             raise ReplayError('No active career')
         return current
 
-    def fulfill_pending(self, event: Any) -> None:
+    def fulfill_pending(self, event: Event) -> None:
         fulfills = event.fulfills
         matched = next((p for p in self.pending_inputs if p.pending_id == fulfills), None)
         if matched is None:

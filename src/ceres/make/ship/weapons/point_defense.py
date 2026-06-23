@@ -7,7 +7,6 @@ from ceres.shared import NoteList, _Note
 from ..parts import CustomisableShipPart, ShipPart, SizeReduction
 from .common import _GENERAL_WEAPON_MODIFICATIONS
 
-PointDefenseKind = Literal['laser', 'gauss']
 PointDefenseRating = Literal[1, 2, 3]
 
 
@@ -16,7 +15,6 @@ class _PointDefenseBattery(CustomisableShipPart):
     cost: ClassVar[float]
     power: ClassVar[float]
     battery_type: str
-    kind: ClassVar[PointDefenseKind]
     rating: ClassVar[PointDefenseRating]
     description: ClassVar[str]
     base_tons: ClassVar[float]
@@ -26,10 +24,7 @@ class _PointDefenseBattery(CustomisableShipPart):
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList(super().build_notes())
-        intercept_dice = self.rating * 2
-        notes.info(f'Intercept +{intercept_dice}D')
-        if self.kind == 'gauss':
-            notes.info('Requires ammunition storage to reload after 12 rounds')
+        notes.info(f'Intercept +{self.rating * 2}D')
         return notes
 
     @property
@@ -49,9 +44,15 @@ class _PointDefenseBattery(CustomisableShipPart):
         return self.base_power * self.power_multiplier
 
 
+class _GaussPointDefenseBattery(_PointDefenseBattery):
+    def build_notes(self) -> list[_Note]:
+        notes = NoteList(super().build_notes())
+        notes.info('Requires ammunition storage to reload after 12 rounds')
+        return notes
+
+
 class LaserPointDefenseBattery1(_PointDefenseBattery):
     battery_type: Literal['laser_point_defense_1'] = 'laser_point_defense_1'
-    kind: ClassVar[PointDefenseKind] = 'laser'
     rating: ClassVar[PointDefenseRating] = 1
     description = 'Point Defence Laser Battery Type I'
     tl: int = 10
@@ -62,7 +63,6 @@ class LaserPointDefenseBattery1(_PointDefenseBattery):
 
 class LaserPointDefenseBattery2(_PointDefenseBattery):
     battery_type: Literal['laser_point_defense_2'] = 'laser_point_defense_2'
-    kind: ClassVar[PointDefenseKind] = 'laser'
     rating: ClassVar[PointDefenseRating] = 2
     description = 'Point Defence Laser Battery Type II'
     tl: int = 12
@@ -73,7 +73,6 @@ class LaserPointDefenseBattery2(_PointDefenseBattery):
 
 class LaserPointDefenseBattery3(_PointDefenseBattery):
     battery_type: Literal['laser_point_defense_3'] = 'laser_point_defense_3'
-    kind: ClassVar[PointDefenseKind] = 'laser'
     rating: ClassVar[PointDefenseRating] = 3
     description = 'Point Defence Laser Battery Type III'
     tl: int = 14
@@ -82,9 +81,8 @@ class LaserPointDefenseBattery3(_PointDefenseBattery):
     base_cost = 20_000_000.0
 
 
-class GaussPointDefenseBattery1(_PointDefenseBattery):
+class GaussPointDefenseBattery1(_GaussPointDefenseBattery):
     battery_type: Literal['gauss_point_defense_1'] = 'gauss_point_defense_1'
-    kind: ClassVar[PointDefenseKind] = 'gauss'
     rating: ClassVar[PointDefenseRating] = 1
     description = 'Point Defence Gauss Battery Type I'
     tl: int = 10
@@ -93,9 +91,8 @@ class GaussPointDefenseBattery1(_PointDefenseBattery):
     base_cost = 3_000_000.0
 
 
-class GaussPointDefenseBattery2(_PointDefenseBattery):
+class GaussPointDefenseBattery2(_GaussPointDefenseBattery):
     battery_type: Literal['gauss_point_defense_2'] = 'gauss_point_defense_2'
-    kind: ClassVar[PointDefenseKind] = 'gauss'
     rating: ClassVar[PointDefenseRating] = 2
     description = 'Point Defence Gauss Battery Type II'
     tl: int = 12
@@ -104,9 +101,8 @@ class GaussPointDefenseBattery2(_PointDefenseBattery):
     base_cost = 6_000_000.0
 
 
-class GaussPointDefenseBattery3(_PointDefenseBattery):
+class GaussPointDefenseBattery3(_GaussPointDefenseBattery):
     battery_type: Literal['gauss_point_defense_3'] = 'gauss_point_defense_3'
-    kind: ClassVar[PointDefenseKind] = 'gauss'
     rating: ClassVar[PointDefenseRating] = 3
     description = 'Point Defence Gauss Battery Type III'
     tl: int = 14

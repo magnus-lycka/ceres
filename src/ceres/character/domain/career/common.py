@@ -66,7 +66,7 @@ class CommonMishap1DoubleRoll(ChoiceBase):
 
 
 class CommonMishap1Handler(CareerHandlerBase):
-    type: Literal['common_mishap_1'] = 'common_mishap_1'
+    kind: Literal['common_mishap_1'] = 'common_mishap_1'
     stay_in_career: bool = False
 
     def handle(self, projection: CharacterProjection, event_id: int, pending_idx: int) -> int:

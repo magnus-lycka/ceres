@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, ClassVar, Literal, cast
+from typing import ClassVar, Literal, cast
 
 from ceres.character.domain.benefits import (
     COMBAT_IMPLANT,
@@ -93,7 +93,7 @@ _ALL_NON_JOT_SKILLS: list[AnySkill] = [
 
 
 class PsionIncreasePsiHandler(CareerHandlerBase):
-    type: Literal['psion_increase_psi'] = 'psion_increase_psi'
+    kind: Literal['psion_increase_psi'] = 'psion_increase_psi'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -109,7 +109,7 @@ class PsionIncreasePsiHandler(CareerHandlerBase):
 class PendingPsionAdvancedTraining(CareerSkillRollPendingBase):
     kind: Literal['psion_advanced_training'] = 'psion_advanced_training'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -121,7 +121,7 @@ class PendingPsionAdvancedTraining(CareerSkillRollPendingBase):
 
 
 class PsionAdvancedTrainingHandler(CareerHandlerBase):
-    type: Literal['psion_advanced_training_request'] = 'psion_advanced_training_request'
+    kind: Literal['psion_advanced_training_request'] = 'psion_advanced_training_request'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -139,7 +139,7 @@ class PsionMishap4Accept(ChoiceBase):
     kind: Literal['psion_mishap_4_accept'] = 'psion_mishap_4_accept'
     label: str = 'Accept (continue in Psion career and gain an Enemy)'
 
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.add_connection(ConnectionKind.ENEMY, origin='Unethical psionic work')
         career = projection.get_current_career()
         projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
@@ -149,12 +149,12 @@ class PsionMishap4Refuse(ChoiceBase):
     kind: Literal['psion_mishap_4_refuse'] = 'psion_mishap_4_refuse'
     label: str = 'Refuse (leave Psion career)'
 
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class PsionMishap4Handler(CareerHandlerBase):
-    type: Literal['psion_mishap_4'] = 'psion_mishap_4'
+    kind: Literal['psion_mishap_4'] = 'psion_mishap_4'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -199,7 +199,7 @@ class PendingPsionMishap3Roll(PendingInputBase):
 
 
 class PsionMishap3Handler(CareerHandlerBase):
-    type: Literal['psion_mishap_3'] = 'psion_mishap_3'
+    kind: Literal['psion_mishap_3'] = 'psion_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -265,7 +265,7 @@ class PendingPsionConnectionConversion(PendingInputBase):
 
 
 class PsionMishap6Handler(CareerHandlerBase):
-    type: Literal['psion_mishap_6'] = 'psion_mishap_6'
+    kind: Literal['psion_mishap_6'] = 'psion_mishap_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -280,7 +280,7 @@ class PsionMishap6Handler(CareerHandlerBase):
 
 
 class PsionEvent3Handler(CareerHandlerBase):
-    type: Literal['psion_event_3'] = 'psion_event_3'
+    kind: Literal['psion_event_3'] = 'psion_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -299,7 +299,7 @@ class PsionEvent5Benefit(ChoiceBase):
     kind: Literal['psion_event_5_benefit'] = 'psion_event_5_benefit'
     label: str = 'Gain an extra Benefit roll'
 
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
         career = projection.get_current_career()
         projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
@@ -309,7 +309,7 @@ class PsionEvent5Soc(ChoiceBase):
     kind: Literal['psion_event_5_soc'] = 'psion_event_5_soc'
     label: str = 'Gain SOC +1'
 
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.summary.characteristics[Chars.SOC] = min(
             15, projection.summary.characteristics.get(Chars.SOC, 0) + 1
         )
@@ -320,7 +320,7 @@ class PsionEvent5Soc(ChoiceBase):
 class PendingPsionEvent5Roll(CareerSkillRollPendingBase):
     kind: Literal['psion_event_5_roll'] = 'psion_event_5_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingChoices(
@@ -339,7 +339,7 @@ class PsionEvent5Accept(ChoiceBase):
     kind: Literal['psion_event_5_accept'] = 'psion_event_5_accept'
     label: str = 'Accept (roll PSI 8+)'
 
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.pending_inputs.append(
             PendingPsionEvent5Roll(
                 pending_id=(event.id, 0),
@@ -353,13 +353,13 @@ class PsionEvent5Refuse(ChoiceBase):
     kind: Literal['psion_event_5_refuse'] = 'psion_event_5_refuse'
     label: str = 'Refuse'
 
-    def handle(self, projection: CharacterProjection, event: Any) -> None:
+    def handle(self, projection: CharacterProjection, event: Event) -> None:
         career = projection.get_current_career()
         projection.pending_inputs.append(_advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionEvent5Handler(CareerHandlerBase):
-    type: Literal['psion_event_5'] = 'psion_event_5'
+    kind: Literal['psion_event_5'] = 'psion_event_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -374,7 +374,7 @@ class PsionEvent5Handler(CareerHandlerBase):
 
 
 class Psion(CareerData):
-    type: Literal['PSION_CAREER'] = 'PSION_CAREER'
+    kind: Literal['PSION_CAREER'] = 'PSION_CAREER'
 
     name: ClassVar[str] = 'Psion'
     description: ClassVar[str] = (

@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ALLY,
@@ -76,6 +76,7 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific choice and pending types ──────────────────────────────────
@@ -108,7 +109,7 @@ class CitizenMishap4Resist(ChoiceBase):
 class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['citizen_mishap_5_skill_roll'] = 'citizen_mishap_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
         from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
 
@@ -194,7 +195,7 @@ class CitizenEvent8Refuse(ChoiceBase):
 
 
 class CitizenMishap4Handler(CareerHandlerBase):
-    type: Literal['citizen_mishap_4'] = 'citizen_mishap_4'
+    kind: Literal['citizen_mishap_4'] = 'citizen_mishap_4'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -215,7 +216,7 @@ class CitizenMishap4Handler(CareerHandlerBase):
 
 
 class CitizenMishap5Handler(CareerHandlerBase):
-    type: Literal['citizen_mishap_5'] = 'citizen_mishap_5'
+    kind: Literal['citizen_mishap_5'] = 'citizen_mishap_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -234,7 +235,7 @@ class CitizenMishap5Handler(CareerHandlerBase):
 
 
 class CitizenEvent6Handler(CareerHandlerBase):
-    type: Literal['citizen_event_6'] = 'citizen_event_6'
+    kind: Literal['citizen_event_6'] = 'citizen_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -254,7 +255,7 @@ class CitizenEvent6Handler(CareerHandlerBase):
 
 
 class CitizenEvent8Handler(CareerHandlerBase):
-    type: Literal['citizen_event_8'] = 'citizen_event_8'
+    kind: Literal['citizen_event_8'] = 'citizen_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -274,7 +275,7 @@ class CitizenEvent8Handler(CareerHandlerBase):
 
 
 class Citizen(CareerData):
-    type: Literal['CITIZEN_CAREER'] = 'CITIZEN_CAREER'
+    kind: Literal['CITIZEN_CAREER'] = 'CITIZEN_CAREER'
 
     name: ClassVar[str] = 'Citizen'
     description: ClassVar[str] = (

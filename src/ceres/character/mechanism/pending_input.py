@@ -67,7 +67,7 @@ class PendingInputBase(BaseModel):
         return default if isinstance(default, str) else 'generic'
 
 
-def _deserialise_pending_input(v: Any) -> PendingInputBase:
+def _deserialise_pending_input(v: object) -> PendingInputBase:
     if isinstance(v, PendingInputBase):
         return v
     if isinstance(v, dict):

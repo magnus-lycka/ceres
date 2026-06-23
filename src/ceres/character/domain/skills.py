@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, NamedTuple, Self, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, Any, Final, Literal, Self, cast, get_args, get_origin
 
 if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterSummary
@@ -30,14 +30,14 @@ def _level(name: str | None = None):
 class Skill(CeresModel):
     @classmethod
     def name(cls) -> str:
-        raw = get_args(cls.model_fields['type'].annotation)[0]
+        raw = get_args(cls.model_fields['kind'].annotation)[0]
         return raw.replace('_', ' ').title()
 
     @classmethod
     def specialities(cls) -> tuple[str, ...]:
         names: list[str] = []
         for field_name, field in cls.model_fields.items():
-            if field_name in {'display_label', 'type', 'level'} or field.annotation is not Level:
+            if field_name in {'display_label', 'kind', 'level'} or field.annotation is not Level:
                 continue
             extra = field.json_schema_extra or {}
             names.append(str(extra.get('name') or field_name.replace('_', ' ').title()))
@@ -45,74 +45,74 @@ class Skill(CeresModel):
 
 
 class Admin(Skill):
-    type: Literal['ADMIN'] = 'ADMIN'
+    kind: Literal['ADMIN'] = 'ADMIN'
     level: Level = _level()
 
 
 class Advocate(Skill):
-    type: Literal['ADVOCATE'] = 'ADVOCATE'
+    kind: Literal['ADVOCATE'] = 'ADVOCATE'
     level: Level = _level()
 
 
 class Animals(Skill):
-    type: Literal['ANIMALS'] = 'ANIMALS'
+    kind: Literal['ANIMALS'] = 'ANIMALS'
     handling: Level = _level('Handling')
     veterinary: Level = _level('Veterinary')
     training: Level = _level('Training')
 
 
 class PerformingArt(Skill):
-    type: Literal['PERFORMING_ART'] = 'PERFORMING_ART'
+    kind: Literal['PERFORMING_ART'] = 'PERFORMING_ART'
     performer: Level = _level('Performer')
     instrument: Level = _level('Instrument')
 
 
 class CreativeArt(Skill):
-    type: Literal['CREATIVE_ART'] = 'CREATIVE_ART'
+    kind: Literal['CREATIVE_ART'] = 'CREATIVE_ART'
     visual_media: Level = _level('Visual Media')
     exotic_media: Level = _level('Exotic Media')
 
 
 class PresentationArt(Skill):
-    type: Literal['PRESENTATION_ART'] = 'PRESENTATION_ART'
+    kind: Literal['PRESENTATION_ART'] = 'PRESENTATION_ART'
     holography: Level = _level('Holography')
     writing: Level = _level('Writing')
 
 
 class Astrogation(Skill):
-    type: Literal['ASTROGATION'] = 'ASTROGATION'
+    kind: Literal['ASTROGATION'] = 'ASTROGATION'
     level: Level = _level()
 
 
 class Athletics(Skill):
-    type: Literal['ATHLETICS'] = 'ATHLETICS'
+    kind: Literal['ATHLETICS'] = 'ATHLETICS'
     dexterity: Level = _level('Dexterity')
     endurance: Level = _level('Endurance')
     strength: Level = _level('Strength')
 
 
 class Broker(Skill):
-    type: Literal['BROKER'] = 'BROKER'
+    kind: Literal['BROKER'] = 'BROKER'
     level: Level = _level()
 
 
 class Carouse(Skill):
-    type: Literal['CAROUSE'] = 'CAROUSE'
+    kind: Literal['CAROUSE'] = 'CAROUSE'
     level: Level = _level()
 
 
 class Deception(Skill):
-    type: Literal['DECEPTION'] = 'DECEPTION'
+    kind: Literal['DECEPTION'] = 'DECEPTION'
     level: Level = _level()
 
 
 class Diplomat(Skill):
-    type: Literal['DIPLOMAT'] = 'DIPLOMAT'
+    kind: Literal['DIPLOMAT'] = 'DIPLOMAT'
     level: Level = _level()
 
 
 class Drive(Skill):
-    type: Literal['DRIVE'] = 'DRIVE'
+    kind: Literal['DRIVE'] = 'DRIVE'
     hovercraft: Level = _level('Hovercraft')
     mole: Level = _level('Mole')
     track: Level = _level('Track')
@@ -121,7 +121,7 @@ class Drive(Skill):
 
 
 class Electronics(Skill):
-    type: Literal['ELECTRONICS'] = 'ELECTRONICS'
+    kind: Literal['ELECTRONICS'] = 'ELECTRONICS'
     comms: Level = _level('Comms')
     computers: Level = _level('Computers')
     remote_ops: Level = _level('Remote Ops')
@@ -129,7 +129,7 @@ class Electronics(Skill):
 
 
 class Engineer(Skill):
-    type: Literal['ENGINEER'] = 'ENGINEER'
+    kind: Literal['ENGINEER'] = 'ENGINEER'
     m_drive: Level = _level('M-Drive')
     j_drive: Level = _level('J-Drive')
     life_support: Level = _level('Life Support')
@@ -137,12 +137,12 @@ class Engineer(Skill):
 
 
 class Explosives(Skill):
-    type: Literal['EXPLOSIVES'] = 'EXPLOSIVES'
+    kind: Literal['EXPLOSIVES'] = 'EXPLOSIVES'
     level: Level = _level()
 
 
 class Flyer(Skill):
-    type: Literal['FLYER'] = 'FLYER'
+    kind: Literal['FLYER'] = 'FLYER'
     airship: Level = _level('Airship')
     grav: Level = _level('Grav')
     ornithopter: Level = _level('Ornithopter')
@@ -151,19 +151,19 @@ class Flyer(Skill):
 
 
 class Gambler(Skill):
-    type: Literal['GAMBLER'] = 'GAMBLER'
+    kind: Literal['GAMBLER'] = 'GAMBLER'
     level: Level = _level()
 
 
 class GunCombat(Skill):
-    type: Literal['GUN_COMBAT'] = 'GUN_COMBAT'
+    kind: Literal['GUN_COMBAT'] = 'GUN_COMBAT'
     archaic: Level = _level('Archaic')
     energy: Level = _level('Energy')
     slug: Level = _level('Slug')
 
 
 class Gunner(Skill):
-    type: Literal['GUNNER'] = 'GUNNER'
+    kind: Literal['GUNNER'] = 'GUNNER'
     turret: Level = _level('Turret')
     ortillery: Level = _level('Ortillery')
     screen: Level = _level('Screen')
@@ -171,19 +171,19 @@ class Gunner(Skill):
 
 
 class HeavyWeapons(Skill):
-    type: Literal['HEAVY_WEAPONS'] = 'HEAVY_WEAPONS'
+    kind: Literal['HEAVY_WEAPONS'] = 'HEAVY_WEAPONS'
     artillery: Level = _level('Artillery')
     portable: Level = _level('Portable')
     vehicle: Level = _level('Vehicle')
 
 
 class Investigate(Skill):
-    type: Literal['INVESTIGATE'] = 'INVESTIGATE'
+    kind: Literal['INVESTIGATE'] = 'INVESTIGATE'
     level: Level = _level()
 
 
 class JackOfAllTrades(Skill):
-    type: Literal['JACK_OF_ALL_TRADES'] = 'JACK_OF_ALL_TRADES'
+    kind: Literal['JACK_OF_ALL_TRADES'] = 'JACK_OF_ALL_TRADES'
     level: Level = _level()
 
     @classmethod
@@ -192,12 +192,12 @@ class JackOfAllTrades(Skill):
 
 
 class LanguageGalanglic(Skill):
-    type: Literal['LANGUAGE_GALANGLIC'] = 'LANGUAGE_GALANGLIC'
+    kind: Literal['LANGUAGE_GALANGLIC'] = 'LANGUAGE_GALANGLIC'
     level: Level = _level()
 
 
 class LanguageVilani(Skill):
-    type: Literal['LANGUAGE_VILANI'] = 'LANGUAGE_VILANI'
+    kind: Literal['LANGUAGE_VILANI'] = 'LANGUAGE_VILANI'
     level: Level = _level()
 
     @classmethod
@@ -206,62 +206,62 @@ class LanguageVilani(Skill):
 
 
 class LanguageZdetl(Skill):
-    type: Literal['LANGUAGE_ZDETL'] = 'LANGUAGE_ZDETL'
+    kind: Literal['LANGUAGE_ZDETL'] = 'LANGUAGE_ZDETL'
     level: Level = _level()
 
 
 class LanguageOynprith(Skill):
-    type: Literal['LANGUAGE_OYNPRITH'] = 'LANGUAGE_OYNPRITH'
+    kind: Literal['LANGUAGE_OYNPRITH'] = 'LANGUAGE_OYNPRITH'
     level: Level = _level()
 
 
 class LanguageTrokh(Skill):
-    type: Literal['LANGUAGE_TROKH'] = 'LANGUAGE_TROKH'
+    kind: Literal['LANGUAGE_TROKH'] = 'LANGUAGE_TROKH'
     level: Level = _level()
 
 
 class LanguageGvegh(Skill):
-    type: Literal['LANGUAGE_GVEGH'] = 'LANGUAGE_GVEGH'
+    kind: Literal['LANGUAGE_GVEGH'] = 'LANGUAGE_GVEGH'
     level: Level = _level()
 
 
 class LanguageAekhu(Skill):
-    type: Literal['LANGUAGE_AEKHU'] = 'LANGUAGE_AEKHU'
+    kind: Literal['LANGUAGE_AEKHU'] = 'LANGUAGE_AEKHU'
     level: Level = _level()
 
 
 class LanguageArrghoun(Skill):
-    type: Literal['LANGUAGE_ARRGHOUN'] = 'LANGUAGE_ARRGHOUN'
+    kind: Literal['LANGUAGE_ARRGHOUN'] = 'LANGUAGE_ARRGHOUN'
     level: Level = _level()
 
 
 class LanguageIrilitok(Skill):
-    type: Literal['LANGUAGE_IRILITOK'] = 'LANGUAGE_IRILITOK'
+    kind: Literal['LANGUAGE_IRILITOK'] = 'LANGUAGE_IRILITOK'
     level: Level = _level()
 
 
 class LanguageLogaksu(Skill):
-    type: Literal['LANGUAGE_LOGAKSU'] = 'LANGUAGE_LOGAKSU'
+    kind: Literal['LANGUAGE_LOGAKSU'] = 'LANGUAGE_LOGAKSU'
     level: Level = _level()
 
 
 class LanguageOvaghoun(Skill):
-    type: Literal['LANGUAGE_OVAGHOUN'] = 'LANGUAGE_OVAGHOUN'
+    kind: Literal['LANGUAGE_OVAGHOUN'] = 'LANGUAGE_OVAGHOUN'
     level: Level = _level()
 
 
 class LanguageSuedzuk(Skill):
-    type: Literal['LANGUAGE_SUEDZUK'] = 'LANGUAGE_SUEDZUK'
+    kind: Literal['LANGUAGE_SUEDZUK'] = 'LANGUAGE_SUEDZUK'
     level: Level = _level()
 
 
 class LanguageVuakedh(Skill):
-    type: Literal['LANGUAGE_VUAKEDH'] = 'LANGUAGE_VUAKEDH'
+    kind: Literal['LANGUAGE_VUAKEDH'] = 'LANGUAGE_VUAKEDH'
     level: Level = _level()
 
 
 class LanguageSagamaal(Skill):
-    type: Literal['LANGUAGE_SAGAMAAL'] = 'LANGUAGE_SAGAMAAL'
+    kind: Literal['LANGUAGE_SAGAMAAL'] = 'LANGUAGE_SAGAMAAL'
     level: Level = _level()
 
     @classmethod
@@ -270,7 +270,7 @@ class LanguageSagamaal(Skill):
 
 
 class LanguageDarrian(Skill):
-    type: Literal['LANGUAGE_DARRIAN'] = 'LANGUAGE_DARRIAN'
+    kind: Literal['LANGUAGE_DARRIAN'] = 'LANGUAGE_DARRIAN'
     level: Level = _level()
 
     @classmethod
@@ -279,22 +279,22 @@ class LanguageDarrian(Skill):
 
 
 class Leadership(Skill):
-    type: Literal['LEADERSHIP'] = 'LEADERSHIP'
+    kind: Literal['LEADERSHIP'] = 'LEADERSHIP'
     level: Level = _level()
 
 
 class Mechanic(Skill):
-    type: Literal['MECHANIC'] = 'MECHANIC'
+    kind: Literal['MECHANIC'] = 'MECHANIC'
     level: Level = _level()
 
 
 class Medic(Skill):
-    type: Literal['MEDIC'] = 'MEDIC'
+    kind: Literal['MEDIC'] = 'MEDIC'
     level: Level = _level()
 
 
 class Melee(Skill):
-    type: Literal['MELEE'] = 'MELEE'
+    kind: Literal['MELEE'] = 'MELEE'
     unarmed: Level = _level('Unarmed')
     blade: Level = _level('Blade')
     bludgeon: Level = _level('Bludgeon')
@@ -305,36 +305,36 @@ class Melee(Skill):
 
 
 class Navigation(Skill):
-    type: Literal['NAVIGATION'] = 'NAVIGATION'
+    kind: Literal['NAVIGATION'] = 'NAVIGATION'
     level: Level = _level()
 
 
 class Persuade(Skill):
-    type: Literal['PERSUADE'] = 'PERSUADE'
+    kind: Literal['PERSUADE'] = 'PERSUADE'
     level: Level = _level()
 
 
 class Pilot(Skill):
-    type: Literal['PILOT'] = 'PILOT'
+    kind: Literal['PILOT'] = 'PILOT'
     small_craft: Level = _level('Small Craft')
     spacecraft: Level = _level('Spacecraft')
     capital_ships: Level = _level('Capital Ships')
 
 
 class ColonistProfession(Skill):
-    type: Literal['COLONIST_PROFESSION'] = 'COLONIST_PROFESSION'
+    kind: Literal['COLONIST_PROFESSION'] = 'COLONIST_PROFESSION'
     farming: Level = _level('Farming')
     ranching: Level = _level('Ranching')
 
 
 class FreeloaderProfession(Skill):
-    type: Literal['FREELOADER_PROFESSION'] = 'FREELOADER_PROFESSION'
+    kind: Literal['FREELOADER_PROFESSION'] = 'FREELOADER_PROFESSION'
     scrounging: Level = _level('Scrounging')
     security: Level = _level('Security')
 
 
 class HostileEnvironmentProfession(Skill):
-    type: Literal['HOSTILE_ENVIRONMENT_PROFESSION'] = 'HOSTILE_ENVIRONMENT_PROFESSION'
+    kind: Literal['HOSTILE_ENVIRONMENT_PROFESSION'] = 'HOSTILE_ENVIRONMENT_PROFESSION'
     contaminant: Level = _level('Contaminant')
     low_g: Level = _level('Low-G')
     high_g: Level = _level('High-G')
@@ -342,13 +342,13 @@ class HostileEnvironmentProfession(Skill):
 
 
 class SpacerProfession(Skill):
-    type: Literal['SPACER_PROFESSION'] = 'SPACER_PROFESSION'
+    kind: Literal['SPACER_PROFESSION'] = 'SPACER_PROFESSION'
     belter: Level = _level('Belter')
     crewmember: Level = _level('Crewmember')
 
 
 class SportProfession(Skill):
-    type: Literal['SPORT_PROFESSION'] = 'SPORT_PROFESSION'
+    kind: Literal['SPORT_PROFESSION'] = 'SPORT_PROFESSION'
     atmosphere_surfing: Level = _level('Atmosphere Surfing')
     golf: Level = _level('Golf')
     motorsports: Level = _level('Motorsports')
@@ -358,7 +358,7 @@ class SportProfession(Skill):
 
 
 class WorkerProfession(Skill):
-    type: Literal['WORKER_PROFESSION'] = 'WORKER_PROFESSION'
+    kind: Literal['WORKER_PROFESSION'] = 'WORKER_PROFESSION'
     armourer: Level = _level('Armourer')
     biologicals: Level = _level('Biologicals')
     civil_engineering: Level = _level('Civil Engineering')
@@ -369,12 +369,12 @@ class WorkerProfession(Skill):
 
 
 class Recon(Skill):
-    type: Literal['RECON'] = 'RECON'
+    kind: Literal['RECON'] = 'RECON'
     level: Level = _level()
 
 
 class LifeScience(Skill):
-    type: Literal['LIFE_SCIENCE'] = 'LIFE_SCIENCE'
+    kind: Literal['LIFE_SCIENCE'] = 'LIFE_SCIENCE'
     biology: Level = _level('Biology')
     genetics: Level = _level('Genetics')
     psionicology: Level = _level('Psionicology')
@@ -382,20 +382,20 @@ class LifeScience(Skill):
 
 
 class PhysicalScience(Skill):
-    type: Literal['PHYSICAL_SCIENCE'] = 'PHYSICAL_SCIENCE'
+    kind: Literal['PHYSICAL_SCIENCE'] = 'PHYSICAL_SCIENCE'
     chemistry: Level = _level('Chemistry')
     physics: Level = _level('Physics')
     jumpspace_physics: Level = _level('Jumpspace Physics')
 
 
 class RoboticScience(Skill):
-    type: Literal['ROBOTIC_SCIENCE'] = 'ROBOTIC_SCIENCE'
+    kind: Literal['ROBOTIC_SCIENCE'] = 'ROBOTIC_SCIENCE'
     cybernetics: Level = _level('Cybernetics')
     robotics: Level = _level('Robotics')
 
 
 class SocialScience(Skill):
-    type: Literal['SOCIAL_SCIENCE'] = 'SOCIAL_SCIENCE'
+    kind: Literal['SOCIAL_SCIENCE'] = 'SOCIAL_SCIENCE'
     archaeology: Level = _level('Archaeology')
     economics: Level = _level('Economics')
     history: Level = _level('History')
@@ -406,14 +406,14 @@ class SocialScience(Skill):
 
 
 class SpaceScience(Skill):
-    type: Literal['SPACE_SCIENCE'] = 'SPACE_SCIENCE'
+    kind: Literal['SPACE_SCIENCE'] = 'SPACE_SCIENCE'
     astronomy: Level = _level('Astronomy')
     cosmology: Level = _level('Cosmology')
     planetology: Level = _level('Planetology')
 
 
 class Seafarer(Skill):
-    type: Literal['SEAFARER'] = 'SEAFARER'
+    kind: Literal['SEAFARER'] = 'SEAFARER'
     ocean_ships: Level = _level('Ocean Ships')
     personal: Level = _level('Personal')
     sail: Level = _level('Sail')
@@ -421,39 +421,39 @@ class Seafarer(Skill):
 
 
 class Stealth(Skill):
-    type: Literal['STEALTH'] = 'STEALTH'
+    kind: Literal['STEALTH'] = 'STEALTH'
     level: Level = _level()
 
 
 class Steward(Skill):
-    type: Literal['STEWARD'] = 'STEWARD'
+    kind: Literal['STEWARD'] = 'STEWARD'
     level: Level = _level()
 
 
 class Streetwise(Skill):
-    type: Literal['STREETWISE'] = 'STREETWISE'
+    kind: Literal['STREETWISE'] = 'STREETWISE'
     level: Level = _level()
 
 
 class Survival(Skill):
-    type: Literal['SURVIVAL'] = 'SURVIVAL'
+    kind: Literal['SURVIVAL'] = 'SURVIVAL'
     level: Level = _level()
 
 
 class Tactics(Skill):
-    type: Literal['TACTICS'] = 'TACTICS'
+    kind: Literal['TACTICS'] = 'TACTICS'
     military: Level = _level('Military')
     naval: Level = _level('Naval')
 
 
 class VaccSuit(Skill):
-    type: Literal['VACC_SUIT'] = 'VACC_SUIT'
+    kind: Literal['VACC_SUIT'] = 'VACC_SUIT'
     level: Level = _level()
 
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
 Arts = PerformingArt | CreativeArt | PresentationArt
-type ArtSkill = Annotated[Arts, Field(discriminator='type')]
+type ArtSkill = Annotated[Arts, Field(discriminator='kind')]
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
 Professions = (
@@ -464,11 +464,11 @@ Professions = (
     | SportProfession
     | WorkerProfession
 )
-type ProfessionSkill = Annotated[Professions, Field(discriminator='type')]
+type ProfessionSkill = Annotated[Professions, Field(discriminator='kind')]
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
 Sciences = LifeScience | PhysicalScience | RoboticScience | SocialScience | SpaceScience
-type ScienceSkill = Annotated[Sciences, Field(discriminator='type')]
+type ScienceSkill = Annotated[Sciences, Field(discriminator='kind')]
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
 Languages = (
@@ -488,7 +488,7 @@ Languages = (
     | LanguageSagamaal
     | LanguageDarrian
 )
-type LanguageSkill = Annotated[Languages, Field(discriminator='type')]
+type LanguageSkill = Annotated[Languages, Field(discriminator='kind')]
 
 # Please Claude, don't be a fool and try to make this a type. It's not a type.
 BackgroundSkills = (
@@ -510,7 +510,7 @@ BackgroundSkills = (
     | Survival
     | VaccSuit
 )
-type BackgroundSkill = Annotated[BackgroundSkills, Field(discriminator='type')]
+type BackgroundSkill = Annotated[BackgroundSkills, Field(discriminator='kind')]
 
 type AnySkill = Annotated[
     Admin
@@ -552,13 +552,8 @@ type AnySkill = Annotated[
     | Survival
     | Tactics
     | VaccSuit,
-    Field(discriminator='type'),
+    Field(discriminator='kind'),
 ]
-
-
-class SkillInfo(NamedTuple):
-    type: str
-    specialities: tuple[str, ...] = ()
 
 
 def _skill_classes(skill_union: object) -> tuple[type[Skill], ...]:
@@ -567,12 +562,6 @@ def _skill_classes(skill_union: object) -> tuple[type[Skill], ...]:
     if get_origin(skill_union) is Annotated:
         skill_union = get_args(skill_union)[0]
     return get_args(skill_union)
-
-
-def skill_list(skill_union: object = AnySkill) -> tuple[SkillInfo, ...]:
-    return tuple(
-        SkillInfo(skill.model_fields['type'].default, skill.specialities()) for skill in _skill_classes(skill_union)
-    )
 
 
 def skill_instances(skill_union: object) -> list[AnySkill]:

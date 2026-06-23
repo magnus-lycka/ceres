@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from ceres.character.domain.career.army import Army
 from ceres.character.domain.career.career_data import CareerData, CharCheck
@@ -8,6 +8,7 @@ from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.psionics import Psi
+from ceres.character.mechanism.event_base import Event
 
 
 class MilitaryAcademyPreCareer(PreCareerData):
@@ -29,7 +30,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
     def apply_entry(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         pending_idx: int,
     ) -> int:
         service_table = self.service_skills_from().skill_table('service_skills')
@@ -42,7 +43,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         honours: bool,
     ) -> int:
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
@@ -65,7 +66,7 @@ class MilitaryAcademyPreCareer(PreCareerData):
     def apply_failed_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
     ) -> None:
         if event.roll > 2:
             projection.auto_qualify_careers.append(self.service_skills_from)

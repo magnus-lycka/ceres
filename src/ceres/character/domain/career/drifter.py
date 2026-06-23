@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ALLY,
@@ -66,6 +66,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -74,7 +75,7 @@ from ceres.character.mechanism.pending_input import ChoiceBase
 class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_mishap_5_skill_roll'] = 'drifter_mishap_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import (
             _apply_mishap_ejection,
             _set_forced_prison_career,
@@ -109,7 +110,7 @@ class DrifterEvent3Decline(ChoiceBase):
 class PendingDrifterEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_event_8_skill_roll'] = 'drifter_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -150,7 +151,7 @@ class DrifterEvent9Prison(ChoiceBase):
 class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['drifter_event_9_roll_skill_roll'] = 'drifter_event_9_roll_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         career = projection.get_current_career()
         roll = event.modified_roll
         if roll <= 2:
@@ -202,7 +203,7 @@ class DrifterEvent9Decline(ChoiceBase):
 
 
 class DrifterMishap5Handler(CareerHandlerBase):
-    type: Literal['drifter_mishap_5'] = 'drifter_mishap_5'
+    kind: Literal['drifter_mishap_5'] = 'drifter_mishap_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -221,7 +222,7 @@ class DrifterMishap5Handler(CareerHandlerBase):
 
 
 class DrifterEvent3Handler(CareerHandlerBase):
-    type: Literal['drifter_event_3'] = 'drifter_event_3'
+    kind: Literal['drifter_event_3'] = 'drifter_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -239,7 +240,7 @@ class DrifterEvent3Handler(CareerHandlerBase):
 
 
 class DrifterEvent8Handler(CareerHandlerBase):
-    type: Literal['drifter_event_8'] = 'drifter_event_8'
+    kind: Literal['drifter_event_8'] = 'drifter_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -258,7 +259,7 @@ class DrifterEvent8Handler(CareerHandlerBase):
 
 
 class DrifterEvent9Handler(CareerHandlerBase):
-    type: Literal['drifter_event_9'] = 'drifter_event_9'
+    kind: Literal['drifter_event_9'] = 'drifter_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -276,7 +277,7 @@ class DrifterEvent9Handler(CareerHandlerBase):
 
 
 class DrifterEvent10Handler(CareerHandlerBase):
-    type: Literal['drifter_event_10'] = 'drifter_event_10'
+    kind: Literal['drifter_event_10'] = 'drifter_event_10'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -292,7 +293,7 @@ class DrifterEvent10Handler(CareerHandlerBase):
 
 
 class DrifterEvent11Handler(CareerHandlerBase):
-    type: Literal['drifter_event_11'] = 'drifter_event_11'
+    kind: Literal['drifter_event_11'] = 'drifter_event_11'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -309,7 +310,7 @@ class DrifterEvent11Handler(CareerHandlerBase):
 
 
 class Drifter(CareerData):
-    type: Literal['DRIFTER_CAREER'] = 'DRIFTER_CAREER'
+    kind: Literal['DRIFTER_CAREER'] = 'DRIFTER_CAREER'
 
     name: ClassVar[str] = 'Drifter'
     description: ClassVar[str] = (

@@ -18,6 +18,7 @@ from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.skills import AnySkill, Carouse, Level, level_fields
 from ceres.character.domain.term_data import TermData
+from ceres.character.mechanism.event_base import Event
 
 
 class PrecareerSkillEntry(BaseModel):
@@ -132,7 +133,7 @@ class PreCareerData(TermData):
     def apply_entry(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         pending_idx: int,
     ) -> int:
         """Default: generic companion entry — auto-grant fixed skills, queue picks for categories."""
@@ -194,7 +195,7 @@ class PreCareerData(TermData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         honours: bool,
     ) -> int:
         """Default: no graduation effects. Returns pending_idx (0)."""
@@ -203,6 +204,6 @@ class PreCareerData(TermData):
     def apply_failed_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
     ) -> None:
         """Default: no effects on failed graduation."""

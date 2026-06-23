@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import Field
 
@@ -222,7 +222,7 @@ def _apply_injury_table_result(projection: CharacterProjection, roll: int, event
         len(projection.pending_inputs),
     )
     if roll == 5:
-        pending: Any = PendingCharacteristicChoice(
+        pending: PendingCharacteristicChoice = PendingCharacteristicChoice(
             pending_id=(event_id, 0),
             instruction='Injured: choose STR, DEX, or END to reduce by 1',
             options=[Chars.STR, Chars.DEX, Chars.END],

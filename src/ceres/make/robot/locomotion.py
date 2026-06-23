@@ -93,7 +93,7 @@ class _LocomotionBase(CeresModel):
 
 
 class NoneLocomotion(_LocomotionBase):
-    type: Literal['NONE'] = 'NONE'
+    kind: Literal['NONE'] = 'NONE'
     _required_tl: ClassVar[int] = 5
     _agility: ClassVar[int | None] = None
     _base_endurance: ClassVar[int] = 216
@@ -108,7 +108,7 @@ class NoneLocomotion(_LocomotionBase):
 
 
 class WheelsLocomotion(_LocomotionBase):
-    type: Literal['WHEELS'] = 'WHEELS'
+    kind: Literal['WHEELS'] = 'WHEELS'
     _required_tl: ClassVar[int] = 5
     _agility: ClassVar[int | None] = 0
     _base_endurance: ClassVar[int] = 72
@@ -124,7 +124,7 @@ class WheelsLocomotion(_LocomotionBase):
 
 
 class WheelsAtvLocomotion(_LocomotionBase):
-    type: Literal['WHEELS_ATV'] = 'WHEELS_ATV'
+    kind: Literal['WHEELS_ATV'] = 'WHEELS_ATV'
     _required_tl: ClassVar[int] = 5
     _agility: ClassVar[int | None] = 0
     _base_endurance: ClassVar[int] = 72
@@ -140,7 +140,7 @@ class WheelsAtvLocomotion(_LocomotionBase):
 
 
 class TracksLocomotion(_LocomotionBase):
-    type: Literal['TRACKS'] = 'TRACKS'
+    kind: Literal['TRACKS'] = 'TRACKS'
     _required_tl: ClassVar[int] = 5
     _agility: ClassVar[int | None] = -1
     _base_endurance: ClassVar[int] = 72
@@ -156,7 +156,7 @@ class TracksLocomotion(_LocomotionBase):
 
 
 class GravLocomotion(_LocomotionBase):
-    type: Literal['GRAV'] = 'GRAV'
+    kind: Literal['GRAV'] = 'GRAV'
     _required_tl: ClassVar[int] = 9
     _agility: ClassVar[int | None] = 1
     _base_endurance: ClassVar[int] = 24
@@ -172,7 +172,7 @@ class GravLocomotion(_LocomotionBase):
 
 
 class AeroplaneLocomotion(_LocomotionBase):
-    type: Literal['AEROPLANE'] = 'AEROPLANE'
+    kind: Literal['AEROPLANE'] = 'AEROPLANE'
     _required_tl: ClassVar[int] = 5
     _agility: ClassVar[int | None] = 1
     _base_endurance: ClassVar[int] = 12
@@ -187,7 +187,7 @@ class AeroplaneLocomotion(_LocomotionBase):
 
 
 class AquaticLocomotion(_LocomotionBase):
-    type: Literal['AQUATIC'] = 'AQUATIC'
+    kind: Literal['AQUATIC'] = 'AQUATIC'
     _required_tl: ClassVar[int] = 6
     _agility: ClassVar[int | None] = -2
     _base_endurance: ClassVar[int] = 72
@@ -203,7 +203,7 @@ class AquaticLocomotion(_LocomotionBase):
 
 
 class VtolLocomotion(_LocomotionBase):
-    type: Literal['VTOL'] = 'VTOL'
+    kind: Literal['VTOL'] = 'VTOL'
     _required_tl: ClassVar[int] = 7
     _agility: ClassVar[int | None] = 0
     _base_endurance: ClassVar[int] = 24
@@ -219,7 +219,7 @@ class VtolLocomotion(_LocomotionBase):
 
 
 class WalkerLocomotion(_LocomotionBase):
-    type: Literal['WALKER'] = 'WALKER'
+    kind: Literal['WALKER'] = 'WALKER'
     _required_tl: ClassVar[int] = 8
     _agility: ClassVar[int | None] = 0
     _base_endurance: ClassVar[int] = 72
@@ -235,7 +235,7 @@ class WalkerLocomotion(_LocomotionBase):
 
 
 class HovercraftLocomotion(_LocomotionBase):
-    type: Literal['HOVERCRAFT'] = 'HOVERCRAFT'
+    kind: Literal['HOVERCRAFT'] = 'HOVERCRAFT'
     _required_tl: ClassVar[int] = 7
     _agility: ClassVar[int | None] = 1
     _base_endurance: ClassVar[int] = 24
@@ -251,7 +251,7 @@ class HovercraftLocomotion(_LocomotionBase):
 
 
 class ThrusterLocomotion(_LocomotionBase):
-    type: Literal['THRUSTER'] = 'THRUSTER'
+    kind: Literal['THRUSTER'] = 'THRUSTER'
     _required_tl: ClassVar[int] = 7
     _agility: ClassVar[int | None] = 1
     _base_endurance: ClassVar[int] = 2
@@ -280,5 +280,5 @@ LocomotionUnion = Annotated[
     | WalkerLocomotion
     | HovercraftLocomotion
     | ThrusterLocomotion,
-    Field(discriminator='type'),
+    Field(discriminator='kind'),
 ]

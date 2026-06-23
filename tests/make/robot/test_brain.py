@@ -231,18 +231,11 @@ class TestBrainTlField:
 
 
 class TestBrainDiscriminatedUnion:
-    @pytest.mark.parametrize(
-        'brain, expected_type',
-        [
-            (PrimitiveBrain(), 'PRIMITIVE'),
-            (BasicBrain(), 'BASIC'),
-            (AdvancedBrain(), 'ADVANCED'),
-        ],
-    )
-    def test_roundtrip(self, brain, expected_type):
+    @pytest.mark.parametrize('brain', [PrimitiveBrain(), BasicBrain(), AdvancedBrain()])
+    def test_roundtrip(self, brain):
         adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
         restored = adapter.validate_json(brain.model_dump_json())
-        assert restored.type == expected_type
+        assert type(restored) is type(brain)
 
     def test_installed_skills_roundtrip(self):
         brain = AdvancedBrain(brain_tl=12, installed_skills=(Electronics(remote_ops=1),))
@@ -262,15 +255,15 @@ class TestBrainDiscriminatedUnion:
         assert restored.function == 'clean'
 
     def test_discriminator_in_json(self):
-        data = AdvancedBrain(brain_tl=11).model_dump()
-        assert data['type'] == 'ADVANCED'
-        assert data['brain_tl'] == 11
+        brain = AdvancedBrain(brain_tl=11)
+        restored = TypeAdapter(RobotBrainUnion).validate_python(brain.model_dump())
+        assert isinstance(restored, AdvancedBrain)
+        assert restored.brain_tl == 11
 
     def test_self_aware_roundtrip(self):
         brain = SelfAwareBrain(hardened=True)
         adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
         restored = adapter.validate_json(brain.model_dump_json())
-        assert restored.type == 'SELF_AWARE'
         assert isinstance(restored, SelfAwareBrain)
         assert restored.hardened is True
 
@@ -839,10 +832,6 @@ class TestSelfAwareBrainRoundtrip:
         restored = adapter.validate_json(brain.model_dump_json())
         assert isinstance(restored, SelfAwareBrain)
         assert restored.int_upgrade == 2
-
-    def test_type_discriminator_is_self_aware(self):
-        data = SelfAwareBrain().model_dump()
-        assert data['type'] == 'SELF_AWARE'
 
 
 class TestSelfAwareBrainInRobot:

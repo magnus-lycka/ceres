@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal, cast
+from typing import ClassVar, Literal, cast
 
 from ceres.character.domain.benefits import (
     ALLY,
@@ -69,6 +69,7 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 3: prison gang ─────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ class PrisonerMishap3Fight(ChoiceBase):
 class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_mishap_3_fight_skill_roll'] = 'prisoner_mishap_3_fight_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
@@ -128,7 +129,7 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerMishap3Handler(CareerHandlerBase):
-    type: Literal['prisoner_mishap_3'] = 'prisoner_mishap_3'
+    kind: Literal['prisoner_mishap_3'] = 'prisoner_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -171,7 +172,7 @@ class PrisonerEvent3Attempt(ChoiceBase):
 class PendingPrisonerEvent3EscapeSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_3_escape_skill_roll'] = 'prisoner_event_3_escape_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 10:
             projection.summary.narrative.append('Prisoner event 3: escaped from prison — career ends.')
             muster_out_setup(projection, event.id, 0)
@@ -182,7 +183,7 @@ class PendingPrisonerEvent3EscapeSkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerEvent3Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_3'] = 'prisoner_event_3'
+    kind: Literal['prisoner_event_3'] = 'prisoner_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -202,7 +203,7 @@ class PrisonerEvent3Handler(CareerHandlerBase):
 class PendingPrisonerEvent4SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_4_skill_roll'] = 'prisoner_event_4_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
             projection.pending_inputs.append(
@@ -219,7 +220,7 @@ class PendingPrisonerEvent4SkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerEvent4Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_4'] = 'prisoner_event_4'
+    kind: Literal['prisoner_event_4'] = 'prisoner_event_4'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -239,7 +240,7 @@ class PrisonerEvent4Handler(CareerHandlerBase):
 class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_5_skill_roll'] = 'prisoner_event_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
             projection.summary.problems.append(
@@ -259,7 +260,7 @@ class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerEvent5Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_5'] = 'prisoner_event_5'
+    kind: Literal['prisoner_event_5'] = 'prisoner_event_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -279,7 +280,7 @@ class PrisonerEvent5Handler(CareerHandlerBase):
 class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_6_skill_roll'] = 'prisoner_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             from ceres.character.domain.skills import AnySkill, _skill_classes
 
@@ -301,7 +302,7 @@ class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerEvent6Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_6'] = 'prisoner_event_6'
+    kind: Literal['prisoner_event_6'] = 'prisoner_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -390,7 +391,7 @@ class PrisonerEvent7GoodBehaviour(ChoiceBase):
 class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_7_riot_skill_roll'] = 'prisoner_event_7_riot_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
@@ -408,7 +409,7 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerEvent7Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_7'] = 'prisoner_event_7'
+    kind: Literal['prisoner_event_7'] = 'prisoner_event_7'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -499,14 +500,14 @@ class PendingPrisonerEvent9LawyerSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_9_lawyer_skill_roll'] = 'prisoner_event_9_lawyer_skill_roll'
     lawyer_level: int = 1
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll + self.lawyer_level >= 8:
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
         # _apply_skill_roll auto-queues advancement
 
 
 class PrisonerEvent9Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_9'] = 'prisoner_event_9'
+    kind: Literal['prisoner_event_9'] = 'prisoner_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -557,7 +558,7 @@ class PrisonerEvent12Refuse(ChoiceBase):
 class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
     kind: Literal['prisoner_event_12_heroism_skill_roll'] = 'prisoner_event_12_heroism_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import _advancement_pending
 
         career = projection.get_current_career()
@@ -578,7 +579,7 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
 
 
 class PrisonerEvent12Handler(CareerHandlerBase):
-    type: Literal['prisoner_event_12'] = 'prisoner_event_12'
+    kind: Literal['prisoner_event_12'] = 'prisoner_event_12'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -593,7 +594,7 @@ class PrisonerEvent12Handler(CareerHandlerBase):
 
 
 class Prisoner(CareerData):
-    type: Literal['PRISONER_CAREER'] = 'PRISONER_CAREER'
+    kind: Literal['PRISONER_CAREER'] = 'PRISONER_CAREER'
 
     name: ClassVar[str] = 'Prisoner'
     description: ClassVar[str] = (

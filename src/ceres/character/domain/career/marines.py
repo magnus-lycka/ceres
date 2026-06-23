@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -68,6 +68,7 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -104,7 +105,7 @@ class MarinesMishap4Accept(ChoiceBase):
 class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['marines_mishap_4_skill_roll'] = 'marines_mishap_4_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
         projection.get_current_career()
@@ -116,7 +117,7 @@ class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
 class PendingMarinesEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['marines_event_6_skill_roll'] = 'marines_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -161,7 +162,7 @@ class MarinesEvent9Protect(ChoiceBase):
 
 
 class MarinesMishap4Handler(CareerHandlerBase):
-    type: Literal['marines_mishap_4'] = 'marines_mishap_4'
+    kind: Literal['marines_mishap_4'] = 'marines_mishap_4'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -182,7 +183,7 @@ class MarinesMishap4Handler(CareerHandlerBase):
 
 
 class MarinesEvent5Handler(CareerHandlerBase):
-    type: Literal['marines_event_5'] = 'marines_event_5'
+    kind: Literal['marines_event_5'] = 'marines_event_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -201,7 +202,7 @@ class MarinesEvent5Handler(CareerHandlerBase):
 
 
 class MarinesEvent6Handler(CareerHandlerBase):
-    type: Literal['marines_event_6'] = 'marines_event_6'
+    kind: Literal['marines_event_6'] = 'marines_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -219,7 +220,7 @@ class MarinesEvent6Handler(CareerHandlerBase):
 
 
 class MarinesEvent9Handler(CareerHandlerBase):
-    type: Literal['marines_event_9'] = 'marines_event_9'
+    kind: Literal['marines_event_9'] = 'marines_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -237,7 +238,7 @@ class MarinesEvent9Handler(CareerHandlerBase):
 
 
 class Marines(CareerData):
-    type: Literal['MARINES_CAREER'] = 'MARINES_CAREER'
+    kind: Literal['MARINES_CAREER'] = 'MARINES_CAREER'
 
     name: ClassVar[str] = 'Marines'
     description: ClassVar[str] = (

@@ -26,6 +26,7 @@ from ceres.character.domain.career.career_data import (
     AssignmentData,
     CareerData,
     CareerSkillOption,
+    RankBonus,
     SkillTableOption,
 )
 from ceres.character.domain.career.entry import (
@@ -141,7 +142,7 @@ __all__ = [
 # ── Shared helpers ─────────────────────────────────────────────────────────────
 
 
-def _skill_option_label(opt: Any) -> str:
+def _skill_option_label(opt: CareerSkillOption | AdvancementDmOption) -> str:
     return skill_option_label(opt)
 
 
@@ -455,19 +456,19 @@ def _build_skill_select_options(
 # ── Career helper functions ───────────────────────────────────────────────────
 
 
-def _rank_bonus_skill(bonus: Any) -> AnySkill:
+def _rank_bonus_skill(bonus: RankBonus) -> AnySkill:
     return rank_bonus_skill(bonus)
 
 
-def _apply_auto_advance(projection: CharacterProjection, career: Any, event_id: int) -> None:
+def _apply_auto_advance(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     apply_auto_advance(projection, career, event_id)
 
 
-def _apply_forced_commission(projection: CharacterProjection, career: Any, event_id: int) -> None:
+def _apply_forced_commission(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     apply_forced_commission(projection, career, event_id)
 
 
-def _start_new_career_term(projection: CharacterProjection, career: Any, event_id: int) -> None:
+def _start_new_career_term(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
     purge_career_pendings(projection)
     assignment = projection.summary.current_assignment
     if assignment is None:
@@ -475,17 +476,19 @@ def _start_new_career_term(projection: CharacterProjection, career: Any, event_i
     career.start_new_term(projection, assignment, event_id, is_continuation=True)
 
 
-def _survive_pending(career: Any, assignment: AssignmentData | None, event_id: int) -> Any:
+def _survive_pending(career: CareerData, assignment: AssignmentData | None, event_id: int) -> Any:
     if assignment is None:
         raise ReplayError(f'No current assignment in career {career.name!r}')
     return career.survival_pending(assignment, event_id)
 
 
-def _advancement_pending(career: Any, assignment: AssignmentData | None, event_id: int, pending_idx: int = 0) -> Any:
+def _advancement_pending(
+    career: CareerData, assignment: AssignmentData | None, event_id: int, pending_idx: int = 0
+) -> Any:
     return advancement_pending(career, assignment, event_id, pending_idx)
 
 
-def _apply_skill_table_entry(projection: CharacterProjection, entry: Any) -> None:
+def _apply_skill_table_entry(projection: CharacterProjection, entry: CareerSkillOption | Chars) -> None:
     from ceres.character.domain.characteristics import Chars as _Chars
 
     if isinstance(entry, _Chars):
@@ -500,7 +503,7 @@ def _set_forced_prison_career(projection: CharacterProjection, description: str)
     set_forced_prison_career(projection, description)
 
 
-def _apply_prisoner_advancement(projection: CharacterProjection, event: Event, career: Any) -> None:
+def _apply_prisoner_advancement(projection: CharacterProjection, event: Event, career: CareerData) -> None:
     apply_prisoner_advancement(projection, event, career)
 
 

@@ -69,7 +69,6 @@ class TestRobotJsonRoundtrip:
             brain=AdvancedBrain(),
         )
         data = robot.model_dump()
-        assert data['locomotion']['type'] == 'NONE'
         restored = Robot.model_validate(data)
         assert isinstance(restored.locomotion, NoneLocomotion)
 
@@ -84,8 +83,6 @@ class TestRobotJsonRoundtrip:
             brain=AdvancedBrain(brain_tl=12),
         )
         data = robot.model_dump()
-        assert data['brain']['type'] == 'ADVANCED'
-        assert data['brain']['brain_tl'] == 12
         restored = Robot.model_validate(data)
         assert isinstance(restored.brain, AdvancedBrain)
         assert restored.brain.brain_tl == 12

@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.merchant import Merchant
@@ -8,6 +8,7 @@ from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill
+from ceres.character.mechanism.event_base import Event
 
 
 def _skill_instances_from_table(table) -> list[AnySkill]:
@@ -36,7 +37,7 @@ class MerchantAcademyPreCareer(PreCareerData):
     def apply_entry(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         pending_idx: int,
     ) -> int:
         merchant = Merchant()
@@ -63,7 +64,7 @@ class MerchantAcademyPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         honours: bool,
     ) -> int:
         pending_idx = 0

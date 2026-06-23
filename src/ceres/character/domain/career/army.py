@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -75,6 +75,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -102,7 +103,7 @@ class ArmyMishap4Cooperate(ChoiceBase):
 class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['army_event_6_skill_roll'] = 'army_event_6_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -156,7 +157,7 @@ class ArmyEvent12PromoteChoice(ChoiceBase):
 
 
 class ArmyMishap4Handler(CareerHandlerBase):
-    type: Literal['army_mishap_4'] = 'army_mishap_4'
+    kind: Literal['army_mishap_4'] = 'army_mishap_4'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -177,7 +178,7 @@ class ArmyMishap4Handler(CareerHandlerBase):
 
 
 class ArmyEvent6Handler(CareerHandlerBase):
-    type: Literal['army_event_6'] = 'army_event_6'
+    kind: Literal['army_event_6'] = 'army_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -195,7 +196,7 @@ class ArmyEvent6Handler(CareerHandlerBase):
 
 
 class ArmyEvent8Handler(CareerHandlerBase):
-    type: Literal['army_event_8'] = 'army_event_8'
+    kind: Literal['army_event_8'] = 'army_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -206,7 +207,7 @@ class ArmyEvent8Handler(CareerHandlerBase):
 
 
 class ArmyEvent11Handler(CareerHandlerBase):
-    type: Literal['army_event_11'] = 'army_event_11'
+    kind: Literal['army_event_11'] = 'army_event_11'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -224,7 +225,7 @@ class ArmyEvent11Handler(CareerHandlerBase):
 
 
 class ArmyEvent12Handler(CareerHandlerBase):
-    type: Literal['army_event_12'] = 'army_event_12'
+    kind: Literal['army_event_12'] = 'army_event_12'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -243,7 +244,7 @@ class ArmyEvent12Handler(CareerHandlerBase):
 
 
 class Army(CareerData):
-    type: Literal['ARMY_CAREER'] = 'ARMY_CAREER'
+    kind: Literal['ARMY_CAREER'] = 'ARMY_CAREER'
 
     name: ClassVar[str] = 'Army'
     description: ClassVar[str] = (

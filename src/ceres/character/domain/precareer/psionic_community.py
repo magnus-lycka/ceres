@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.psion import Psion
@@ -7,6 +7,7 @@ from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
 from ceres.character.domain.psionics import PendingPsionicTalentLevelChoice, queue_psionic_institute_training
 from ceres.character.domain.skills import Level, LifeScience, ProfessionSkill, ScienceSkill, Streetwise, skill_instances
+from ceres.character.mechanism.event_base import Event
 
 
 class PsionicCommunityPreCareer(PreCareerData):
@@ -36,7 +37,7 @@ class PsionicCommunityPreCareer(PreCareerData):
     def is_available(self, summary: CharacterSummary) -> bool:
         return summary.psionics is not None
 
-    def apply_entry(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply_entry(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         pending_idx = super().apply_entry(projection, event, pending_idx)
         if queue_psionic_institute_training(projection, event.id, pending_idx):
             pending_idx += 1
@@ -45,7 +46,7 @@ class PsionicCommunityPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         honours: bool,
     ) -> int:
 

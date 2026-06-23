@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
@@ -19,6 +19,7 @@ from ceres.character.domain.skills import (
     Stealth,
     Streetwise,
 )
+from ceres.character.mechanism.event_base import Event
 
 
 class SchoolOfHardKnocksPreCareer(PreCareerData):
@@ -50,7 +51,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         honours: bool,
     ) -> int:
         pending_idx = 0

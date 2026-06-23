@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     BLADE,
@@ -67,6 +67,7 @@ from ceres.character.domain.skills import (
     Tactics,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── mishap 3: disaster or war ─────────────────────────────────────────────────
@@ -75,7 +76,7 @@ from ceres.character.mechanism.pending_input import ChoiceBase
 class PendingNobleMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_mishap_3_skill_roll'] = 'noble_mishap_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
         projection.get_current_career()
         if event.modified_roll >= 8:
@@ -88,7 +89,7 @@ class PendingNobleMishap3SkillRoll(CareerSkillRollPendingBase):
 
 
 class NobleMishap3Handler(CareerHandlerBase):
-    type: Literal['noble_mishap_3'] = 'noble_mishap_3'
+    kind: Literal['noble_mishap_3'] = 'noble_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -109,7 +110,7 @@ class NobleMishap3Handler(CareerHandlerBase):
 class PendingNobleMishap5SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_mishap_5_skill_roll'] = 'noble_mishap_5_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
         projection.get_current_career()
         if event.modified_roll < 8:
@@ -120,7 +121,7 @@ class PendingNobleMishap5SkillRoll(CareerSkillRollPendingBase):
 
 
 class NobleMishap5Handler(CareerHandlerBase):
-    type: Literal['noble_mishap_5'] = 'noble_mishap_5'
+    kind: Literal['noble_mishap_5'] = 'noble_mishap_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -140,7 +141,7 @@ class NobleMishap5Handler(CareerHandlerBase):
 class NobleEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['noble_event_8_skill_roll'] = 'noble_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
         if event.modified_roll >= 8:
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
@@ -176,7 +177,7 @@ class NobleEvent8Refuse(ChoiceBase):
 
 
 class NobleEvent8Handler(CareerHandlerBase):
-    type: Literal['noble_event_8'] = 'noble_event_8'
+    kind: Literal['noble_event_8'] = 'noble_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -195,7 +196,7 @@ class NobleEvent8Handler(CareerHandlerBase):
 
 
 class Noble(CareerData):
-    type: Literal['NOBLE_CAREER'] = 'NOBLE_CAREER'
+    kind: Literal['NOBLE_CAREER'] = 'NOBLE_CAREER'
 
     name: ClassVar[str] = 'Noble'
     description: ClassVar[str] = (

@@ -181,14 +181,14 @@ class _SimpleBrain(_BrainBase):
 
 
 class PrimitiveBrain(_SimpleBrain):
-    type: Literal['PRIMITIVE'] = 'PRIMITIVE'
+    kind: Literal['PRIMITIVE'] = 'PRIMITIVE'
     brain_tl: int = 8
     _table: ClassVar[tuple[_BrainEntry, ...]] = _PRIMITIVE_TABLE
     _label: ClassVar[str] = 'Primitive'
 
 
 class BasicBrain(_SimpleBrain):
-    type: Literal['BASIC'] = 'BASIC'
+    kind: Literal['BASIC'] = 'BASIC'
     brain_tl: int = 10
     _table: ClassVar[tuple[_BrainEntry, ...]] = _BASIC_TABLE
     _label: ClassVar[str] = 'Basic'
@@ -311,7 +311,7 @@ class _AdvancedBrainBase(_BrainBase):
 
 
 class AdvancedBrain(_AdvancedBrainBase):
-    type: Literal['ADVANCED'] = 'ADVANCED'
+    kind: Literal['ADVANCED'] = 'ADVANCED'
     brain_tl: int = 12
     _table: ClassVar[tuple[_BrainEntry, ...]] = _ADVANCED_TABLE
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]] = _ADVANCED_BW_UPGRADES
@@ -345,7 +345,7 @@ class AdvancedBrain(_AdvancedBrainBase):
 
 
 class VeryAdvancedBrain(_AdvancedBrainBase):
-    type: Literal['VERY_ADVANCED'] = 'VERY_ADVANCED'
+    kind: Literal['VERY_ADVANCED'] = 'VERY_ADVANCED'
     brain_tl: int = 12
     _table: ClassVar[tuple[_BrainEntry, ...]] = _VERY_ADVANCED_TABLE
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]] = _VERY_ADVANCED_BW_UPGRADES
@@ -368,7 +368,7 @@ class VeryAdvancedBrain(_AdvancedBrainBase):
 
 
 class SelfAwareBrain(_AdvancedBrainBase):
-    type: Literal['SELF_AWARE'] = 'SELF_AWARE'
+    kind: Literal['SELF_AWARE'] = 'SELF_AWARE'
     brain_tl: int = 15
     _table: ClassVar[tuple[_BrainEntry, ...]] = _SELF_AWARE_TABLE
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]] = _SELF_AWARE_BW_UPGRADES
@@ -418,7 +418,7 @@ class SelfAwareBrain(_AdvancedBrainBase):
 
 RobotBrainUnion = Annotated[
     PrimitiveBrain | BasicBrain | AdvancedBrain | VeryAdvancedBrain | SelfAwareBrain,
-    Field(discriminator='type'),
+    Field(discriminator='kind'),
 ]
 
 

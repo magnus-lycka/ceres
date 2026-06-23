@@ -11,7 +11,7 @@ from ceres.character.domain.characteristics import Chars
 
 
 class CharacteristicIncrease(BaseModel):
-    type: Literal['stat_benefit'] = 'stat_benefit'
+    kind: Literal['stat_benefit'] = 'stat_benefit'
     char: Chars
     amount: int
 
@@ -29,7 +29,7 @@ class CharacteristicIncrease(BaseModel):
 
 
 class ItemBenefit(BaseModel):
-    type: Literal['item_benefit'] = 'item_benefit'
+    kind: Literal['item_benefit'] = 'item_benefit'
     key: str
     label: str
     exceptional: bool = False
@@ -45,7 +45,7 @@ class ItemBenefit(BaseModel):
 class ChoiceBenefit(BaseModel):
     """A benefit where the player picks one of several options (e.g. 'SOC +1 or Cybernetic Implant')."""
 
-    type: Literal['option_benefit'] = 'option_benefit'
+    kind: Literal['option_benefit'] = 'option_benefit'
     options: list[CharacteristicIncrease | ItemBenefit]
 
     @property
@@ -71,7 +71,7 @@ class ChoiceBenefit(BaseModel):
 class CombinedBenefit(BaseModel):
     """Multiple benefits all granted together (e.g. 'SOC +1 and Yacht')."""
 
-    type: Literal['combined'] = 'combined'
+    kind: Literal['combined'] = 'combined'
     benefits: list[CharacteristicIncrease | ItemBenefit]
 
     @property
@@ -89,7 +89,7 @@ class CombinedBenefit(BaseModel):
 
 AnyBenefit = Annotated[
     CharacteristicIncrease | ItemBenefit | ChoiceBenefit | CombinedBenefit,
-    Field(discriminator='type'),
+    Field(discriminator='kind'),
 ]
 
 # Ships and vehicles

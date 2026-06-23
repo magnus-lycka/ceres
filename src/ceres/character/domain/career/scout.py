@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     SCOUT_SHIP,
@@ -73,6 +73,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 
 _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
 
@@ -83,7 +84,7 @@ _AMBUSH_TARGETS: dict[str, int] = {'Pilot': 8, 'Persuade': 10}
 class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_3_skill_roll'] = 'scout_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         skill_name = event.skill if isinstance(event.skill, str) else type(event.skill).name()
         target = _AMBUSH_TARGETS[skill_name]
         if event.modified_roll >= target:
@@ -101,9 +102,9 @@ class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
 
 
 class ScoutEvent3Handler(CareerHandlerBase):
-    type: Literal['scout_event_3'] = 'scout_event_3'
+    kind: Literal['scout_event_3'] = 'scout_event_3'
 
-    def apply(self, projection: CharacterProjection, event: Any, pending_idx: int) -> int:
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         next_idx = self.handle(projection, event.id, pending_idx)
         projection.add_connection(ConnectionKind.ENEMY, origin=self.text)
         return next_idx
@@ -126,7 +127,7 @@ class ScoutEvent3Handler(CareerHandlerBase):
 class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_8_skill_roll'] = 'scout_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.add_connection(ConnectionKind.ALLY, origin='Alien intelligence contact')
             projection.pending_advancement_dm += 2
@@ -141,7 +142,7 @@ class PendingScoutEvent8SkillRoll(CareerSkillRollPendingBase):
 
 
 class ScoutEvent8Handler(CareerHandlerBase):
-    type: Literal['scout_event_8'] = 'scout_event_8'
+    kind: Literal['scout_event_8'] = 'scout_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -161,7 +162,7 @@ class ScoutEvent8Handler(CareerHandlerBase):
 class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_9_skill_roll'] = 'scout_event_9_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.add_connection(ConnectionKind.CONTACT, origin='Disaster survivor')
             projection.pending_advancement_dm += 2
@@ -170,7 +171,7 @@ class PendingScoutEvent9SkillRoll(CareerSkillRollPendingBase):
 
 
 class ScoutEvent9Handler(CareerHandlerBase):
-    type: Literal['scout_event_9'] = 'scout_event_9'
+    kind: Literal['scout_event_9'] = 'scout_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -190,7 +191,7 @@ class ScoutEvent9Handler(CareerHandlerBase):
 class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['scout_event_10_skill_roll'] = 'scout_event_10_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.add_connection(ConnectionKind.CONTACT, origin='Alien contact from the fringes of Charted Space')
             projection.pending_inputs.append(
@@ -211,7 +212,7 @@ class PendingScoutEvent10SkillRoll(CareerSkillRollPendingBase):
 
 
 class ScoutEvent10Handler(CareerHandlerBase):
-    type: Literal['scout_event_10'] = 'scout_event_10'
+    kind: Literal['scout_event_10'] = 'scout_event_10'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -233,7 +234,7 @@ class PendingScoutEvent11(CareerSkillChoicePendingBase):
 
 
 class ScoutEvent11Handler(CareerHandlerBase):
-    type: Literal['scout_event_11'] = 'scout_event_11'
+    kind: Literal['scout_event_11'] = 'scout_event_11'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -249,7 +250,7 @@ class ScoutEvent11Handler(CareerHandlerBase):
 
 
 class Scout(CareerData):
-    type: Literal['SCOUT_CAREER'] = 'SCOUT_CAREER'
+    kind: Literal['SCOUT_CAREER'] = 'SCOUT_CAREER'
 
     def start_new_term(
         self,

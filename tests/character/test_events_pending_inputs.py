@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar
 
 import pytest
 
@@ -158,12 +158,13 @@ def _projection(**summary_kwargs: Any) -> CharacterProjection:
     )
 
 
-class FakeCareer:
-    name = 'Fake'
+class FakeCareer(CareerData):
+    rank_bonus: RankBonus | None = None
+    started_term: bool = False
 
-    def __init__(self, rank_bonus: RankBonus | None = None):
-        self.rank_bonus = rank_bonus
-        self.started_term = False
+    name: ClassVar[str] = 'Fake'
+    ranks: ClassVar[dict[int, RankEntry]] = {}
+    allows_assignment_change: ClassVar[bool] = False
 
     def update_current_term_rank(self, projection: CharacterProjection) -> None:
         if projection.summary.career_terms:
@@ -174,32 +175,33 @@ class FakeCareer:
             return {}
         return {1: RankEntry(rank=1, bonus=self.rank_bonus)}
 
-    def available_tables(self, edu: int, assignment) -> list:
-        from ceres.character.domain.career.career_data import SkillTableOption
-
+    def available_tables(self, edu: int, assignment: AssignmentData | None) -> list[SkillTableOption]:
         return [SkillTableOption(label='Service Skills', key='service_skills')]
 
-    def assignment_by_index(self, index: int):
+    def assignment_by_index(self, index: int) -> AssignmentData | None:
         return None
 
-    def start_new_term(self, projection: CharacterProjection, assignment, event_id: int) -> None:
+    def start_new_term(
+        self,
+        projection: CharacterProjection,
+        assignment: AssignmentData,
+        event_id: int,
+        is_continuation: bool = False,
+    ) -> None:
         self.started_term = True
 
 
 class FakePrisonerCareer(FakeCareer):
-    name = 'Prisoner'
+    name: ClassVar[str] = 'Prisoner'
+    inmate_assignment: AssignmentData = AssignmentData(
+        name='Inmate',
+        description='',
+        survival=CharCheck(characteristic=Chars.END, target=5),
+        advancement=CharCheck(characteristic=Chars.INT, target=8),
+    )
 
-    def __init__(self, rank_bonus: RankBonus | None = None):
-        super().__init__(rank_bonus)
-        self.assignment = AssignmentData(
-            name='Inmate',
-            description='',
-            survival=CharCheck(characteristic=Chars.END, target=5),
-            advancement=CharCheck(characteristic=Chars.INT, target=8),
-        )
-
-    def assignment_by_index(self, index: int):
-        return self.assignment if index == 1 else None
+    def assignment_by_index(self, index: int) -> AssignmentData | None:
+        return self.inmate_assignment if index == 1 else None
 
 
 def test_ucp_event_rejects_wrong_length():
@@ -229,7 +231,7 @@ def test_apply_skill_table_entry_with_psi_raises():
 
 def test_auto_advance_can_apply_characteristic_rank_bonus():
     projection = _projection(characteristics={Chars.SOC: 7})
-    career = FakeCareer(RankBonus(characteristic=Chars.SOC, level=2))
+    career = FakeCareer(rank_bonus=RankBonus(characteristic=Chars.SOC, level=2))
 
     _apply_auto_advance(projection, career, 5)
 
@@ -461,7 +463,7 @@ def test_prisoner_advancement_special_cases():
     _apply_prisoner_advancement(
         choice_bonus,
         Event(handler=AdvancementHandler(roll=12)),
-        FakePrisonerCareer(RankBonus(choices=[character_skills.Admin()], level=1)),
+        FakePrisonerCareer(rank_bonus=RankBonus(choices=[character_skills.Admin()], level=1)),
     )
     assert choice_bonus.pending_advancement_dm == 0
     assert choice_bonus.prisoner_freed is True
@@ -479,7 +481,7 @@ def test_prisoner_advancement_special_cases():
     _apply_prisoner_advancement(
         characteristic_bonus,
         Event(handler=AdvancementHandler(roll=12)),
-        FakePrisonerCareer(RankBonus(characteristic=Chars.SOC, level=2)),
+        FakePrisonerCareer(rank_bonus=RankBonus(characteristic=Chars.SOC, level=2)),
     )
     assert characteristic_bonus.summary.characteristics[Chars.SOC] == 9
     assert any(isinstance(p, PendingSkillTable) for p in characteristic_bonus.pending_inputs)
@@ -548,7 +550,7 @@ def test_career_progress_pending_reports_invalid_career_shape():
             return True
 
     with pytest.raises(ReplayError, match='can attempt commission without commission rules'):
-        career_progress_pending(_projection(), cast(Any, BadCommissionCareer()), event_id=1)
+        career_progress_pending(_projection(), BadCommissionCareer(), event_id=1)
 
 
 def test_pending_background_skills_builds_form_and_specs():
@@ -1010,8 +1012,8 @@ def test_career_skill_roll_pending_base_event_from_form_char_and_skill():
     assert edu_event.modified_roll == 9
     assert edu_event.fulfills == (8, 0)
 
-    # Skill option — form value is the discriminator (ELECTRONICS), not the display name
-    skill_event = pending.event_from_form(Form(skill=character_skills.Electronics().type, modified_roll='8'))
+    # Skill option — form value is the skill's kind identifier, not its display name
+    skill_event = pending.event_from_form(Form(skill=character_skills.Electronics().kind, modified_roll='8'))
     assert isinstance(skill_event.handler, SkillRollHandler)
     assert isinstance(skill_event.skill, character_skills.Electronics)
     assert skill_event.modified_roll == 8
@@ -1077,10 +1079,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     class _PendingSkillChoice(CareerSkillChoicePendingBase):
         kind: Literal['_test_skill_choice'] = '_test_skill_choice'
 
-    class _FakeEvent:
-        id = 10
-        skill = character_skills.Admin()
-
+    skill_event = Event(id=10, handler=SkillChoiceHandler(skill=character_skills.Admin()))
     scout = SCOUT
 
     # Without advancement_precreated — should queue career progress
@@ -1091,7 +1090,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
         current_assignment='Courier',
     )
     before_count = len(proj.pending_inputs)
-    pending.on_skill_chosen(proj, _FakeEvent())
+    pending.on_skill_chosen(proj, skill_event)
     assert proj.summary.skill_level(character_skills.Admin) is not None
     assert len(proj.pending_inputs) > before_count
 
@@ -1101,7 +1100,7 @@ def test_career_skill_choice_pending_base_on_skill_chosen_grants_skill_and_queue
     )
     proj2 = _projection(current_career=scout, current_assignment='Courier')
     before2 = len(proj2.pending_inputs)
-    pending2.on_skill_chosen(proj2, _FakeEvent())
+    pending2.on_skill_chosen(proj2, skill_event)
     assert len(proj2.pending_inputs) == before2
 
 

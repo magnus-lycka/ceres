@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 import re
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 from pydantic import Field, TypeAdapter, field_serializer, field_validator
 
@@ -74,7 +74,7 @@ class UcpHandler(EventHandlerBase):
     kind: Literal['ucp_event'] = 'ucp_event'
     ucp: str
 
-    def _parse_characteristics(self, sophont: Any) -> dict[Chars, int]:
+    def _parse_characteristics(self, sophont: Sophont) -> dict[Chars, int]:
         ucp_stats = sophont.ucp_stats if isinstance(sophont, Sophont) else UCP_STATS
         if len(self.ucp) != len(ucp_stats):
             raise ReplayError(f'Invalid UCP: {self.ucp!r} — expected {len(ucp_stats)} hex digits')

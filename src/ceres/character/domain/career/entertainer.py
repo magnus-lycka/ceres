@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     CONTACT,
@@ -68,6 +68,7 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -76,7 +77,7 @@ from ceres.character.mechanism.pending_input import ChoiceBase
 class PendingEntertainerEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['entertainer_event_3_skill_roll'] = 'entertainer_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.summary.characteristics[Chars.SOC] = projection.summary.characteristics.get(Chars.SOC, 0) + 1
         else:
@@ -113,7 +114,7 @@ class EntertainerEvent8Refuse(ChoiceBase):
 class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['entertainer_event_8_skill_roll'] = 'entertainer_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_advancement_dm += 2
         else:
@@ -127,7 +128,7 @@ class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
 
 
 class EntertainerEvent3Handler(CareerHandlerBase):
-    type: Literal['entertainer_event_3'] = 'entertainer_event_3'
+    kind: Literal['entertainer_event_3'] = 'entertainer_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -145,7 +146,7 @@ class EntertainerEvent3Handler(CareerHandlerBase):
 
 
 class EntertainerEvent8Handler(CareerHandlerBase):
-    type: Literal['entertainer_event_8'] = 'entertainer_event_8'
+    kind: Literal['entertainer_event_8'] = 'entertainer_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -163,7 +164,7 @@ class EntertainerEvent8Handler(CareerHandlerBase):
 
 
 class Entertainer(CareerData):
-    type: Literal['ENTERTAINER_CAREER'] = 'ENTERTAINER_CAREER'
+    kind: Literal['ENTERTAINER_CAREER'] = 'ENTERTAINER_CAREER'
 
     name: ClassVar[str] = 'Entertainer'
     description: ClassVar[str] = (

@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     PERSONAL_VEHICLE,
@@ -65,6 +65,7 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 _MISHAP_3_SKILLS: dict[str, list] = {
@@ -80,7 +81,7 @@ _MISHAP_3_SKILLS: dict[str, list] = {
 class PendingNavyMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['navy_mishap_3_skill_roll'] = 'navy_mishap_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
         projection.get_current_career()
         lose = event.modified_roll < 8
@@ -136,7 +137,7 @@ class NavyEvent10Refuse(ChoiceBase):
 
 
 class NavyMishap3Handler(CareerHandlerBase):
-    type: Literal['navy_mishap_3'] = 'navy_mishap_3'
+    kind: Literal['navy_mishap_3'] = 'navy_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -161,7 +162,7 @@ class NavyMishap3Handler(CareerHandlerBase):
 
 
 class NavyMishap4Handler(CareerHandlerBase):
-    type: Literal['navy_mishap_4'] = 'navy_mishap_4'
+    kind: Literal['navy_mishap_4'] = 'navy_mishap_4'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -183,7 +184,7 @@ class NavyMishap4Handler(CareerHandlerBase):
 
 
 class NavyEvent5Handler(CareerHandlerBase):
-    type: Literal['navy_event_5'] = 'navy_event_5'
+    kind: Literal['navy_event_5'] = 'navy_event_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -194,7 +195,7 @@ class NavyEvent5Handler(CareerHandlerBase):
 
 
 class NavyEvent10Handler(CareerHandlerBase):
-    type: Literal['navy_event_10'] = 'navy_event_10'
+    kind: Literal['navy_event_10'] = 'navy_event_10'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -210,7 +211,7 @@ class NavyEvent10Handler(CareerHandlerBase):
 
 
 class Navy(CareerData):
-    type: Literal['NAVY_CAREER'] = 'NAVY_CAREER'
+    kind: Literal['NAVY_CAREER'] = 'NAVY_CAREER'
 
     name: ClassVar[str] = 'Navy'
     description: ClassVar[str] = (

@@ -199,9 +199,9 @@ class TestCombinedBenefit:
 
         ta = TypeAdapter(AnyBenefit)
         data = {
-            'type': CombinedBenefit.model_fields['type'].default,
+            'kind': CombinedBenefit.model_fields['kind'].default,
             'benefits': [
-                {'type': ItemBenefit.model_fields['type'].default, 'key': 'ship_share', 'label': 'Ship Share'}
+                {'kind': ItemBenefit.model_fields['kind'].default, 'key': 'ship_share', 'label': 'Ship Share'}
             ],
         }
         result = ta.validate_python(data)

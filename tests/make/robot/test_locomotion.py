@@ -125,7 +125,6 @@ class TestLocomotionDiscriminatedUnion:
         data = loco.model_dump()
         restored = adapter.validate_python(data)
         assert isinstance(restored, NoneLocomotion)
-        assert restored.type == 'NONE'
 
     def test_roundtrip_wheels(self):
         from pydantic import TypeAdapter

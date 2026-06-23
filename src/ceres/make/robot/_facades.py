@@ -15,19 +15,19 @@ from ceres.make.robot._robot_skill_base import _RobotSkill
 
 
 class Admin(_RobotSkill):
-    type: Literal['robot_pkg.Admin'] = 'robot_pkg.Admin'
+    kind: Literal['robot_pkg.Admin'] = 'robot_pkg.Admin'
     _char_cls: ClassVar = _char.Admin
     level: int = 0
 
 
 class Advocate(_RobotSkill):
-    type: Literal['robot_pkg.Advocate'] = 'robot_pkg.Advocate'
+    kind: Literal['robot_pkg.Advocate'] = 'robot_pkg.Advocate'
     _char_cls: ClassVar = _char.Advocate
     level: int = 0
 
 
 class Animals(_RobotSkill):
-    type: Literal['robot_pkg.Animals'] = 'robot_pkg.Animals'
+    kind: Literal['robot_pkg.Animals'] = 'robot_pkg.Animals'
     _char_cls: ClassVar = _char.Animals
     level: int = 0
     handling: int = 0
@@ -36,7 +36,7 @@ class Animals(_RobotSkill):
 
 
 class PerformingArt(_RobotSkill):
-    type: Literal['robot_pkg.PerformingArt'] = 'robot_pkg.PerformingArt'
+    kind: Literal['robot_pkg.PerformingArt'] = 'robot_pkg.PerformingArt'
     _char_cls: ClassVar = _char.PerformingArt
     level: int = 0
     performer: int = 0
@@ -44,7 +44,7 @@ class PerformingArt(_RobotSkill):
 
 
 class CreativeArt(_RobotSkill):
-    type: Literal['robot_pkg.CreativeArt'] = 'robot_pkg.CreativeArt'
+    kind: Literal['robot_pkg.CreativeArt'] = 'robot_pkg.CreativeArt'
     _char_cls: ClassVar = _char.CreativeArt
     level: int = 0
     visual_media: int = 0
@@ -52,7 +52,7 @@ class CreativeArt(_RobotSkill):
 
 
 class PresentationArt(_RobotSkill):
-    type: Literal['robot_pkg.PresentationArt'] = 'robot_pkg.PresentationArt'
+    kind: Literal['robot_pkg.PresentationArt'] = 'robot_pkg.PresentationArt'
     _char_cls: ClassVar = _char.PresentationArt
     level: int = 0
     holography: int = 0
@@ -60,13 +60,13 @@ class PresentationArt(_RobotSkill):
 
 
 class Astrogation(_RobotSkill):
-    type: Literal['robot_pkg.Astrogation'] = 'robot_pkg.Astrogation'
+    kind: Literal['robot_pkg.Astrogation'] = 'robot_pkg.Astrogation'
     _char_cls: ClassVar = _char.Astrogation
     level: int = 0
 
 
 class Athletics(_RobotSkill):
-    type: Literal['robot_pkg.Athletics'] = 'robot_pkg.Athletics'
+    kind: Literal['robot_pkg.Athletics'] = 'robot_pkg.Athletics'
     _char_cls: ClassVar = _char.Athletics
     level: int = 0
     dexterity: int = 0
@@ -75,31 +75,31 @@ class Athletics(_RobotSkill):
 
 
 class Broker(_RobotSkill):
-    type: Literal['robot_pkg.Broker'] = 'robot_pkg.Broker'
+    kind: Literal['robot_pkg.Broker'] = 'robot_pkg.Broker'
     _char_cls: ClassVar = _char.Broker
     level: int = 0
 
 
 class Carouse(_RobotSkill):
-    type: Literal['robot_pkg.Carouse'] = 'robot_pkg.Carouse'
+    kind: Literal['robot_pkg.Carouse'] = 'robot_pkg.Carouse'
     _char_cls: ClassVar = _char.Carouse
     level: int = 0
 
 
 class Deception(_RobotSkill):
-    type: Literal['robot_pkg.Deception'] = 'robot_pkg.Deception'
+    kind: Literal['robot_pkg.Deception'] = 'robot_pkg.Deception'
     _char_cls: ClassVar = _char.Deception
     level: int = 0
 
 
 class Diplomat(_RobotSkill):
-    type: Literal['robot_pkg.Diplomat'] = 'robot_pkg.Diplomat'
+    kind: Literal['robot_pkg.Diplomat'] = 'robot_pkg.Diplomat'
     _char_cls: ClassVar = _char.Diplomat
     level: int = 0
 
 
 class Drive(_RobotSkill):
-    type: Literal['robot_pkg.Drive'] = 'robot_pkg.Drive'
+    kind: Literal['robot_pkg.Drive'] = 'robot_pkg.Drive'
     _char_cls: ClassVar = _char.Drive
     level: int = 0
     hovercraft: int = 0
@@ -110,7 +110,7 @@ class Drive(_RobotSkill):
 
 
 class Electronics(_RobotSkill):
-    type: Literal['robot_pkg.Electronics'] = 'robot_pkg.Electronics'
+    kind: Literal['robot_pkg.Electronics'] = 'robot_pkg.Electronics'
     _char_cls: ClassVar = _char.Electronics
     level: int = 0
     comms: int = 0
@@ -120,7 +120,7 @@ class Electronics(_RobotSkill):
 
 
 class Engineer(_RobotSkill):
-    type: Literal['robot_pkg.Engineer'] = 'robot_pkg.Engineer'
+    kind: Literal['robot_pkg.Engineer'] = 'robot_pkg.Engineer'
     _char_cls: ClassVar = _char.Engineer
     level: int = 0
     m_drive: int = 0
@@ -130,13 +130,13 @@ class Engineer(_RobotSkill):
 
 
 class Explosives(_RobotSkill):
-    type: Literal['robot_pkg.Explosives'] = 'robot_pkg.Explosives'
+    kind: Literal['robot_pkg.Explosives'] = 'robot_pkg.Explosives'
     _char_cls: ClassVar = _char.Explosives
     level: int = 0
 
 
 class Flyer(_RobotSkill):
-    type: Literal['robot_pkg.Flyer'] = 'robot_pkg.Flyer'
+    kind: Literal['robot_pkg.Flyer'] = 'robot_pkg.Flyer'
     _char_cls: ClassVar = _char.Flyer
     level: int = 0
     airship: int = 0
@@ -147,13 +147,13 @@ class Flyer(_RobotSkill):
 
 
 class Gambler(_RobotSkill):
-    type: Literal['robot_pkg.Gambler'] = 'robot_pkg.Gambler'
+    kind: Literal['robot_pkg.Gambler'] = 'robot_pkg.Gambler'
     _char_cls: ClassVar = _char.Gambler
     level: int = 0
 
 
 class GunCombat(_RobotSkill):
-    type: Literal['robot_pkg.GunCombat'] = 'robot_pkg.GunCombat'
+    kind: Literal['robot_pkg.GunCombat'] = 'robot_pkg.GunCombat'
     _char_cls: ClassVar = _char.GunCombat
     level: int = 0
     archaic: int = 0
@@ -162,7 +162,7 @@ class GunCombat(_RobotSkill):
 
 
 class Gunner(_RobotSkill):
-    type: Literal['robot_pkg.Gunner'] = 'robot_pkg.Gunner'
+    kind: Literal['robot_pkg.Gunner'] = 'robot_pkg.Gunner'
     _char_cls: ClassVar = _char.Gunner
     level: int = 0
     turret: int = 0
@@ -172,7 +172,7 @@ class Gunner(_RobotSkill):
 
 
 class HeavyWeapons(_RobotSkill):
-    type: Literal['robot_pkg.HeavyWeapons'] = 'robot_pkg.HeavyWeapons'
+    kind: Literal['robot_pkg.HeavyWeapons'] = 'robot_pkg.HeavyWeapons'
     _char_cls: ClassVar = _char.HeavyWeapons
     level: int = 0
     artillery: int = 0
@@ -181,127 +181,127 @@ class HeavyWeapons(_RobotSkill):
 
 
 class Investigate(_RobotSkill):
-    type: Literal['robot_pkg.Investigate'] = 'robot_pkg.Investigate'
+    kind: Literal['robot_pkg.Investigate'] = 'robot_pkg.Investigate'
     _char_cls: ClassVar = _char.Investigate
     level: int = 0
 
 
 class JackOfAllTrades(_RobotSkill):
-    type: Literal['robot_pkg.JackOfAllTrades'] = 'robot_pkg.JackOfAllTrades'
+    kind: Literal['robot_pkg.JackOfAllTrades'] = 'robot_pkg.JackOfAllTrades'
     _char_cls: ClassVar = _char.JackOfAllTrades
     level: int = 0
 
 
 class LanguageGalanglic(_RobotSkill):
-    type: Literal['robot_pkg.LanguageGalanglic'] = 'robot_pkg.LanguageGalanglic'
+    kind: Literal['robot_pkg.LanguageGalanglic'] = 'robot_pkg.LanguageGalanglic'
     _char_cls: ClassVar = _char.LanguageGalanglic
     level: int = 0
 
 
 class LanguageVilani(_RobotSkill):
-    type: Literal['robot_pkg.LanguageVilani'] = 'robot_pkg.LanguageVilani'
+    kind: Literal['robot_pkg.LanguageVilani'] = 'robot_pkg.LanguageVilani'
     _char_cls: ClassVar = _char.LanguageVilani
     level: int = 0
 
 
 class LanguageZdetl(_RobotSkill):
-    type: Literal['robot_pkg.LanguageZdetl'] = 'robot_pkg.LanguageZdetl'
+    kind: Literal['robot_pkg.LanguageZdetl'] = 'robot_pkg.LanguageZdetl'
     _char_cls: ClassVar = _char.LanguageZdetl
     level: int = 0
 
 
 class LanguageOynprith(_RobotSkill):
-    type: Literal['robot_pkg.LanguageOynprith'] = 'robot_pkg.LanguageOynprith'
+    kind: Literal['robot_pkg.LanguageOynprith'] = 'robot_pkg.LanguageOynprith'
     _char_cls: ClassVar = _char.LanguageOynprith
     level: int = 0
 
 
 class LanguageTrokh(_RobotSkill):
-    type: Literal['robot_pkg.LanguageTrokh'] = 'robot_pkg.LanguageTrokh'
+    kind: Literal['robot_pkg.LanguageTrokh'] = 'robot_pkg.LanguageTrokh'
     _char_cls: ClassVar = _char.LanguageTrokh
     level: int = 0
 
 
 class LanguageGvegh(_RobotSkill):
-    type: Literal['robot_pkg.LanguageGvegh'] = 'robot_pkg.LanguageGvegh'
+    kind: Literal['robot_pkg.LanguageGvegh'] = 'robot_pkg.LanguageGvegh'
     _char_cls: ClassVar = _char.LanguageGvegh
     level: int = 0
 
 
 class LanguageAekhu(_RobotSkill):
-    type: Literal['robot_pkg.LanguageAekhu'] = 'robot_pkg.LanguageAekhu'
+    kind: Literal['robot_pkg.LanguageAekhu'] = 'robot_pkg.LanguageAekhu'
     _char_cls: ClassVar = _char.LanguageAekhu
     level: int = 0
 
 
 class LanguageArrghoun(_RobotSkill):
-    type: Literal['robot_pkg.LanguageArrghoun'] = 'robot_pkg.LanguageArrghoun'
+    kind: Literal['robot_pkg.LanguageArrghoun'] = 'robot_pkg.LanguageArrghoun'
     _char_cls: ClassVar = _char.LanguageArrghoun
     level: int = 0
 
 
 class LanguageIrilitok(_RobotSkill):
-    type: Literal['robot_pkg.LanguageIrilitok'] = 'robot_pkg.LanguageIrilitok'
+    kind: Literal['robot_pkg.LanguageIrilitok'] = 'robot_pkg.LanguageIrilitok'
     _char_cls: ClassVar = _char.LanguageIrilitok
     level: int = 0
 
 
 class LanguageLogaksu(_RobotSkill):
-    type: Literal['robot_pkg.LanguageLogaksu'] = 'robot_pkg.LanguageLogaksu'
+    kind: Literal['robot_pkg.LanguageLogaksu'] = 'robot_pkg.LanguageLogaksu'
     _char_cls: ClassVar = _char.LanguageLogaksu
     level: int = 0
 
 
 class LanguageOvaghoun(_RobotSkill):
-    type: Literal['robot_pkg.LanguageOvaghoun'] = 'robot_pkg.LanguageOvaghoun'
+    kind: Literal['robot_pkg.LanguageOvaghoun'] = 'robot_pkg.LanguageOvaghoun'
     _char_cls: ClassVar = _char.LanguageOvaghoun
     level: int = 0
 
 
 class LanguageSuedzuk(_RobotSkill):
-    type: Literal['robot_pkg.LanguageSuedzuk'] = 'robot_pkg.LanguageSuedzuk'
+    kind: Literal['robot_pkg.LanguageSuedzuk'] = 'robot_pkg.LanguageSuedzuk'
     _char_cls: ClassVar = _char.LanguageSuedzuk
     level: int = 0
 
 
 class LanguageVuakedh(_RobotSkill):
-    type: Literal['robot_pkg.LanguageVuakedh'] = 'robot_pkg.LanguageVuakedh'
+    kind: Literal['robot_pkg.LanguageVuakedh'] = 'robot_pkg.LanguageVuakedh'
     _char_cls: ClassVar = _char.LanguageVuakedh
     level: int = 0
 
 
 class LanguageSagamaal(_RobotSkill):
-    type: Literal['robot_pkg.LanguageSagamaal'] = 'robot_pkg.LanguageSagamaal'
+    kind: Literal['robot_pkg.LanguageSagamaal'] = 'robot_pkg.LanguageSagamaal'
     _char_cls: ClassVar = _char.LanguageSagamaal
     level: int = 0
 
 
 class LanguageDarrian(_RobotSkill):
-    type: Literal['robot_pkg.LanguageDarrian'] = 'robot_pkg.LanguageDarrian'
+    kind: Literal['robot_pkg.LanguageDarrian'] = 'robot_pkg.LanguageDarrian'
     _char_cls: ClassVar = _char.LanguageDarrian
     level: int = 0
 
 
 class Leadership(_RobotSkill):
-    type: Literal['robot_pkg.Leadership'] = 'robot_pkg.Leadership'
+    kind: Literal['robot_pkg.Leadership'] = 'robot_pkg.Leadership'
     _char_cls: ClassVar = _char.Leadership
     level: int = 0
 
 
 class Mechanic(_RobotSkill):
-    type: Literal['robot_pkg.Mechanic'] = 'robot_pkg.Mechanic'
+    kind: Literal['robot_pkg.Mechanic'] = 'robot_pkg.Mechanic'
     _char_cls: ClassVar = _char.Mechanic
     level: int = 0
 
 
 class Medic(_RobotSkill):
-    type: Literal['robot_pkg.Medic'] = 'robot_pkg.Medic'
+    kind: Literal['robot_pkg.Medic'] = 'robot_pkg.Medic'
     _char_cls: ClassVar = _char.Medic
     level: int = 0
 
 
 class Melee(_RobotSkill):
-    type: Literal['robot_pkg.Melee'] = 'robot_pkg.Melee'
+    kind: Literal['robot_pkg.Melee'] = 'robot_pkg.Melee'
     _char_cls: ClassVar = _char.Melee
     level: int = 0
     unarmed: int = 0
@@ -314,19 +314,19 @@ class Melee(_RobotSkill):
 
 
 class Navigation(_RobotSkill):
-    type: Literal['robot_pkg.Navigation'] = 'robot_pkg.Navigation'
+    kind: Literal['robot_pkg.Navigation'] = 'robot_pkg.Navigation'
     _char_cls: ClassVar = _char.Navigation
     level: int = 0
 
 
 class Persuade(_RobotSkill):
-    type: Literal['robot_pkg.Persuade'] = 'robot_pkg.Persuade'
+    kind: Literal['robot_pkg.Persuade'] = 'robot_pkg.Persuade'
     _char_cls: ClassVar = _char.Persuade
     level: int = 0
 
 
 class Pilot(_RobotSkill):
-    type: Literal['robot_pkg.Pilot'] = 'robot_pkg.Pilot'
+    kind: Literal['robot_pkg.Pilot'] = 'robot_pkg.Pilot'
     _char_cls: ClassVar = _char.Pilot
     level: int = 0
     small_craft: int = 0
@@ -335,7 +335,7 @@ class Pilot(_RobotSkill):
 
 
 class ColonistProfession(_RobotSkill):
-    type: Literal['robot_pkg.ColonistProfession'] = 'robot_pkg.ColonistProfession'
+    kind: Literal['robot_pkg.ColonistProfession'] = 'robot_pkg.ColonistProfession'
     _char_cls: ClassVar = _char.ColonistProfession
     level: int = 0
     farming: int = 0
@@ -343,7 +343,7 @@ class ColonistProfession(_RobotSkill):
 
 
 class FreeloaderProfession(_RobotSkill):
-    type: Literal['robot_pkg.FreeloaderProfession'] = 'robot_pkg.FreeloaderProfession'
+    kind: Literal['robot_pkg.FreeloaderProfession'] = 'robot_pkg.FreeloaderProfession'
     _char_cls: ClassVar = _char.FreeloaderProfession
     level: int = 0
     scrounging: int = 0
@@ -351,7 +351,7 @@ class FreeloaderProfession(_RobotSkill):
 
 
 class HostileEnvironmentProfession(_RobotSkill):
-    type: Literal['robot_pkg.HostileEnvironmentProfession'] = 'robot_pkg.HostileEnvironmentProfession'
+    kind: Literal['robot_pkg.HostileEnvironmentProfession'] = 'robot_pkg.HostileEnvironmentProfession'
     _char_cls: ClassVar = _char.HostileEnvironmentProfession
     level: int = 0
     contaminant: int = 0
@@ -361,7 +361,7 @@ class HostileEnvironmentProfession(_RobotSkill):
 
 
 class SpacerProfession(_RobotSkill):
-    type: Literal['robot_pkg.SpacerProfession'] = 'robot_pkg.SpacerProfession'
+    kind: Literal['robot_pkg.SpacerProfession'] = 'robot_pkg.SpacerProfession'
     _char_cls: ClassVar = _char.SpacerProfession
     level: int = 0
     belter: int = 0
@@ -369,7 +369,7 @@ class SpacerProfession(_RobotSkill):
 
 
 class SportProfession(_RobotSkill):
-    type: Literal['robot_pkg.SportProfession'] = 'robot_pkg.SportProfession'
+    kind: Literal['robot_pkg.SportProfession'] = 'robot_pkg.SportProfession'
     _char_cls: ClassVar = _char.SportProfession
     level: int = 0
     atmosphere_surfing: int = 0
@@ -381,7 +381,7 @@ class SportProfession(_RobotSkill):
 
 
 class WorkerProfession(_RobotSkill):
-    type: Literal['robot_pkg.WorkerProfession'] = 'robot_pkg.WorkerProfession'
+    kind: Literal['robot_pkg.WorkerProfession'] = 'robot_pkg.WorkerProfession'
     _char_cls: ClassVar = _char.WorkerProfession
     level: int = 0
     armourer: int = 0
@@ -394,13 +394,13 @@ class WorkerProfession(_RobotSkill):
 
 
 class Recon(_RobotSkill):
-    type: Literal['robot_pkg.Recon'] = 'robot_pkg.Recon'
+    kind: Literal['robot_pkg.Recon'] = 'robot_pkg.Recon'
     _char_cls: ClassVar = _char.Recon
     level: int = 0
 
 
 class LifeScience(_RobotSkill):
-    type: Literal['robot_pkg.LifeScience'] = 'robot_pkg.LifeScience'
+    kind: Literal['robot_pkg.LifeScience'] = 'robot_pkg.LifeScience'
     _char_cls: ClassVar = _char.LifeScience
     level: int = 0
     biology: int = 0
@@ -410,7 +410,7 @@ class LifeScience(_RobotSkill):
 
 
 class PhysicalScience(_RobotSkill):
-    type: Literal['robot_pkg.PhysicalScience'] = 'robot_pkg.PhysicalScience'
+    kind: Literal['robot_pkg.PhysicalScience'] = 'robot_pkg.PhysicalScience'
     _char_cls: ClassVar = _char.PhysicalScience
     level: int = 0
     chemistry: int = 0
@@ -419,7 +419,7 @@ class PhysicalScience(_RobotSkill):
 
 
 class RoboticScience(_RobotSkill):
-    type: Literal['robot_pkg.RoboticScience'] = 'robot_pkg.RoboticScience'
+    kind: Literal['robot_pkg.RoboticScience'] = 'robot_pkg.RoboticScience'
     _char_cls: ClassVar = _char.RoboticScience
     level: int = 0
     cybernetics: int = 0
@@ -427,7 +427,7 @@ class RoboticScience(_RobotSkill):
 
 
 class SocialScience(_RobotSkill):
-    type: Literal['robot_pkg.SocialScience'] = 'robot_pkg.SocialScience'
+    kind: Literal['robot_pkg.SocialScience'] = 'robot_pkg.SocialScience'
     _char_cls: ClassVar = _char.SocialScience
     level: int = 0
     archaeology: int = 0
@@ -440,7 +440,7 @@ class SocialScience(_RobotSkill):
 
 
 class SpaceScience(_RobotSkill):
-    type: Literal['robot_pkg.SpaceScience'] = 'robot_pkg.SpaceScience'
+    kind: Literal['robot_pkg.SpaceScience'] = 'robot_pkg.SpaceScience'
     _char_cls: ClassVar = _char.SpaceScience
     level: int = 0
     astronomy: int = 0
@@ -449,7 +449,7 @@ class SpaceScience(_RobotSkill):
 
 
 class Seafarer(_RobotSkill):
-    type: Literal['robot_pkg.Seafarer'] = 'robot_pkg.Seafarer'
+    kind: Literal['robot_pkg.Seafarer'] = 'robot_pkg.Seafarer'
     _char_cls: ClassVar = _char.Seafarer
     level: int = 0
     ocean_ships: int = 0
@@ -459,31 +459,31 @@ class Seafarer(_RobotSkill):
 
 
 class Stealth(_RobotSkill):
-    type: Literal['robot_pkg.Stealth'] = 'robot_pkg.Stealth'
+    kind: Literal['robot_pkg.Stealth'] = 'robot_pkg.Stealth'
     _char_cls: ClassVar = _char.Stealth
     level: int = 0
 
 
 class Steward(_RobotSkill):
-    type: Literal['robot_pkg.Steward'] = 'robot_pkg.Steward'
+    kind: Literal['robot_pkg.Steward'] = 'robot_pkg.Steward'
     _char_cls: ClassVar = _char.Steward
     level: int = 0
 
 
 class Streetwise(_RobotSkill):
-    type: Literal['robot_pkg.Streetwise'] = 'robot_pkg.Streetwise'
+    kind: Literal['robot_pkg.Streetwise'] = 'robot_pkg.Streetwise'
     _char_cls: ClassVar = _char.Streetwise
     level: int = 0
 
 
 class Survival(_RobotSkill):
-    type: Literal['robot_pkg.Survival'] = 'robot_pkg.Survival'
+    kind: Literal['robot_pkg.Survival'] = 'robot_pkg.Survival'
     _char_cls: ClassVar = _char.Survival
     level: int = 0
 
 
 class Tactics(_RobotSkill):
-    type: Literal['robot_pkg.Tactics'] = 'robot_pkg.Tactics'
+    kind: Literal['robot_pkg.Tactics'] = 'robot_pkg.Tactics'
     _char_cls: ClassVar = _char.Tactics
     level: int = 0
     military: int = 0
@@ -491,7 +491,7 @@ class Tactics(_RobotSkill):
 
 
 class VaccSuit(_RobotSkill):
-    type: Literal['robot_pkg.VaccSuit'] = 'robot_pkg.VaccSuit'
+    kind: Literal['robot_pkg.VaccSuit'] = 'robot_pkg.VaccSuit'
     _char_cls: ClassVar = _char.VaccSuit
     level: int = 0
 
@@ -511,7 +511,7 @@ _ROBOT_PROFESSION_SPEC_LABELS: dict[str, str] = {
 class RobotProfession(_RobotSkill):
     """Robot-specific profession skill with no character domain equivalent."""
 
-    type: Literal['robot_pkg.RobotProfession'] = 'robot_pkg.RobotProfession'
+    kind: Literal['robot_pkg.RobotProfession'] = 'robot_pkg.RobotProfession'
     _char_cls: ClassVar = None  # type: ignore[assignment]
     belter: int = 0
     cleaning: int = 0
@@ -616,5 +616,5 @@ AnyRobotSkill = Annotated[
     | Tactics
     | VaccSuit
     | RobotProfession,
-    Field(discriminator='type'),
+    Field(discriminator='kind'),
 ]

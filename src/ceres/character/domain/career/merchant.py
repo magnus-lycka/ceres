@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     BLADE,
@@ -69,6 +69,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── event 3: smuggling opportunity ───────────────────────────────────────────
@@ -77,7 +78,7 @@ from ceres.character.mechanism.pending_input import ChoiceBase
 class MerchantEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['merchant_event_3_skill_roll'] = 'merchant_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
         if event.modified_roll >= 8:
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
@@ -113,7 +114,7 @@ class MerchantEvent3Refuse(ChoiceBase):
 
 
 class MerchantEvent3Handler(CareerHandlerBase):
-    type: Literal['merchant_event_3'] = 'merchant_event_3'
+    kind: Literal['merchant_event_3'] = 'merchant_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -135,7 +136,7 @@ class MerchantEvent3Handler(CareerHandlerBase):
 
 
 class MerchantEvent5Handler(CareerHandlerBase):
-    type: Literal['merchant_event_5'] = 'merchant_event_5'
+    kind: Literal['merchant_event_5'] = 'merchant_event_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -156,14 +157,14 @@ class MerchantEvent5Handler(CareerHandlerBase):
 class PendingMerchantEvent8Roll(CareerSkillRollPendingBase):
     kind: Literal['merchant_event_8_roll'] = 'merchant_event_8_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
         if event.modified_roll == 2:
             _set_forced_prison_career(projection, 'Legal trouble — rolled 2, sent to Prisoner career.')
 
 
 class MerchantEvent8Handler(CareerHandlerBase):
-    type: Literal['merchant_event_8'] = 'merchant_event_8'
+    kind: Literal['merchant_event_8'] = 'merchant_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -189,7 +190,7 @@ class MerchantEvent8Handler(CareerHandlerBase):
 
 
 class MerchantEvent9Handler(CareerHandlerBase):
-    type: Literal['merchant_event_9'] = 'merchant_event_9'
+    kind: Literal['merchant_event_9'] = 'merchant_event_9'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -197,7 +198,7 @@ class MerchantEvent9Handler(CareerHandlerBase):
 
 
 class Merchant(CareerData):
-    type: Literal['MERCHANT_CAREER'] = 'MERCHANT_CAREER'
+    kind: Literal['MERCHANT_CAREER'] = 'MERCHANT_CAREER'
 
     name: ClassVar[str] = 'Merchant'
     description: ClassVar[str] = (

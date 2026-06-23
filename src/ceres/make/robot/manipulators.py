@@ -34,7 +34,7 @@ class Leg(CeresModel):
     """A plain walker leg with no manipulation capability."""
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
-    type: Literal['LEG'] = 'LEG'
+    kind: Literal['LEG'] = 'LEG'
 
 
 class Manipulator(RobotPart):
@@ -45,7 +45,7 @@ class Manipulator(RobotPart):
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
-    type: Literal['MANIPULATOR'] = 'MANIPULATOR'
+    kind: Literal['MANIPULATOR'] = 'MANIPULATOR'
 
     size: RobotSize | None = None
     str_bonus: int = 0
@@ -104,4 +104,4 @@ class Manipulator(RobotPart):
         super().bind(assembly)
 
 
-LegOrManipulator = Annotated[Leg | Manipulator, Field(discriminator='type')]
+LegOrManipulator = Annotated[Leg | Manipulator, Field(discriminator='kind')]

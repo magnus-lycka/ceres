@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career.career_data import CharCheck
@@ -14,6 +14,7 @@ from ceres.character.domain.skills import (
     ScienceSkill,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 
 
 class UniversityPreCareer(PreCareerData):
@@ -49,7 +50,7 @@ class UniversityPreCareer(PreCareerData):
     def apply_entry(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         pending_idx: int,
     ) -> int:
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
@@ -77,7 +78,7 @@ class UniversityPreCareer(PreCareerData):
     def apply_graduation(
         self,
         projection: CharacterProjection,
-        event: Any,
+        event: Event,
         honours: bool,
     ) -> int:
         for skill in projection.summary.precareer_skills:

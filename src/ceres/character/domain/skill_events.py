@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 from pydantic import Field, TypeAdapter
 
@@ -18,7 +18,7 @@ _advancement_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = 
 )
 
 
-def skill_option_label(option: Any) -> str:
+def skill_option_label(option: CareerSkillOption | AdvancementDmOption) -> str:
     if isinstance(option, AdvancementDmOption):
         return option.label()
     if isinstance(option, Psi):

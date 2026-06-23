@@ -3,7 +3,7 @@ from typing import Any, Literal, cast
 
 from pydantic import Field
 
-from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
@@ -12,7 +12,7 @@ from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
 
 
-def _conditional_characteristic_dms(summary: Any, dms: dict[str, int]) -> int:
+def _conditional_characteristic_dms(summary: CharacterSummary, dms: dict[str, int]) -> int:
     from ceres.character.domain.characteristics import Chars
 
     total = 0

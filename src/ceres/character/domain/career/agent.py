@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
     CYBERNETIC_IMPLANT,
@@ -74,6 +74,7 @@ from ceres.character.domain.skills import (
     VaccSuit,
     skill_instances,
 )
+from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
@@ -124,7 +125,7 @@ class AgentMishap2Refuse(ChoiceBase):
 class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_mishap_3_skill_roll'] = 'agent_mishap_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         projection.get_current_career()
 
         from ceres.character.domain.career.career_events import _set_forced_prison_career
@@ -185,7 +186,7 @@ class AgentMishap5Family(ChoiceBase):
 class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_event_3_skill_roll'] = 'agent_event_3_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.pending_inputs.append(
                 PendingSkillChoice(
@@ -210,7 +211,7 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
 class PendingAgentEvent8SkillRoll(CareerSkillRollPendingBase):
     kind: Literal['agent_event_8_skill_roll'] = 'agent_event_8_skill_roll'
 
-    def resolve(self, projection: CharacterProjection, event: Any) -> None:
+    def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.summary.problems.append(
                 'Undercover mission success: roll on Rogue or Citizen Events table and '
@@ -233,7 +234,7 @@ class PendingAgentEvent11SkillChoice(CareerSkillChoicePendingBase):
 
 
 class AgentMishap2Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_2'] = 'agent_mishap_2'
+    kind: Literal['agent_mishap_2'] = 'agent_mishap_2'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -254,7 +255,7 @@ class AgentMishap2Handler(CareerHandlerBase):
 
 
 class AgentMishap3Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_3'] = 'agent_mishap_3'
+    kind: Literal['agent_mishap_3'] = 'agent_mishap_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -272,7 +273,7 @@ class AgentMishap3Handler(CareerHandlerBase):
 
 
 class AgentMishap5Handler(CareerHandlerBase):
-    type: Literal['agent_mishap_5'] = 'agent_mishap_5'
+    kind: Literal['agent_mishap_5'] = 'agent_mishap_5'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -290,7 +291,7 @@ class AgentMishap5Handler(CareerHandlerBase):
 
 
 class AgentEvent3Handler(CareerHandlerBase):
-    type: Literal['agent_event_3'] = 'agent_event_3'
+    kind: Literal['agent_event_3'] = 'agent_event_3'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -308,7 +309,7 @@ class AgentEvent3Handler(CareerHandlerBase):
 
 
 class AgentEvent6Handler(CareerHandlerBase):
-    type: Literal['agent_event_6'] = 'agent_event_6'
+    kind: Literal['agent_event_6'] = 'agent_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -319,7 +320,7 @@ class AgentEvent6Handler(CareerHandlerBase):
 
 
 class AgentEvent8Handler(CareerHandlerBase):
-    type: Literal['agent_event_8'] = 'agent_event_8'
+    kind: Literal['agent_event_8'] = 'agent_event_8'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -337,7 +338,7 @@ class AgentEvent8Handler(CareerHandlerBase):
 
 
 class AgentEvent11Handler(CareerHandlerBase):
-    type: Literal['agent_event_11'] = 'agent_event_11'
+    kind: Literal['agent_event_11'] = 'agent_event_11'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
@@ -353,7 +354,7 @@ class AgentEvent11Handler(CareerHandlerBase):
 
 
 class Agent(CareerData):
-    type: Literal['AGENT_CAREER'] = 'AGENT_CAREER'
+    kind: Literal['AGENT_CAREER'] = 'AGENT_CAREER'
 
     name: ClassVar[str] = 'Agent'
     description: ClassVar[str] = (
