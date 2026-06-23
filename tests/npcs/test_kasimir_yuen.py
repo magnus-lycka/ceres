@@ -24,7 +24,7 @@ from ceres.character.domain.character_start import (
 )
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Level, Pilot
 from ceres.character.domain.sophont import VILANI
-from ceres.character.domain.spec import NpcSpec, spec_from_summary
+from ceres.character.domain.spec import StatBlockSpec, spec_from_summary
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.character.helpers import MOCK_WORLD
@@ -97,7 +97,7 @@ def _events() -> list:
     ]
 
 
-def build_kasimir_spec() -> NpcSpec:
+def build_kasimir_spec() -> StatBlockSpec:
     """2-term Scout Courier, Vilani. Mustered out with a Scout Ship."""
     from ceres.character.notes import generate_notes
 

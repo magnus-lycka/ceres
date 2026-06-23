@@ -6,7 +6,7 @@ from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import AnySkill, level_fields
 
 
-class NpcSpec(BaseModel):
+class StatBlockSpec(BaseModel):
     name: str
     career: str | None = None
     assignment: str | None = None
@@ -22,13 +22,13 @@ class NpcSpec(BaseModel):
     notes: str | None = None
 
 
-def spec_from_summary(summary: CharacterSummary, notes: str | None = None) -> NpcSpec:
+def spec_from_summary(summary: CharacterSummary, notes: str | None = None) -> StatBlockSpec:
     from ceres.character.domain.characteristics import UCP_STATS
 
     ucp = ''.join(f'{summary.characteristics.get(stat, 0):X}' for stat in UCP_STATS)
     career_obj = summary.current_career or summary.last_career
     assignment_obj = summary.current_assignment or summary.last_assignment
-    return NpcSpec(
+    return StatBlockSpec(
         name=summary.name or 'Unknown',
         career=career_obj.name if career_obj else None,
         assignment=assignment_obj.name if assignment_obj else None,
@@ -45,17 +45,17 @@ def spec_from_summary(summary: CharacterSummary, notes: str | None = None) -> Np
     )
 
 
-def format_npc_skills(skills: list[AnySkill]) -> str:
+def format_stat_block_skills(skills: list[AnySkill]) -> str:
     parts: list[str] = []
     for skill in sorted(skills, key=lambda s: type(s).name()):
-        parts.extend(_format_npc_skill(skill))
+        parts.extend(_format_stat_block_skill(skill))
     return ', '.join(parts)
 
 
 _NBSP = ' '  # non-breaking space — keeps level number with preceding word/paren
 
 
-def _format_npc_skill(skill: AnySkill) -> list[str]:
+def _format_stat_block_skill(skill: AnySkill) -> list[str]:
     fields = level_fields(type(skill))
     if not fields:
         return []

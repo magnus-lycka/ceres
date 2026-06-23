@@ -20,7 +20,7 @@ from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError
 from ceres.character.mechanism.store import SqliteCharacterBackend
-from ceres.character.report import render_npc_gallery_pdf
+from ceres.character.report import render_stat_block_gallery_pdf
 from ceres.worlds import SectorWorldFilters, search_sectors
 
 _COMBINED_REF_RE = re.compile(r'^([A-Za-z]+)(\d{4})$')
@@ -198,11 +198,11 @@ def _normalize_world_filters_for_matching(
 
 
 def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
-    from ceres.character.domain.spec import format_npc_skills
+    from ceres.character.domain.spec import format_stat_block_skills
 
     router = APIRouter()
     templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
-    templates.env.filters['format_skills'] = format_npc_skills
+    templates.env.filters['format_skills'] = format_stat_block_skills
 
     @router.get('/', response_class=HTMLResponse)
     def list_characters(request: Request) -> Any:
@@ -568,7 +568,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         if projection is None:
             return Response(status_code=404)
         spec = spec_from_summary(projection.summary)
-        pdf = render_npc_gallery_pdf([spec])
+        pdf = render_stat_block_gallery_pdf([spec])
         safe_name = (spec.name or 'character').replace(' ', '_')
         return Response(
             content=pdf,
