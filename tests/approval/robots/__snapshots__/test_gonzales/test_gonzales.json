@@ -1,0 +1,260 @@
+{
+  "data": {
+    "name": "Gonzales",
+    "tl": 15,
+    "robot_notes": [
+      {
+        "category": "error",
+        "message": "Slot overload: 9 used, 8 available"
+      }
+    ],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 4 (Bwap)",
+            "col2": "+8",
+            "col3": "—",
+            "cost": "Cr800"
+          },
+          {
+            "name": "Wheels, ATV chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,600"
+          },
+          {
+            "name": "Vehicle Speed Modification",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,400"
+          },
+          {
+            "name": "Agility Enhancement (2)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,800"
+          },
+          {
+            "name": "Efficiency",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,200"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Basic (locomotion) (INT 4)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 5 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "-Cr200"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "PRIS Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Auditory Sensor (broad spectrum)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Voder Speaker (broad spectrum)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Camouflage: Visual (enhanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr800"
+          },
+          {
+            "name": "Camouflage: Audible (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr400"
+          },
+          {
+            "name": "Camouflage: Olfactory (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr800"
+          },
+          {
+            "name": "Navigation System (basic)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Storage Compartment (4 Slots)",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Transceiver 5,000km (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "8/24",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr24,500"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Gonzales"
+          ],
+          [
+            "Size",
+            "4"
+          ],
+          [
+            "Hits",
+            "12"
+          ],
+          [
+            "Locomotion",
+            "Wheels, ATV (VSM)"
+          ],
+          [
+            "Speed",
+            "7m (slow)"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "Cr24,500"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Athletics (Dexterity) 2, Drive (Wheel) 2, Navigation 1, Stealth 3",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 5 DEX 9) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "288 (72) hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+8), ATV, Heightened Senses, IR/UV Vision, Small (-1)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Basic (locomotion) (INT 4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor (broad spectrum), Camouflage: Audible (advanced), Camouflage: Olfactory (advanced), Camouflage: Visual (enhanced), Drone Interface, Efficiency, Navigation System (basic), PRIS Sensor, Storage Compartment (4 Slots), Transceiver 5,000km (advanced), Voder Speaker (broad spectrum)",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr24,500 vs source Cr27,000 — gap Cr2,500 unresolved",
+    "slots": "IncreasedArmour(+4) takes 1 slot → used=9 vs available=8 (slot overload); source shows 0 remaining"
+  }
+}

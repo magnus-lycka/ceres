@@ -1,0 +1,489 @@
+{
+  "data": {
+    "ship_class": "King Kay",
+    "ship_type": "Luxury Liner",
+    "tl": 12,
+    "hull_points": 2000.0,
+    "ship_notes": [],
+    "crew_notes": [
+      {
+        "category": "info",
+        "message": "ADMINISTRATOR above recommended count: 10 > 2"
+      },
+      {
+        "category": "info",
+        "message": "CAPTAIN above recommended count: 1 > 0"
+      },
+      {
+        "category": "info",
+        "message": "ENGINEER above recommended count: 16 > 13"
+      },
+      {
+        "category": "info",
+        "message": "GENERAL CREW above recommended count: 55 > 0"
+      },
+      {
+        "category": "warning",
+        "message": "MAINTENANCE below recommended count: 5 < 6"
+      },
+      {
+        "category": "info",
+        "message": "MARINE above recommended count: 10 > 0"
+      },
+      {
+        "category": "info",
+        "message": "MEDIC above recommended count: 5 > 3"
+      },
+      {
+        "category": "info",
+        "message": "OFFICER above recommended count: 11 > 1"
+      },
+      {
+        "category": "info",
+        "message": "PILOT above recommended count: 3 > 1"
+      },
+      {
+        "category": "info",
+        "message": "STEWARD above recommended count: 65 > 0"
+      }
+    ],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 1285657000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 1285657000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 5356904.17
+      },
+      {
+        "label": "Maintenance",
+        "amount": 107138.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 496000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 561800.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 1006750.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 387000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 7915592.17
+      }
+    ],
+    "crew": [
+      {
+        "role": "CAPTAIN",
+        "salary": 10000,
+        "quantity": null
+      },
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": 3
+      },
+      {
+        "role": "ASTROGATOR",
+        "salary": 5000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": 16
+      },
+      {
+        "role": "GENERAL CREW",
+        "salary": 1000,
+        "quantity": 55
+      },
+      {
+        "role": "MAINTENANCE",
+        "salary": 1000,
+        "quantity": 5
+      },
+      {
+        "role": "STEWARD",
+        "salary": 2000,
+        "quantity": 65
+      },
+      {
+        "role": "ADMINISTRATOR",
+        "salary": 1500,
+        "quantity": 10
+      },
+      {
+        "role": "MEDIC",
+        "salary": 4000,
+        "quantity": 5
+      },
+      {
+        "role": "OFFICER",
+        "salary": 5000,
+        "quantity": 11
+      },
+      {
+        "role": "MARINE",
+        "salary": 1000,
+        "quantity": 10
+      }
+    ],
+    "passengers": [
+      {
+        "kind": "MIDDLE_P",
+        "quantity": 378
+      },
+      {
+        "kind": "LOW_P",
+        "quantity": 18
+      }
+    ],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Close Structure Hull",
+        "quantity": null,
+        "tons": 5000.0,
+        "power": null,
+        "cost": 200000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 1000.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": 10,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Jump",
+        "item": "Jump 2",
+        "quantity": null,
+        "tons": 255.0,
+        "power": -1000.0,
+        "cost": 382500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 1",
+        "quantity": null,
+        "tons": 50.0,
+        "power": -500.0,
+        "cost": 100000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 2010",
+        "quantity": null,
+        "tons": 134.0,
+        "power": 2010.0,
+        "cost": 134000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "J-2, 8 weeks of operation",
+        "quantity": null,
+        "tons": 1027.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Holographic Controls",
+        "quantity": null,
+        "tons": 60.0,
+        "power": null,
+        "cost": 31250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/10",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 160000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Backup Computer/5/bis",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 45000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Jump Control/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Civilian Grade Sensors",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 3000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -2 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Craft",
+        "item": "Docking Space (70 tons)",
+        "quantity": null,
+        "tons": 77.0,
+        "power": null,
+        "cost": 19250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Docking Space (70 tons)",
+        "quantity": null,
+        "tons": 77.0,
+        "power": null,
+        "cost": 19250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Docking Space (252 tons)",
+        "quantity": null,
+        "tons": 278.0,
+        "power": null,
+        "cost": 69500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 80,
+        "tons": 320.0,
+        "power": null,
+        "cost": 40000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "High Staterooms",
+        "quantity": 192,
+        "tons": 1152.0,
+        "power": null,
+        "cost": 153600000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Luxury Staterooms",
+        "quantity": 8,
+        "tons": 80.0,
+        "power": null,
+        "cost": 12000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Low Berths",
+        "quantity": 18,
+        "tons": 9.0,
+        "power": -2.0,
+        "cost": 900000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 388.0,
+        "power": null,
+        "cost": 38800000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Swimming Pool",
+        "quantity": null,
+        "tons": 60.0,
+        "power": null,
+        "cost": 1200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Theatre",
+        "quantity": 3,
+        "tons": 300.0,
+        "power": null,
+        "cost": 30000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Wet Bar",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 2000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Medical Bay",
+        "quantity": null,
+        "tons": 4.0,
+        "power": -1.0,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Commercial Zone",
+        "quantity": null,
+        "tons": 240.0,
+        "power": -1.0,
+        "cost": 48000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 488.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "fuel": "Ref shows J-2 + 8 weeks combined 1028t; Ceres: 1000 + 27 = 1027t (1t gap in op fuel calculation)"
+  }
+}

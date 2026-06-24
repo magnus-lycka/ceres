@@ -1,0 +1,429 @@
+{
+  "data": {
+    "ship_class": "Strandbell",
+    "ship_type": "System Defense Boat",
+    "tl": 15,
+    "hull_points": 88.0,
+    "ship_notes": [
+      {
+        "category": "warning",
+        "message": "Installed armouries below recommendation: 0 < 1"
+      }
+    ],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 140900000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 126810000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 528375.0
+      },
+      {
+        "label": "Maintenance",
+        "amount": 10568.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 15000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 14000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 0.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 61000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 628943.0
+      }
+    ],
+    "crew": [
+      {
+        "role": "CAPTAIN",
+        "salary": 10000,
+        "quantity": null
+      },
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": 3
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": null
+      },
+      {
+        "role": "GUNNER",
+        "salary": 2000,
+        "quantity": 4
+      },
+      {
+        "role": "SENSOR OPERATOR",
+        "salary": 4000,
+        "quantity": 3
+      },
+      {
+        "role": "MEDIC",
+        "salary": 4000,
+        "quantity": null
+      },
+      {
+        "role": "OFFICER",
+        "salary": 5000,
+        "quantity": null
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Standard Reinforced Hull",
+        "quantity": null,
+        "tons": 200.0,
+        "power": null,
+        "cost": 15000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 40.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Crystaliron, Armour: 13",
+        "quantity": null,
+        "tons": 32.5,
+        "power": null,
+        "cost": 6500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": 2,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 9",
+        "quantity": null,
+        "tons": 18.0,
+        "power": -180.0,
+        "cost": 36000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 240",
+        "quantity": null,
+        "tons": 16.0,
+        "power": 240.0,
+        "cost": 16000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "12 weeks of operation",
+        "quantity": null,
+        "tons": 5.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Processor (20 tons/day)",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 50000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Standard Bridge",
+        "quantity": null,
+        "tons": 10.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/35",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Auto-Repair/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 5000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Fire Control/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Evade/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Improved Sensors",
+        "quantity": null,
+        "tons": 3.0,
+        "power": -3.0,
+        "cost": 4300000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON"
+          },
+          {
+            "category": "info",
+            "message": "DM +1 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Countermeasures Suite",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -1.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "DM +4 to all jamming and electronic warfare attempts"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Triple Turret",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -13.0,
+        "cost": 2500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Beam Laser × 3"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Triple Turret",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 3250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Missile Rack × 3"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Missile Storage (240)",
+        "quantity": null,
+        "tons": 20.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 15,
+        "tons": 60.0,
+        "power": null,
+        "cost": 7500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 400000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "warning",
+            "message": "Recommended common area is 15.00 tons"
+          }
+        ]
+      },
+      {
+        "section": "Systems",
+        "item": "Medical Bay",
+        "quantity": null,
+        "tons": 4.0,
+        "power": -1.0,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Repair Drones",
+        "quantity": null,
+        "tons": 2.0,
+        "power": null,
+        "cost": 400000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 20.5,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "2 tons needed per 100 days of stores and spares"
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ref MCr147.13 includes armored bulkheads (MCr0.62) and stores/spares; Ceres gives MCr140.9 (armored M-drive bulkheads and stores not modelled)",
+    "fuel": "Ceres gives op_fuel=5.0t per RIS-007; ref shows 4.80t for 12 weeks",
+    "cargo": "Ceres gives 20.5t; ref shows 13.8t — armored M-drive bulkheads and stores/spares not modelled"
+  }
+}

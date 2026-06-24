@@ -1,0 +1,384 @@
+{
+  "data": {
+    "name": "Mimer",
+    "tl": 15,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 1 (Rat)",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "No Locomotion",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Self-Aware (INT 12)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "MCr2.25"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Recon 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr50,000"
+          },
+          {
+            "name": "Stealth 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr5,000"
+          },
+          {
+            "name": "Investigate 2",
+            "col2": "—",
+            "col3": "-3",
+            "cost": "Cr50,000"
+          },
+          {
+            "name": "Electronics 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Broker 3",
+            "col2": "—",
+            "col3": "-3",
+            "cost": "Cr200,000"
+          },
+          {
+            "name": "Admin 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Advocate 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr5,000"
+          },
+          {
+            "name": "Engineer 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Mechanic 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Medic 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Steward 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Robotic Science (Robotics) 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Language Bilanidin 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Tactics 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Flyer 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Navigation 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Universal Translator",
+            "col2": "—",
+            "col3": "-3",
+            "cost": "Cr25,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Removed manipulator",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "-Cr20"
+          },
+          {
+            "name": "Removed manipulator",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Avatar Controller (enhanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr500,000"
+          },
+          {
+            "name": "Swarm Controller (advanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100,000"
+          },
+          {
+            "name": "Camouflage: Audible (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr50"
+          },
+          {
+            "name": "Camouflage: Visual (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Encryption Module",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          },
+          {
+            "name": "Environment Processor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Injector Needle × 7",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr140"
+          },
+          {
+            "name": "Parasitic Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "PRIS Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Self-Maintenance Enhancement (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr50,000"
+          },
+          {
+            "name": "Vacuum Environment Protection",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr600"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "2",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "20/21",
+            "col3": "8/10",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "MCr3.30437"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Mimer"
+          ],
+          [
+            "Size",
+            "1"
+          ],
+          [
+            "Hits",
+            "1"
+          ],
+          [
+            "Locomotion",
+            "None"
+          ],
+          [
+            "Speed",
+            "0m"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "MCr3.30437"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Admin 3, Advocate 3, Broker 5, Electronics (All) 2, Engineer (All) 2, Flyer (All) 1, Investigate 4, Language Bilanidin 2, Mechanic 2, Medic 4, Navigation 2, Recon 4, Robotic Science (Cybernetics) 2, Robotic Science (Robotics) 4, Stealth 4, Steward 2, Tactics (All) 2, +2 Bandwidth available",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "864 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), Hardened, Heightened Senses, IR/UV Vision, Small (-4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Self-Aware (INT 12)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Avatar Controller (enhanced), Camouflage: Audible (advanced), Camouflage: Visual (advanced), Encryption Module, Environment Processor, Injector Needle × 7, PRIS Sensor, Parasitic Link, Self-Maintenance Enhancement (improved), Swarm Controller (advanced), Transceiver 5km (improved), Vacuum Environment Protection, Visual Spectrum Sensor, Voder Speaker, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  }
+}

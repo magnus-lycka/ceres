@@ -320,7 +320,7 @@ class Robot(RobotBase):
                 cs.rows.append(
                     RobotDetailRow(
                         name='Vehicle Speed Modification',
-                        col2=f'−{opt.slots}',
+                        col2=f'-{opt.slots}',
                         cost=format_credits(opt.cost),
                     )
                 )
@@ -353,7 +353,7 @@ class Robot(RobotBase):
             bs.rows.append(
                 RobotDetailRow(
                     name=brain_label,
-                    col2=f'−{total_brain_slots}' if total_brain_slots else '—',
+                    col2=f'-{total_brain_slots}' if total_brain_slots else '—',
                     col3=f'+{self.brain.bandwidth}',
                     cost=format_credits(brain_base_cost),
                 )
@@ -362,7 +362,7 @@ class Robot(RobotBase):
                 bs.rows.append(
                     RobotDetailRow(
                         name=f'INT +{self.brain.int_upgrade}',
-                        col3=f'−{self.brain._int_upgrade_bw}',
+                        col3=f'-{self.brain._int_upgrade_bw}',
                         cost=format_credits(self.brain._int_upgrade_cost),
                     )
                 )
@@ -370,7 +370,7 @@ class Robot(RobotBase):
             bs.rows.append(
                 RobotDetailRow(
                     name=brain_label,
-                    col2=f'−{total_brain_slots}' if total_brain_slots else '—',
+                    col2=f'-{total_brain_slots}' if total_brain_slots else '—',
                     cost=format_credits(self.brain.hardware_cost),
                 )
             )
@@ -387,7 +387,7 @@ class Robot(RobotBase):
                 ss.rows.append(
                     RobotDetailRow(
                         name=pkg_name,
-                        col3=f'−{pkg.bandwidth}',
+                        col3=f'-{pkg.bandwidth}',
                         cost=format_credits(pkg.cost),
                     )
                 )
@@ -396,7 +396,7 @@ class Robot(RobotBase):
                     ss.rows.append(
                         RobotDetailRow(
                             name=sw.name,
-                            col3=f'−{sw.bandwidth}',
+                            col3=f'-{sw.bandwidth}',
                             cost=format_credits(sw.cost),
                         )
                     )
@@ -431,11 +431,11 @@ class Robot(RobotBase):
             grouped_name = f'{name} × {count}' if count > 1 else name
             total_slots = slots_freed * count
             total_cost = cost_effect * count
-            slot_str = f'+{total_slots}' if total_slots > 0 else (f'−{-total_slots}' if total_slots < 0 else '—')
+            slot_str = f'+{total_slots}' if total_slots > 0 else (f'-{-total_slots}' if total_slots < 0 else '—')
             cost_str = (
                 format_credits(total_cost)
                 if total_cost > 0
-                else (f'−{format_credits(-total_cost)}' if total_cost < 0 else '—')
+                else (f'-{format_credits(-total_cost)}' if total_cost < 0 else '—')
             )
             ms.rows.append(RobotDetailRow(name=grouped_name, col2=slot_str, cost=cost_str))
             j += count
@@ -466,7 +466,7 @@ class Robot(RobotBase):
                 os_.rows.append(
                     RobotDetailRow(
                         name=name,
-                        col2=f'−{slots}' if slots > 0 else '—',
+                        col2=f'-{slots}' if slots > 0 else '—',
                         cost=format_credits(cost) if cost > 0 else '—',
                     )
                 )

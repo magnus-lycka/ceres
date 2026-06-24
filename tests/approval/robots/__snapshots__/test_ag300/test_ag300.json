@@ -1,0 +1,260 @@
+{
+  "data": {
+    "name": "AG300 Agricultural Worker",
+    "tl": 10,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 5 (Human)",
+            "col2": "+16",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Walker chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr9,000"
+          },
+          {
+            "name": "Speed modification (+1)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Basic (labourer) (INT 4)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 9 DEX 6) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "(STR 7 DEX 6) × 2",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr800"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Agricultural Equipment (medium)",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Light Intensifier Sensor (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,250"
+          },
+          {
+            "name": "Navigation System (basic)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Olfactory Sensor (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr3,500"
+          },
+          {
+            "name": "Storage Compartment (8 Slots refrigerated)",
+            "col2": "-8",
+            "col3": "—",
+            "cost": "Cr800"
+          },
+          {
+            "name": "Thermal Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "9/20",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr24,850"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "AG300 Agricultural Worker"
+          ],
+          [
+            "Size",
+            "5"
+          ],
+          [
+            "Hits",
+            "20"
+          ],
+          [
+            "Locomotion",
+            "Walker"
+          ],
+          [
+            "Speed",
+            "6m"
+          ],
+          [
+            "TL",
+            "10"
+          ],
+          [
+            "Cost",
+            "Cr24,850"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Navigation 1, Profession (Labourer) 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 9 DEX 6) × 2, (STR 7 DEX 6) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "64 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+3), ATV, Heightened Senses, IR Vision",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Basic (labourer) (INT 4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Agricultural Equipment (medium), Auditory Sensor, Drone Interface, Light Intensifier Sensor (advanced), Navigation System (basic), Olfactory Sensor (improved), Storage Compartment (8 Slots refrigerated), Thermal Sensor, Transceiver 5km (improved), Visual Spectrum Sensor, Voder Speaker, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr24,850 vs source Cr20,000 — discrepancy untraced, see RIR-002"
+  }
+}

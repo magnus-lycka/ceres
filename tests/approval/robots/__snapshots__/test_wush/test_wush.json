@@ -1,0 +1,215 @@
+{
+  "data": {
+    "name": "Wush",
+    "tl": 15,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 2 (Cat)",
+            "col2": "+2",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Wheels, ATV chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr400"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Primitive (clean) (INT 1)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr100"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 3 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Domestic Cleaning Equipment (small)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Storage Compartment (1 Slots)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr50"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "5/22",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr850"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Wush"
+          ],
+          [
+            "Size",
+            "2"
+          ],
+          [
+            "Hits",
+            "4"
+          ],
+          [
+            "Locomotion",
+            "Wheels, ATV"
+          ],
+          [
+            "Speed",
+            "5m"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "Cr850"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Profession (Domestic Cleaner) 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 3 DEX 9) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "144 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), ATV, Small (-3)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Primitive (clean) (INT 1)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Domestic Cleaning Equipment (small), Drone Interface, Storage Compartment (1 Slots), Transceiver 5km (improved), Visual Spectrum Sensor, Voder Speaker",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  }
+}

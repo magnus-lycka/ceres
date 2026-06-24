@@ -1,0 +1,274 @@
+{
+  "data": {
+    "name": "Hudson",
+    "tl": 15,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 4 (Bwap)",
+            "col2": "+8",
+            "col3": "—",
+            "cost": "Cr800"
+          },
+          {
+            "name": "Walker chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr7,200"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Advanced (INT 9, Bandwidth 4)",
+            "col2": "-1",
+            "col3": "+4",
+            "cost": "Cr15,000"
+          },
+          {
+            "name": "INT +1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr9,000"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Admin 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Drive 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Flyer 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Pilot (Small Craft) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Steward 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 7 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Olfactory Sensor (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr3,500"
+          },
+          {
+            "name": "Autochef (improved)",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Stylist Toolkit",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Storage Compartment (1 Slots refrigerated)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Video Screen (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "0",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "6/24",
+            "col3": "2/2",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr43,300"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Hudson"
+          ],
+          [
+            "Size",
+            "4"
+          ],
+          [
+            "Hits",
+            "12"
+          ],
+          [
+            "Locomotion",
+            "Walker"
+          ],
+          [
+            "Speed",
+            "5m"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "Cr43,300"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Admin 2, Drive (All) 1, Flyer (All) 1, Pilot (Capital Ships) 1, Pilot (Small Craft) 2, Pilot (Spacecraft) 1, Steward 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 7 DEX 9) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "144 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), ATV, Heightened Senses, Small (-1)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Advanced (INT 9)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Autochef (improved), Drone Interface, Olfactory Sensor (improved), Storage Compartment (1 Slots refrigerated), Stylist Toolkit, Transceiver 5km (improved), Video Screen (improved), Visual Spectrum Sensor",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr43,300 vs source Cr43,000 — Cr300 discrepancy untraced, likely source rounding",
+    "skills": "Ceres shows implied-familiarity Pilot subspecialties (Capital Ships, Spacecraft) at level 1 from DEX DM+1 boost; source stat block omits these entries"
+  }
+}

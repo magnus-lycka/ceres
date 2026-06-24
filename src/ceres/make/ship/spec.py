@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
 from enum import StrEnum
+
+from pydantic import BaseModel, Field, PrivateAttr, computed_field
 
 from ceres.shared import NoteList
 
 
-# Update the sections to merge jump and propulsion into drive.
-# See docs/todo_maybe.md for any remaining section-shape follow-up.
 class SpecSection(StrEnum):
     HULL = 'Hull'
     JUMP = 'Jump'
@@ -23,8 +22,7 @@ class SpecSection(StrEnum):
     CARGO = 'Cargo'
 
 
-@dataclass
-class SpecRow:
+class SpecRow(BaseModel):
     section: SpecSection
     item: str
     quantity: int | None = None
@@ -33,47 +31,38 @@ class SpecRow:
     cost: float | None = None
     emphasize_tons: bool = False
     emphasize_power: bool = False
-    notes: NoteList = field(default_factory=NoteList)
-
-    def __post_init__(self) -> None:
-        self.notes = NoteList(self.notes)
+    notes: NoteList = Field(default_factory=NoteList)
 
 
-@dataclass
-class ExpenseRow:
+class ExpenseRow(BaseModel):
     label: str
     amount: float
 
 
-@dataclass
-class CrewRow:
+class CrewRow(BaseModel):
     role: str
-    salary: int  # for one
+    salary: int
     quantity: int | None = None
 
 
-@dataclass
-class PassengerRow:
+class PassengerRow(BaseModel):
     kind: str
     quantity: int
 
 
-@dataclass
-class ShipSpec:
+class ShipSpec(BaseModel):
     ship_class: str | None = None
     ship_type: str | None = None
     tl: int | None = None
     hull_points: float | None = None
-    _sections: dict[SpecSection, list[SpecRow]] = field(default_factory=dict)
-    ship_notes: NoteList = field(default_factory=NoteList)
-    crew_notes: NoteList = field(default_factory=NoteList)
-    expenses: list[ExpenseRow] = field(default_factory=list)
-    crew: list[CrewRow] = field(default_factory=list)
-    passengers: list[PassengerRow] = field(default_factory=list)
+    ship_notes: NoteList = Field(default_factory=NoteList)
+    crew_notes: NoteList = Field(default_factory=NoteList)
+    expenses: list[ExpenseRow] = Field(default_factory=list)
+    crew: list[CrewRow] = Field(default_factory=list)
+    passengers: list[PassengerRow] = Field(default_factory=list)
+    _sections: dict[SpecSection, list[SpecRow]] = PrivateAttr(default_factory=dict)
 
-    def __post_init__(self) -> None:
-        self.ship_notes = NoteList(self.ship_notes)
-        self.crew_notes = NoteList(self.crew_notes)
+    def model_post_init(self, __context) -> None:
         for section in SpecSection:
             self._sections.setdefault(section, [])
 
@@ -81,6 +70,7 @@ class ShipSpec:
         target = SpecSection(section) if section is not None else row.section
         self._sections[target].append(row)
 
+    @computed_field
     @property
     def rows(self) -> list[SpecRow]:
         rows: list[SpecRow] = []

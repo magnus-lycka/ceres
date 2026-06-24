@@ -1,0 +1,425 @@
+{
+  "data": {
+    "name": "Rhino",
+    "tl": 15,
+    "robot_notes": [
+      {
+        "category": "error",
+        "message": "Slot overload: 154 used, 128 available"
+      }
+    ],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 8 (Virushi)",
+            "col2": "+128",
+            "col3": "—",
+            "cost": "Cr8,000"
+          },
+          {
+            "name": "Walker chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr72,000"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Self-Aware (INT 12)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "MCr1.65"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Athletics",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Athletics",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Medic 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Investigate 2",
+            "col2": "—",
+            "col3": "-3",
+            "cost": "Cr50,000"
+          },
+          {
+            "name": "Life Science (Biology) 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Physical Science (Chemistry) 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Robotic Science (Robotics) 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Profession (Fabricator) 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Profession (Robotics) 2",
+            "col2": "—",
+            "col3": "-2",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Electronics 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Engineer 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Mechanic 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Tactics 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Spacer Profession 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Melee 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Recon 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Survival 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Fab Creator/3",
+            "col2": "—",
+            "col3": "-3",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Translator/0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr50"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 15 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "(STR 6 DEX 15) × 2",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr44,400"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Bioscanner Sensor",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr350,000"
+          },
+          {
+            "name": "Densitometer Sensor",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Encryption Module",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          },
+          {
+            "name": "Environment Processor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Injector Needle × 8",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr160"
+          },
+          {
+            "name": "Medikit (advanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Medical Chamber (60 Slots, Improved Low Berth, Reanimation, Species-Specific Add-on)",
+            "col2": "-60",
+            "col3": "—",
+            "cost": "Cr938,000"
+          },
+          {
+            "name": "Neural Activity Sensor",
+            "col2": "-5",
+            "col3": "—",
+            "cost": "Cr35,000"
+          },
+          {
+            "name": "Olfactory Sensor (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Robotic Drone Controller (advanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr50,000"
+          },
+          {
+            "name": "Scientific Toolkit (advanced)",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr8,000"
+          },
+          {
+            "name": "Solar Coating (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr64,000"
+          },
+          {
+            "name": "Storage Compartment (8 Slots refrigerated)",
+            "col2": "-8",
+            "col3": "—",
+            "cost": "Cr800"
+          },
+          {
+            "name": "Swarm Controller (advanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100,000"
+          },
+          {
+            "name": "Vacuum Environment Protection",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr76,800"
+          },
+          {
+            "name": "Video Screen (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Fabrication Chamber (enhanced, 64 Slots)",
+            "col2": "-64",
+            "col3": "—",
+            "cost": "MCr3.2"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "-26",
+            "col3": "0",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "17/28",
+            "col3": "10/10",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "MCr6.84491"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Rhino"
+          ],
+          [
+            "Size",
+            "8"
+          ],
+          [
+            "Hits",
+            "72"
+          ],
+          [
+            "Locomotion",
+            "Walker"
+          ],
+          [
+            "Speed",
+            "5m"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "MCr6.84491"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Athletics (Dexterity) 1, Athletics (Strength) 3, Electronics (All) 2, Engineer (All) 2, Investigate 4, Life Science (Biology) 4, Life Science (Genetics) 2, Life Science (Psionicology) 2, Life Science (Xenology) 2, Mechanic 2, Medic 4, Melee (All) 1, Physical Science (Chemistry) 4, Physical Science (Jumpspace Physics) 2, Physical Science (Physics) 2, Profession (Fabricator) 4, Profession (Robotics) 4, Recon 2, Robotic Science (Cybernetics) 2, Robotic Science (Robotics) 4, Spacer Profession (All) 2, Survival 2, Tactics (All) 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 15 DEX 9) × 2, (STR 6 DEX 15) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "144 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), ATV, Hardened, Heightened Senses, Large (+3)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Self-Aware (INT 12)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Bioscanner Sensor, Densitometer Sensor, Drone Interface, Encryption Module, Environment Processor, Fabrication Chamber (enhanced, 64 Slots), Injector Needle × 8, Medical Chamber (60 Slots, Improved Low Berth, Reanimation, Species-Specific Add-on), Medikit (advanced), Neural Activity Sensor, Olfactory Sensor (advanced), Robotic Drone Controller (advanced), Scientific Toolkit (advanced), Solar Coating (advanced), Storage Compartment (8 Slots refrigerated), Swarm Controller (advanced), Vacuum Environment Protection, Video Screen (advanced), Visual Spectrum Sensor, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  }
+}

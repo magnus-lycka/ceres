@@ -1,5 +1,3 @@
-from dataclasses import replace
-
 from ceres.shared import _Note
 
 from .spec import ShipSpec, SpecRow
@@ -77,13 +75,14 @@ def _can_collapse(left: SpecRow, right: SpecRow) -> bool:
 def _merge_rows(left: SpecRow, right: SpecRow) -> SpecRow:
     left_qty = left.quantity or 1
     right_qty = right.quantity or 1
-    return replace(
-        left,
-        quantity=left_qty + right_qty,
-        tons=_sum_or_none(left.tons, right.tons),
-        power=_sum_or_none(left.power, right.power),
-        cost=_sum_or_none(left.cost, right.cost),
-        notes=_copy_notes(left.notes),
+    return left.model_copy(
+        update={
+            'quantity': left_qty + right_qty,
+            'tons': _sum_or_none(left.tons, right.tons),
+            'power': _sum_or_none(left.power, right.power),
+            'cost': _sum_or_none(left.cost, right.cost),
+            'notes': _copy_notes(left.notes),
+        }
     )
 
 

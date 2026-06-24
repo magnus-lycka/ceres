@@ -1,0 +1,285 @@
+{
+  "data": {
+    "name": "Hugin",
+    "tl": 15,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 1 (Rat)",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Grav chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,900"
+          },
+          {
+            "name": "Vehicle Speed Modification",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Agility Enhancement (4)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr16,000"
+          },
+          {
+            "name": "Efficiency",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Advanced (INT 8)",
+            "col2": "—",
+            "col3": "+2",
+            "cost": "Cr10,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Removed manipulator × 2",
+            "col2": "+2",
+            "col3": "—",
+            "cost": "-Cr200"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Avatar Receiver",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Camouflage: Audible (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr50"
+          },
+          {
+            "name": "Camouflage: Olfactory (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Encryption Module",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          },
+          {
+            "name": "Environment Processor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Gecko Grippers",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Injector Needle × 8",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr160"
+          },
+          {
+            "name": "Olfactory Sensor (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Parasitic Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "PRIS Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Solar Coating (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Transceiver 5,000km (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Vacuum Environment Protection",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr600"
+          },
+          {
+            "name": "Voder Speaker (broad spectrum)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "1",
+            "col3": "2",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "21/21",
+            "col3": "0/2",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr84,710"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Hugin"
+          ],
+          [
+            "Size",
+            "1"
+          ],
+          [
+            "Hits",
+            "1"
+          ],
+          [
+            "Locomotion",
+            "Grav (VSM)"
+          ],
+          [
+            "Speed",
+            "10m (high)"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "Cr84,710"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Athletics (Dexterity) 4, Recon 0, +2 Bandwidth available",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "96 (24) hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), Flyer (high), Hardened, Heightened Senses, IR/UV Vision, Small (-4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Advanced (INT 8)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Avatar Receiver, Camouflage: Audible (advanced), Camouflage: Olfactory (advanced), Efficiency, Encryption Module, Environment Processor, Gecko Grippers, Injector Needle × 8, Olfactory Sensor (advanced), PRIS Sensor, Parasitic Link, Solar Coating (advanced), Spare Slots ×1, Transceiver 5,000km (advanced), Vacuum Environment Protection, Voder Speaker (broad spectrum), Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr84,710 vs source Cr130,000 — gap Cr45,090 unresolved (partial build)",
+    "skills": "Source shows Flyer(Grav) 4, Stealth 2, Navigation 1, Recon 1 — not reproduced: Flyer(Grav) 4 would require Cr1M brain pkg; Stealth 2 and Navigation 1 origins unexplained from source options list"
+  }
+}

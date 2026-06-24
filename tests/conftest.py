@@ -35,10 +35,16 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help='run tests marked as slow',
     )
     parser.addoption(
+        '--with-snapshots',
+        action='store_true',
+        default=False,
+        help='run approval/snapshot tests',
+    )
+    parser.addoption(
         '--all-tests',
         action='store_true',
         default=False,
-        help='run all optional tests, including generated-output and slow tests',
+        help='run all optional tests, including generated-output, slow, and snapshot tests',
     )
     parser.addoption(
         '--profile-session',
@@ -77,6 +83,10 @@ def pytest_configure(config: pytest.Config) -> None:
         'markers',
         'slow: slow test skipped by default',
     )
+    config.addinivalue_line(
+        'markers',
+        'approval: approval/snapshot tests skipped by default',
+    )
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -89,12 +99,17 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     skip_slow = pytest.mark.skip(
         reason='skipped slow test; pass --with-slow or --all-tests to run it',
     )
+    skip_approval = pytest.mark.skip(
+        reason='skipped approval/snapshot test; pass --with-snapshots or --all-tests to run it',
+    )
 
     for item in items:
         if 'generated_output' in item.keywords and not config.getoption('--with-generated-output'):
             item.add_marker(skip_generated)
         if 'slow' in item.keywords and not config.getoption('--with-slow'):
             item.add_marker(skip_slow)
+        if 'approval' in item.keywords and not config.getoption('--with-snapshots'):
+            item.add_marker(skip_approval)
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:

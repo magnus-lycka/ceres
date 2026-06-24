@@ -1,0 +1,237 @@
+{
+  "data": {
+    "name": "Basic Lab Control Robot",
+    "tl": 12,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 1 (Rat)",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "No Locomotion",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Advanced (INT 8)",
+            "col2": "-1",
+            "col3": "+2",
+            "cost": "Cr10,000"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Electronics (Remote Ops) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Removed manipulator",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "-Cr20"
+          },
+          {
+            "name": "Removed manipulator",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Video Screen (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Transceiver 500km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "External Power",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Robotic Drone Controller (basic)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,000"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "1",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "5/18",
+            "col3": "0/2",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr14,680"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Basic Lab Control Robot"
+          ],
+          [
+            "Size",
+            "1"
+          ],
+          [
+            "Hits",
+            "1"
+          ],
+          [
+            "Locomotion",
+            "None"
+          ],
+          [
+            "Speed",
+            "0m"
+          ],
+          [
+            "TL",
+            "12"
+          ],
+          [
+            "Cost",
+            "Cr14,680"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Electronics (Remote Ops) 1, +1 Bandwidth available",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "324 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), Small (-4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Advanced (INT 8)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, External Power, Robotic Drone Controller (basic), Transceiver 500km (improved), Video Screen (improved), Voder Speaker, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr14,680 vs source Cr12,000 — source uses editorial simplification, omits skill package Cr1,000 and default suite substitution costs; SIZE_1 NoneLocomotion removal credit capped at 20% BCC = -Cr20"
+  }
+}

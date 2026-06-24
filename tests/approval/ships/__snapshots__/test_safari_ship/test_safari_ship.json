@@ -1,0 +1,400 @@
+{
+  "data": {
+    "ship_class": "Type-K",
+    "ship_type": "Safari Ship",
+    "tl": 12,
+    "hull_points": 80.0,
+    "ship_notes": [],
+    "crew_notes": [
+      {
+        "category": "warning",
+        "message": "GUNNER below recommended count: 0 < 1"
+      },
+      {
+        "category": "info",
+        "message": "MEDIC above recommended count: 1 > 0"
+      },
+      {
+        "category": "warning",
+        "message": "PILOT below recommended count: 1 < 2"
+      },
+      {
+        "category": "info",
+        "message": "STEWARD above recommended count: 1 > 0"
+      }
+    ],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 67475000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 60727500.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 253031.25
+      },
+      {
+        "label": "Maintenance",
+        "amount": 5061.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 11000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 21000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 8100.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 21000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 319192.25
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      },
+      {
+        "role": "ASTROGATOR",
+        "salary": 5000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": null
+      },
+      {
+        "role": "STEWARD",
+        "salary": 2000,
+        "quantity": null
+      },
+      {
+        "role": "MEDIC",
+        "salary": 4000,
+        "quantity": null
+      }
+    ],
+    "passengers": [
+      {
+        "kind": "MIDDLE_P",
+        "quantity": 16
+      }
+    ],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Streamlined Hull",
+        "quantity": null,
+        "tons": 200.0,
+        "power": null,
+        "cost": 12000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 40.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Jump",
+        "item": "Jump 2",
+        "quantity": null,
+        "tons": 15.0,
+        "power": -40.0,
+        "cost": 22500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 1",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -20.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 105",
+        "quantity": null,
+        "tons": 7.0,
+        "power": 105.0,
+        "cost": 7000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "J-2, 4 weeks of operation",
+        "quantity": null,
+        "tons": 41.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Processor (40 tons/day)",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Standard Bridge",
+        "quantity": null,
+        "tons": 10.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5/bis",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 45000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Jump Control/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Civilian Grade Sensors",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 3000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -2 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Double Turret",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "No weapons in turret"
+          }
+        ]
+      },
+      {
+        "section": "Craft",
+        "item": "Internal Docking Space: Launch",
+        "quantity": null,
+        "tons": 22.0,
+        "power": null,
+        "cost": 5500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Launch",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 2630000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Internal Docking Space: Air/Raft",
+        "quantity": null,
+        "tons": 5.0,
+        "power": null,
+        "cost": 1250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Air/Raft",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 11,
+        "tons": 44.0,
+        "power": null,
+        "cost": 5500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 13.0,
+        "power": null,
+        "cost": 1300000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Trophy Lounge (Common Area)",
+        "quantity": null,
+        "tons": 7.0,
+        "power": null,
+        "cost": 700000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 13.2,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 16.8,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  }
+}

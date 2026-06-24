@@ -1,0 +1,299 @@
+{
+  "data": {
+    "ship_class": "Gothta",
+    "ship_type": "Ambush Fighter",
+    "tl": 12,
+    "hull_points": 8.0,
+    "ship_notes": [
+      {
+        "category": "error",
+        "message": "No airlock installed"
+      }
+    ],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 24625000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 24625000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 102604.17
+      },
+      {
+        "label": "Maintenance",
+        "amount": 2052.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 375.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 1000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 0.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 6000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 112031.17
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Streamlined Hull, Pressure Hull",
+        "quantity": null,
+        "tons": 20.0,
+        "power": null,
+        "cost": 12000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 4.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Armour: 4",
+        "quantity": null,
+        "tons": 5.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Aerofins",
+        "quantity": null,
+        "tons": 1.0,
+        "power": null,
+        "cost": 100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "DM +2 to Pilot checks in atmosphere"
+          }
+        ]
+      },
+      {
+        "section": "Propulsion",
+        "item": "High-Burn Thruster, Thrust 4",
+        "quantity": null,
+        "tons": 1.6,
+        "power": null,
+        "cost": 320000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "No inertial compensation above manoeuvre-drive thrust"
+          }
+        ]
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 6",
+        "quantity": null,
+        "tons": 1.2,
+        "power": -12.0,
+        "cost": 2400000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 30",
+        "quantity": null,
+        "tons": 2.0,
+        "power": 30.0,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "2 weeks of operation, 1 hour Thruster",
+        "quantity": null,
+        "tons": 2.1,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Standard Bridge",
+        "quantity": null,
+        "tons": 3.0,
+        "power": null,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Fire Control/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Military Grade Sensors",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 4100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON"
+          },
+          {
+            "category": "info",
+            "message": "DM +0 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Pulse Laser",
+        "quantity": null,
+        "tons": null,
+        "power": -3.0,
+        "cost": 1100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Cabin Space",
+        "quantity": null,
+        "tons": 1.5,
+        "power": null,
+        "cost": 75000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 0.6000000000000014,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "0.2 tons needed per 100 days of stores and spares"
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "error": "No airlock installed — expected error for this design"
+  }
+}

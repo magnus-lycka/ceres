@@ -1,0 +1,754 @@
+import pytest
+
+from ceres.make.ship import hull, ship
+from ceres.make.ship.base import ShipBase
+from ceres.make.ship.bridge import Bridge, CommandSection
+from ceres.make.ship.computer import Computer5, ComputerSection
+from ceres.make.ship.crew import Pilot, ShipCrew
+from ceres.make.ship.drives import DriveSection, FusionPlantTL12, JDrive1, PowerSection
+from ceres.make.ship.habitation import (
+    AdvancedEntertainmentSystem,
+    Barracks,
+    Brig,
+    CabinSpace,
+    EmergencyLowBerth,
+    HabitationSection,
+    HighStateroom,
+    LowBerth,
+    LuxuryStateroom,
+    PsionStateroom,
+    Stable,
+    Stateroom,
+)
+from ceres.make.ship.occupants import HighPassage, LowPassage, MiddlePassage, ResidenceDemand
+from ceres.make.ship.systems import CommonArea, SwimmingPool
+from tests.unit.make.ship.helpers import passengers
+
+
+class DummyOwner(ShipBase):
+    def __init__(self, tl, displacement):
+        super().__init__(tl=tl, displacement=displacement)
+
+
+def test_staterooms_tons():
+    s = Stateroom()
+    s.bind(DummyOwner(12, 100))
+    assert s.tons == pytest.approx(4.0)
+
+
+def test_staterooms_cost():
+    s = Stateroom()
+    s.bind(DummyOwner(12, 100))
+    assert s.cost == 500_000
+
+
+def test_staterooms_power_zero():
+    s = Stateroom()
+    s.bind(DummyOwner(12, 100))
+    assert s.power == 0
+
+
+def test_stateroom_values_are_computed_properties_not_serialized_fields():
+    s = Stateroom.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+    assert s.tons == pytest.approx(4.0)
+    assert s.cost == pytest.approx(500_000.0)
+    assert s.power == pytest.approx(0.0)
+    assert 'tons' not in s.model_dump()
+    assert 'cost' not in s.model_dump()
+    assert 'power' not in s.model_dump()
+
+
+def test_staterooms_default_to_double_occupancy():
+    s = Stateroom()
+    s.bind(DummyOwner(12, 100))
+    assert s.occupancy == 2
+    assert s.fixed_life_support_cost == 1_000
+
+
+def test_staterooms_support_single_occupancy():
+    s = Stateroom(occupancy=1)
+    s.bind(DummyOwner(12, 100))
+    assert s.occupancy == 1
+    assert s.fixed_life_support_cost == 1_000
+
+
+def test_staterooms_reject_unsupported_occupancy():
+    with pytest.raises(ValueError, match='Stateroom occupancy must be 1 or 2'):
+        Stateroom(occupancy=3)
+
+
+def test_multiple_staterooms_add_linearly():
+    rooms = [Stateroom() for _ in range(4)]
+    for room in rooms:
+        room.bind(DummyOwner(12, 100))
+    assert sum(room.tons for room in rooms) == pytest.approx(16.0)
+    assert sum(room.cost for room in rooms) == 2_000_000
+    assert sum(room.occupancy for room in rooms) == 8
+    assert sum(room.fixed_life_support_cost for room in rooms) == 4_000
+
+
+def test_low_berths_tons():
+    lb = LowBerth()
+    lb.bind(DummyOwner(12, 200))
+    assert lb.tons == pytest.approx(0.5)
+
+
+def test_low_berths_cost():
+    lb = LowBerth()
+    lb.bind(DummyOwner(12, 200))
+    assert lb.cost == 50_000
+
+
+def test_low_berths_power():
+    ship_20 = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()] * 20),
+    )
+    ship_1 = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()]),
+    )
+    ship_10 = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()] * 10),
+    )
+    ship_11 = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()] * 11),
+    )
+
+    assert ship_20.habitation is not None
+    assert sum(berth.power for berth in ship_20.habitation.low_berths) == 2
+    assert ship_1.habitation is not None
+    assert sum(berth.power for berth in ship_1.habitation.low_berths) == 1
+    assert ship_10.habitation is not None
+    assert sum(berth.power for berth in ship_10.habitation.low_berths) == 1
+    assert ship_11.habitation is not None
+    assert sum(berth.power for berth in ship_11.habitation.low_berths) == 2
+
+
+def test_low_berth_values_are_computed_properties_not_serialized_fields():
+    berth = LowBerth.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+    assert berth.tons == pytest.approx(0.5)
+    assert berth.cost == pytest.approx(50_000.0)
+    assert berth.power == pytest.approx(0.0)
+    assert 'tons' not in berth.model_dump()
+    assert 'cost' not in berth.model_dump()
+    assert 'power' not in berth.model_dump()
+
+
+def test_emergency_low_berth_values():
+    berth = EmergencyLowBerth()
+    berth.bind(DummyOwner(12, 200))
+
+    assert berth.tons == pytest.approx(1.0)
+    assert berth.cost == pytest.approx(1_000_000.0)
+    assert berth.power == pytest.approx(1.0)
+    assert berth.provides == [(ResidenceDemand.LOW_BERTH, 4)]
+
+
+def test_emergency_low_berth_values_are_computed_properties_not_serialized_fields():
+    berth = EmergencyLowBerth.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+
+    assert berth.tons == pytest.approx(1.0)
+    assert berth.cost == pytest.approx(1_000_000.0)
+    assert berth.power == pytest.approx(1.0)
+    assert 'tons' not in berth.model_dump()
+    assert 'cost' not in berth.model_dump()
+    assert 'power' not in berth.model_dump()
+
+
+def test_emergency_low_berths_add_four_low_passage_places_each():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(emergency_low_berths=[EmergencyLowBerth()]),
+        crew=ShipCrew(roles=[]),
+        occupants=passengers(low=4),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_emergency_low_berths_count_toward_default_low_passengers():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()] * 2, emergency_low_berths=[EmergencyLowBerth()]),
+        crew=ShipCrew(roles=[]),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.low_passage_capacity() == 6
+    assert my_ship.habitation.passenger_counts(my_ship) == {LowPassage.model_fields['kind'].default: 6}
+
+
+def test_stable_values_and_capacity():
+    stable = Stable(tons=10)
+
+    assert stable.tons == pytest.approx(10.0)
+    assert stable.cost == pytest.approx(25_000.0)
+    assert stable.power == pytest.approx(0.0)
+    assert stable.human_sized_capacity == 20
+    assert stable.cattle_sized_capacity == 10
+    assert stable.fixed_life_support_cost == pytest.approx(2_500.0)
+    assert stable.notes.infos == ['Includes air scrubbers and waste-collectors separate from main life support']
+
+
+def test_stable_capacity_scales_with_tonnage():
+    stable = Stable(tons=15)
+
+    assert stable.human_sized_capacity == 30
+    assert stable.cattle_sized_capacity == 15
+    assert stable.fixed_life_support_cost == pytest.approx(3_750.0)
+
+
+def test_stable_reports_below_minimum_size():
+    stable = Stable(tons=9.99)
+
+    assert 'Stable minimum size is 10 tons' in stable.notes.errors
+
+
+def test_stable_life_support_counts_as_facility_cost():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(stables=[Stable(tons=10)]),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == pytest.approx(2_500.0)
+
+
+def test_stable_appears_in_ship_spec():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(stables=[Stable(tons=10)]),
+    )
+
+    row = my_ship.build_spec().row('Stable', section='Habitation')
+    assert row.tons == pytest.approx(10.0)
+    assert row.cost == pytest.approx(25_000.0)
+
+
+def test_habitation_section_groups_emergency_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(emergency_low_berths=[EmergencyLowBerth(), EmergencyLowBerth()]),
+    )
+    spec = my_ship.build_spec()
+
+    row = spec.row('Emergency Low Berths', section='Habitation')
+    assert row.quantity == 2
+    assert row.tons == pytest.approx(2.0)
+    assert row.cost == pytest.approx(2_000_000.0)
+    assert row.power == pytest.approx(-2.0)
+
+
+def test_brig_values_are_computed_properties_not_serialized_fields():
+    brig = Brig.model_validate({'tons': 99, 'cost': 99, 'power': 99})
+    assert brig.tons == pytest.approx(4.0)
+    assert brig.cost == pytest.approx(250_000.0)
+    assert brig.power == pytest.approx(0.0)
+    assert 'tons' not in brig.model_dump()
+    assert 'cost' not in brig.model_dump()
+    assert 'power' not in brig.model_dump()
+
+
+def test_habitation_section_groups_multiple_brigs():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=400,
+        hull=hull.Hull(configuration=hull.standard_hull),
+        habitation=HabitationSection(brigs=[Brig(), Brig(), Brig(), Brig()]),
+    )
+    spec = my_ship.build_spec()
+
+    row = spec.row('Brigs', section='Habitation')
+    assert row.quantity == 4
+    assert row.tons == pytest.approx(16.0)
+    assert row.cost == pytest.approx(1_000_000.0)
+
+
+def test_barracks_use_explicit_tonnage_and_hg_cost_per_ton():
+    barracks = Barracks(tons=300, occupants='150 troops')
+    barracks.bind(DummyOwner(12, 50_000))
+
+    assert barracks.build_item() == 'Barracks (150 troops)'
+    assert barracks.tons == pytest.approx(300.0)
+    assert barracks.cost == pytest.approx(15_000_000.0)
+    assert barracks.power == pytest.approx(0.0)
+
+
+def test_advanced_entertainment_system_cost():
+    system = AdvancedEntertainmentSystem(cost=500)
+    system.bind(DummyOwner(12, 100))
+    assert system.tons == 0
+    assert system.cost == 500.0
+    assert system.power == 0.0
+
+
+def test_advanced_entertainment_system_values_are_property_backed_design_fields():
+    system = AdvancedEntertainmentSystem.model_validate({'cost': 500, 'tons': 99, 'power': 99})
+    system.bind(DummyOwner(12, 100))
+    dump = system.model_dump()
+
+    assert system.tons == pytest.approx(0.0)
+    assert system.cost == pytest.approx(500.0)
+    assert system.power == pytest.approx(0.0)
+    assert dump['cost'] == pytest.approx(500.0)
+    assert 'tons' not in dump
+    assert 'power' not in dump
+
+
+def test_advanced_entertainment_system_requires_cost_in_allowed_range():
+    with pytest.raises(ValueError, match='between 100 and 10000 credits'):
+        AdvancedEntertainmentSystem(cost=99)
+
+
+def test_cabin_space_cost():
+    cabin = CabinSpace(tons=15.0)
+    cabin.bind(DummyOwner(12, 100))
+    assert cabin.cost == 750_000.0
+    assert cabin.power == 0.0
+
+
+def test_cabin_space_values_are_property_backed_design_fields():
+    cabin = CabinSpace.model_validate({'tons': 15.0, 'cost': 99, 'power': 99})
+    cabin.bind(DummyOwner(12, 100))
+    dump = cabin.model_dump()
+
+    assert cabin.tons == pytest.approx(15.0)
+    assert cabin.cost == pytest.approx(750_000.0)
+    assert cabin.power == pytest.approx(0.0)
+    assert dump['tons'] == pytest.approx(15.0)
+    assert 'cost' not in dump
+    assert 'power' not in dump
+
+
+def test_cabin_space_passenger_capacity():
+    cabin = CabinSpace(tons=15.0)
+    cabin.bind(DummyOwner(12, 100))
+    assert cabin.passenger_capacity == 10
+
+
+def test_cabin_space_fixed_life_support_cost():
+    cabin = CabinSpace(tons=15.0)
+    cabin.bind(DummyOwner(12, 100))
+    assert cabin.fixed_life_support_cost == 3_750.0
+
+
+def test_high_stateroom_values():
+    s = HighStateroom()
+    s.bind(DummyOwner(12, 100))
+    assert s.description == 'High Stateroom'
+    assert s.occupancy == 1
+    assert s.tons == pytest.approx(6.0)
+    assert s.cost == pytest.approx(800_000.0)
+    assert s.fixed_life_support_cost == pytest.approx(2_000.0)
+
+
+def test_luxury_stateroom_values():
+    s = LuxuryStateroom()
+    s.bind(DummyOwner(12, 100))
+    assert s.description == 'Luxury Stateroom'
+    assert s.occupancy == 1
+    assert s.tons == pytest.approx(10.0)
+    assert s.cost == pytest.approx(1_500_000.0)
+    assert s.fixed_life_support_cost == pytest.approx(4_000.0)
+
+
+def test_psion_stateroom_values_and_notes():
+    s = PsionStateroom()
+    s.bind(DummyOwner(12, 100))
+
+    assert s.description == 'Psion Stateroom'
+    assert s.occupancy == 2
+    assert s.tons == pytest.approx(4.0)
+    assert s.cost == pytest.approx(2_000_000.0)
+    assert s.fixed_life_support_cost == pytest.approx(1_000.0)
+    assert s.notes.infos == ['Psion occupant increases PSI regeneration rate by +50%']
+
+
+def test_psion_stateroom_requires_tl12():
+    s = PsionStateroom()
+    s.bind(DummyOwner(11, 100))
+
+    assert s.notes.errors == ['Requires TL12, ship is TL11']
+
+
+def test_habitation_section_supports_standard_and_high_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(
+            staterooms=[Stateroom()] * 4 + [HighStateroom(), PsionStateroom()],
+        ),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == pytest.approx(7_000.0)
+
+
+def test_psion_stateroom_roundtrips_in_habitation_section():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[PsionStateroom()]),
+    )
+
+    loaded = ship.Ship.model_validate_json(my_ship.model_dump_json())
+
+    assert loaded.habitation is not None
+    assert isinstance(loaded.habitation.staterooms[0], PsionStateroom)
+
+
+def test_habitation_default_passengers_use_unused_staterooms_and_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 10, low_berths=[LowBerth()] * 4),
+        crew=ShipCrew(roles=[Pilot()] * 7),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.passenger_counts(my_ship) == {
+        MiddlePassage.model_fields['kind'].default: 12,
+        LowPassage.model_fields['kind'].default: 4,
+    }
+
+
+def test_habitation_default_middle_passengers_include_cabin_space_capacity():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4, cabin_space=CabinSpace(tons=15.0)),
+        crew=ShipCrew(roles=[Pilot()] * 2),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.passenger_counts(my_ship) == {MiddlePassage.model_fields['kind'].default: 16}
+
+
+def test_habitation_explicit_occupants_override_default_passengers():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=100,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        drives=DriveSection(j_drive=JDrive1()),
+        power=PowerSection(plant=FusionPlantTL12(output=10)),
+        command=CommandSection(bridge=Bridge()),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4),
+        occupants=passengers(high=1),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.passenger_counts(my_ship) == {HighPassage.model_fields['kind'].default: 1}
+
+
+def test_expenses_life_support_separates_facilities_and_people_costs():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 4, cabin_space=CabinSpace(tons=15.0)),
+        crew=ShipCrew(roles=[Pilot()] * 16),
+        occupants=[],
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.life_support_facilities_cost(my_ship) == 7_750.0
+    assert my_ship.habitation.life_support_people_cost(my_ship) == 16_000.0
+    assert my_ship.expenses.life_support_facilities == 7_750.0
+    assert my_ship.expenses.life_support_people == 16_000.0
+
+
+def test_habitation_life_support_people_cost_covers_all_design_people_categories():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=10_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(low_berths=[LowBerth()] * 5),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=1_000, middle=200, basic=30, low=5),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.life_support_people_cost(my_ship) == 1_234_500.0
+
+
+def test_common_area_requirement_counts_common_area_facilities_toward_total():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(
+            staterooms=[Stateroom()] * 4,
+            common_area=CommonArea(tons=2.0),
+            swimming_pool=SwimmingPool(tons=2.0),
+        ),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.provided_common_area_tons() == pytest.approx(4.0)
+    assert 'Recommended common area is 4.00 tons' not in my_ship.habitation.notes.warnings
+
+
+def test_explicit_middle_passengers_must_fit_in_remaining_non_crew_beds():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 10),
+        crew=ShipCrew(roles=[Pilot()] * 7),
+        occupants=passengers(middle=13),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'Middle passage exceeds available non-crew beds: 13 > 12' in my_ship.habitation.notes.errors
+
+
+def test_explicit_low_passengers_must_fit_in_low_berths():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()], low_berths=[LowBerth()] * 4),
+        crew=ShipCrew(roles=[Pilot()]),
+        occupants=passengers(low=5),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'Low passage exceeds available low berths: 5 > 4' in my_ship.habitation.notes.errors
+
+
+def test_basic_passengers_do_not_create_hard_stateroom_requirement():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
+        crew=ShipCrew(roles=[Pilot()]),
+        occupants=passengers(basic=30),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_staterooms_without_common_area_add_recommendation_warning():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=99,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        command=CommandSection(bridge=Bridge(small=True)),
+        computer=ComputerSection(hardware=Computer5()),
+        habitation=HabitationSection(staterooms=[Stateroom()]),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'Recommended common area is 1.00 tons' in my_ship.habitation.notes.warnings
+
+
+def test_high_and_middle_passengers_can_exactly_fill_remaining_non_crew_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 10),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=4, middle=4),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_crewless_passenger_spacecraft_does_not_reserve_crew_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=40,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 2),
+        crew=ShipCrew(roles=[]),
+        occupants=passengers(middle=4),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+    assert my_ship.habitation.life_support_people_cost(my_ship) == 4_000
+
+
+def test_high_passage_uses_single_occupancy_rooms_before_double_occupancy_capacity():
+    room_sets = [
+        [
+            Stateroom(),
+            Stateroom(occupancy=1),
+            Stateroom(occupancy=1),
+            Stateroom(),
+            Stateroom(),
+            Stateroom(),
+            Stateroom(),
+        ],
+        [
+            Stateroom(),
+            Stateroom(occupancy=1),
+            Stateroom(),
+            Stateroom(),
+            Stateroom(occupancy=1),
+            Stateroom(),
+            Stateroom(),
+        ],
+    ]
+
+    for rooms in room_sets:
+        my_ship = ship.Ship(
+            tl=12,
+            displacement=200,
+            hull=hull.Hull(configuration=hull.streamlined_hull),
+            habitation=HabitationSection(staterooms=rooms),
+            crew=ShipCrew(roles=[Pilot()]),
+            occupants=passengers(high=2, middle=8),
+        )
+
+        assert my_ship.habitation is not None
+        assert my_ship.habitation.notes.errors == []
+
+
+def test_large_passenger_manifest_stateroom_need_with_double_occupancy_rooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=10_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(
+            staterooms=[Stateroom()] * 1_102,
+            low_berths=[LowBerth()] * 5,
+        ),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=1_000, middle=200, basic=30, low=5),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_large_passenger_manifest_stateroom_need_with_single_occupancy_rooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=10_000,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(
+            staterooms=[Stateroom(occupancy=1)] * 1_204,
+            low_berths=[LowBerth()] * 5,
+        ),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=1_000, middle=200, basic=30, low=5),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_one_more_high_passenger_than_capacity_errors():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 8),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=7),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'High passage exceeds available non-crew staterooms: 7 > 6' in my_ship.habitation.notes.errors
+
+
+def test_one_more_middle_passenger_than_capacity_errors():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 8),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=4, middle=5),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'Middle passage exceeds available non-crew beds: 5 > 4' in my_ship.habitation.notes.errors
+
+
+def test_three_crew_three_middle_three_high_fit_in_seven_staterooms():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 7),
+        crew=ShipCrew(roles=[Pilot()] * 3),
+        occupants=passengers(high=3, middle=3),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_one_more_crew_still_fits_in_seven_stateroom_case():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 7),
+        crew=ShipCrew(roles=[Pilot()] * 4),
+        occupants=passengers(high=3, middle=3),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_one_more_middle_still_fits_in_seven_stateroom_case():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 7),
+        crew=ShipCrew(roles=[Pilot()] * 3),
+        occupants=passengers(high=3, middle=4),
+    )
+
+    assert my_ship.habitation is not None
+    assert my_ship.habitation.notes.errors == []
+
+
+def test_one_more_high_does_not_fit_even_with_spare_beds():
+    my_ship = ship.Ship(
+        tl=12,
+        displacement=200,
+        hull=hull.Hull(configuration=hull.streamlined_hull),
+        habitation=HabitationSection(staterooms=[Stateroom()] * 6),
+        crew=ShipCrew(roles=[Pilot()] * 3),
+        occupants=passengers(high=5),
+    )
+
+    assert my_ship.habitation is not None
+    assert 'High passage exceeds available non-crew staterooms: 5 > 4' in my_ship.habitation.notes.errors

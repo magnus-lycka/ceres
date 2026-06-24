@@ -191,20 +191,8 @@ screenshots, or PDF excerpts. Do not commit copyrighted source material.
 
 ## Development
 
-```bash
-uv run pytest                                          # quick suite
-uv run pytest --all-tests                             # include slow + generated-output tests
-uv run pytest --cov --cov-report=term-missing         # tests + coverage
-uvx ruff check --fix                                   # lint + auto-fix
-uvx ruff format                                        # format
-uvx ty check                                           # type check
-```
-
-Default `pytest` skips slow tests and generated-output artifact tests. Use
-`--with-slow`, `--with-generated-output`, or `--all-tests` when you want the
-full suite.
-
-The usual full gate for local work is `./pre-commit.sh`.
+See [DEVELOPMENT_AND_TESTING.md](DEVELOPMENT_AND_TESTING.md) for the full
+development workflow, test categories, snapshot management, and commands.
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical decisions,
 and [AI_README.md](AI_README.md) for contributor guidance (including AI

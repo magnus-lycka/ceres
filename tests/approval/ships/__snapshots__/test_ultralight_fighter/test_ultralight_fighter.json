@@ -1,0 +1,261 @@
+{
+  "data": {
+    "ship_class": "Botfly",
+    "ship_type": "Ultralight Fighter",
+    "tl": 12,
+    "hull_points": 2.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 6837833.333333333
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 6154050.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 25641.88
+      },
+      {
+        "label": "Maintenance",
+        "amount": 513.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 0.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 0.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 0.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 6000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 32154.88
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Light Streamlined Hull",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 270000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 2.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Crystaliron, Armour: 6",
+        "quantity": null,
+        "tons": 2.16,
+        "power": null,
+        "cost": 432000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Stealth",
+        "quantity": null,
+        "tons": 0.12,
+        "power": null,
+        "cost": 240000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 6",
+        "quantity": null,
+        "tons": 0.36,
+        "power": -4.0,
+        "cost": 720000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 8",
+        "quantity": null,
+        "tons": 0.5333333333333333,
+        "power": 8.0,
+        "cost": 533333.3333333334,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": [
+          {
+            "category": "warning",
+            "message": "Capacity 1.00 less than max use"
+          }
+        ]
+      },
+      {
+        "section": "Fuel",
+        "item": "4 weeks of operation",
+        "quantity": null,
+        "tons": 0.1,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Holographic Cockpit",
+        "quantity": null,
+        "tons": 1.5,
+        "power": null,
+        "cost": 12500.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Civilian Grade Sensors",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 3000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -2 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Pulse Laser",
+        "quantity": null,
+        "tons": null,
+        "power": -2.0,
+        "cost": 1600000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "High Technology: Very High Yield, Energy Efficient"
+          }
+        ]
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 0.22666666666666657,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "0.1 tons needed per 100 days of stores and spares"
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "power_basic": "Tycho uses floor(6 * 0.2) = 1; Ceres uses ceil(6 * 0.2) = 2 per RIS-013"
+  }
+}

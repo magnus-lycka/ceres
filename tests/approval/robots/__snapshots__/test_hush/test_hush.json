@@ -1,0 +1,238 @@
+{
+  "data": {
+    "name": "Hush",
+    "tl": 15,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 2 (Cat)",
+            "col2": "+2",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Walker chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,800"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Basic (recon) (INT 4)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 3 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "PRIS Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Auditory Sensor (broad spectrum)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Voder Speaker (broad spectrum)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Camouflage: Visual (enhanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Camouflage: Audible (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Camouflage: Olfactory (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Gecko Grippers",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Navigation System (basic)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Transceiver 5,000km (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "9/22",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr12,700"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Hush"
+          ],
+          [
+            "Size",
+            "2"
+          ],
+          [
+            "Hits",
+            "4"
+          ],
+          [
+            "Locomotion",
+            "Walker"
+          ],
+          [
+            "Speed",
+            "5m"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "Cr12,700"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Athletics (Dexterity) 1, Navigation 1, Recon 2, Stealth 3",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 3 DEX 9) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "144 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), ATV, Heightened Senses, IR/UV Vision, Small (-3)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Basic (recon) (INT 4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor (broad spectrum), Camouflage: Audible (advanced), Camouflage: Olfactory (advanced), Camouflage: Visual (enhanced), Drone Interface, Gecko Grippers, Navigation System (basic), PRIS Sensor, Transceiver 5,000km (advanced), Voder Speaker (broad spectrum)",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr12,700 vs source Cr17,000 — gap ~Cr4,300 from unimplemented speed/agility modifications",
+    "speed": "Ceres 5m vs source 10m — speed_reduction=2 + AgilityEnhancement incompatible per rules; source combination cannot be reproduced",
+    "endurance": "Ceres 144h vs source 173h — endurance boost from speed_reduction not applied (incompatible with AgilityEnhancement)"
+  }
+}

@@ -10,6 +10,8 @@ objects and parameters, and get back a validated design. Goals include:
 - Data structures usable by other code, reports, tests, and export tools
 
 See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical choices.
+See [DEVELOPMENT_AND_TESTING.md](DEVELOPMENT_AND_TESTING.md) for the full
+development workflow, test conventions, commands, and snapshot management.
 
 ## Output formats
 
@@ -150,10 +152,10 @@ is at the wrong abstraction level.
 **Abstraction levels must not be crossed.** Tests written for code at one level
 of abstraction must not rely on lower levels, and vice versa:
 
-- **Career rule tests** (`tests/character/test_army.py`, `test_careers.py`,
+- **Career rule tests** (`tests/unit/character/test_army.py`, `test_careers.py`,
   etc.) verify Traveller rules: "does Army survival with END 5 and a roll of 4
   produce a mishap?" These tests use `CharacterDriver`
-  (`tests/character/helpers.py`) exclusively. They must not reference event
+  (`tests/unit/character/helpers.py`) exclusively. They must not reference event
   class names, pending type names, event IDs, or fulfillment order — those are
   implementation details of the event/pending layer.
 
@@ -183,13 +185,12 @@ multiple concerns when only one should need to change.
 
 ## Examples
 
-The main source-derived reference cases live in `tests/ships/` and
-`tests/robots/`, not in a separate examples package. These serve as integration
-targets for rule interpretation: as subsystems are implemented, differences
-against reference stat blocks should be explained by rules, omissions, or
-explicit project decisions. Expected values are documented in the test files
-and related docs, but they are not to be copied blindly into the code without
-understanding why the rules lead there.
+The main source-derived reference cases live in `tests/approval/ships/` and
+`tests/approval/robots/`, with gallery output in `tests/gallery/`. These serve
+as integration targets for rule interpretation: as subsystems are implemented,
+differences against reference stat blocks should be explained by rules,
+omissions, or explicit project decisions. Expected values are captured as
+approval snapshots; annotate discrepancies with `snap.annotate(...)`.
 
 Keep documentation in English. Use `docs/RULE_INTERPRETATIONS.md` for general
 rule interpretations, `docs/TEST_CASE_ASSEMBLIES.md` for test-case mapping

@@ -101,7 +101,7 @@ class ScholarMishap3Openly(ChoiceBase):
 
 class ScholarMishap3Secretly(ChoiceBase):
     kind: Literal['scholar_mishap_3_secretly'] = 'scholar_mishap_3_secretly'
-    label: str = 'Continue secretly (Science +1, SOC −2)'
+    label: str = 'Continue secretly (Science +1, SOC -2)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
         soc = projection.summary.characteristics.get(Chars.SOC, 0)

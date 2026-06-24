@@ -1,0 +1,266 @@
+{
+  "data": {
+    "name": "Test",
+    "age": 22,
+    "sophont": {
+      "name": "Vilani",
+      "ucp_stats": [
+        "STR",
+        "DEX",
+        "END",
+        "INT",
+        "EDU",
+        "SOC"
+      ],
+      "allegiance_pattern": "Im*",
+      "remarks_codes": []
+    },
+    "homeworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "birthworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "characteristics": {
+      "STR": 7,
+      "DEX": 8,
+      "END": 6,
+      "INT": 9,
+      "EDU": 10,
+      "SOC": 5
+    },
+    "psionics": null,
+    "last_career": {
+      "kind": "SCHOLAR_CAREER"
+    },
+    "last_career_ejected": false,
+    "last_assignment": {
+      "name": "Field Researcher",
+      "description": "You are an explorer or field researcher, equally at home in the laboratory or wilderness.",
+      "survival": {
+        "characteristic": "END",
+        "target": 6
+      },
+      "advancement": {
+        "characteristic": "INT",
+        "target": 6
+      }
+    },
+    "rank": 0,
+    "career_terms": [
+      {
+        "career": {
+          "kind": "SCHOLAR_CAREER"
+        },
+        "assignment": {
+          "name": "Field Researcher",
+          "description": "You are an explorer or field researcher, equally at home in the laboratory or wilderness.",
+          "survival": {
+            "characteristic": "END",
+            "target": 6
+          },
+          "advancement": {
+            "characteristic": "INT",
+            "target": 6
+          }
+        },
+        "commission": false,
+        "rank_after_term": 0,
+        "muster_out": {
+          "terms": 1,
+          "cash_count": 0,
+          "benefits": [],
+          "extra_rolls": 0,
+          "lost_rolls": 1,
+          "benefit_roll_dms": [],
+          "used": true,
+          "rolls_remaining": 0,
+          "pending_setup": false
+        },
+        "event": null,
+        "mishap": null,
+        "prison": null
+      }
+    ],
+    "drafted": false,
+    "skills": [
+      {
+        "display_label": null,
+        "kind": "ADMIN",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ATHLETICS",
+        "dexterity": {
+          "display_label": null,
+          "value": 0
+        },
+        "endurance": {
+          "display_label": null,
+          "value": 0
+        },
+        "strength": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "CAROUSE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "MEDIC",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ELECTRONICS",
+        "comms": {
+          "display_label": null,
+          "value": 0
+        },
+        "computers": {
+          "display_label": null,
+          "value": 0
+        },
+        "remote_ops": {
+          "display_label": null,
+          "value": 0
+        },
+        "sensors": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "DIPLOMAT",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "INVESTIGATE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "DRIVE",
+        "hovercraft": {
+          "display_label": null,
+          "value": 0
+        },
+        "mole": {
+          "display_label": null,
+          "value": 0
+        },
+        "track": {
+          "display_label": null,
+          "value": 0
+        },
+        "walker": {
+          "display_label": null,
+          "value": 0
+        },
+        "wheel": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SPACE_SCIENCE",
+        "astronomy": {
+          "display_label": null,
+          "value": 0
+        },
+        "cosmology": {
+          "display_label": null,
+          "value": 0
+        },
+        "planetology": {
+          "display_label": null,
+          "value": 0
+        }
+      }
+    ],
+    "connections": [],
+    "problems": [
+      "Your work is sabotaged by unknown parties."
+    ],
+    "narrative": [
+      "Mishap (Scholar): Your work is sabotaged by unknown parties."
+    ],
+    "cash": 0,
+    "dead": false,
+    "precareer": null,
+    "precareer_completed": null,
+    "precareer_skills": [],
+    "parole_threshold": null
+  }
+}

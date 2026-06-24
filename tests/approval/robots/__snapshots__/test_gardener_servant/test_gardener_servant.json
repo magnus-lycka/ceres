@@ -1,0 +1,321 @@
+{
+  "data": {
+    "name": "Gardener Servant",
+    "tl": 15,
+    "robot_notes": [
+      {
+        "category": "error",
+        "message": "Slot overload: 17 used, 16 available"
+      }
+    ],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 5 (Human)",
+            "col2": "+16",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Walker chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr9,000"
+          },
+          {
+            "name": "Speed modification (+1)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Advanced (INT 9, Bandwidth 6)",
+            "col2": "-1",
+            "col3": "+6",
+            "cost": "Cr30,000"
+          },
+          {
+            "name": "INT +1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr9,000"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Animals (Veterinary) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Medic 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Profession (Cleaning) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Profession (Gardening) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Steward 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 9 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "(STR 9 DEX 9) × 2",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Manipulator leg (STR 9 DEX 9) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Agricultural Equipment (small)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Auditory Sensor (broad spectrum)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr200"
+          },
+          {
+            "name": "Autobar (enhanced)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Autochef (enhanced)",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr5,000"
+          },
+          {
+            "name": "Domestic Cleaning Equipment (small)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Medikit (enhanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr5,000"
+          },
+          {
+            "name": "Olfactory Sensor (advanced)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "PRIS Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Storage Compartment (3 Slots refrigerated)",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr300"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "-1",
+            "col3": "0",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "7/25",
+            "col3": "0/2",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr86,100"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Gardener Servant"
+          ],
+          [
+            "Size",
+            "5"
+          ],
+          [
+            "Hits",
+            "20"
+          ],
+          [
+            "Locomotion",
+            "Walker"
+          ],
+          [
+            "Speed",
+            "6m"
+          ],
+          [
+            "TL",
+            "15"
+          ],
+          [
+            "Cost",
+            "Cr86,100"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Animals (Handling) 1, Animals (Training) 1, Animals (Veterinary) 2, Medic 2, Profession (Cleaning) 2, Profession (Gardening) 2, Steward 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 9 DEX 9) × 4, Manipulator leg (STR 9 DEX 9) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "129 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+4), ATV, Heightened Senses, IR/UV Vision",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Advanced (INT 9)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Agricultural Equipment (small), Auditory Sensor (broad spectrum), Autobar (enhanced), Autochef (enhanced), Domestic Cleaning Equipment (small), Drone Interface, Medikit (enhanced), Olfactory Sensor (advanced), PRIS Sensor, Storage Compartment (3 Slots refrigerated), Transceiver 5km (improved), Visual Spectrum Sensor, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "endurance": "Ceres 129h (truncates 129.6h) vs source 130h (rounds up)",
+    "cost": "Ceres ~Cr86,100 vs source Cr85,000 — gap ~Cr1,100 unresolved (possible source rounding)"
+  }
+}

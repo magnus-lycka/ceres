@@ -1,0 +1,630 @@
+{
+  "data": {
+    "ship_class": "Dragon",
+    "ship_type": "System Defense Boat, Revised",
+    "tl": 13,
+    "hull_points": 176.0,
+    "ship_notes": [],
+    "crew_notes": [
+      {
+        "category": "info",
+        "message": "MAINTENANCE above recommended count: 1 > 0"
+      },
+      {
+        "category": "info",
+        "message": "OFFICER above recommended count: 2 > 1"
+      }
+    ],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 292855166.6666667
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 263569650.00000003
+      },
+      {
+        "label": "Mortgage",
+        "amount": 1098206.88
+      },
+      {
+        "label": "Maintenance",
+        "amount": 21964.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 10000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 19000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 0.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 77000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 1226170.88
+      }
+    ],
+    "crew": [
+      {
+        "role": "CAPTAIN",
+        "salary": 10000,
+        "quantity": null
+      },
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": 3
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": 3
+      },
+      {
+        "role": "MAINTENANCE",
+        "salary": 1000,
+        "quantity": null
+      },
+      {
+        "role": "MEDIC",
+        "salary": 4000,
+        "quantity": null
+      },
+      {
+        "role": "GUNNER",
+        "salary": 2000,
+        "quantity": 5
+      },
+      {
+        "role": "SENSOR OPERATOR",
+        "salary": 4000,
+        "quantity": 3
+      },
+      {
+        "role": "OFFICER",
+        "salary": 5000,
+        "quantity": 2
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Streamlined Hull",
+        "quantity": null,
+        "tons": 400.0,
+        "power": null,
+        "cost": 36000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 80.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Crystaliron, Armour: 13",
+        "quantity": null,
+        "tons": 78.0,
+        "power": null,
+        "cost": 15600000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Improved Stealth",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 40000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Radiation Shielding: Reduce Rads by 1,000",
+        "quantity": null,
+        "tons": 0.0,
+        "power": null,
+        "cost": 10000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Armoured Bulkheads",
+        "quantity": null,
+        "tons": 22.523333333333333,
+        "power": null,
+        "cost": 4504666.666666667,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Critical hit severity reduced by 1 if critical hit severity >1"
+          }
+        ]
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": 4,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 7",
+        "quantity": null,
+        "tons": 35.00000000000001,
+        "power": -280.0,
+        "cost": 42000000.00000001,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          },
+          {
+            "category": "info",
+            "message": "Budget: Increased Size"
+          }
+        ]
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 482",
+        "quantity": null,
+        "tons": 40.166666666666664,
+        "power": 482.0,
+        "cost": 24100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          },
+          {
+            "category": "info",
+            "message": "Budget: Increased Size"
+          }
+        ]
+      },
+      {
+        "section": "Fuel",
+        "item": "16 weeks of operation",
+        "quantity": null,
+        "tons": 17.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Holographic Controls",
+        "quantity": null,
+        "tons": 20.0,
+        "power": null,
+        "cost": 2500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          }
+        ]
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/25/fib",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 15000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Backup Computer/20/fib",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 7500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Auto-Repair/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 5000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Fire Control/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Evade/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Improved Sensors",
+        "quantity": null,
+        "tons": 3.0,
+        "power": -3.0,
+        "cost": 4300000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar, Densitometer, Jammers, EMCON"
+          },
+          {
+            "category": "info",
+            "message": "DM +1 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Countermeasures Suite",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -1.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "DM +4 to all jamming and electronic warfare attempts"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Enhanced Signal Processing",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 8000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "DM +4 to all sensor-related checks"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Extended Arrays",
+        "quantity": null,
+        "tons": 6.0,
+        "power": -9.0,
+        "cost": 8600000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Cannot expend Thrust or jump while in use"
+          },
+          {
+            "category": "info",
+            "message": "DM +2 to detect ship while in use"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Sensor Stations",
+        "quantity": 2,
+        "tons": 2.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Particle Barbette (Damage × 3 after armour)",
+        "quantity": 2,
+        "tons": 10.0,
+        "power": -30.0,
+        "cost": 20000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          },
+          {
+            "category": "info",
+            "message": "Very Advanced: Very High Yield"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Small Missile Bay (12 missiles per salvo)",
+        "quantity": null,
+        "tons": 35.0,
+        "power": -5.0,
+        "cost": 18000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          },
+          {
+            "category": "info",
+            "message": "Magazine: 144 missiles (12 full salvos)"
+          },
+          {
+            "category": "info",
+            "message": "High Technology: Size Reduction × 3"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Point Defence Laser Battery Type II",
+        "quantity": null,
+        "tons": 20.0,
+        "power": -15.0,
+        "cost": 11000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          },
+          {
+            "category": "info",
+            "message": "Advanced: Energy Efficient"
+          },
+          {
+            "category": "info",
+            "message": "Intercept +4D"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Missile Storage (408)",
+        "quantity": null,
+        "tons": 34.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Armoured bulkhead, see Hull section."
+          }
+        ]
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 10,
+        "tons": 40.0,
+        "power": null,
+        "cost": 5000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 10.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Advanced Entertainment System",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 500.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Armoury",
+        "quantity": null,
+        "tons": 1.0,
+        "power": null,
+        "cost": 250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Medical Bay",
+        "quantity": null,
+        "tons": 4.0,
+        "power": -1.0,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Training Facility: 2-person capacity",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 800000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Workshop",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 900000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Repair Drones",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 800000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 4.310000000000013,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "4 tons needed per 100 days of stores and spares"
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "fuel": "Operation fuel: Ceres rounds up to 17t; ref shows 16.07t",
+    "cargo": "Ceres gives 4.31t vs ref ~5.24t (fuel tons rounding + RIS-001 stores not modelled separately)"
+  }
+}

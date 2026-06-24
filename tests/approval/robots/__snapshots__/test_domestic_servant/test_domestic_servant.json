@@ -1,0 +1,230 @@
+{
+  "data": {
+    "name": "Domestic Servant",
+    "tl": 8,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 3 (Dog)",
+            "col2": "+4",
+            "col3": "—",
+            "cost": "Cr400"
+          },
+          {
+            "name": "Wheels chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr400"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Primitive (clean) (INT 1)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr100"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Removed manipulator",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "-Cr160"
+          },
+          {
+            "name": "Removed manipulator",
+            "col2": "+1",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Domestic Cleaning Equipment (small)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Recon Sensor (improved)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Storage Compartment (4 Slots)",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr200"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "5/16",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr860"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Domestic Servant"
+          ],
+          [
+            "Size",
+            "3"
+          ],
+          [
+            "Hits",
+            "6"
+          ],
+          [
+            "Locomotion",
+            "Wheels"
+          ],
+          [
+            "Speed",
+            "4m"
+          ],
+          [
+            "TL",
+            "8"
+          ],
+          [
+            "Cost",
+            "Cr860"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Profession (Domestic Cleaner) 2, Recon 1",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "79 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+2), Small (-2)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Primitive (clean) (INT 1)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Domestic Cleaning Equipment (small), Recon Sensor (improved), Storage Compartment (4 Slots), Transceiver 5km (improved), Visual Spectrum Sensor, Voder Speaker, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr860 vs source Cr500 — source uses editorial rounding; Ceres: BCC=Cr800, capped manipulator removal credit (20% BCC = -Cr160)"
+  }
+}

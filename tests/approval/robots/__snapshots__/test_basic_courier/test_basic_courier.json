@@ -1,0 +1,230 @@
+{
+  "data": {
+    "name": "Basic Courier",
+    "tl": 10,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 3 (Dog)",
+            "col2": "+4",
+            "col3": "—",
+            "cost": "Cr400"
+          },
+          {
+            "name": "Grav chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr7,600"
+          },
+          {
+            "name": "Vehicle Speed Modification",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr8,000"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Basic (locomotion) (INT 4)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr4,000"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Removed manipulator × 2",
+            "col2": "+2",
+            "col3": "—",
+            "cost": "-Cr600"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 500km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Navigation System (basic)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Storage Compartment (3 Slots hazardous material)",
+            "col2": "-3",
+            "col3": "—",
+            "cost": "Cr1,500"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "0",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "6/18",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr23,900"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "Basic Courier"
+          ],
+          [
+            "Size",
+            "3"
+          ],
+          [
+            "Hits",
+            "8"
+          ],
+          [
+            "Locomotion",
+            "Grav (VSM)"
+          ],
+          [
+            "Speed",
+            "6m (high)"
+          ],
+          [
+            "TL",
+            "10"
+          ],
+          [
+            "Cost",
+            "Cr23,900"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Athletics (Dexterity) 1, Flyer (Grav) 1, Navigation 1",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "24 (6) hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+3), Flyer (high), Small (-2)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Basic (locomotion) (INT 4)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Drone Interface, Navigation System (basic), Storage Compartment (3 Slots hazardous material), Transceiver 500km (improved), Visual Spectrum Sensor, Voder Speaker, Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cost": "Ceres Cr23,900 vs source Cr25,000 — discrepancy untraced, see RIR-002"
+  }
+}

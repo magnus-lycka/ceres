@@ -1,0 +1,364 @@
+{
+  "data": {
+    "ship_class": "Suleiman",
+    "ship_type": "Scout/Courier",
+    "tl": 12,
+    "hull_points": 40.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 41045000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 36940500.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 153918.75
+      },
+      {
+        "label": "Maintenance",
+        "amount": 3078.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 4000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 8000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 4066.6666666666665
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 17000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 190063.41666666666
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      },
+      {
+        "role": "ASTROGATOR",
+        "salary": 5000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": null
+      },
+      {
+        "role": "GUNNER",
+        "salary": 2000,
+        "quantity": null
+      }
+    ],
+    "passengers": [
+      {
+        "kind": "MIDDLE_P",
+        "quantity": 4
+      }
+    ],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Streamlined Hull",
+        "quantity": null,
+        "tons": 100.0,
+        "power": null,
+        "cost": 6000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 20.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Crystaliron, Armour: 4",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 1200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Jump",
+        "item": "Jump 2",
+        "quantity": null,
+        "tons": 10.0,
+        "power": -20.0,
+        "cost": 15000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 2",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -20.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 60",
+        "quantity": null,
+        "tons": 4.0,
+        "power": 60.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "J-2, 20 weeks of operation",
+        "quantity": null,
+        "tons": 22.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Processor (40 tons/day)",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Standard Bridge",
+        "quantity": null,
+        "tons": 10.0,
+        "power": null,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5/bis",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 45000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Jump Control/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Military Grade Sensors",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 4100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON"
+          },
+          {
+            "category": "info",
+            "message": "DM +0 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Double Turret",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "No weapons in turret"
+          }
+        ]
+      },
+      {
+        "section": "Craft",
+        "item": "Internal Docking Space: Air/Raft",
+        "quantity": null,
+        "tons": 5.0,
+        "power": null,
+        "cost": 1250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Air/Raft",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 4,
+        "tons": 16.0,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "warning",
+            "message": "Recommended common area is 4.00 tons"
+          }
+        ]
+      },
+      {
+        "section": "Systems",
+        "item": "Workshop",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 900000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Probe Drones",
+        "quantity": 10,
+        "tons": 2.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 12.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "fuel": "Ceres gives op_fuel=2.0t per RIS-007 (rounds up to whole dTon for ≥100t ships); ref shows 1.20t"
+  }
+}

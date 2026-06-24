@@ -1,0 +1,242 @@
+{
+  "data": {
+    "ship_class": "Boxy",
+    "ship_type": "Ore Freighter",
+    "tl": 9,
+    "hull_points": 72.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 16030000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 14427000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 60112.5
+      },
+      {
+        "label": "Maintenance",
+        "amount": 1202.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 1000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 2000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 100.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 10000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 74414.5
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": null
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Light Close Structure Hull",
+        "quantity": null,
+        "tons": 200.0,
+        "power": null,
+        "cost": 6000000.000000001,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 40.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 1",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -20.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 8), Power 80",
+        "quantity": null,
+        "tons": 8.0,
+        "power": 80.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "12 weeks of operation",
+        "quantity": null,
+        "tons": 3.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Smaller Bridge",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "DM -1 for all checks related to spacecraft operations"
+          }
+        ]
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Basic Sensors",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -4 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Habitation",
+        "item": "Stateroom",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 1.0,
+        "power": null,
+        "cost": 100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Workshop",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 900000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 170.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  }
+}

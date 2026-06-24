@@ -1,0 +1,831 @@
+{
+  "data": {
+    "ship_class": "Acrux",
+    "ship_type": "Heavy Cruiser",
+    "tl": 11,
+    "hull_points": 27500.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 23909900000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 23909900000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 99624583.33
+      },
+      {
+        "label": "Maintenance",
+        "amount": 1992492.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 355000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 474000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 2036750.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 1245500.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 105728325.33
+      }
+    ],
+    "crew": [
+      {
+        "role": "CAPTAIN",
+        "salary": 10000,
+        "quantity": null
+      },
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": 3
+      },
+      {
+        "role": "ASTROGATOR",
+        "salary": 5000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": 82
+      },
+      {
+        "role": "MAINTENANCE",
+        "salary": 1000,
+        "quantity": 34
+      },
+      {
+        "role": "GUNNER",
+        "salary": 2000,
+        "quantity": 281
+      },
+      {
+        "role": "ADMINISTRATOR",
+        "salary": 1500,
+        "quantity": 17
+      },
+      {
+        "role": "SENSOR OPERATOR",
+        "salary": 4000,
+        "quantity": 7
+      },
+      {
+        "role": "MEDIC",
+        "salary": 4000,
+        "quantity": 5
+      },
+      {
+        "role": "OFFICER",
+        "salary": 5000,
+        "quantity": 43
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Close Structure Hull",
+        "quantity": null,
+        "tons": 50000.0,
+        "power": null,
+        "cost": 3000000000.0000005,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 10000.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Crystaliron, Armour: 11",
+        "quantity": null,
+        "tons": 6875.0,
+        "power": null,
+        "cost": 1375000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Radiation Shielding: Reduce Rads by 1,000",
+        "quantity": null,
+        "tons": 0.0,
+        "power": null,
+        "cost": 1250000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": 100,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Jump",
+        "item": "Jump 2",
+        "quantity": null,
+        "tons": 2505.0,
+        "power": -10000.0,
+        "cost": 3757500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 5",
+        "quantity": null,
+        "tons": 2500.0,
+        "power": -25000.0,
+        "cost": 5000000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 8), Power 52500",
+        "quantity": null,
+        "tons": 3674.9999999999995,
+        "power": 52500.0,
+        "cost": 3937500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": [
+          {
+            "category": "info",
+            "message": "High Technology: Size Reduction × 3"
+          }
+        ]
+      },
+      {
+        "section": "Fuel",
+        "item": "J-2, 8 weeks of operation",
+        "quantity": null,
+        "tons": 10735.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Processor (5000 tons/day)",
+        "quantity": null,
+        "tons": 250.0,
+        "power": -250.0,
+        "cost": 12500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Holographic Controls",
+        "quantity": null,
+        "tons": 60.0,
+        "power": null,
+        "cost": 312500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Core/60",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 75000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Backup Core/50",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 60000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Auto-Repair/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 5000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Evade/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Advanced Fire Control/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 12000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Anti-Hijack/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 6000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Battle System/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 18000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Electronic Warfare/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 15000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Launch Solution/2",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 12000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Virtual Crew/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Military Grade Sensors",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 4100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON"
+          },
+          {
+            "category": "info",
+            "message": "DM +0 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Extended Arrays",
+        "quantity": null,
+        "tons": 4.0,
+        "power": -6.0,
+        "cost": 8200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Cannot expend Thrust or jump while in use"
+          },
+          {
+            "category": "info",
+            "message": "DM +2 to detect ship while in use"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Triple Turret",
+        "quantity": 120,
+        "tons": 120.0,
+        "power": -1560.0,
+        "cost": 570000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Pulse Laser × 3"
+          },
+          {
+            "category": "info",
+            "message": "Very Advanced: Long Range"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Triple Turret",
+        "quantity": 90,
+        "tons": 90.0,
+        "power": -1170.0,
+        "cost": 225000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Beam Laser × 3"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Triple Turret",
+        "quantity": 60,
+        "tons": 60.0,
+        "power": -60.0,
+        "cost": 105000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Sandcaster × 3"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Particle Barbette (Damage × 3 after armour)",
+        "quantity": 50,
+        "tons": 250.0,
+        "power": -750.0,
+        "cost": 400000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Weapons",
+        "item": "Plasma Barbette (Damage × 3 after armour)",
+        "quantity": 40,
+        "tons": 200.0,
+        "power": -480.0,
+        "cost": 200000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Weapons",
+        "item": "Particle Accelerator Spinal Mount",
+        "quantity": null,
+        "tons": 7000.0,
+        "power": -2000.0,
+        "cost": 2000000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Damage: 16D × 1,000"
+          },
+          {
+            "category": "info",
+            "message": "Traits: Radiation"
+          },
+          {
+            "category": "info",
+            "message": "Damage is reduced by 3% per point of target armour before applying the damage multiple"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Large Missile Bay (120 missiles per salvo)",
+        "quantity": 5,
+        "tons": 1750.0,
+        "power": -100.0,
+        "cost": 187500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Magazine: 1,440 missiles (12 full salvos)"
+          },
+          {
+            "category": "info",
+            "message": "High Technology: Size Reduction × 3"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Large Torpedo Bay (30 torpedoes per salvo)",
+        "quantity": 5,
+        "tons": 2000.0,
+        "power": -50.0,
+        "cost": 62500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Magazine: 360 torpedoes (12 full salvos)"
+          },
+          {
+            "category": "info",
+            "message": "Very Advanced: Size Reduction × 2"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Medium Particle Beam Bay (Damage × 20 after armour)",
+        "quantity": 10,
+        "tons": 1000.0,
+        "power": -500.0,
+        "cost": 400000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "error",
+            "message": "Requires TL12, ship is TL11"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Point Defence Laser Battery Type I",
+        "quantity": 10,
+        "tons": 200.0,
+        "power": -100.0,
+        "cost": 50000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "Intercept +2D"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Missile Storage (28800)",
+        "quantity": null,
+        "tons": 2400.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Weapons",
+        "item": "Torpedo Storage (7200)",
+        "quantity": null,
+        "tons": 2400.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Weapons",
+        "item": "Sandcaster Canister Storage (4800)",
+        "quantity": null,
+        "tons": 240.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Docking Space (1080 tons)",
+        "quantity": null,
+        "tons": 1188.0,
+        "power": null,
+        "cost": 297000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Full Hangar (360 tons)",
+        "quantity": null,
+        "tons": 720.0,
+        "power": null,
+        "cost": 144000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 337,
+        "tons": 1348.0,
+        "power": null,
+        "cost": 168500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "High Staterooms",
+        "quantity": 9,
+        "tons": 54.0,
+        "power": null,
+        "cost": 7200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Low Berths",
+        "quantity": 20,
+        "tons": 10.0,
+        "power": -2.0,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Brigs",
+        "quantity": 4,
+        "tons": 16.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Barracks (150 troops)",
+        "quantity": null,
+        "tons": 300.0,
+        "power": null,
+        "cost": 15000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 346.0,
+        "power": null,
+        "cost": 34600000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "warning",
+            "message": "Recommended common area is 350.50 tons"
+          }
+        ]
+      },
+      {
+        "section": "Systems",
+        "item": "Armoury",
+        "quantity": 50,
+        "tons": 50.0,
+        "power": null,
+        "cost": 12500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Briefing Room",
+        "quantity": 4,
+        "tons": 16.0,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Medical Bay",
+        "quantity": 6,
+        "tons": 24.0,
+        "power": -6.0,
+        "cost": 12000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Training Facility: 50-person capacity",
+        "quantity": null,
+        "tons": 100.0,
+        "power": null,
+        "cost": 20000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "UNREP System (500 tons/hour)",
+        "quantity": null,
+        "tons": 25.0,
+        "power": -25.0,
+        "cost": 12500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Workshop",
+        "quantity": 17,
+        "tons": 102.0,
+        "power": null,
+        "cost": 15300000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Repair Drones",
+        "quantity": null,
+        "tons": 500.0,
+        "power": null,
+        "cost": 100000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Bay (Cargo Hold)",
+        "quantity": null,
+        "tons": 424.5,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Crane",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 456.5,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "500 tons needed per 100 days of stores and spares"
+          },
+          {
+            "category": "warning",
+            "message": "Cargo is below recommended 100-day stores capacity of 500 tons"
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "error": "Requires TL12, ship is TL11 — command bridge not modelled as Ceres CommandBridge",
+    "cost": "Armour cost not yet traced to an HG rule; source purchase/row totals are inconsistent"
+  }
+}

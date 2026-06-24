@@ -1,0 +1,213 @@
+{
+  "data": {
+    "ship_class": "Civilian Hopper",
+    "ship_type": "Hopper",
+    "tl": 9,
+    "hull_points": 2.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 660300.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 660300.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 2751.25
+      },
+      {
+        "label": "Maintenance",
+        "amount": 55.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 0.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 0.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 5.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 6000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 8811.25
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Close Structure Hull",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 240000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 2.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 1",
+        "quantity": null,
+        "tons": 0.06,
+        "power": -1.0,
+        "cost": 120000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fission Plant (TL 6), Power 4",
+        "quantity": null,
+        "tons": 0.5,
+        "power": 4.0,
+        "cost": 200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "8 weeks of operation",
+        "quantity": null,
+        "tons": 0.1,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Cockpit",
+        "quantity": null,
+        "tons": 1.5,
+        "power": null,
+        "cost": 10000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Basic Sensors",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -4 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Systems",
+        "item": "Tow Cable",
+        "quantity": null,
+        "tons": 0.06,
+        "power": null,
+        "cost": 300.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Acceleration Seat",
+        "quantity": 2,
+        "tons": 1.0,
+        "power": null,
+        "cost": 60000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 2.7800000000000007,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "cargo": "Stat block shows 2.5t; Ceres gives 2.78t (0.28t discrepancy — root cause not identified, possibly a standard small-craft overhead in the SCC design tool)"
+  }
+}

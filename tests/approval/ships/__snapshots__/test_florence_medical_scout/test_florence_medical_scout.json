@@ -1,0 +1,464 @@
+{
+  "data": {
+    "ship_class": "Florence",
+    "ship_type": "Medical Scout",
+    "tl": 14,
+    "hull_points": 160.0,
+    "ship_notes": [],
+    "crew_notes": [
+      {
+        "category": "info",
+        "message": "CAPTAIN above recommended count: 1 > 0"
+      },
+      {
+        "category": "warning",
+        "message": "GUNNER below recommended count: 0 < 1"
+      },
+      {
+        "category": "info",
+        "message": "MAINTENANCE above recommended count: 1 > 0"
+      },
+      {
+        "category": "info",
+        "message": "MEDIC above recommended count: 6 > 1"
+      }
+    ],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 164880000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 164880000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 687000.0
+      },
+      {
+        "label": "Maintenance",
+        "amount": 13740.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 8000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 13000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 24200.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 60000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 805940.0
+      }
+    ],
+    "crew": [
+      {
+        "role": "CAPTAIN",
+        "salary": 10000,
+        "quantity": null
+      },
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": 2
+      },
+      {
+        "role": "ASTROGATOR",
+        "salary": 5000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": 2
+      },
+      {
+        "role": "MAINTENANCE",
+        "salary": 1000,
+        "quantity": null
+      },
+      {
+        "role": "MEDIC",
+        "salary": 4000,
+        "quantity": 6
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Standard Hull",
+        "quantity": null,
+        "tons": 400.0,
+        "power": null,
+        "cost": 20000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 80.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Jump",
+        "item": "Jump 3",
+        "quantity": null,
+        "tons": 35.0,
+        "power": -120.0,
+        "cost": 52500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 2",
+        "quantity": null,
+        "tons": 8.0,
+        "power": -80.0,
+        "cost": 16000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 300",
+        "quantity": null,
+        "tons": 20.0,
+        "power": 300.0,
+        "cost": 20000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "J-3, 12 weeks of operation",
+        "quantity": null,
+        "tons": 126.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Processor (60 tons/day)",
+        "quantity": null,
+        "tons": 3.0,
+        "power": -3.0,
+        "cost": 150000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Standard Bridge",
+        "quantity": null,
+        "tons": 20.0,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/15",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 2000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Jump Control/3",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 300000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Military Grade Sensors",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -2.0,
+        "cost": 4100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar, Jammers, EMCON"
+          },
+          {
+            "category": "info",
+            "message": "DM +0 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Sensors",
+        "item": "Life Scanner Analysis Suite",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Advanced ship-mounted life scanner"
+          },
+          {
+            "category": "info",
+            "message": "Requires Electronics (sensors) to interpret; improves biological analysis"
+          }
+        ]
+      },
+      {
+        "section": "Weapons",
+        "item": "Double Turret",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "info",
+            "message": "No weapons in turret"
+          }
+        ]
+      },
+      {
+        "section": "Craft",
+        "item": "Internal Docking Space: Slow Pinnace",
+        "quantity": null,
+        "tons": 44.0,
+        "power": null,
+        "cost": 11000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Slow Pinnace",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 6630000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Internal Docking Space: Air/Raft",
+        "quantity": null,
+        "tons": 5.0,
+        "power": null,
+        "cost": 1250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Air/Raft",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Internal Docking Space: Air/Raft",
+        "quantity": null,
+        "tons": 5.0,
+        "power": null,
+        "cost": 1250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Craft",
+        "item": "Air/Raft",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 8,
+        "tons": 32.0,
+        "power": null,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Low Berths",
+        "quantity": 20,
+        "tons": 10.0,
+        "power": -2.0,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 32.0,
+        "power": null,
+        "cost": 3200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Medical Bay",
+        "quantity": 6,
+        "tons": 24.0,
+        "power": -6.0,
+        "cost": 12000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Laboratory",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Systems",
+        "item": "Briefing Room",
+        "quantity": null,
+        "tons": 4.0,
+        "power": null,
+        "cost": 500000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 24.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  }
+}

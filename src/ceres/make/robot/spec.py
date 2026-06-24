@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
 from enum import StrEnum
+
+from pydantic import BaseModel, Field, PrivateAttr, computed_field
 
 from ceres.shared import NoteList
 
@@ -15,42 +16,39 @@ class RobotSpecSection(StrEnum):
     OPTIONS = 'Options'
 
 
-@dataclass
-class RobotSpecRow:
+class RobotSpecRow(BaseModel):
     section: RobotSpecSection
     label: str
     value: str = ''
-    columns: list[tuple[str, str]] = field(default_factory=list)  # (header, value) for multi-column rows
-    notes: NoteList = field(default_factory=NoteList)
+    columns: list[tuple[str, str]] = Field(default_factory=list)
+    notes: NoteList = Field(default_factory=NoteList)
 
 
-@dataclass
-class RobotDetailRow:
+class RobotDetailRow(BaseModel):
     name: str
     col2: str = '—'
     col3: str = '—'
     cost: str = '—'
 
 
-@dataclass
-class RobotDetailSection:
+class RobotDetailSection(BaseModel):
     title: str
     col2_header: str = 'Slots'
     col3_header: str = 'Bandwidth'
-    rows: list[RobotDetailRow] = field(default_factory=list)
+    rows: list[RobotDetailRow] = Field(default_factory=list)
 
 
-@dataclass
-class RobotSpec:
+class RobotSpec(BaseModel):
     name: str
     tl: int
-    _rows: list[RobotSpecRow] = field(default_factory=list)
-    robot_notes: NoteList = field(default_factory=NoteList)
-    detail_sections: list[RobotDetailSection] = field(default_factory=list)
+    robot_notes: NoteList = Field(default_factory=NoteList)
+    detail_sections: list[RobotDetailSection] = Field(default_factory=list)
+    _rows: list[RobotSpecRow] = PrivateAttr(default_factory=list)
 
     def add_row(self, row: RobotSpecRow) -> None:
         self._rows.append(row)
 
+    @computed_field
     @property
     def rows(self) -> list[RobotSpecRow]:
         order = list(RobotSpecSection)

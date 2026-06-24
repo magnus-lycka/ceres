@@ -98,13 +98,13 @@ class ShipExpenses:
     @property
     def rows(self) -> list[ExpenseRow]:
         return [
-            ExpenseRow('Production Cost', self.production_cost),
-            ExpenseRow('Sales Price New', self.sales_price_new),
-            ExpenseRow('Mortgage', self.mortgage),
-            ExpenseRow('Maintenance', self.maintenance),
-            ExpenseRow('Life Support Facilities', self.life_support_facilities),
-            ExpenseRow('Life Support People', self.life_support_people),
-            ExpenseRow('Fuel', self.fuel),
-            ExpenseRow('Crew Salaries', self.crew_salaries),
-            ExpenseRow('Total Expenses', self.total),
+            ExpenseRow(label='Production Cost', amount=self.production_cost),
+            ExpenseRow(label='Sales Price New', amount=self.sales_price_new),
+            ExpenseRow(label='Mortgage', amount=self.mortgage),
+            ExpenseRow(label='Maintenance', amount=self.maintenance),
+            ExpenseRow(label='Life Support Facilities', amount=self.life_support_facilities),
+            ExpenseRow(label='Life Support People', amount=self.life_support_people),
+            ExpenseRow(label='Fuel', amount=self.fuel),
+            ExpenseRow(label='Crew Salaries', amount=self.crew_salaries),
+            ExpenseRow(label='Total Expenses', amount=self.total),
         ]

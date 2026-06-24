@@ -1,0 +1,312 @@
+{
+  "data": {
+    "name": "StarTek",
+    "tl": 14,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 5 (Human)",
+            "col2": "+16",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Grav chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr19,000"
+          },
+          {
+            "name": "Efficiency",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr10,000"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Very Advanced (INT 12)",
+            "col2": "—",
+            "col3": "+5",
+            "cost": "Cr500,000"
+          },
+          {
+            "name": "INT +1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr24,000"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Athletics",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Electronics (All) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Engineer (All) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Explosives 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Gun Combat 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr100"
+          },
+          {
+            "name": "Mechanic 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Medic 0",
+            "col2": "—",
+            "col3": "-0",
+            "cost": "Cr200"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 12 DEX 8) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr9,000"
+          },
+          {
+            "name": "(STR 5 DEX 12)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr9,900"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Secondary Locomotion (Walker)",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr20,000"
+          },
+          {
+            "name": "Radiation Environment Protection",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr9,600"
+          },
+          {
+            "name": "Vacuum Environment Protection",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr9,600"
+          },
+          {
+            "name": "PRIS Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Medikit (enhanced)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr5,000"
+          },
+          {
+            "name": "Starship Engineer Toolkit (advanced)",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Weapon Mount (small)",
+            "col2": "-1",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Wireless Data Link",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "2",
+            "col3": "1",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "7/24",
+            "col3": "4/5",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr637,100"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "StarTek"
+          ],
+          [
+            "Size",
+            "5"
+          ],
+          [
+            "Hits",
+            "20"
+          ],
+          [
+            "Locomotion",
+            "Grav"
+          ],
+          [
+            "Speed",
+            "6m"
+          ],
+          [
+            "TL",
+            "14"
+          ],
+          [
+            "Cost",
+            "Cr637,100"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "Athletics (Strength) 2, Electronics (All) 3, Engineer (All) 3, Explosives 2, Gun Combat 0, Mechanic 3, Medic 2, +1 Bandwidth available",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 12 DEX 8) × 2, (STR 5 DEX 12)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "72 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+10), ATV, Flyer (idle), IR/UV Vision",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Very Advanced (INT 12)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Efficiency, Medikit (enhanced), PRIS Sensor, Radiation Environment Protection, Secondary Locomotion (Walker), Spare Slots ×2, Starship Engineer Toolkit (advanced), Transceiver 5km (improved), Vacuum Environment Protection, Visual Spectrum Sensor, Voder Speaker, Weapon Mount (small), Wireless Data Link",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  }
+}

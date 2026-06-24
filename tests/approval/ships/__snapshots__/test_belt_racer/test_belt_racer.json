@@ -1,0 +1,202 @@
+{
+  "data": {
+    "ship_class": "Vargr Belt Racer",
+    "ship_type": "Racer",
+    "tl": 12,
+    "hull_points": 2.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 854000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 854000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 3558.33
+      },
+      {
+        "label": "Maintenance",
+        "amount": 71.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 0.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 0.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 0.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 6000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 9629.33
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      }
+    ],
+    "passengers": [],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Light Close Structure Hull",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 180000.00000000003,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 2.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "R-Drive Thrust 16",
+        "quantity": null,
+        "tons": 1.92,
+        "power": null,
+        "cost": 384000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 8), Power 5",
+        "quantity": null,
+        "tons": 0.5,
+        "power": 5.0,
+        "cost": 250000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "52 minutes of operation",
+        "quantity": null,
+        "tons": 2.0800000000000005,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Cockpit",
+        "quantity": null,
+        "tons": 1.5,
+        "power": null,
+        "cost": 10000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Basic Sensors",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -4 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo (0.00 tons)",
+        "quantity": null,
+        "tons": -4.440892098500626e-16,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "power_basic": "Ceres gives 2 (ceil(6 * 0.2) per RIS-013); Tycho stat block shows 1 (uses floor)"
+  }
+}

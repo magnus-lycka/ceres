@@ -30,6 +30,7 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",
+    "syrupy>=5.3.2",
 ]
 
 [tool.ruff]
@@ -105,3 +106,6 @@ source_pkgs = ["ceres"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "approval: approval/snapshot tests; skipped by default, run with --with-snapshots or --all-tests",
+]

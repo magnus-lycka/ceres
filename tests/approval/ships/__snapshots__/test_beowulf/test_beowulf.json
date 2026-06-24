@@ -1,0 +1,333 @@
+{
+  "data": {
+    "ship_class": "Beowulf",
+    "ship_type": "Type A Free Trader",
+    "tl": 12,
+    "hull_points": 80.0,
+    "ship_notes": [],
+    "crew_notes": [],
+    "expenses": [
+      {
+        "label": "Production Cost",
+        "amount": 51380000.0
+      },
+      {
+        "label": "Sales Price New",
+        "amount": 46242000.0
+      },
+      {
+        "label": "Mortgage",
+        "amount": 192675.0
+      },
+      {
+        "label": "Maintenance",
+        "amount": 3854.0
+      },
+      {
+        "label": "Life Support Facilities",
+        "amount": 10000.0
+      },
+      {
+        "label": "Life Support People",
+        "amount": 20000.0
+      },
+      {
+        "label": "Fuel",
+        "amount": 4100.0
+      },
+      {
+        "label": "Crew Salaries",
+        "amount": 17000.0
+      },
+      {
+        "label": "Total Expenses",
+        "amount": 247629.0
+      }
+    ],
+    "crew": [
+      {
+        "role": "PILOT",
+        "salary": 6000,
+        "quantity": null
+      },
+      {
+        "role": "ASTROGATOR",
+        "salary": 5000,
+        "quantity": null
+      },
+      {
+        "role": "ENGINEER",
+        "salary": 4000,
+        "quantity": null
+      },
+      {
+        "role": "STEWARD",
+        "salary": 2000,
+        "quantity": null
+      }
+    ],
+    "passengers": [
+      {
+        "kind": "MIDDLE_P",
+        "quantity": 16
+      }
+    ],
+    "rows": [
+      {
+        "section": "Hull",
+        "item": "Streamlined Hull",
+        "quantity": null,
+        "tons": 200.0,
+        "power": null,
+        "cost": 12000000.0,
+        "emphasize_tons": true,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Basic Ship Systems",
+        "quantity": null,
+        "tons": null,
+        "power": 40.0,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Crystaliron, Armour: 2",
+        "quantity": null,
+        "tons": 6.0,
+        "power": null,
+        "cost": 1200000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Hull",
+        "item": "Airlock (2 tons)",
+        "quantity": 2,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Jump",
+        "item": "Jump 1",
+        "quantity": null,
+        "tons": 10.0,
+        "power": -20.0,
+        "cost": 15000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Propulsion",
+        "item": "M-Drive 1",
+        "quantity": null,
+        "tons": 2.0,
+        "power": -20.0,
+        "cost": 4000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Power",
+        "item": "Fusion (TL 12), Power 75",
+        "quantity": null,
+        "tons": 5.0,
+        "power": 75.0,
+        "cost": 5000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": true,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "J-1, 8 weeks of operation",
+        "quantity": null,
+        "tons": 21.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Scoops",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Fuel",
+        "item": "Fuel Processor (20 tons/day)",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 50000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Command",
+        "item": "Standard Bridge",
+        "quantity": null,
+        "tons": 10.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Computer/5",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 30000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Library",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Manoeuvre/0",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Intellect",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Computer",
+        "item": "Jump Control/1",
+        "quantity": null,
+        "tons": null,
+        "power": null,
+        "cost": 100000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Sensors",
+        "item": "Civilian Grade Sensors",
+        "quantity": null,
+        "tons": 1.0,
+        "power": -1.0,
+        "cost": 3000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": [
+          {
+            "category": "content",
+            "message": "Passive optical and thermal sensors, Radar, Lidar"
+          },
+          {
+            "category": "info",
+            "message": "DM -2 to Electronics (comms) and Electronics (sensors) checks"
+          }
+        ]
+      },
+      {
+        "section": "Habitation",
+        "item": "Staterooms",
+        "quantity": 10,
+        "tons": 40.0,
+        "power": null,
+        "cost": 5000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Low Berths",
+        "quantity": 20,
+        "tons": 10.0,
+        "power": -2.0,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Habitation",
+        "item": "Common Area",
+        "quantity": null,
+        "tons": 10.0,
+        "power": null,
+        "cost": 1000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Hold",
+        "quantity": null,
+        "tons": 81.0,
+        "power": null,
+        "cost": null,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      },
+      {
+        "section": "Cargo",
+        "item": "Cargo Crane",
+        "quantity": null,
+        "tons": 3.0,
+        "power": null,
+        "cost": 3000000.0,
+        "emphasize_tons": false,
+        "emphasize_power": false,
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "fuel": "Ceres gives op_fuel=1.0t per RIS-007 (1-ton minimum); ref shows 0.5t",
+    "life_support": "Ceres gives 30,000 (4 crew + 16 middle passengers); ref shows 31,000 (source inconsistency)"
+  }
+}
