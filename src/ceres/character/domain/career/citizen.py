@@ -16,6 +16,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionEntry,
@@ -495,3 +496,11 @@ class Citizen(CareerData):
 
 
 CITIZEN = Citizen()
+
+
+class CitizenTerm(CareerTerm):
+    kind: Literal['citizen_term'] = 'citizen_term'
+    career: Citizen
+
+
+Citizen.term_class = CitizenTerm

@@ -139,6 +139,28 @@ def _selected_homeworld(form_defaults: dict[str, str]) -> TravellerMapWorld | No
     return fetch_world(sector, hex_code)
 
 
+_NOTE_CATEGORY_COLOR = {
+    'content': 'text-gray-500',
+    'info': 'text-blue-400/80',
+    'warning': 'text-yellow-600/80',
+    'error': 'text-red-400/80',
+}
+
+
+def _term_detail_rows(summary) -> list[dict[str, Any]]:
+    return [
+        {
+            'career': term.career.name,
+            'assignment': term.assignment.name,
+            'notes': [
+                {'text': n.message, 'color': _NOTE_CATEGORY_COLOR.get(n.category.value, 'text-gray-500')}
+                for n in term.notes
+            ],
+        }
+        for term in summary.career_terms
+    ]
+
+
 def _projection_context(projection: CharacterProjection, character_id: int) -> dict[str, Any]:
     careers = load_careers()
     enriched_inputs = []
@@ -154,6 +176,7 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         'careers': careers,
         'precareers': tuple(pc for pc in load_precareers() if pc.is_available(projection.summary)),
         'select_world_url': _select_world_url,
+        'term_detail_rows': _term_detail_rows(projection.summary),
     }
 
 

@@ -4,22 +4,22 @@ import pytest
 
 from ceres.make.robot.report import render_robot_typst
 from ceres.report import render_pdf_source
-from tests.approval.robots.test_ag300 import build_ag300
-from tests.approval.robots.test_basic_courier import build_basic_courier
-from tests.approval.robots.test_domestic_servant import build_domestic_servant
-from tests.approval.robots.test_gardener_servant import build_gardener_servant
-from tests.approval.robots.test_gonzales import build_gonzales
-from tests.approval.robots.test_hudson import build_hudson
-from tests.approval.robots.test_hugin import build_hugin
-from tests.approval.robots.test_hush import build_hush
-from tests.approval.robots.test_lab_control_robot_advanced import build_advanced_lab_control_robot
-from tests.approval.robots.test_lab_control_robot_basic import build_basic_lab_control_robot
-from tests.approval.robots.test_mimer import build_mimer
-from tests.approval.robots.test_munin import build_munin
-from tests.approval.robots.test_rhino import build_rhino
-from tests.approval.robots.test_startek import build_startek
-from tests.approval.robots.test_utility_droid import build_utility_droid
-from tests.approval.robots.test_wush import build_wush
+from tests.approval.robot.e2e.test_ag300 import build_ag300
+from tests.approval.robot.e2e.test_basic_courier import build_basic_courier
+from tests.approval.robot.e2e.test_domestic_servant import build_domestic_servant
+from tests.approval.robot.e2e.test_gardener_servant import build_gardener_servant
+from tests.approval.robot.e2e.test_gonzales import build_gonzales
+from tests.approval.robot.e2e.test_hudson import build_hudson
+from tests.approval.robot.e2e.test_hugin import build_hugin
+from tests.approval.robot.e2e.test_hush import build_hush
+from tests.approval.robot.e2e.test_lab_control_robot_advanced import build_advanced_lab_control_robot
+from tests.approval.robot.e2e.test_lab_control_robot_basic import build_basic_lab_control_robot
+from tests.approval.robot.e2e.test_mimer import build_mimer
+from tests.approval.robot.e2e.test_munin import build_munin
+from tests.approval.robot.e2e.test_rhino import build_rhino
+from tests.approval.robot.e2e.test_startek import build_startek
+from tests.approval.robot.e2e.test_utility_droid import build_utility_droid
+from tests.approval.robot.e2e.test_wush import build_wush
 
 from ._output import write_json_output, write_pdf_output, write_typst_output
 

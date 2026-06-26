@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from ceres.character.domain.career.army import Army
 from ceres.character.domain.career.career_data import CareerData, CharCheck
@@ -6,7 +6,7 @@ from ceres.character.domain.career.marines import Marines
 from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PreCareerTerm
 from ceres.character.domain.psionics import Psi
 from ceres.character.mechanism.event_base import Event
 
@@ -95,3 +95,20 @@ class NavyAcademyPreCareer(MilitaryAcademyPreCareer):
     entry: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=8)
     service_skills_from: ClassVar[type[CareerData]] = Navy
     tied_career: ClassVar[str] = Navy.name
+
+
+class ArmyAcademyTerm(PreCareerTerm):
+    kind: Literal['army_academy'] = 'army_academy'
+
+
+class MarineAcademyTerm(PreCareerTerm):
+    kind: Literal['marine_academy'] = 'marine_academy'
+
+
+class NavyAcademyTerm(PreCareerTerm):
+    kind: Literal['navy_academy'] = 'navy_academy'
+
+
+ArmyAcademyPreCareer.term_class = ArmyAcademyTerm
+MarineAcademyPreCareer.term_class = MarineAcademyTerm
+NavyAcademyPreCareer.term_class = NavyAcademyTerm

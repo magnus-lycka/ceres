@@ -19,7 +19,7 @@ Current Ceres status: only `Humaniti` and `Vilani` are defined in
 | Akeed                       | Alien    | Akee | Re:Akee,(Akeed)         | Trail             | STR-2, END-2, INT+1                                                                         | Akeed Debate DM+2; Akeed Friendship bond; slug-like; careers not listed                                         |
 | Amindii                     | Alien    | —    | Re:(Amindii)            | JTAS 9            | STR=3D (+2 Activator; +END 1 Bearer)                                                        | Three sexes; age 14 start; Perception ability                                                                   |
 | Aniyun                      | Alien    | —    | Re:(Aniyun)             | Spinext           | STR=1D, EDU-2                                                                               | Citizen/Drifter only; natural flight                                                                            |
-| Aquamorph                   | Human    | Aqua | Re:Aqua,(Aquan),(Aquamorphs) | Sol               | STR halved when out of water                                                                | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                        |
+| Aquamorph                   | Human    | Aqua | Re:Aqua,(Aquamorphs)    | Sol               | STR halved when out of water                                                                | Amphibious; gill/lung; indefinite underwater breathing; all Core careers                                        |
 | Ascondi                     | Alien    | —    | Re:(Ascondi)            | Great Rift 1      | END+1; caste mods at age ~20                                                                | Caste replaces background; SOC starts at 1                                                                      |
 | Aslan (in Darrian)          | Alien    | Asla | A:DaCf&S<6              | AoCS 3            | STR+1, DEX+1, EDU+1                                                                         | Any Darrian career; sex-role preferences softened; Roget Aslan may also use AoCS 1 options                      |
 | Aslan (in Hierate)          | Major    | Asla | A:As*                   | AoCS 1            | (m) STR+2 DEX-2 END+1; SOC → TER; (f) STR+1 DEX-1 END+2                                     | Rite of Passage; Clan Shares; sex-locked assignments                                                            |
@@ -503,7 +503,8 @@ Genetically engineered desert-adapted humans, first settled on Jonkeer (Deneb se
 
 *Source: Spinward Extents (`refs/spinext/16_balleau.md`)*
 
-Humans native to the heavy-gravity world of Katanga (Foreven sector), part of the former Sindalian Empire region. Physically identical to standard humans but physiologically adapted.
+Humans native to the heavy-gravity world of Katanga (Foreven sector), part of the former Sindalian Empire region.
+Physically identical to standard humans but physiologically adapted.
 
 - **Characteristics:** STR+1, DEX-1, END+1.
 - **Draft:** all Katangan serve a mandatory military term in the first career.
@@ -531,10 +532,12 @@ differences from standard Humaniti; Core careers.
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Humans modified by the Ancients for aquatic environments, now with an extensive interstellar culture in the Gateway/Ley region. About 35% of Luriani society are non-Luriani humans absorbed culturally (Verasti Dtareen and Mmarislusant).
+Humans modified by the Ancients for aquatic environments, now with an extensive interstellar culture in the Gateway/Ley
+region. About 35% of Luriani society are non-Luriani humans absorbed culturally (Verasti Dtareen and Mmarislusant).
 
 - **Characteristics:** DEX+1, END+1, SOC-2.
-- **Aquatic Adaptation (genetically Luriani only):** safe dives to 500m unaided; breathe without air for up to 1 hour; DM+2 Survival and swimming/underwater checks.
+- **Aquatic Adaptation (genetically Luriani only):** safe dives to 500m unaided; breathe without air for up to 1 hour;
+  DM+2 Survival and swimming/underwater checks.
 - **Histrionics (all Luriani culture members):** DM-2 concealing feelings; DM+2 drawing attention to themselves.
 
 ### Murrissi
@@ -548,10 +551,12 @@ from standard Humaniti; Core careers.
 
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
-Long-limbed, lightly-built humans engineered for low-gravity environments during early Sol system colonisation. Homeworld is Velscur (Alpha Crucis); enclaves across many paraterraformed worlds.
+Long-limbed, lightly-built humans engineered for low-gravity environments during early Sol system colonisation.
+Homeworld is Velscur (Alpha Crucis); enclaves across many paraterraformed worlds.
 
 - **Characteristics:** DEX+2; STR=2D3+1; END=1D+1.
-- **Great Indoors:** uncomfortable outdoors on uncontrolled planets; must make Routine (6+) INT check or panic when exposed to uncontrolled weather; more dangerous phenomena trigger harder checks.
+- **Great Indoors:** uncomfortable outdoors on uncontrolled planets; must make Routine (6+) INT check or panic when
+  exposed to uncontrolled weather; more dangerous phenomena trigger harder checks.
 - **Low-G:** DM+2 physical activity in low-gravity/microgravity; never loses orientation in 3D environments.
 - All Core careers available; space-related careers preferred.
 
@@ -559,22 +564,29 @@ Long-limbed, lightly-built humans engineered for low-gravity environments during
 
 *Source: Third Imperium (`refs/3i/39_khiinra_ash.md`)*
 
-Human Minor Race created by the Ancients, native to Sylea. Taller than average with pale skin and dark hair. Culturally focused and spiritually driven; played a key role in the establishment of the Third Imperium. Billions of genetically pure Syleans remain despite centuries of interbreeding.
+Human Minor Race created by the Ancients, native to Sylea. Taller than average with pale skin and dark hair. Culturally
+focused and spiritually driven; played a key role in the establishment of the Third Imperium. Billions of genetically
+pure Syleans remain despite centuries of interbreeding.
 
 - **Characteristics:** STR-1, EDU+1.
 - **Cooperation:** DM+2 on Admin, Diplomat, and Streetwise checks on Sylean worlds (50%+ Sylean population).
 - **Wealth:** DM+1 on all Cash Benefit rolls at mustering out.
-- Almost all Core careers available. Drifter (barbarian/wanderer) is very rare; Rogue requires extenuating circumstances. Psion/Believer (from Companion) suitable for religiously-inclined Syleans.
+- Almost all Core careers available. Drifter (barbarian/wanderer) is very rare; Rogue requires extenuating 
+  circumstances. Psion/Believer (from Companion) suitable for religiously-inclined Syleans.
 
 ### Sydites
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Very large (~2.5m) four-armed humans engineered by the Ancients as workers or expendable warriors. Upper arms handle power, lower arms fine work — but the muscle groups are interlinked, making simultaneous use awkward. Cannot interbreed with other humans. Once ruled the Khuur League.
+Very large (~2.5m) four-armed humans engineered by the Ancients as workers or expendable warriors. Upper arms handle
+power, lower arms fine work — but the muscle groups are interlinked, making simultaneous use awkward. Cannot interbreed
+with other humans. Once ruled the Khuur League.
 
-- **Characteristics:** STR+2, END+2, DEX-2, INT-3, EDU-3. When using upper limbs for power tasks: additional STR+2. When using lower limbs for fine work: additional DEX+2 (offsetting the base penalty).
+- **Characteristics:** STR+2, END+2, DEX-2, INT-3, EDU-3. When using upper limbs for power tasks: additional STR+2.
+  When using lower limbs for fine work: additional DEX+2 (offsetting the base penalty).
 - **Resilient:** Protection +1; DM+2 vs electric shocks, heat, and cold damage.
-- **Plodding Along (most Sydites):** DM-4 on Leadership or Tactics checks; DM+4 on morale checks to avoid discouragement. Travellers may lack this trait at Referee's discretion.
+- **Plodding Along (most Sydites):** DM-4 on Leadership or Tactics checks; DM+4 on morale checks to avoid
+  discouragement. Travellers may lack this trait at Referee's discretion.
 
 ### Swanfei
 
@@ -694,7 +706,10 @@ Uplifted Earth orcas (killer whales).
 
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
-An Ape is either a **Chimp** (chimpanzee-type) or a **Gorilla** (gorilla-type). Uplifted Terran apes engineered by Old Earth Union scientists late in the Interstellar Wars period. Two interfertile subtypes: chimpanzee-types are small and agile; gorilla-types are massively strong. Small scattered communities exist on Solomani worlds; legally treated as people by both the Imperium and Confederation, though often second-class citizens in practice.
+An Ape is either a **Chimp** (chimpanzee-type) or a **Gorilla** (gorilla-type). Uplifted Terran apes engineered by
+Old Earth Union scientists late in the Interstellar Wars period. Two interfertile subtypes: chimpanzee-types are small
+and agile; gorilla-types are massively strong. Small scattered communities exist on Solomani worlds; legally treated as
+people by both the Imperium and Confederation, though often second-class citizens in practice.
 
 - **Characteristics:** STR+1, END+1, SOC-1.
 - **Heightened Senses:** DM+1 Recon and Survival checks.
@@ -714,10 +729,14 @@ See [Ape](#ape).
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Uplifted Terran brown bears, adapted by Solomani scientists for colonisation of high-gravity worlds. Most were killed in a Solomani corporate termination programme; the survivors are few and deeply scarred by this history. Live in small rural communities; loyal and jovial once trust is earned, despite a surly exterior with strangers. Great craftspeople who hate to destroy things.
+Uplifted Terran brown bears, adapted by Solomani scientists for colonisation of high-gravity worlds. Most were killed
+in a Solomani corporate termination programme; the survivors are few and deeply scarred by this history. Live in small
+rural communities; loyal and jovial once trust is earned, despite a surly exterior with strangers. Great craftspeopl
+who hate to destroy things.
 
 - **Characteristics:** STR+4, END+2.
-- **Claws and Teeth:** Claws deal 1D+3 in close combat; DM+2 climbing natural surfaces. Claws and teeth also serve as improvised tools.
+- **Claws and Teeth:** Claws deal 1D+3 in close combat; DM+2 climbing natural surfaces. Claws and teeth also serve as
+  improvised tools.
 - **Sore Head:** DM-2 to all social interactions with humans (except those who have become like family to the Ursa).
 
 ---
@@ -823,7 +842,10 @@ Bureaucratic amphibious species within the Third Imperium.
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Enormous hexapedal sophonts from Kretikaa (Lamas subsector, Deneb). Covered in thick armoured hide; two trunk-like appendages serve as arms. Despite fearsome appearance, have an advanced industrial civilisation and form the core of the Crenduthaar Hierarchy. Harbour deep hostility towards Vargr (rumoured genocidal history); may attack Vargr on sight. Terrified of darkness — never willingly enter unlit spaces.
+Enormous hexapedal sophonts from Kretikaa (Lamas subsector, Deneb). Covered in thick armoured hide; two trunk-like
+appendages serve as arms. Despite fearsome appearance, have an advanced industrial civilisation and form the core of
+the Crenduthaar Hierarchy. Harbour deep hostility towards Vargr (rumoured genocidal history); may attack Vargr on sight.
+Terrified of darkness — never willingly enter unlit spaces.
 
 - **Characteristics:** STR=3D, END=3D, DEX=1D.
 - **Traits:** Armour (+3, thick hide); IR Vision; Natural Weapon (Slasher, 2D).
@@ -844,10 +866,13 @@ Humanoid traders from the trailing Old Expanses.
 
 *Source: BTC (`refs/btc/09_spinwards_marches_subsctor_d.md`)*
 
-Large arthropod-descended sophonts from Aramanx (Aramis subsector). Originally ammonia-breathing methane-worlders now adapted to a standard atmosphere via biological engineering. Patient, methodical, and surprisingly social for a species evolved in toxic isolation.
+Large arthropod-descended sophonts from Aramanx (Aramis subsector). Originally ammonia-breathing methane-worlders now
+adapted to a standard atmosphere via biological engineering. Patient, methodical, and surprisingly social for a species
+evolved in toxic isolation.
 
 - **Characteristics:** DEX-2, END+3.
-- **Traits:** Atmospheric Requirements (originally methane; adapted individuals require filter mask in standard atmosphere); Armour (+3); UV Vision (see into ultraviolet spectrum).
+- **Traits:** Atmospheric Requirements (originally methane; adapted individuals require filter mask in standard
+  atmosphere); Armour (+3); UV Vision (see into ultraviolet spectrum).
 - Careers: Agent, Army, Citizen, Drifter, Merchant, Noble, Scholar, Scout.
 
 ### Githiaskio
@@ -880,10 +905,13 @@ a permanent hereditary servant of K'kree masters.
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Asymmetric insectoid sophonts from Kubishush (Magash subsector, Deneb) — a world with a corrosive ammonia atmosphere. Friendly and cultured despite nightmarish appearance. Hermaphroditic; no sex distinction in mechanics. Obsessed with redundancy in starship design; their staterooms are tiny, fitting 8 per standard cabin.
+Asymmetric insectoid sophonts from Kubishush (Magash subsector, Deneb) — a world with a corrosive ammonia atmosphere.
+Friendly and cultured despite nightmarish appearance. Hermaphroditic; no sex distinction in mechanics. Obsessed with
+redundancy in starship design; their staterooms are tiny, fitting 8 per standard cabin.
 
 - **Characteristics:** END-1, DEX+1, EDU-2.
-- **Traits:** Atmospheric Requirements (ammonia — need sealed suit elsewhere); Fast Metabolism (DM+1 initiative); Heightened Senses (DM+1 Recon/Survival); IR Vision (see only in infrared); Natural Weapon (fangs, 1D+2).
+- **Traits:** Atmospheric Requirements (ammonia — need sealed suit elsewhere); Fast Metabolism (DM+1 initiative);
+  Heightened Senses (DM+1 Recon/Survival); IR Vision (see only in infrared); Natural Weapon (fangs, 1D+2).
 - All Core careers available.
 
 ### Gmina
@@ -1022,17 +1050,22 @@ Trilaterally symmetrical sophonts from Reaver's Deep.
 
 *Source: BTC (`refs/btc/09_spinwards_marches_subsctor_d.md`)*
 
-Five-limbed spherical sophonts native to Junidy (Aramis subsector). All five limbs function interchangeably as arms or legs. Highly complex social hierarchy where an individual's rank can shift minute to minute; using the wrong form of address is a serious gaffe. Share their world with humans, with recurring tensions.
+Five-limbed spherical sophonts native to Junidy (Aramis subsector). All five limbs function interchangeably as arms or
+legs. Highly complex social hierarchy where an individual's rank can shift minute to minute; using the wrong form of
+address is a serious gaffe. Share their world with humans, with recurring tensions.
 
 - **Characteristics:** STR=2D3, END=2D3.
-- **Traits:** Alien Digits (DM-2 on checks using devices not adapted for Llellewyloly); Atmosphere (thin — comfortable in very thin atmosphere, need protection from dense).
+- **Traits:** Alien Digits (DM-2 on checks using devices not adapted for Llellewyloly); Atmosphere (thin — comfortable
+  in very thin atmosphere, need protection from dense).
 - Careers not listed in source.
 
 ### Lurent
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Large headless sophonts from Borlund (Lamas subsector, Deneb). Thorax carries sense organs and two manipulation tentacles; abdomen has two legs and vestigial tail. Covered in pale blue or green fur. Subject to compulsion cycles — wandering, homeward-bound, or sedentary — that override rational choice.
+Large headless sophonts from Borlund (Lamas subsector, Deneb). Thorax carries sense organs and two manipulation
+tentacles; abdomen has two legs and vestigial tail. Covered in pale blue or green fur.
+Subject to compulsion cycles — wandering, homeward-bound, or sedentary — that override rational choice.
 
 - **Characteristics:** STR=2D+4, END=2D+4.
 - **Traits:** Natural Weapon (Tentacle Bash, 2D); Wanderlust (compelling cycle: wandering, homeward, or sedentary).
@@ -1049,10 +1082,13 @@ Large headless sophonts from Borlund (Lamas subsector, Deneb). Thorax carries se
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Lightly built humanoids from Marz (Pretoria subsector, Deneb), living in warm spindly forests. No concept of themselves as a species — each village is simply "us," everywhere else is "not home." Will happily combine stone-age techniques with high technology in bizarre but effective ways.
+Lightly built humanoids from Marz (Pretoria subsector, Deneb), living in warm spindly forests. No concept of themselves
+as a species — each village is simply "us," everywhere else is "not home." Will happily combine stone-age techniques
+with high technology in bizarre but effective ways.
 
 - **Characteristics:** STR-1, END-1, DEX+1; EDU=1D (cannot be increased beyond 7).
-- **Traits:** Adaptability (INT check to improvise tools/solutions); Telepathic Confusion (telepathy attempts on Martians always fail, leaving telepath baffled).
+- **Traits:** Adaptability (INT check to improvise tools/solutions); Telepathic Confusion (telepathy attempts on
+  Martians always fail, leaving telepath baffled).
 - Most Core careers suitable; gravitate to frontiersman/infantry roles.
 
 ### Mewey
@@ -1106,7 +1142,8 @@ cooperative history with humanity.
 
 *Source: BTC (`refs/btc/12_saurus.md`)*
 
-Reptilian sophonts native to Saurus (Sword Worlds subsector). Heavily built, warm-blooded, peaceable hunters. Primitive when humans arrived; some now work in human settlements but most still live traditionally. Quite accepting of strangers.
+Reptilian sophonts native to Saurus (Sword Worlds subsector). Heavily built, warm-blooded, peaceable hunters. Primitive
+when humans arrived; some now work in human settlements but most still live traditionally. Quite accepting of strangers.
 
 - **Characteristics:** STR+2, END+2; INT=2D3; EDU=1D.
 - **Traits:** Armour (+2, thick scaly skin).
@@ -1116,7 +1153,9 @@ Reptilian sophonts native to Saurus (Sword Worlds subsector). Heavily built, war
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Tall, leathery-skinned sophonts from Segan (Deneb), probably transplanted there by unknown entities — not native to their world. Aggressive desert-adapted fighters. Jump travel causes progressive madness; Segani who venture interstellar typically use low berths.
+Tall, leathery-skinned sophonts from Segan (Deneb), probably transplanted there by unknown entities — not native to
+their world. Aggressive desert-adapted fighters. Jump travel causes progressive madness; Segani who venture interstellar
+typically use low berths.
 
 - **Characteristics:** END=1D+2 (maximum 10 by any means); all other characteristics 2D.
 - **Traits:** Desert Adaptation (DM+2 Survival/Recon in arid environments); Quick to Anger (DM+2 initiative).
@@ -1126,7 +1165,8 @@ Tall, leathery-skinned sophonts from Segan (Deneb), probably transplanted there 
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Bullet-shaped aquatic sophonts from Chaosheo (Star Lane subsector, Deneb). Highly fragmented society — some communities are friendly, others lethal to visitors; the pattern is unpredictable even between visits to the same group.
+Bullet-shaped aquatic sophonts from Chaosheo (Star Lane subsector, Deneb). Highly fragmented society — some communities
+are friendly, others lethal to visitors; the pattern is unpredictable even between visits to the same group.
 
 - **Characteristics:** STR=3D, END=3D, DEX=1D. Males also: STR-1, END+1.
 - **Traits:** Echolocation (30m); Fast Metabolism (DM+1 initiative); Natural Weapon (grippers, 2D); Swimmer (9m).
@@ -1136,9 +1176,11 @@ Bullet-shaped aquatic sophonts from Chaosheo (Star Lane subsector, Deneb). Highl
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Indigenous people of Talon (Million subsector, Deneb), now intermingled with Vargr migrants who arrived around -300. Three-section asymmetric torso, eight legs, four dual-thumbed arms. Four sex castes: Designer, Explorer, Hunter, Worker.
+Indigenous people of Talon (Million subsector, Deneb), now intermingled with Vargr migrants who arrived around -300.
+Three-section asymmetric torso, eight legs, four dual-thumbed arms. Four sex castes: Designer, Explorer, Hunter, Worker.
 
-- **Characteristics:** DEX+1, INT-1, EDU+1 (all castes). Designer also: DEX+1, END-1. Explorer also: DEX+1, END-1, INT-1, EDU+1. Hunter also: DEX+1, INT-1. Worker also: INT-1, EDU+1.
+- **Characteristics:** DEX+1, INT-1, EDU+1 (all castes). Designer also: DEX+1, END-1. Explorer also: DEX+1, END-1,
+  INT-1, EDU+1. Hunter also: DEX+1, INT-1. Worker also: INT-1, EDU+1.
 - **Traits:** Armour (+1); Bite (1D+2).
 - All Core careers available.
 
@@ -1222,7 +1264,8 @@ within the Third Imperium.
 
 ### Virushi
 
-*Source: JTAS Vol. 5 (`refs/jtas/5/07_alien.md`); also The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`) — same mechanics, adds explicit stateroom sizes*
+*Source: JTAS Vol. 5 (`refs/jtas/5/07_alien.md`);*
+*also The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`) — same mechanics, adds explicit stateroom sizes*
 
 Enormous pacifist herbivores from Reaver's Deep.
 
@@ -1237,7 +1280,8 @@ Enormous pacifist herbivores from Reaver's Deep.
 
 *Source: BTC (`refs/btc/31_trin.md`)*
 
-Multi-legged sophonts from Kernal (Star Lane subsector, Deneb). Rear body is carried low on eight pairs of walking legs; front pair held upright serves as arms. Able to perceive electromagnetic fields. Renowned negotiators and diplomats.
+Multi-legged sophonts from Kernal (Star Lane subsector, Deneb). Rear body is carried low on eight pairs of walking legs;
+front pair held upright serves as arms. Able to perceive electromagnetic fields. Renowned negotiators and diplomats.
 
 - **Characteristics:** STR=1D, END=1D, DEX=3D, INT+1.
 - **Traits:** Enhanced Vision (electromagnetic fields); Small (-1, DM-1 to ranged attacks against them).
@@ -1247,7 +1291,8 @@ Multi-legged sophonts from Kernal (Star Lane subsector, Deneb). Rear body is car
 
 *Source: The Deep Dark (`refs/deepdark/03_aliens_of_the_buffer.md`)*
 
-Bipedal, fur-covered sophonts transplanted to Tsanesi (Reaver's Deep) by the Saie; descended from carnivores but culturally pacifistic.
+Bipedal, fur-covered sophonts transplanted to Tsanesi (Reaver's Deep) by the Saie; descended from carnivores but
+culturally pacifistic.
 
 - **Characteristics:** STR-2, INT+2.
 - All Core careers available.
@@ -1273,31 +1318,42 @@ Three-sexed arboreal sophonts.
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Slug-like sophonts from Akeen (Gateway sector), ruling a multi-world state where humans live as willing partners. Upper body has four pairs of tentacles; lower body is a boneless locomotion pad. Blind in the visual spectrum — navigate by sonar and chemical sense. No mouth; breathe through a hole that can produce speech and even singing. Feed by drawing minerals from soil through foot openings.
+Slug-like sophonts from Akeen (Gateway sector), ruling a multi-world state where humans live as willing partners.
+Upper body has four pairs of tentacles; lower body is a boneless locomotion pad. Blind in the visual spectrum — navigate
+by sonar and chemical sense. No mouth; breathe through a hole that can produce speech and even singing. Feed by drawing
+minerals from soil through foot openings.
 
 - **Characteristics:** STR-2, END-2, INT+1.
 - **Akeed Debate:** DM+2 to argue a point, convince someone, or mediate a fair settlement.
-- **Akeed Friendship:** Difficult (10+) Persuade check after several hours of interaction; on success, forms a permanent deep bond granting DM+1 on all checks benefiting the friend. One bond at a time.
+- **Akeed Friendship:** Difficult (10+) Persuade check after several hours of interaction; on success, forms a permanent
+  deep bond granting DM+1 on all checks benefiting the friend. One bond at a time.
 - Movement 4m; can traverse slopes up to 70° at 1m/round. Careers not listed in source.
 
 ### Capry
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Feathered bipeds from Basternevis (Gateway sector), now nearly extinct following ecological collapse of their homeworld. Three sexes: females (technical), big males (physical), small males (abstract intellect). All have a prehensile tail ending in a cluster of feather-fingers for delicate manipulation. Wiry build, ~1.4–1.6m tall. Deeply fatalistic but liberated by their species' doom.
+Feathered bipeds from Basternevis (Gateway sector), now nearly extinct following ecological collapse of their homeworld.
+Three sexes: females (technical), big males (physical), small males (abstract intellect). All have a prehensile tail
+ending in a cluster of feather-fingers for delicate manipulation. Wiry build, ~1.4–1.6m tall. Deeply fatalistic but
+liberated by their species' doom.
 
 - **Female characteristics:** STR-3, DEX+2, END-2, INT+1.
 - **Big Male characteristics:** STR-1, END+1.
 - **Small Male characteristics:** STR-4, DEX+3, END-3, EDU+2.
-- **Liberating Fatalism:** choose 3 areas of special interest; DM+1 on tasks that can benefit from near-obsession with those areas.
-- **Third Hand:** feather-fingers can assist with fine tasks (holding things, steadying a repair) granting DM+2; too weak to wield weapons or support body weight.
+- **Liberating Fatalism:** choose 3 areas of special interest; DM+1 on tasks that can benefit from near-obsession with
+  those areas.
+- **Third Hand:** feather-fingers can assist with fine tasks (holding things, steadying a repair) granting DM+2; too
+  weak to wield weapons or support body weight.
 - Careers not listed in source.
 
 ### Droashav
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Six-limbed pseudoreptilians from Trevannic (Gateway sector). Two pairs of arms, clawed feet useful in combat. Greeny-brown hide provides natural armour. Most live as TL1 desert nomads; a small TL4 civilisation exists. Possibly related to the K'kree — a contested theory that would make them the ancient G'naak the K'kree tried to exterminate.
+Six-limbed pseudoreptilians from Trevannic (Gateway sector). Two pairs of arms, clawed feet useful in combat.
+Greeny-brown hide provides natural armour. Most live as TL1 desert nomads; a small TL4 civilisation exists. Possibly
+related to the K'kree — a contested theory that would make them the ancient G'naak the K'kree tried to exterminate.
 
 - **Characteristics:** STR+2, DEX-1, END+3, INT-1.
 - **Natural Defences:** Protection +1; claws deal 1D+2 in close combat.
@@ -1307,7 +1363,9 @@ Six-limbed pseudoreptilians from Trevannic (Gateway sector). Two pairs of arms, 
 
 *Source: Spinward Extents (`refs/spinext/42_portmanteau_shipping_services.md`)*
 
-Three-caste aquatic sophonts of the Spinward Extents, divided by SOC into sub-races: Selyin (high SOC), Chutin (mid SOC), Magsin (low SOC). Males of all castes have STR+1 but suffer DM-1 advancement at Rank 4+; females receive DM+1 advancement. Well adapted to underwater environments.
+Three-caste aquatic sophonts of the Spinward Extents, divided by SOC into sub-races: Selyin (high SOC),
+Chutin (mid SOC), Magsin (low SOC). Males of all castes have STR+1 but suffer DM-1 advancement at Rank 4+; females
+receive DM+1 advancement. Well adapted to underwater environments.
 
 - **Characteristics:** By caste (Selyin/Chutin/Magsin vary); males also STR+1.
 - **Amphibious:** can breathe and operate underwater indefinitely.
@@ -1318,20 +1376,26 @@ Three-caste aquatic sophonts of the Spinward Extents, divided by SOC into sub-ra
 
 *Source: The Trailing Frontier (`refs/trail/03_pthe_trailing_frontier_eople_of.md`)*
 
-Squat, powerfully built humanoids from the high-gravity world of Alphaaric (Gateway sector). Pale skin, no body hair, pale eyes. Advanced technology but no interest in interstellar expansion — most visitors meet Faar representatives at the orbital station Faarview. Appear fearful of something "out there" and desperately want to stay home.
+Squat, powerfully built humanoids from the high-gravity world of Alphaaric (Gateway sector). Pale skin, no body hair,
+pale eyes. Advanced technology but no interest in interstellar expansion — most visitors meet Faar representatives at
+the orbital station Faarview. Appear fearful of something "out there" and desperately want to stay home.
 
 - **Characteristics:** STR+1, END+1, DEX-1.
 - **Closed Book:** all skills involving reading Faar emotions or reactions, including psionics, suffer DM-2.
-- **Homesickness:** every 2D days away from home, END check (Average 8+) or fall into melancholy (DM-1 all non-survival tasks for 1D days).
+- **Homesickness:** every 2D days away from home, END check (Average 8+) or fall into melancholy (DM-1 all non-survival
+  tasks for 1D days).
 - Careers not listed in source.
 
 ### Freni
 
 *Source: Spinward Extents (`refs/spinext/42_portmanteau_shipping_services.md`)*
 
-Six-subspecies sophonts of the Spinward Extents, with SOC equal to EDU rather than social standing. Renowned throughout the region as exceptional cooks and freeloaders. All start with Steward 1, Profession (freeloading) 1, and Survival 0 as innate skills. Flexible, prehensile digit structure.
+Six-subspecies sophonts of the Spinward Extents, with SOC equal to EDU rather than social standing. Renowned throughout
+the region as exceptional cooks and freeloaders. All start with Steward 1, Profession (freeloading) 1, and Survival 0 as
+innate skills. Flexible, prehensile digit structure.
 
-- **Subspecies characteristics:** Type 1: STR-1, DEX+2, INT-1; Type 2: DEX-2, END+1, INT+1; Type 3: STR+1, DEX-2, END+1; Type 4: DEX-1, END+2, INT-1; Type 5: STR-1, END-1, INT+2; Type 6: STR+1, DEX-1, END-1, INT+1.
+- **Subspecies characteristics:** Type 1: STR-1, DEX+2, INT-1; Type 2: DEX-2, END+1, INT+1; Type 3: STR+1, DEX-2, END+1;
+  Type 4: DEX-1, END+2, INT-1; Type 5: STR-1, END-1, INT+2; Type 6: STR+1, DEX-1, END-1, INT+1.
 - **SOC = EDU** at start of character generation.
 - **Flexible Digits:** DM+1 on fine manipulation tasks.
 - All Core careers available; DM+1 Entertainer and Merchant; DM-1 Agent and Scholar.
@@ -1340,10 +1404,14 @@ Six-subspecies sophonts of the Spinward Extents, with SOC equal to EDU rather th
 
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
-Blind deep-sea octopoid sophonts from Ugarup (Ultima subsector, Solomani Rim). Six tentacles, no eyes — primary sense is sonar. Males are tiny parasites absorbed during mating; only females are sophonts. Strong sense of community identity over self; infuriating habit of refusing to address aliens directly, yet excellent negotiators. Allied with the Terran Confederation historically, now within the Third Imperium.
+Blind deep-sea octopoid sophonts from Ugarup (Ultima subsector, Solomani Rim). Six tentacles, no eyes — primary sense is
+sonar. Males are tiny parasites absorbed during mating; only females are sophonts. Strong sense of community identity
+over self; infuriating habit of refusing to address aliens directly, yet excellent negotiators. Allied with the Terran
+Confederation historically, now within the Third Imperium.
 
 - **Characteristics:** DEX+2.
-- **Aquatic:** breathe underwater naturally; on land, speed 2m, END check every minute (increasing difficulty) or suffer 1D damage; resets after 5 minutes fully immersed.
+- **Aquatic:** breathe underwater naturally; on land, speed 2m, END check every minute (increasing difficulty) or suffer
+  1D damage; resets after 5 minutes fully immersed.
 - **Bite:** 1D damage, Melee (natural).
 - **Deep Diver (1,000m):** safe to 1,000m depth.
 - **Sonar (120m):** navigate by sonar in water or complete darkness.
@@ -1354,28 +1422,39 @@ Blind deep-sea octopoid sophonts from Ugarup (Ultima subsector, Solomani Rim). S
 
 *Source: Solomani Front (`refs/sol/02_overview_of_the_solomani_front.md`)*
 
-Slender humanoids with multifaceted eyes, feathery ears, and shimmering blue-violet skin, native to Amiens (Alpha Crucis). Serial hermaphrodites; spend most time as female or neuter. Gentle, docile, and widely considered beautiful by most sentient species. Commonly employed as domestic workers and servants throughout the Confederation of Turin. Whether their apparent intellectual limitations are innate or socially conditioned is debated.
+Slender humanoids with multifaceted eyes, feathery ears, and shimmering blue-violet skin, native to Amiens
+(Alpha Crucis). Serial hermaphrodites; spend most time as female or neuter. Gentle, docile, and widely considered
+beautiful by most sentient species. Commonly employed as domestic workers and servants throughout the Confederation of
+Turin. Whether their apparent intellectual limitations are innate or socially conditioned is debated.
 
 - **Characteristics:** STR=1D+2, END=1D+2, SOC=1D+2; INT=2D3; EDU=2D3; DEX=2D+3.
 - **Gentle Soul:** DM-2 to all checks involving combat or confrontation (including leadership, bargaining).
-- **You Beautiful Thing:** DM+2 to obtain assistance when asking for help or appearing in need. Attackers roll 2D — on 12+, they hesitate and refuse to harm the Ladybug.
+- **You Beautiful Thing:** DM+2 to obtain assistance when asking for help or appearing in need.
+  Attackers roll 2D — on 12+, they hesitate and refuse to harm the Ladybug.
 - All careers in theory; DM-2 to qualify for and advance in military or confrontational careers.
 
 ### Murian
 
 *Source: Spinward Extents (`refs/spinext/43_freni_language.md`)*
 
-Short-limbed, heavily built sophonts of the Spinward Extents. SOC is generated on 2D3+4. STR and END have a racial maximum of 18. Move at 4m (Short Limbs). Cannot see green, blue, or violet wavelengths; see into infrared.
+Short-limbed, heavily built sophonts of the Spinward Extents. SOC is generated on 2D3+4. STR and END have a racial
+maximum of 18. Move at 4m (Short Limbs). Cannot see green, blue, or violet wavelengths; see into infrared.
 
 - **Characteristics:** STR+1, DEX-2, END+2; SOC=2D3+4.
-- **Traits:** Armour (+1, thick hide); Natural Weapon (claw, 1D+2); Short Limbs (movement 4m, DM-1 on all checks penalised by reach or speed); IR Vision (no green/blue/violet).
+- **Traits:** Armour (+1, thick hide); Natural Weapon (claw, 1D+2); Short Limbs (movement 4m, DM-1 on all checks
+  penalised by reach or speed); IR Vision (no green/blue/violet).
 - All Core careers available.
 
 ### Oo-ne-beto-pon-tee
 
 *Source: Third Imperium (`refs/3i/48_creating_oo_ne_beto_pon_tee_whistler_travellers.md`)*
 
-Four-sexed insectoid sophonts from Night (Third Imperium region), commonly called Whistlers by humans. Matchers, males, and females are extremely focused/specialised and poorly suited as Travellers; neuters are recommended for play. Groups of Whistlers aboard a ship gradually affect the crew with a calming, community-building influence after 4–6 weeks — effective on most Major Races except half of Hivers.
+Four-sexed insectoid sophonts from Night (Third Imperium region), commonly called Whistlers by humans. Matchers, males,
+and females are extremely focused/specialised and poorly suited as Travellers; neuters are recommended for play. Groups
+of Whistlers aboard a starship gradually causes the crew to segment themselves into breeding groups. Males and females
+devote themselves to the practice of reproduction, aided by the skills of ‘matchers’ who – in the human adaptation of
+the practice – form the third part of a polyamorous threesome, which contain two males and a female or two females and
+a male. This is effective on most Major Races except half of Hivers.
 
 - **Characteristics:** STR=D3, END=D3, SOC=D3; DEX=1D+4; INT=2D-1; EDU=2D.
 - **Sticky Feet:** can climb virtually any surface.

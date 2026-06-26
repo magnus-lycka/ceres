@@ -18,6 +18,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossChoiceEntry,
     CharCheck,
     GainConnectionAndAdvancementDmEntry,
@@ -431,3 +432,11 @@ class Navy(CareerData):
 
 
 NAVY = Navy()
+
+
+class NavyTerm(CareerTerm):
+    kind: Literal['navy_term'] = 'navy_term'
+    career: Navy
+
+
+Navy.term_class = NavyTerm

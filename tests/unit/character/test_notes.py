@@ -3,11 +3,12 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career import SCOUT
-from ceres.character.domain.career.career_data import CareerTerm
+from ceres.character.domain.career.career_data import CareerTerm, MusterOut
 from ceres.character.domain.character_state import CharacterSummary
 from ceres.character.domain.sophont import VILANI
-from ceres.character.notes import NpcNotesCache, build_prompt, generate_notes
+from ceres.character.notes import NpcNotesCache, _career_context_lines, build_prompt, clear_notes_cache, generate_notes
 from tests.unit.character.helpers import MOCK_WORLD
 
 
@@ -24,7 +25,7 @@ def _summary(**kwargs) -> CharacterSummary:
         'current_career': SCOUT,
         'current_assignment': explorer,
         'rank': 1,
-        'career_terms': [CareerTerm(career=SCOUT, assignment=explorer) for _ in range(term_count)],
+        'terms': [CareerTerm(career=SCOUT, assignment=explorer) for _ in range(term_count)],
     }
     return CharacterSummary.model_validate({**defaults, **kwargs})
 
@@ -174,3 +175,66 @@ class TestGenerateNotes:
             or call_kwargs.args[0] == 'llama3.1:8b'
             or 'llama3.1:8b' in str(call_kwargs)
         )
+
+    def test_returns_none_when_response_is_empty(self, tmp_path: Path):
+        mock_response = MagicMock()
+        mock_response.response = ''
+        with patch('ollama.Client') as mock_client:
+            mock_client.return_value.generate.return_value = mock_response
+            result = generate_notes(_summary(), cache_path=tmp_path / 'test.db')
+        assert result is None
+
+
+def test_career_context_lines_returns_empty_string_when_no_careers():
+    s = _summary(terms=[], current_career=None, current_assignment=None)
+    assert _career_context_lines(s) == ''
+
+
+def test_career_context_lines_includes_last_career_when_different_from_terms():
+    courier = SCOUT.assignment('Courier')
+    explorer = SCOUT.assignment('Explorer')
+    term = CareerTerm(career=SCOUT, assignment=explorer, muster_out=None)
+    s = _summary(terms=[term], last_career=SCOUT, last_assignment=courier)
+    result = _career_context_lines(s)
+    assert 'Scout' in result
+
+
+def test_build_prompt_notes_weak_characteristic():
+    s = _summary(characteristics={'STR': 2, 'DEX': 8, 'END': 6, 'INT': 9, 'EDU': 7, 'SOC': 5})
+    assert 'Notably weak STR' in build_prompt(s)
+
+
+def test_build_prompt_notes_exceptional_characteristic():
+    s = _summary(characteristics={'STR': 7, 'DEX': 8, 'END': 6, 'INT': 14, 'EDU': 7, 'SOC': 5})
+    assert 'Exceptional INT' in build_prompt(s)
+
+
+def test_build_prompt_notes_rank_matched_every_term():
+    s = _summary(rank=2, term_count=2)
+    assert 'advanced every term' in build_prompt(s)
+
+
+def test_build_prompt_notes_above_average_career_pace():
+    s = _summary(rank=3, term_count=4)
+    assert 'above average' in build_prompt(s)
+
+
+def test_build_prompt_includes_non_exceptional_benefit_without_annotation():
+    explorer = SCOUT.assignment('Explorer')
+    term = CareerTerm(
+        career=SCOUT,
+        assignment=explorer,
+        muster_out=MusterOut(benefits=[ItemBenefit(key='pistol', label='Pistol')]),
+    )
+    s = _summary(terms=[term])
+    prompt = build_prompt(s)
+    assert 'Pistol' in prompt
+    assert '[exceptional' not in prompt
+
+
+def test_clear_notes_cache_removes_db_file(tmp_path: Path):
+    cache_path = tmp_path / 'test.db'
+    NpcNotesCache(cache_path).close()
+    assert cache_path.exists()
+    clear_notes_cache(cache_path)
+    assert not cache_path.exists()

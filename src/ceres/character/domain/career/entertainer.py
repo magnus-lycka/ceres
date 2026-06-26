@@ -14,6 +14,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionAndAdvancementDmEntry,
@@ -400,3 +401,11 @@ class Entertainer(CareerData):
 
 
 ENTERTAINER = Entertainer()
+
+
+class EntertainerTerm(CareerTerm):
+    kind: Literal['entertainer_term'] = 'entertainer_term'
+    career: Entertainer
+
+
+Entertainer.term_class = EntertainerTerm

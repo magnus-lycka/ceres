@@ -9,11 +9,13 @@ from ceres.adapters.travellermap import (
     SectorWorldEntry,
     TravellerMapWorld,
     _extract,
+    _parse_allegiance_names,
     _parse_column_positions,
     _parse_sec_worlds,
     clear_travellermap_cache,
     clear_travellermap_memory_cache,
     fetch_sector,
+    fetch_sector_coordinates,
     fetch_sector_worlds,
     fetch_sectors,
     fetch_world,
@@ -346,6 +348,24 @@ class TestFetchSector:
 
         assert sector.name == 'Trojan Reach'
 
+    def test_uses_abbreviation_when_sector_not_in_directory(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        response = _FakeResponse(text=_SAMPLE_SEC_TEXT.replace('# Sector: Trojan Reach\n', ''))
+        client = _FakeClient()
+        client.response = response
+        client.requests = []
+        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(
+            travellermap,
+            'fetch_sectors',
+            lambda milieu='M1105': [
+                SectorInfo(x=1, y=2, milieu='M1105', abbreviation='Spin', tags='OTU', names=['Spinward Marches'])
+            ],
+        )
+
+        sector = travellermap.fetch_sector('Troj')
+
+        assert sector.name == 'Troj'
+
     def test_loads_sector_coordinates_from_directory(self, monkeypatch: pytest.MonkeyPatch) -> None:
         response = _FakeResponse(
             text=json.dumps(
@@ -549,3 +569,104 @@ class TestFetchWorld:
             fetch_world('Troj', '9999')
 
         assert response.raise_for_status_called
+
+
+class TestSectorWorldEntryProperties:
+    _ENTRY = SectorWorldEntry(
+        hex='0103',
+        name='Taltern',
+        uwp='E530240-6',
+        remarks='De Lo Po',
+        ix='{ -3 }',
+        ex='(410-5)',
+        cx='[1111]',
+        nobility='-',
+        bases='-',
+        zone='-',
+        pbg='202',
+        world_count='7',
+        allegiance='NaHu',
+        stellar='M2 V M2 V',
+    )
+
+    def test_starport(self) -> None:
+        assert self._ENTRY.starport == 'E'
+
+    def test_size(self) -> None:
+        assert self._ENTRY.size == 5
+
+    def test_atmosphere(self) -> None:
+        assert self._ENTRY.atmosphere == 3
+
+    def test_hydrographics(self) -> None:
+        assert self._ENTRY.hydrographics == 0
+
+    def test_population(self) -> None:
+        assert self._ENTRY.population == 2
+
+    def test_government(self) -> None:
+        assert self._ENTRY.government == 4
+
+    def test_law_level(self) -> None:
+        assert self._ENTRY.law_level == 0
+
+    def test_tl(self) -> None:
+        assert self._ENTRY.tl == 6
+
+
+class TestReadCachedPayload:
+    def test_returns_none_for_expired_cache_entry(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
+        url = 'https://example.com/test'
+        travellermap._write_cached_payload(url, 'some_payload')
+        monkeypatch.setattr(travellermap, 'time', lambda: float('inf'))
+
+        result = travellermap._read_cached_payload(url)
+
+        assert result is None
+
+
+class TestParseAllegianceNames:
+    def test_valid_allegiance_line(self) -> None:
+        text = '# Alleg: NaHu: "Non-Aligned, Human-dominated"\n'
+        assert _parse_allegiance_names(text) == {'NaHu': 'Non-Aligned, Human-dominated'}
+
+    def test_skips_line_with_no_label(self) -> None:
+        text = '# Alleg: NaHu\n# Alleg: Good: "Valid"\n'
+        assert _parse_allegiance_names(text) == {'Good': 'Valid'}
+
+    def test_skips_line_with_no_code(self) -> None:
+        text = '# Alleg: : No Code\n# Alleg: Good: "Valid"\n'
+        assert _parse_allegiance_names(text) == {'Good': 'Valid'}
+
+    def test_skips_non_allegiance_lines(self) -> None:
+        text = '# Sector: Test\n# Alleg: AA: "Alpha"\n'
+        assert _parse_allegiance_names(text) == {'AA': 'Alpha'}
+
+
+class TestFetchSectorCoordinates:
+    def setup_method(self) -> None:
+        clear_travellermap_cache()
+
+    def test_returns_zero_zero_when_no_sectors_in_directory(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(travellermap, 'fetch_sectors', lambda milieu='M1105': [])
+
+        assert fetch_sector_coordinates('Troj') == (0, 0)
+
+    def test_returns_zero_zero_when_sector_not_in_directory(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            travellermap,
+            'fetch_sectors',
+            lambda milieu='M1105': [
+                SectorInfo(x=1, y=2, milieu='M1105', abbreviation='Spin', tags='OTU', names=['Spinward Marches'])
+            ],
+        )
+
+        assert fetch_sector_coordinates('Troj') == (0, 0)
+
+
+class TestClearTravellerMapCache:
+    def test_does_nothing_when_cache_dir_does_not_exist(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        non_existent = tmp_path / 'nonexistent'
+        monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: non_existent)
+        clear_travellermap_cache()  # should not raise

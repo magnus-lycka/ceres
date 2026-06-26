@@ -1,5 +1,14 @@
 # Plan: Approval Testing for Complex State Deltas
 
+## Decision
+
+**Syrupy (Option B) is the chosen approach.** The inline-snapshot vs. Syrupy
+experiment is complete. Use Syrupy with `JSONSnapshotExtension` for all complex
+state-delta approval tests. Do not implement Option C (custom fixtures).
+
+The snapshot update workflow is `pytest --snapshot-update`. Snapshot files live
+under `__snapshots__/` beside the test file, committed to the repository.
+
 ## Concept
 
 Approval testing is a methodology where the assertions in a test evolve by
@@ -172,7 +181,7 @@ one complex state-delta test.
 Approved references live in `tests/character/approvals/`. Each approval test
 has a corresponding JSON fixture file named after the test:
 
-```
+```text
 tests/character/approvals/
     test_scholar_event3_accept_full_delta.json
     test_scholar_event3_decline_full_delta.json
@@ -237,6 +246,7 @@ def test_scholar_event3_accept_full_delta(approval):
 ```
 
 The `approval` fixture:
+
 - Derives the fixture key from the test node id (module + function name)
 - Loads the corresponding fixture file from `tests/character/approvals/`
 - Calls `projection_diff(before, after)` to get the current diff
@@ -265,13 +275,13 @@ it.
 
 The interactive review tool is a standalone script invoked as:
 
-```
+```shell
 uv run python -m ceres.tools.approval_review
 ```
 
 or via a pytest plugin option:
 
-```
+```shell
 uv run pytest --approval-review tests/character/
 ```
 

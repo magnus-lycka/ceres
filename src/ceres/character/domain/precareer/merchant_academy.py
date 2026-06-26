@@ -1,10 +1,10 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.merchant import Merchant
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PreCareerTerm
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill
@@ -105,3 +105,15 @@ class MerchantAcademyBusinessPreCareer(MerchantAcademyPreCareer):
 class MerchantAcademyShipboardPreCareer(MerchantAcademyPreCareer):
     name: ClassVar[str] = 'Merchant Academy (Shipboard)'
     curriculum_table: ClassVar[str] = 'assignment1'
+
+
+class MerchantAcademyBusinessTerm(PreCareerTerm):
+    kind: Literal['merchant_academy_business'] = 'merchant_academy_business'
+
+
+class MerchantAcademyShipboardTerm(PreCareerTerm):
+    kind: Literal['merchant_academy_shipboard'] = 'merchant_academy_shipboard'
+
+
+MerchantAcademyBusinessPreCareer.term_class = MerchantAcademyBusinessTerm
+MerchantAcademyShipboardPreCareer.term_class = MerchantAcademyShipboardTerm

@@ -3,6 +3,27 @@
 Update todo items in this document as progress is made.
 When todo items are done, please move them to docs/archive/done_todos.md
 
+## Conditional NumberEntry visibility in input_specs
+
+In [src/ceres/character/input_specs.py](../src/ceres/character/input_specs.py),
+`NumberEntry` (and potentially other input types) has no way to express
+conditions on its relevance. A common pattern is a `NumberEntry` that only
+applies when a particular option was selected in a preceding `SelectEntry`.
+
+Currently the form always treats `NumberEntry` as compulsory and the frontend
+has no signal about whether a field is actually required given the current
+selection state. This forces the user to fill in numbers that are irrelevant to
+their actual choice.
+
+Needed:
+
+- A `condition` or `visible_when` mechanism on at least `NumberEntry` (and
+  probably other spec types), expressing something like "this field is only
+  relevant when field X has value Y"
+- The frontend should use this to hide/show (or mark optional) entries that do
+  not apply given current selections, rather than always rendering them as
+  required
+
 ## Projection diff testing helper
 
 Improve and document the `projection_diff` / DeepDiff-based test helper used in

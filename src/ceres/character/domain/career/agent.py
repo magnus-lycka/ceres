@@ -19,6 +19,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharCheck,
     GainSkillAndConnectionEntry,
     InjuryEntry,
@@ -587,3 +588,11 @@ class Agent(CareerData):
 
 
 AGENT = Agent()
+
+
+class AgentTerm(CareerTerm):
+    kind: Literal['agent_term'] = 'agent_term'
+    career: Agent
+
+
+Agent.term_class = AgentTerm

@@ -88,8 +88,9 @@ Ceres has six categories of test, each with a clear location and purpose.
 
 ### Unit Tests — `tests/unit/`
 
-Focused tests for individual modules and functions. A unit test breaks if the
-unit it targets is broken, and for no other reason.
+Focused tests for individual modules and functions. Each test file mirrors a
+single source file: `src/ceres/foo/bar.py` → `tests/unit/foo/test_bar.py`. A
+unit test breaks if the unit it targets is broken, and for no other reason.
 
 | Directory | What it tests |
 | --- | --- |
@@ -112,7 +113,7 @@ Abstraction levels must not be crossed:
   class names, pending type names, event IDs, or fulfilment order — those are
   implementation details of the event/pending layer.
 
-- **Event and pending mechanics tests** (`test_events_pending_inputs.py`)
+- **Event and pending mechanics tests** (`tests/approval/character/uc/test_events_pending_inputs.py`)
   verify the event sourcing machinery: `apply()`, `resolve()`,
   `event_from_form()`. These tests work directly with event and pending objects
   and may reference their internals.
@@ -131,33 +132,41 @@ When you find yourself writing a career rule test that imports `SurviveEvent`,
 instead. When you find yourself writing an event mechanics test that calls
 `CharacterDriver`, stop: test `apply()` or `resolve()` directly.
 
-### Usecase Approval Tests — `tests/approval/character/usecases/`
+### Use-case Approval Tests — `tests/approval/<package>/uc/`
 
 Approval snapshot tests for complex multi-module scenarios where several
-subsystems interact. They verify a complete character state after a sequence of
-decisions — both that the expected consequences occurred and that nothing
-unexpected changed.
+subsystems interact. They verify a complete state after a sequence of decisions
+— both that the expected consequences occurred and that nothing unexpected
+changed.
 
-Use a usecase test when:
-- Three or more distinct parts of the projection change in a single event.
+Use a use-case test when:
+
+- Three or more distinct parts of the output change in a single event.
 - "Nothing else changed" is part of the invariant.
 - A plain assertion list would be long, brittle, or hard to review.
+- The test spans multiple modules and does not have a clear 1:1 home in `tests/unit/`.
 
-Usecase tests drive the scenario with `CharacterDriver` and snapshot
+Character use-case tests drive the scenario with `CharacterDriver` and snapshot
 `d.projection.summary.model_dump(mode='json')` at the natural resolution point.
 This gives a stable, event-ID-free snapshot of the full observable character
 state.
 
-### End-to-end Approval Tests — `tests/approval/`
+| Directory | What it covers |
+| --- | --- |
+| `tests/approval/character/uc/` | Career rules, precareers, aging, character summary, web, event/pending mechanics |
+| `tests/approval/ship/uc/` | Ship customisation, drives, hulls, systems, weapons, serialization, HTML/PDF rendering |
+| `tests/approval/robot/uc/` | Robot configuration, skill packages, serialization, PDF rendering |
+
+### End-to-end Approval Tests — `tests/approval/<package>/e2e/`
 
 Snapshot tests for complete assembled designs. They exercise the full build
 pipeline from domain objects to a rendered spec.
 
 | Directory | What it snapshots |
 | --- | --- |
-| `tests/approval/ships/` | `ship.build_spec().model_dump(mode='json')` |
-| `tests/approval/robots/` | `robot.build_spec().model_dump(mode='json')` |
-| `tests/approval/character/npcs/` | `spec_from_summary(summary).model_dump(mode='json')` |
+| `tests/approval/ship/e2e/` | `ship.build_spec().model_dump(mode='json')` |
+| `tests/approval/robot/e2e/` | `robot.build_spec().model_dump(mode='json')` |
+| `tests/approval/character/e2e/` | `spec_from_summary(summary).model_dump(mode='json')` |
 
 Each test file has a `build_<name>()` function. `AnnotatedSnapshot` wraps the
 data and allows notes explaining known discrepancies from source material.
@@ -193,7 +202,7 @@ Tests for developer tooling and code-generation scripts.
 
 | File | What it tests |
 | --- | --- |
-| `test_discriminator_literal_audit.py` | The discriminator-audit tool itself |
+| `test_discriminator_literal_audit.py` | The discriminator-audit tool |
 | `test_gen_robot_skills.py` | The robot-skills code generator |
 
 ---
@@ -219,7 +228,7 @@ committed to the repository.
 uv run pytest tests/approval/ --with-snapshots --snapshot-update
 
 # Update one file's snapshots
-uv run pytest tests/approval/ships/test_beowulf.py --with-snapshots --snapshot-update
+uv run pytest tests/approval/ship/e2e/test_beowulf.py --with-snapshots --snapshot-update
 ```
 
 Always review the diff before committing updated snapshots. A snapshot update
@@ -230,10 +239,10 @@ is a test assertion change and must be justified.
 | Scenario | Where |
 | --- | --- |
 | Single-module behaviour | `tests/unit/<matching-path>/test_<module>.py` |
-| Complex multi-module character scenario | `tests/approval/character/usecases/test_<topic>.py` |
-| New ship design | `tests/approval/ships/test_<name>.py` + register in `tests/gallery/ships/test_gallery.py` |
-| New robot design | `tests/approval/robots/test_<name>.py` + register in `tests/gallery/robots/test_gallery.py` |
-| New NPC | `tests/approval/character/npcs/test_<name>.py` + register in `tests/gallery/npcs/test_gallery.py` |
+| Complex multi-module scenario | `tests/approval/<package>/uc/test_<topic>.py` |
+| New ship design | `tests/approval/ship/e2e/test_<name>.py` + register in `tests/gallery/ships/test_gallery.py` |
+| New robot design | `tests/approval/robot/e2e/test_<name>.py` + register in `tests/gallery/robots/test_gallery.py` |
+| New NPC | `tests/approval/character/e2e/test_<name>.py` + register in `tests/gallery/npcs/test_gallery.py` |
 
 Gallery coverage tests (`test_gallery_coverage.py`) enforce that every approval
 test file is registered in the gallery.

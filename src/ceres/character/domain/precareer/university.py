@@ -1,11 +1,12 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
+
+from pydantic import Field, SerializeAsAny
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
-from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
 from ceres.character.domain.skills import (
     AnySkill,
     ArtSkill,
@@ -47,14 +48,28 @@ class UniversityPreCareer(PreCareerData):
         'Commission roll before first term of a military career after university',
     ]
 
-    def apply_entry(
-        self,
-        projection: CharacterProjection,
-        event: Event,
-        pending_idx: int,
-    ) -> int:
+
+def _precareer_skill_options(precareer: PreCareerData) -> list[AnySkill]:
+    seen: set[str] = set()
+    result: list[AnySkill] = []
+    for entry in precareer.skill_choices:
+        for skill in entry.skill_options:
+            key = type(skill).name()
+            if key not in seen:
+                seen.add(key)
+                result.append(skill)
+    return sorted(result, key=lambda s: type(s).name())
+
+
+class UniversityTerm(PreCareerTerm):
+    kind: Literal['university'] = 'university'
+    pending_skills: list[SerializeAsAny[AnySkill]] = Field(default_factory=list)
+
+    def apply_entry(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
+
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
-        skill_opts = _precareer_skill_options(self)
+        skill_opts = _precareer_skill_options(self.precareer)
         projection.pending_inputs.append(
             PendingPreCareerSkillChoice(
                 pending_id=(event.id, pending_idx),
@@ -75,14 +90,10 @@ class UniversityPreCareer(PreCareerData):
         pending_idx += 1
         return pending_idx
 
-    def apply_graduation(
-        self,
-        projection: CharacterProjection,
-        event: Event,
-        honours: bool,
-    ) -> int:
-        for skill in projection.summary.precareer_skills:
+    def apply_graduation(self, projection: CharacterProjection, event: Event, honours: bool) -> int:
+        for skill in self.pending_skills:
             projection.increment_skill(skill)
+        self.pending_skills.clear()
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         dm_amount = 2 if honours else 1
         projection.pending_qualification_dm += dm_amount
@@ -94,13 +105,4 @@ class UniversityPreCareer(PreCareerData):
         return 0
 
 
-def _precareer_skill_options(precareer: PreCareerData) -> list[AnySkill]:
-    seen: set[str] = set()
-    result: list[AnySkill] = []
-    for entry in precareer.skill_choices:
-        for skill in entry.skill_options:
-            key = type(skill).name()
-            if key not in seen:
-                seen.add(key)
-                result.append(skill)
-    return sorted(result, key=lambda s: type(s).name())
+UniversityPreCareer.term_class = UniversityTerm

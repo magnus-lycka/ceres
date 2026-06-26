@@ -17,6 +17,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionAndAdvancementDmEntry,
@@ -430,3 +431,11 @@ class Noble(CareerData):
 
 
 NOBLE = Noble()
+
+
+class NobleTerm(CareerTerm):
+    kind: Literal['noble_term'] = 'noble_term'
+    career: Noble
+
+
+Noble.term_class = NobleTerm

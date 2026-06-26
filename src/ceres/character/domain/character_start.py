@@ -17,6 +17,7 @@ from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.shared import ehex_to_int
 
 BACKGROUND_SKILLS: frozenset[type] = frozenset(_skill_classes(BackgroundSkill))
 
@@ -78,7 +79,7 @@ class UcpHandler(EventHandlerBase):
         ucp_stats = sophont.ucp_stats if isinstance(sophont, Sophont) else UCP_STATS
         if len(self.ucp) != len(ucp_stats):
             raise ReplayError(f'Invalid UCP: {self.ucp!r} — expected {len(ucp_stats)} hex digits')
-        return {stat: int(digit, 16) for stat, digit in zip(ucp_stats, self.ucp, strict=True)}
+        return {stat: ehex_to_int(digit) for stat, digit in zip(ucp_stats, self.ucp, strict=True)}
 
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None

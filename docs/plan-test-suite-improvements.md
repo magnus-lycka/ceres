@@ -29,7 +29,7 @@ Applying this to the character domain:
 | What is being tested | Correct home |
 | --- | --- |
 | `ConnectionsRollHandler` inserts name pendings before existing pendings | `test_connection_events.py` |
-| Projection state operation, e.g. `decrease_characteristic()` | `test_character_projection.py` or equivalent focused state test |
+| Projection state operation, e.g. `decrease_characteristic()` | `test_character_projection.py` or equivalent |
 | Shared typed entry, e.g. `AdvancementDmEntry` | `test_career_data.py` while entries live in `career_data.py` |
 | Scout mishap 3 observable outcome | `test_scout.py` via `CharacterDriver` |
 | Army mishap 3 observable outcome | `test_army.py` via `CharacterDriver` |
@@ -207,29 +207,14 @@ new behavior is needed, write projection-verb or typed-entry tests first.
 
 ### 4. Establish Snapshot/Approval Experiment
 
-Status: **deferred, non-blocking**.
+Status: **complete — Syrupy chosen**.
 
-Try one complex state-delta test using the options in
-[plan-approval-testing.md](plan-approval-testing.md):
+**Decision:** Use Syrupy with `JSONSnapshotExtension` for all complex
+state-delta approval tests. See [plan-approval-testing.md](plan-approval-testing.md)
+for the full approach. The update workflow is `pytest --snapshot-update`.
 
-- `inline-snapshot`
-- Syrupy
-- custom approval fixtures only if the library options fail
-
-Later, use one existing `projection_diff` case such as Scholar event 3 accept.
-The goal is to decide the style before adding many complex multi-effect
-characterization tests, not before starting the entry-outcome refactor.
-
-This is useful, especially for complex events and mishaps, but it should not
-block the next entry-outcome steps. Defer it until after the initial typed-entry
-shape is in place unless a specific complex row genuinely needs approval-style
-coverage to migrate safely:
-
-- first compare `inline-snapshot` and Syrupy using the same
-  `projection_diff`/normalisation helper
 - prefer ordinary assertions for single-effect entries
-- use snapshot/approval style only where "nothing else changed" is part of the
-  invariant
+- use Syrupy snapshots only where "nothing else changed" is part of the invariant
 
 ## During `plan-career-entry-outcomes.md`
 

@@ -1,6 +1,6 @@
-from typing import Any, ClassVar, cast
+from typing import Annotated, Any, ClassVar, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, BeforeValidator, ConfigDict, PlainSerializer
 
 from ceres.character.domain.career.career_data import (
     CareerTableEntry,
@@ -17,7 +17,7 @@ from ceres.character.domain.character_state import CharacterProjection, Characte
 from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.skills import AnySkill, Carouse, Level, level_fields
-from ceres.character.domain.term_data import TermData
+from ceres.character.domain.term_data import Term, TermData
 from ceres.character.mechanism.event_base import Event
 
 
@@ -122,6 +122,11 @@ class PreCareerData(TermData):
     honours_target: ClassVar[int | None] = None
     graduation_benefits: ClassVar[list[str]] = []
 
+    term_class: ClassVar[type[PreCareerTerm]]
+
+    def make_term(self) -> PreCareerTerm:
+        return type(self).term_class(precareer=self)
+
     def is_available(self, summary: CharacterSummary) -> bool:
         """Return True if this precareer is available for the given character."""
         return True
@@ -207,3 +212,34 @@ class PreCareerData(TermData):
         event: Event,
     ) -> None:
         """Default: no effects on failed graduation."""
+
+
+def _deserialise_precareer(v: object) -> object:
+    if isinstance(v, PreCareerData):
+        return v
+    from ceres.character.domain.precareer.loader import precareer_from_user_input_name
+
+    pc = precareer_from_user_input_name(str(v))
+    if pc is None:
+        raise ValueError(f'Unknown pre-career: {v!r}')
+    return pc
+
+
+_PreCareerField = Annotated[Any, BeforeValidator(_deserialise_precareer), PlainSerializer(lambda pc: pc.name)]
+
+
+class PreCareerTerm(Term):
+    kind: str = ''  # discriminator; concrete subclasses set to a Literal
+    precareer: _PreCareerField
+    completed: bool = False
+    graduated: bool = False
+    honours: bool = False
+
+    def apply_entry(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
+        return self.precareer.apply_entry(projection, event, pending_idx)
+
+    def apply_graduation(self, projection: CharacterProjection, event: Event, honours: bool) -> int:
+        return self.precareer.apply_graduation(projection, event, honours)
+
+    def apply_failed_graduation(self, projection: CharacterProjection, event: Event) -> None:
+        self.precareer.apply_failed_graduation(projection, event)

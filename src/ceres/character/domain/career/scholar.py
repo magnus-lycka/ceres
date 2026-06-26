@@ -17,6 +17,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharCheck,
     GainConnectionEntry,
     InjuryAndGainConnectionEntry,
@@ -573,3 +574,11 @@ class Scholar(CareerData):
 
 
 SCHOLAR = Scholar()
+
+
+class ScholarTerm(CareerTerm):
+    kind: Literal['scholar_term'] = 'scholar_term'
+    career: Scholar
+
+
+Scholar.term_class = ScholarTerm

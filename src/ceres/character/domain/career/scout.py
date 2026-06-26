@@ -15,6 +15,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossChoiceEntry,
     CharCheck,
     GainSkillAndConnectionEntry,
@@ -98,7 +99,7 @@ class PendingScoutEvent3SkillRoll(CareerSkillRollPendingBase):
             )
         else:
             projection.summary.problems.append('Ship destroyed; may not re-enlist in Scouts at the end of this term.')
-            projection.forced_leave = True
+            projection.summary.career_terms[-1].forced_leave = True
 
 
 class ScoutEvent3Handler(CareerHandlerBase):
@@ -500,3 +501,11 @@ class Scout(CareerData):
 
 
 SCOUT = Scout()
+
+
+class ScoutTerm(CareerTerm):
+    kind: Literal['scout_term'] = 'scout_term'
+    career: Scout
+
+
+Scout.term_class = ScoutTerm

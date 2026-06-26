@@ -28,6 +28,13 @@ def _conditional_characteristic_dms(summary: CharacterSummary, dms: dict[str, in
     return total
 
 
+def _current_precareer(projection: CharacterProjection) -> PreCareerData:
+    term = projection.summary.current_precareer_term
+    if term is None:
+        raise ReplayError('No active pre-career term')
+    return term.precareer
+
+
 def _expand_skill_to_spec_instances(skill: AnySkill) -> list[AnySkill]:
     """Return one instance per spec at Level(1) for specialised skills, or [skill] for unspecialised."""
     from ceres.character.domain.skills import Level
@@ -59,8 +66,6 @@ class PreCareerEntryHandler(EventHandlerBase):
         terms_started = projection.summary.terms_started_in_pre_and_careers
         if terms_started >= 3:
             raise ReplayError('Pre-career education is only available in terms 1–3')
-        if projection.summary.precareer_completed is not None:
-            raise ReplayError('A character may only attend one pre-career')
         if not precareer.prepare_entry(projection, self.roll, terms_started):
             queue_career_choice(projection, event.id, 'Pre-career entry failed — choose a career')
             return
@@ -78,10 +83,11 @@ class PreCareerEntryHandler(EventHandlerBase):
             if self.roll == 2 or self.roll + dm < precareer.entry.target:
                 queue_career_choice(projection, event.id, 'Pre-career entry failed — choose a career')
                 return
-        projection.summary.precareer = precareer
+        term = precareer.make_term()
+        projection.summary.terms.append(term)
         projection.summary.age += 4
         pending_idx = 0
-        pending_idx = precareer.apply_entry(projection, event, pending_idx)
+        pending_idx = term.apply_entry(projection, event, pending_idx)
         projection.pending_inputs.append(
             PendingPreCareerEvent(
                 pending_id=(event.id, pending_idx),
@@ -120,12 +126,16 @@ class PreCareerSkillChoiceHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
+        from ceres.character.domain.precareer.university import UniversityTerm
+
         level = fulfilled_pending.level if isinstance(fulfilled_pending, PendingPreCareerSkillChoice) else 0
         if level == 0:
             projection.grant_skill(self.skill)
         else:
             projection.increment_skill(self.skill)
-        projection.summary.precareer_skills.append(self.skill)
+        term = projection.summary.current_precareer_term
+        if isinstance(term, UniversityTerm):
+            term.pending_skills.append(self.skill)
 
 
 class PreCareerEventHandler(EventHandlerBase):
@@ -138,9 +148,10 @@ class PreCareerEventHandler(EventHandlerBase):
         from ceres.character.domain.career.career_events import queue_career_choice
         from ceres.character.domain.characteristics import Chars
 
-        precareer = projection.summary.precareer
-        if precareer is None:
-            raise ReplayError('No active pre-career for pre-career event')
+        term = projection.summary.current_precareer_term
+        if term is None:
+            raise ReplayError('No active pre-career')
+        precareer = term.precareer
         term_event = precareer.events.get(self.roll)
         if term_event is None:
             raise ReplayError(f'No pre-career event entry for roll {self.roll}')
@@ -156,8 +167,7 @@ class PreCareerEventHandler(EventHandlerBase):
             remaining_grad = [p for p in projection.pending_inputs if isinstance(p, PendingPreCareerGraduation)]
             for p in remaining_grad:
                 projection.pending_inputs.remove(p)
-            projection.summary.precareer_completed = precareer
-            projection.summary.precareer = None
+            term.completed = True
             queue_career_choice(projection, event.id, 'Pre-career ended (no graduation) — choose a career')
             return
         pending_idx = term_event.apply(projection, event, pending_idx)
@@ -183,12 +193,12 @@ class PreCareerGraduationHandler(EventHandlerBase):
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
         from ceres.character.domain.career.career_events import queue_career_choice_indexed
-
-        precareer = projection.summary.precareer
-        if precareer is None:
-            raise ReplayError('No active pre-career for graduation')
-
         from ceres.character.domain.characteristics import characteristic_dm
+
+        term = projection.summary.current_precareer_term
+        if term is None:
+            raise ReplayError('No active pre-career for graduation')
+        precareer = term.precareer
 
         graduated = True
         honours = False
@@ -206,13 +216,13 @@ class PreCareerGraduationHandler(EventHandlerBase):
             projection.summary.narrative.append(
                 f'Graduated from {precareer.name}' + (' with honours!' if honours else '.')
             )
-            pending_graduation_idx = precareer.apply_graduation(projection, event, honours)
+            pending_graduation_idx = term.apply_graduation(projection, event, honours)
         else:
             projection.summary.narrative.append(f'Did not graduate from {precareer.name}.')
-            precareer.apply_failed_graduation(projection, event)
-        projection.summary.precareer_completed = precareer
-        projection.summary.precareer = None
-        projection.summary.precareer_skills = []
+            term.apply_failed_graduation(projection, event)
+        term.graduated = graduated
+        term.honours = honours
+        term.completed = True
         queue_career_choice_indexed(
             projection, event.id, pending_graduation_idx, 'Pre-career complete — choose a career'
         )

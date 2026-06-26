@@ -28,7 +28,7 @@ Characteristic DM from score:
 
 **Available skills (all at level 0):** Admin, Animals, Art, Athletics, Carouse, Drive, Electronics, Flyer, Language, Mechanic, Medic, Profession, Science, Seafarer, Streetwise, Survival, Vacc Suit.
 
-Art, Profession and Science are unspecified in the core rulebook — the player picks which speciality. The Companion expansions used in Ceres (three Art types, seven Profession types, five Science types) are directly compatible.
+Art, Profession and Science are unspecified in the core rulebook — the player picks which speciality. The Companion expansions used in Ceres (three Art types, seven Profession types, five Science types) are directly compatible. The same broad-skill model applies to career skill table entries that list "Science", "Art", or "Profession" — see **RIC-001**.
 
 Traveller is now 18 years old and ready to begin careers.
 
@@ -48,6 +48,8 @@ Each career term represents four years.
 
 **Skill level limits:** No skill may exceed level 4 during creation. Total skill levels may never exceed 3 × (INT + EDU).
 
+**Homeworld triggers:** Some careers check the character's homeworld at the start of each term (including re-enlistment terms) and may require or offer a homeworld change before the term can proceed. See **RIC-006** for the per-career rules.
+
 ---
 
 ## 4. Ranks and Bonuses
@@ -55,6 +57,7 @@ Each career term represents four years.
 - Travellers start at rank 0 in each new career.
 - A successful advancement roll moves the Traveller to the next rank and grants one extra roll on any available skill table.
 - Rank bonuses (skills or characteristic increases) are acquired immediately upon reaching the rank.
+- Rank titles carry forward: a blank entry at a given rank means no new title is awarded, not that the previous title is lost. See **RIC-007**.
 
 ---
 
@@ -69,6 +72,8 @@ Travellers gain one Benefit roll per full term served. Additional rolls are gran
 | 5–6 | +3, and DM+1 to all Benefit rolls from this career |
 
 Each career has two Benefit columns: Cash and Benefits. A Traveller may roll on the Cash column **at most three times** across all careers. A Traveller with the Gambler skill gains DM+1 to all Cash rolls.
+
+Event outcomes may grant DM+1 to any one Benefit roll as a post-roll choice; this is distinct from the rank-5/6 DM+1 that applies unconditionally to all rolls from that career. See **RIC-004** for how these interact.
 
 ---
 
@@ -140,7 +145,7 @@ A special career that cannot be entered voluntarily — Travellers are forced in
 
 ## 10. Pre-Career Education (Optional, Terms 1–3)
 
-Pre-career education occupies a term in place of a career. Only one attempt per term; available only in terms 1–3.
+Pre-career education occupies a term in place of a career. Only one pre-career per term; available only in terms 1–3. Multiple pre-careers are permitted — one per term — provided each is taken within that window.
 
 ### University
 
@@ -173,20 +178,107 @@ Pre-career education occupies a term in place of a career. Only one attempt per 
 
 Failing graduation (but not rolling 2 or less) still grants automatic entry into the tied military career, but no commission roll in the first term.
 
+### Colonial Upbringing *(Companion)*
+
+**Entry:** Automatic for characters from a homeworld of TL 8 or lower.
+
+**Skills:** Survival 1; choose two from Animals, Athletics, Drive, GunCombat, Mechanic, Medic, Navigation, Recon, Profession (any), Seafarer (all at level 0).
+
+**Graduation:** INT 8+ (DM+1 if END 8+; 12+ = with honours)
+
+**Graduation Benefits:**
+- Raise one level-0 skill already gained to level 1; gain any two other listed skills at level 1; gain Jack-of-all-Trades 1
+- Honours graduates also gain Leadership 1 and may raise one further level-0 skill to level 1
+- END+1
+
+**Ceres model (RIC-002):** Colonial Upbringing lasts two standard terms (8 years). The first term covers entry, the event, and graduation (END+1 applied here). The second term is mandatory — there is no career choice — and applies the EDU −1D3 roll from the graduation block. The character always enters their first career at age 26. The *Core Rulebook* "22+2D3" age range is treated as flavour text; 26 is the fixed midpoint equivalent.
+
+### Merchant Academy *(Companion)*
+
+Two tracks: **Business** (Broker curriculum) and **Shipboard** (Merchant Marine curriculum).
+
+**Entry:** INT 9+ (DM+1 if SOC 8+)
+
+**Skills at entry:** All skills from the chosen curriculum table at level 0; choose one Service Skill at level 1.
+
+**Graduation:** INT 7+ (DM+1 if EDU 8+, DM+1 if SOC 8+; 11+ = with honours)
+
+**Graduation Benefits:**
+- Raise one curriculum skill to level 1
+- EDU+1
+- May enter the appropriate Merchant or Citizen branch automatically at rank 1 (rank 2 with honours), if this is the first career after the academy (manual)
+- DM+1 (DM+2 with honours) on all advancement checks in Merchant or Citizen (manual)
+
+### Psionic Community *(Companion)*
+
+**Entry:** Requires demonstrated psionic ability. PSI 8+ (DM+1 if INT 8+). Automatic if PSI 8+.
+
+**Skills at entry:** Choose one from Profession (any), Science (any), Streetwise (all at level 0).
+
+**Graduation:** PSI 6+ (DM+1 if INT 8+; 12+ = with honours)
+
+**Graduation Benefits:**
+- PSI+1
+- Raise one possessed talent to level 1 (honours: all possessed talents to level 1, then advance one to level 2)
+- Science (psionicology) 1
+- Automatic enlistment in Psion career at any time (even after intervening careers)
+- Gain a Rival (Enemy with honours)
+
+### School of Hard Knocks *(Companion)*
+
+**Entry:** Automatic for characters with SOC 6 or lower.
+
+**Skills at entry:** Streetwise 1; choose one from Athletics, Deception, Drive, Gambler, Melee, Persuade, Stealth (all at level 0).
+
+**Graduation:** INT 7+ (DM+1 if END 9+; 11+ = with honours)
+
+**Graduation Benefits:**
+- Gain any three other listed skills at level 0; gain Gun Combat 0
+- Honours graduates also gain Carouse 1 and may raise one level-0 listed skill to level 1
+- SOC−1
+- DM−2 on all commission and promotion checks in the first career unless voluntarily leaving (manual)
+
+### Spacer Community *(Companion)*
+
+**Entry:** Automatic for characters from a size-0 homeworld; otherwise INT 4+ (DM+1 if DEX 8+).
+
+**Skills at entry:** Vacc Suit 1; choose one from Astrogation, Electronics, Engineer, Profession (any) (all at level 0).
+
+**Graduation:** INT 8+ (DM+1 if DEX 6+; 12+ = with honours)
+
+**Graduation Benefits:**
+- Gain any two other listed skills at level 0; gain any listed skill at level 1; gain Pilot 0
+- Honours graduates also gain Jack-of-all-Trades 1
+- DEX+1, SOC−2
+- DM+1 to enlist, commission, and promotion in Merchant (Free Trader) (manual)
+
 ---
 
 ## 11. Draft
 
 A Traveller may enter the draft at most once per lifetime (unless a specific event states otherwise).
 
+In Ceres, draft eligibility is career-owned: each career declares whether it appears in the draft and with what
+weight. The table is constructed at runtime from all eligible careers in alphabetical order — it is not hardcoded.
+This means draft tables can vary by sophont or culture (e.g. Darrian characters draft from a completely different
+table). See **RIC-003**.
+
+For the six standard *Core Rulebook* draftable careers, alphabetical ordering gives:
+
 | 1D | Career |
 |----|--------|
-| 1 | Navy (any) |
+| 1 | Agent (law enforcement) |
 | 2 | Army (any) |
 | 3 | Marines (any) |
 | 4 | Merchant (merchant marine) |
-| 5 | Scout (any) |
-| 6 | Agent (law enforcement) |
+| 5 | Navy (any) |
+| 6 | Scout (any) |
+
+Note: the *Core Rulebook* lists these in a different order (Navy first, Agent last). Ceres uses alphabetical
+order for consistency across sophonts.
+
+The Drifter career (and any career that declares `is_draft_alternative`) is offered as an alternative when a
+Traveller fails qualification and wants to avoid the draft. See **RIC-003**.
 
 ---
 
@@ -223,12 +315,3 @@ Chosen as a group after all Travellers have finished creation. Players take turn
 | Starship | Astrogation 1, Electronics 1, Engineer 1, Gunner 1, Mechanic 1, Medic 1, Pilot 1, Tactics (naval) 1 |
 | Criminal | Broker 1, Deception 1, Electronics 1, Medic 1, Persuade 1, Pilot 1, Stealth 1, Streetwise 1 |
 
----
-
-## Explorer Edition Notes (Scout + Scholar only)
-
-- Commission rules do not apply (military careers only)
-- Scout does **not** qualify for a pension
-- Scholar qualifies for a pension after 5+ terms
-- Ageing becomes relevant from term 4 onward — a Traveller with two Scout terms followed by two Scholar terms will begin ageing checks
-- Pre-career education is available as a pre-career option before term 1

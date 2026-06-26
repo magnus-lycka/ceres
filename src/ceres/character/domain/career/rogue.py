@@ -14,6 +14,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharCheck,
     GainConnectionAndBenefitDmEntry,
     GainConnectionEntry,
@@ -503,3 +504,11 @@ class Rogue(CareerData):
 
 
 ROGUE = Rogue()
+
+
+class RogueTerm(CareerTerm):
+    kind: Literal['rogue_term'] = 'rogue_term'
+    career: Rogue
+
+
+Rogue.term_class = RogueTerm

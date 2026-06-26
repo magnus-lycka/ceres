@@ -198,7 +198,7 @@ See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical decisions
 and [AI_README.md](AI_README.md) for contributor guidance (including AI
 assistants).
 
-# Fair Use
+## Fair Use
 
 The Traveller, 2300AD, Twilight: 2000 and Dark
 Conspiracy games in all forms are owned by Mongoose

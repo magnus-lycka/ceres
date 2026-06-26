@@ -267,12 +267,13 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
 
     last_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
     deferred_mo = last_term.muster_out if last_term is not None else None
+    forced_stay = last_term.forced_stay if last_term is not None else False
     if deferred_mo is not None and deferred_mo.pending_setup:
         muster_out_setup(projection, source_event_id, 0, clear_career=False)
     else:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
-            can_muster_out_ac = not projection.forced_stay
+            can_muster_out_ac = not forced_stay
             projection.pending_inputs.append(
                 PendingAssignmentChangeChoice(
                     pending_id=(source_event_id, 0),
@@ -282,10 +283,8 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
                     else 'Stay or switch assignment?',
                 )
             )
-            projection.forced_stay = False
         else:
-            can_muster_out = not projection.forced_stay
-            projection.forced_stay = False
+            can_muster_out = not forced_stay
             projection.pending_inputs.append(
                 PendingReenlist(
                     pending_id=(source_event_id, 0),

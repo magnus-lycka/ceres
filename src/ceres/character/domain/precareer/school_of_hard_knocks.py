@@ -1,9 +1,9 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import (
     AnySkill,
@@ -86,3 +86,10 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
             '(unless you leave that career by choice). Apply manually.'
         )
         return pending_idx
+
+
+class SchoolOfHardKnocksTerm(PreCareerTerm):
+    kind: Literal['school_of_hard_knocks'] = 'school_of_hard_knocks'
+
+
+SchoolOfHardKnocksPreCareer.term_class = SchoolOfHardKnocksTerm

@@ -18,6 +18,7 @@ from ceres.character.domain.career.career_data import (
     CareerSkillOption,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionAndAdvancementDmEntry,
@@ -639,3 +640,11 @@ class Psion(CareerData):
 
 
 PSION = Psion()
+
+
+class PsionTerm(CareerTerm):
+    kind: Literal['psion_term'] = 'psion_term'
+    career: Psion
+
+
+Psion.term_class = PsionTerm

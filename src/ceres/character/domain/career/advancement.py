@@ -43,9 +43,9 @@ class AdvancementHandler(EventHandlerBase):
         success = (self.roll + dm) >= assignment.advancement.target
         terms_in_career = len(career.prior_terms(projection.summary.career_terms, assignment))
         if self.roll == 12:
-            projection.forced_stay = True
+            projection.summary.career_terms[-1].forced_stay = True
         elif self.roll <= terms_in_career:
-            projection.forced_leave = True
+            projection.summary.career_terms[-1].forced_leave = True
         if not success:
             queue_reenlist_or_aging(projection, event.id, 0)
             return
@@ -262,7 +262,7 @@ def apply_forced_commission(projection: CharacterProjection, career: CareerData,
     projection.summary.rank = 1
     if projection.summary.career_terms:
         projection.summary.career_terms[-1].commission = True
-        projection.summary.career_terms[-1].rank_after_term = 1
+        projection.summary.career_terms[-1].rank = 1
     _apply_promotion_after_existing_rank(projection, career, event_id)
 
 

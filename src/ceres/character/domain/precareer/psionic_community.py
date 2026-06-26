@@ -1,10 +1,10 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.psion import Psion
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
 from ceres.character.domain.psionics import PendingPsionicTalentLevelChoice, queue_psionic_institute_training
 from ceres.character.domain.skills import Level, LifeScience, ProfessionSkill, ScienceSkill, Streetwise, skill_instances
 from ceres.character.mechanism.event_base import Event
@@ -79,3 +79,10 @@ class PsionicCommunityPreCareer(PreCareerData):
         else:
             projection.add_connection(ConnectionKind.RIVAL, origin=source)
         return pending_idx
+
+
+class PsionicCommunityTerm(PreCareerTerm):
+    kind: Literal['psionic_community'] = 'psionic_community'
+
+
+PsionicCommunityPreCareer.term_class = PsionicCommunityTerm

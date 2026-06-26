@@ -16,6 +16,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharCheck,
     GainConnectionEntry,
     InjuryEntry,
@@ -419,3 +420,11 @@ class Merchant(CareerData):
 
 
 MERCHANT = Merchant()
+
+
+class MerchantTerm(CareerTerm):
+    kind: Literal['merchant_term'] = 'merchant_term'
+    career: Merchant
+
+
+Merchant.term_class = MerchantTerm

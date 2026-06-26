@@ -20,6 +20,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionAndParoleThresholdChangeEntry,
@@ -806,3 +807,11 @@ class Prisoner(CareerData):
 
 
 PRISONER = Prisoner()
+
+
+class PrisonerTerm(CareerTerm):
+    kind: Literal['prisoner_term'] = 'prisoner_term'
+    career: Prisoner
+
+
+Prisoner.term_class = PrisonerTerm

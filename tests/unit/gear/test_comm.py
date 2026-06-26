@@ -322,3 +322,42 @@ def test_meson_transceiver_rejects_unsupported_tl_for_range():
         assert 'TL14' in str(exc)
     else:
         raise AssertionError('Expected unsupported meson transceiver TL to raise ValueError')
+
+
+def test_encryption_part_description():
+    assert TransceiverEncryptionPart().description == 'Hardware Encryption Module'
+
+
+def test_satellite_uplink_part_description_static():
+    assert SatelliteUplinkPart(cost=100, mass_kg=1.0, static=True).description == 'Static Satellite Uplink'
+
+
+def test_satellite_uplink_part_description_standard():
+    assert SatelliteUplinkPart(cost=100, mass_kg=1.0).description == 'Satellite Uplink'
+
+
+def test_normalise_satellite_uplink_false_returns_none():
+    assert TransceiverEquipment._normalise_satellite_uplink(False) == 'none'
+
+
+def test_normalise_satellite_uplink_invalid_raises():
+    with pytest.raises(ValueError, match='satellite_uplink must be one of'):
+        TransceiverEquipment._normalise_satellite_uplink('invalid')  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+
+
+def test_radio_transceiver_with_explicit_parts_skips_resolver():
+    part = RadioTransceiverPart(tl=7, cost=100, range_km=5, mass_kg=1.0)
+    t = RadioTransceiverEquipment.model_validate({'tl': 7, 'cost': 100, 'mass_kg': 1.0, 'parts': [part]})
+    assert t.tl == 7
+
+
+def test_laser_transceiver_with_explicit_parts_skips_resolver():
+    part = LaserTransceiverPart(tl=9, cost=2500, range_km=500, mass_kg=1.5)
+    t = LaserTransceiverEquipment.model_validate({'tl': 9, 'cost': 2500, 'mass_kg': 1.5, 'parts': [part]})
+    assert t.tl == 9
+
+
+def test_meson_transceiver_with_explicit_parts_skips_resolver():
+    part = MesonTransceiverPart(tl=12, cost=50_000, range_km=50_000, mass_kg=200.0)
+    t = MesonTransceiverEquipment.model_validate({'tl': 12, 'cost': 50_000, 'mass_kg': 200.0, 'parts': [part]})
+    assert t.tl == 12

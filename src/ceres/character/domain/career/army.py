@@ -17,6 +17,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharCheck,
     GainConnectionAndSkillChoiceEntry,
     GainConnectionEntry,
@@ -475,3 +476,11 @@ class Army(CareerData):
 
 
 ARMY = Army()
+
+
+class ArmyTerm(CareerTerm):
+    kind: Literal['army_term'] = 'army_term'
+    career: Army
+
+
+Army.term_class = ArmyTerm

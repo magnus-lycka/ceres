@@ -1,7 +1,7 @@
 import pytest
 
 from ceres.character.report import render_stat_block_gallery_pdf, render_stat_block_gallery_typst
-from tests.approval.character.npcs.test_kasimir_yuen import build_kasimir_yuen
+from tests.approval.character.e2e.test_kasimir_yuen import build_kasimir_yuen
 
 from ._output import write_pdf_output, write_typst_output
 

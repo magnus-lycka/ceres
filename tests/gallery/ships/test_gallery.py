@@ -3,37 +3,37 @@ import inspect
 import pytest
 
 from ceres.report import render_pdf_source, render_ship_html, render_ship_typst
-from tests.approval.ships.test_90t_non_gravity_rdrive import build_90t_non_gravity_rdrive
-from tests.approval.ships.test_acrux_heavy_cruiser import build_acrux_heavy_cruiser
-from tests.approval.ships.test_almeida_laboratory_station import build_almeida_laboratory_station
-from tests.approval.ships.test_alt_dragon import build_alt_dragon
-from tests.approval.ships.test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
-from tests.approval.ships.test_beagle_laboratory_ship import build_beagle_laboratory_ship
-from tests.approval.ships.test_belt_racer import build_belt_racer
-from tests.approval.ships.test_beowulf import build_beowulf
-from tests.approval.ships.test_boxy_ore_freighter import build_boxy_ore_freighter
-from tests.approval.ships.test_civilian_hopper import build_civilian_hopper
-from tests.approval.ships.test_dolphin_extended_scout_courier import build_dolphin_extended_scout_courier
-from tests.approval.ships.test_dragon import build_dragon
-from tests.approval.ships.test_florence_medical_scout import build_florence_medical_scout
-from tests.approval.ships.test_freight_handler_pod import build_freight_handler_pod
-from tests.approval.ships.test_gothta_ambush_fighter import build_gothta_ambush_fighter
-from tests.approval.ships.test_king_kay_luxury_liner import build_king_kay
-from tests.approval.ships.test_pinnace_with_20_ton_fuel_capacity import build_pinnace_with_20_ton_fuel_capacity
-from tests.approval.ships.test_poseidon_cargo_boat import (
+from tests.approval.ship.e2e.test_90t_non_gravity_rdrive import build_90t_non_gravity_rdrive
+from tests.approval.ship.e2e.test_acrux_heavy_cruiser import build_acrux_heavy_cruiser
+from tests.approval.ship.e2e.test_almeida_laboratory_station import build_almeida_laboratory_station
+from tests.approval.ship.e2e.test_alt_dragon import build_alt_dragon
+from tests.approval.ship.e2e.test_ambush_hunter_killer_corvette import build_ambush_hunter_killer_corvette
+from tests.approval.ship.e2e.test_beagle_laboratory_ship import build_beagle_laboratory_ship
+from tests.approval.ship.e2e.test_belt_racer import build_belt_racer
+from tests.approval.ship.e2e.test_beowulf import build_beowulf
+from tests.approval.ship.e2e.test_boxy_ore_freighter import build_boxy_ore_freighter
+from tests.approval.ship.e2e.test_civilian_hopper import build_civilian_hopper
+from tests.approval.ship.e2e.test_dolphin_extended_scout_courier import build_dolphin_extended_scout_courier
+from tests.approval.ship.e2e.test_dragon import build_dragon
+from tests.approval.ship.e2e.test_florence_medical_scout import build_florence_medical_scout
+from tests.approval.ship.e2e.test_freight_handler_pod import build_freight_handler_pod
+from tests.approval.ship.e2e.test_gothta_ambush_fighter import build_gothta_ambush_fighter
+from tests.approval.ship.e2e.test_king_kay_luxury_liner import build_king_kay
+from tests.approval.ship.e2e.test_pinnace_with_20_ton_fuel_capacity import build_pinnace_with_20_ton_fuel_capacity
+from tests.approval.ship.e2e.test_poseidon_cargo_boat import (
     build_poseidon_cargo_boat_tl9,
     build_poseidon_cargo_boat_tl10,
     build_poseidon_cargo_boat_tl12,
 )
-from tests.approval.ships.test_revised_beowulf import build_revised_beowulf
-from tests.approval.ships.test_revised_dragon import build_revised_dragon
-from tests.approval.ships.test_safari_ship import build_safari_ship
-from tests.approval.ships.test_serrano_laboratory_station import build_serrano_laboratory_station
-from tests.approval.ships.test_small_scout_base import build_small_scout_base
-from tests.approval.ships.test_strandbell import build_strandbell
-from tests.approval.ships.test_suleiman import build_suleiman
-from tests.approval.ships.test_ultralight_fighter import build_ultralight_fighter
-from tests.approval.ships.test_valiant_light_cruiser import build_valiant_light_cruiser
+from tests.approval.ship.e2e.test_revised_beowulf import build_revised_beowulf
+from tests.approval.ship.e2e.test_revised_dragon import build_revised_dragon
+from tests.approval.ship.e2e.test_safari_ship import build_safari_ship
+from tests.approval.ship.e2e.test_serrano_laboratory_station import build_serrano_laboratory_station
+from tests.approval.ship.e2e.test_small_scout_base import build_small_scout_base
+from tests.approval.ship.e2e.test_strandbell import build_strandbell
+from tests.approval.ship.e2e.test_suleiman import build_suleiman
+from tests.approval.ship.e2e.test_ultralight_fighter import build_ultralight_fighter
+from tests.approval.ship.e2e.test_valiant_light_cruiser import build_valiant_light_cruiser
 
 from ._output import write_html_output, write_json_output, write_pdf_output, write_typst_output
 

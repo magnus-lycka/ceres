@@ -1,6 +1,6 @@
-from typing import Annotated, Any, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, cast, overload
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer, SerializeAsAny, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
@@ -10,26 +10,31 @@ from ceres.character.domain.connection import AnyConnection
 from ceres.character.domain.psionics import Psionics
 from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
+from ceres.character.domain.term_data import Term
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
 from ceres.shared import int_to_ehex
 
+if TYPE_CHECKING:
+    from ceres.character.domain.precareer.precareer_data import PreCareerTerm
 
-def _deserialise_precareer(v: object) -> object:
-    from ceres.character.domain.precareer.precareer_data import PreCareerData
 
-    if isinstance(v, PreCareerData):
+def _deserialise_term(v: object) -> object:
+    from ceres.character.domain.term_data import Term as _Term
+
+    if isinstance(v, _Term):
         return v
-    from ceres.character.domain.precareer.loader import precareer_from_user_input_name
+    if not isinstance(v, dict):
+        raise TypeError(f'Cannot deserialise term from {type(v)!r}')
+    kind = v.get('kind')
+    from ceres.character.domain.career.career_term import _CAREER_TERM_REGISTRY
+    from ceres.character.domain.precareer.precareer_term import _PRECAREER_TERM_REGISTRY
 
-    pc = precareer_from_user_input_name(str(v))
-    if pc is None:
-        raise ValueError(f'Unknown pre-career: {v!r}')
-    return pc
-
-
-_PreCareerField = Annotated[Any, BeforeValidator(_deserialise_precareer), PlainSerializer(lambda pc: pc.name)]
+    cls = _CAREER_TERM_REGISTRY.get(kind) or _PRECAREER_TERM_REGISTRY.get(kind)
+    if cls is None:
+        raise ValueError(f'Unknown term kind: {kind!r}')
+    return cls.model_validate(v)
 
 
 class CharacterSummary(BaseModel):
@@ -51,7 +56,7 @@ class CharacterSummary(BaseModel):
     last_career_ejected: bool = False  # True when last_career ended via mishap ejection
     last_assignment: AssignmentData | None = None
     rank: int | None = None
-    career_terms: list[CareerTerm] = Field(default_factory=list)
+    terms: list[SerializeAsAny[Annotated[Term, BeforeValidator(_deserialise_term)]]] = Field(default_factory=list)
     drafted: bool = False
     skills: list[AnySkill] = Field(default_factory=list)
     connections: list[AnyConnection] = Field(default_factory=list)
@@ -59,12 +64,19 @@ class CharacterSummary(BaseModel):
     narrative: list[str] = Field(default_factory=list)
     cash: int = 0
     dead: bool = False
-    precareer: _PreCareerField | None = None  # pre-career currently in progress
-    precareer_completed: _PreCareerField | None = None  # pre-career that was attended (whether graduated or not)
-    precareer_skills: list[SerializeAsAny[AnySkill]] = Field(
-        default_factory=list
-    )  # skills chosen during university (for graduation boost)
-    parole_threshold: int | None = None  # Prisoner career: current Parole Threshold (3-12)
+    parole_threshold: int | None = None
+
+    @property
+    def career_terms(self) -> list[CareerTerm]:
+        return [t for t in self.terms if isinstance(t, CareerTerm)]
+
+    @property
+    def current_precareer_term(self) -> PreCareerTerm | None:
+        from ceres.character.domain.precareer.precareer_data import PreCareerTerm as _PreCareerTerm
+
+        if self.terms and isinstance(self.terms[-1], _PreCareerTerm) and not self.terms[-1].completed:
+            return self.terms[-1]
+        return None
 
     @property
     def current_career(self) -> CareerData | None:
@@ -143,14 +155,12 @@ class CharacterSummary(BaseModel):
         self.current_term().require_muster_out().cash_count += 1
 
     def terms_started(self, *, only_current_career: bool, include_precareer: bool) -> int:
-        terms = self.career_terms
         if only_current_career:
             career = self.current_career
-            terms = self.latest_career_run_terms(career) if career is not None else []
-        count = len(terms)
-        if include_precareer and (self.precareer is not None or self.precareer_completed is not None):
-            count += 1
-        return count
+            return len(self.latest_career_run_terms(career)) if career is not None else 0
+        if include_precareer:
+            return len(self.terms)
+        return len(self.career_terms)
 
     @property
     def terms_started_in_current_career(self) -> int:
@@ -197,6 +207,13 @@ class CharacterSummary(BaseModel):
             a_display = f'{a_code} {a_title}'.strip() if a_title else a_code
             changes.append(f'Rank {b_display} → {a_display}')
 
+        for i, after_term in enumerate(other.career_terms):
+            before_term = self.career_terms[i] if i < len(self.career_terms) else None
+            if not (before_term and before_term.forced_stay) and after_term.forced_stay:
+                changes.append('Rolled 12 on advancement — must remain in this career next term')
+            if not (before_term and before_term.forced_leave) and after_term.forced_leave:
+                changes.append('Advancement roll too low — forced muster out')
+
         all_chars = set(self.characteristics) | set(other.characteristics)
         for char in sorted(all_chars, key=lambda c: c.value):
             b_val = self.characteristics.get(char, 0)
@@ -242,8 +259,6 @@ class CharacterProjection(BaseModel):
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
-    forced_stay: bool = False  # natural 12 on advancement: character must stay this term
-    forced_leave: bool = False  # advancement roll ≤ terms: character must leave this term
 
     def add_connection(self, kind: ConnectionKind, *, origin: str = '') -> None:
         from ceres.character.domain.connection import make_connection

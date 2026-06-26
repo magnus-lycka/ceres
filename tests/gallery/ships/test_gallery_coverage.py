@@ -6,12 +6,12 @@ import re
 
 
 def test_all_ship_approval_files_in_gallery():
-    approval_dir = Path(__file__).parent.parent.parent / 'approval' / 'ships'
+    approval_dir = Path(__file__).parent.parent.parent / 'approval' / 'ship' / 'e2e'
     gallery_path = Path(__file__).parent / 'test_gallery.py'
     gallery_text = gallery_path.read_text(encoding='utf-8')
 
     ship_files = {f.stem for f in approval_dir.glob('test_*.py')}
-    imported_modules = set(re.findall(r'from tests\.approval\.ships\.(test_\w+) import', gallery_text))
+    imported_modules = set(re.findall(r'from tests\.approval\.ship\.e2e\.(test_\w+) import', gallery_text))
 
     missing = ship_files - imported_modules
     assert not missing, (

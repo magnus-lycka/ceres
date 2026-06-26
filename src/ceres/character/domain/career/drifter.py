@@ -15,6 +15,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossEntry,
     CharCheck,
     GainConnectionEntry,
@@ -513,3 +514,11 @@ class Drifter(CareerData):
 
 
 DRIFTER = Drifter()
+
+
+class DrifterTerm(CareerTerm):
+    kind: Literal['drifter_term'] = 'drifter_term'
+    career: Drifter
+
+
+Drifter.term_class = DrifterTerm

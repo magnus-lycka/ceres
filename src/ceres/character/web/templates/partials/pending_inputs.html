@@ -34,13 +34,6 @@
 {% set pi = item.input %}
 
 <div class="border {% if pi.blocking %}border-amber-700/60{% else %}border-gray-700{% endif %} mb-4">
-  <div class="bg-gray-800/60 px-4 py-2 border-b border-gray-700 flex items-center gap-2">
-    <span class="text-xs text-gray-500 font-mono">{{ pi.__class__.__name__ }}</span>
-    {% if pi.blocking %}
-    <span class="text-xs bg-amber-900/50 text-amber-400 px-1">required</span>
-    {% endif %}
-  </div>
-
   <div class="px-4 py-4">
     <p class="text-sm text-gray-300 mb-4">{{ pi.instruction }}</p>
 

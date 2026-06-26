@@ -10,9 +10,10 @@ from ceres.character.domain.characteristics import Chars, ConnectionKind, charac
 from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
-from ceres.character.domain.term_data import TermData
+from ceres.character.domain.term_data import Term, TermData
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
+from ceres.shared import NoteList
 
 if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
@@ -582,6 +583,7 @@ class BasicTrainingPlan(BaseModel):
 
 class CareerData(TermData):
     kind: str = ''  # discriminator; set in concrete subclasses as Literal['X_CAREER']
+    term_class: ClassVar[type[CareerTerm]]
 
     _registry: ClassVar[dict[str, type[CareerData]]] = {}
 
@@ -729,24 +731,26 @@ class CareerData(TermData):
             return 0
         commissioned = prior[-1].commission
         same_track = [term for term in prior if term.commission == commissioned]
-        return same_track[-1].rank_after_term if same_track else 0
+        return same_track[-1].rank if same_track else 0
+
+    def make_term(self, assignment: AssignmentData, commission: bool = False, rank: int = 0) -> CareerTerm:
+        return type(self).term_class(career=self, assignment=assignment, commission=commission, rank=rank)
 
     def append_term(self, projection, assignment: AssignmentData) -> None:
-        term = CareerTerm(
-            career=self,
+        term = self.make_term(
             assignment=assignment,
             commission=self.is_commissioned(projection.summary.career_terms),
-            rank_after_term=projection.summary.rank or 0,
+            rank=projection.summary.rank or 0,
         )
         if projection.summary.career_terms:
             previous = projection.summary.career_terms[-1]
             if term.continue_career_run_from(previous):
                 pass
-        projection.summary.career_terms.append(term)
+        projection.summary.terms.append(term)
 
     def update_current_term_rank(self, projection) -> None:
         if projection.summary.career_terms:
-            projection.summary.career_terms[-1].rank_after_term = projection.summary.rank or 0
+            projection.summary.career_terms[-1].rank = projection.summary.rank or 0
 
     def can_attempt_commission(self, projection) -> bool:
         if self.commission is None:
@@ -1073,19 +1077,19 @@ class MusterOut(BaseModel):
         self.lost_rolls = 9999
 
 
-class CareerTerm(BaseModel):
+class CareerTerm(Term):
+    kind: Literal['CAREER_TERM'] = 'CAREER_TERM'
     career: CareerData
     assignment: AssignmentData
     commission: bool = False
-    rank_after_term: int = 0
+    rank: int = 0
     muster_out: MusterOut | None = Field(default_factory=MusterOut)
-    event: str | None = None
-    mishap: str | None = None
-    prison: str | None = None
+    forced_stay: bool = False
+    forced_leave: bool = False
 
     @property
     def rank_title(self) -> tuple[str, str]:
-        return self.career.rank_title(self.commission, self.rank_after_term, self.assignment)
+        return self.career.rank_title(self.commission, self.rank, self.assignment)
 
     def continue_career_run_from(self, previous: CareerTerm) -> bool:
         if not previous.muster_out:
@@ -1111,3 +1115,12 @@ class CareerTerm(BaseModel):
         if self.muster_out is None:
             raise ReplayError('Career term has no active muster-out state')
         return self.muster_out
+
+    @property
+    def notes(self) -> NoteList:
+        result = super().notes
+        if self.forced_stay:
+            result.info('Proved indispensable — retained for another term')
+        if self.forced_leave:
+            result.warning('Poor performance review — dismissed from service')
+        return result

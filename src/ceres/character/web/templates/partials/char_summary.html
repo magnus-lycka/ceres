@@ -70,14 +70,36 @@
   </div>
   {% endif %}
 
-  {% if summary.narrative %}
+  {% if summary.narrative or term_detail_rows %}
   <div>
     <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">History</div>
-    <ul class="text-xs text-gray-500 space-y-1">
-      {% for entry in summary.narrative | reverse %}
-      <li>{{ entry }}</li>
-      {% endfor %}
-    </ul>
+
+    {% if summary.narrative %}
+    <details open>
+      <summary class="cursor-pointer text-xs text-gray-600 hover:text-gray-400 select-none mb-1">Notable events</summary>
+      <ul class="text-xs text-gray-500 space-y-0.5 mt-1 mb-2">
+        {% for entry in summary.narrative | reverse %}
+        <li>{{ entry }}</li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+
+    {% if term_detail_rows %}
+    <details>
+      <summary class="cursor-pointer text-xs text-gray-600 hover:text-gray-400 select-none">Term details</summary>
+      <div class="mt-2 space-y-2">
+        {% for term in term_detail_rows %}
+        <div class="text-xs border-l border-gray-700 pl-2">
+          <div class="text-gray-500 font-bold">{{ term.career }} · {{ term.assignment }}</div>
+          {% for note in term.notes %}
+          <div class="{{ note.color }}">{{ note.text }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   </div>
   {% endif %}
 

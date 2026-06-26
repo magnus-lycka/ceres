@@ -1,10 +1,10 @@
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry
+from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import AnySkill, JackOfAllTrades, Leadership, Level, ProfessionSkill, skill_instances
 from ceres.character.mechanism.event_base import Event
@@ -79,3 +79,10 @@ class ColonialUprbringingPreCareer(PreCareerData):
             'add 2D3 extra years to current age. Apply manually.'
         )
         return pending_idx
+
+
+class ColonialUprbringingTerm(PreCareerTerm):
+    kind: Literal['colonial_upbringing'] = 'colonial_upbringing'
+
+
+ColonialUprbringingPreCareer.term_class = ColonialUprbringingTerm

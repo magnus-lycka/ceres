@@ -16,6 +16,7 @@ from ceres.character.domain.career.career_data import (
     CareerHandlerBase,
     CareerSkillTables,
     CareerTableEntry,
+    CareerTerm,
     CharacteristicLossesAndConnectionEntry,
     CharacteristicLossOutcome,
     CharCheck,
@@ -458,3 +459,11 @@ class Marines(CareerData):
 
 
 MARINES = Marines()
+
+
+class MarinesTerm(CareerTerm):
+    kind: Literal['marines_term'] = 'marines_term'
+    career: Marines
+
+
+Marines.term_class = MarinesTerm

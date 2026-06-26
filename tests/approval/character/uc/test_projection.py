@@ -1,0 +1,370 @@
+"""Tests for CharacterProjection.skill_choices and check_skill_choice."""
+
+import pytest
+
+from ceres.character.domain.career import SCOUT
+from ceres.character.domain.career.career_data import CareerTerm
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.psionics import Psionics
+from ceres.character.domain.skills import (
+    Admin,
+    Animals,
+    Electronics,
+    Level,
+    LifeScience,
+    PhysicalScience,
+    RoboticScience,
+    SocialScience,
+    SpaceScience,
+)
+from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.errors import ReplayError
+from tests.unit.character.helpers import MOCK_WORLD
+
+
+def _projection(skills=None) -> CharacterProjection:
+    summary = CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD, skills=skills or [])
+    return CharacterProjection(character_id=1, summary=summary)
+
+
+class TestSkillChoicesNonSpecialised:
+    def test_missing_skill_increment_gives_level_1(self):
+        proj = _projection()
+
+        choices = proj.skill_choices([Admin], None)
+
+        assert choices == [Admin(level=Level(value=1))]
+
+    def test_level_0_increment_gives_level_1(self):
+        proj = _projection([Admin(level=Level(value=0))])
+
+        choices = proj.skill_choices([Admin], None)
+
+        assert choices == [Admin(level=Level(value=1))]
+
+    def test_level_1_increment_gives_level_2(self):
+        proj = _projection([Admin(level=Level(value=1))])
+
+        choices = proj.skill_choices([Admin], None)
+
+        assert choices == [Admin(level=Level(value=2))]
+
+    def test_level_3_increment_gives_level_4(self):
+        proj = _projection([Admin(level=Level(value=3))])
+
+        choices = proj.skill_choices([Admin], None)
+
+        assert choices == [Admin(level=Level(value=4))]
+
+    def test_level_4_increment_gives_no_choices(self):
+        proj = _projection([Admin(level=Level(value=4))])
+
+        choices = proj.skill_choices([Admin], None)
+
+        assert choices == []
+
+    def test_fixed_level_1_when_missing_gives_choice(self):
+        proj = _projection()
+
+        choices = proj.skill_choices([Admin], 1)
+
+        assert choices == [Admin(level=Level(value=1))]
+
+    def test_fixed_level_1_when_at_level_0_gives_choice(self):
+        proj = _projection([Admin(level=Level(value=0))])
+
+        choices = proj.skill_choices([Admin], 1)
+
+        assert choices == [Admin(level=Level(value=1))]
+
+    def test_fixed_level_1_when_already_at_level_1_gives_no_choices(self):
+        proj = _projection([Admin(level=Level(value=1))])
+
+        choices = proj.skill_choices([Admin], 1)
+
+        assert choices == []
+
+    def test_fixed_level_1_when_above_level_1_gives_no_choices(self):
+        proj = _projection([Admin(level=Level(value=3))])
+
+        choices = proj.skill_choices([Admin], 1)
+
+        assert choices == []
+
+
+class TestSkillChoicesSpecialised:
+    def test_missing_skill_increment_gives_choices_for_all_specs(self):
+        proj = _projection()
+
+        choices = proj.skill_choices([Animals], None)
+
+        assert Animals(handling=Level(value=1)) in choices
+        assert Animals(veterinary=Level(value=1)) in choices
+        assert Animals(training=Level(value=1)) in choices
+        assert len(choices) == 3
+
+    def test_spec_at_level_0_increment_gives_level_1_for_that_spec(self):
+        proj = _projection([Animals(handling=Level(value=0))])
+
+        choices = proj.skill_choices([Animals], None)
+
+        assert Animals(handling=Level(value=1)) in choices
+
+    def test_spec_at_level_3_increment_gives_level_4(self):
+        proj = _projection([Animals(handling=Level(value=3))])
+
+        choices = proj.skill_choices([Animals], None)
+
+        assert Animals(handling=Level(value=4)) in choices
+        assert Animals(veterinary=Level(value=1)) in choices
+        assert Animals(training=Level(value=1)) in choices
+        assert len(choices) == 3
+
+    def test_spec_at_level_4_not_included_in_increment(self):
+        proj = _projection([Animals(handling=Level(value=4))])
+
+        choices = proj.skill_choices([Animals], None)
+
+        assert not any(getattr(c, 'handling', Level(value=0)).value > 4 for c in choices)
+        assert Animals(handling=Level(value=5)) not in choices
+        assert Animals(veterinary=Level(value=1)) in choices
+        assert Animals(training=Level(value=1)) in choices
+        assert len(choices) == 2
+
+    def test_multiple_skill_types(self):
+        proj = _projection()
+
+        choices = proj.skill_choices([LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience], None)
+
+        assert len(choices) == 19  # 3+3+2+5+6 specializations across all science classes
+
+
+class TestSkillChoicesMultipleTypes:
+    def test_returns_choices_for_all_skill_types(self):
+        proj = _projection()
+
+        choices = proj.skill_choices([Admin, Animals], None)
+
+        assert Admin(level=Level(value=1)) in choices
+        assert Animals(handling=Level(value=1)) in choices
+
+    def test_excludes_maxed_types(self):
+        proj = _projection([Admin(level=Level(value=4))])
+
+        choices = proj.skill_choices([Admin, Animals], None)
+
+        assert Admin(level=Level(value=5)) not in choices
+        assert Admin(level=Level(value=4)) not in choices
+        assert Animals(handling=Level(value=1)) in choices
+
+
+class TestCheckSkillChoice:
+    def test_valid_increment_choice_returns_true(self):
+        proj = _projection()
+
+        assert proj.check_skill_choice([Admin], None, Admin(level=Level(value=1))) is True
+
+    def test_skipping_levels_returns_false(self):
+        proj = _projection()
+
+        assert proj.check_skill_choice([Admin], None, Admin(level=Level(value=3))) is False
+
+    def test_level_2_3_returns_true(self):
+        proj = _projection([Animals(handling=Level(value=2))])
+
+        assert proj.check_skill_choice([Animals], None, Animals(handling=Level(value=3))) is True
+        assert proj.check_skill_choice([Animals], None, Animals(training=Level(value=1))) is True
+        assert proj.check_skill_choice([Animals], None, Animals(veterinary=Level(value=1))) is True
+
+    def test_level_0_for_increment_returns_false(self):
+        proj = _projection()
+
+        assert proj.check_skill_choice([Admin], None, Admin()) is False
+
+    def test_fixed_level_0_returns_true(self):
+        proj = _projection()
+
+        assert proj.check_skill_choice([Admin], 0, Admin()) is True
+
+    def test_valid_specialised_choice_returns_true(self):
+        proj = _projection()
+
+        result = proj.check_skill_choice(
+            [LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience],
+            None,
+            SpaceScience(planetology=Level(value=1)),
+        )
+
+        assert result is True
+
+    def test_skipping_levels_specialised_returns_false(self):
+        proj = _projection()
+
+        result = proj.check_skill_choice(
+            [LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience],
+            None,
+            SpaceScience(planetology=Level(value=3)),
+        )
+
+        assert result is False
+
+    def test_level_0_increment_specialised_returns_false(self):
+        proj = _projection()
+
+        result = proj.check_skill_choice(
+            [LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience],
+            None,
+            SpaceScience(),
+        )
+
+        assert result is False
+
+    def test_fixed_level_0_specialised_returns_true(self):
+        proj = _projection()
+
+        result = proj.check_skill_choice(
+            [LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience],
+            0,
+            SpaceScience(),
+        )
+
+        assert result is True
+
+    def test_electronics_not_in_science_types_returns_false(self):
+        proj = _projection()
+
+        result = proj.check_skill_choice(
+            [LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience],
+            None,
+            Electronics(computers=Level(value=1)),
+        )
+
+        assert result is False
+
+
+class TestProjectionCharacteristicChanges:
+    def test_decrease_characteristic_reduces_by_amount(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.STR] = 7
+
+        proj.decrease_characteristic(Chars.STR, amount=3)
+
+        assert proj.summary.characteristics[Chars.STR] == 4
+
+    def test_decrease_characteristic_floors_at_zero(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.END] = 1
+
+        proj.decrease_characteristic(Chars.END, amount=5)
+
+        assert proj.summary.characteristics[Chars.END] == 0
+
+    def test_decrease_characteristic_defaults_to_one(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.DEX] = 8
+
+        proj.decrease_characteristic(Chars.DEX)
+
+        assert proj.summary.characteristics[Chars.DEX] == 7
+
+    def test_decrease_psi_to_zero_removes_psi_and_psionics(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.PSI] = 1
+        proj.summary.psionics = Psionics()
+
+        proj.decrease_characteristic(Chars.PSI)
+
+        assert Chars.PSI not in proj.summary.characteristics
+        assert proj.summary.psionics is None
+
+    def test_decrease_psi_not_to_zero_keeps_psi_and_psionics(self):
+        proj = _projection()
+        proj.summary.characteristics[Chars.PSI] = 3
+        proj.summary.psionics = Psionics()
+
+        proj.decrease_characteristic(Chars.PSI)
+
+        assert proj.summary.characteristics[Chars.PSI] == 2
+        assert proj.summary.psionics is not None
+
+
+class TestProjectionCareerModifiers:
+    def test_add_advancement_dm_accumulates(self):
+        proj = _projection()
+
+        proj.add_advancement_dm(2)
+        proj.add_advancement_dm(1)
+
+        assert proj.pending_advancement_dm == 3
+
+    def test_add_qualification_dm_accumulates(self):
+        proj = _projection()
+
+        proj.add_qualification_dm(3)
+        proj.add_qualification_dm(2)
+
+        assert proj.pending_qualification_dm == 5
+
+    def test_add_benefit_dm_adds_to_current_term_muster_out(self):
+        proj = _projection_with_career_term()
+
+        proj.add_benefit_dm(1)
+
+        dms = proj.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert len(dms) == 1
+        assert dms[0].amount == 1
+
+    def test_add_benefit_dm_without_career_term_is_noop(self):
+        proj = _projection()
+
+        proj.add_benefit_dm(1)
+
+        assert proj.summary.career_terms == []
+
+
+class TestProjectionCareerState:
+    def test_adjust_parole_threshold_clamps_to_zero_and_twelve(self):
+        proj = _projection()
+        proj.summary.parole_threshold = 2
+
+        proj.adjust_parole_threshold(-10)
+        assert proj.summary.parole_threshold == 0
+
+        proj.adjust_parole_threshold(20)
+        assert proj.summary.parole_threshold == 12
+
+    def test_adjust_parole_threshold_none_is_noop(self):
+        proj = _projection()
+
+        proj.adjust_parole_threshold(3)
+
+        assert proj.summary.parole_threshold is None
+
+    def test_auto_qualify_adds_career_once(self):
+        proj = _projection()
+
+        proj.auto_qualify(type(SCOUT))
+        proj.auto_qualify(type(SCOUT))
+
+        assert proj.auto_qualify_careers == [type(SCOUT)]
+
+    def test_forfeit_current_career_benefits_forfeits_current_career_terms(self):
+        proj = _projection_with_career_term()
+        muster_out = proj.summary.career_terms[-1].require_muster_out()
+
+        proj.forfeit_current_career_benefits()
+
+        assert muster_out.lost_rolls == 9999
+
+    def test_forfeit_current_career_benefits_raises_without_active_career(self):
+        proj = _projection()
+
+        with pytest.raises(ReplayError, match='No active career'):
+            proj.forfeit_current_career_benefits()
+
+
+def _projection_with_career_term() -> CharacterProjection:
+    proj = _projection()
+    proj.summary.terms.append(CareerTerm(career=SCOUT, assignment=SCOUT.assignment('Courier')))
+    return proj
