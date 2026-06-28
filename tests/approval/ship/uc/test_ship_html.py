@@ -8,7 +8,7 @@ any template change that removes or renames a key element will fail the test.
 
 import pytest
 
-from ceres.report import render_ship_spec_html
+from ceres.make.ship.report import render_ship_spec_html
 from tests.approval.ship.e2e.test_suleiman import build_suleiman
 from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
 

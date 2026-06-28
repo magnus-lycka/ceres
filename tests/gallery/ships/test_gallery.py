@@ -2,7 +2,8 @@ import inspect
 
 import pytest
 
-from ceres.report import render_pdf_source, render_ship_html, render_ship_typst
+from ceres.make.ship.report import render_ship_html, render_ship_typst
+from ceres.report import render_pdf_source
 from tests.approval.ship.e2e.test_90t_non_gravity_rdrive import build_90t_non_gravity_rdrive
 from tests.approval.ship.e2e.test_acrux_heavy_cruiser import build_acrux_heavy_cruiser
 from tests.approval.ship.e2e.test_almeida_laboratory_station import build_almeida_laboratory_station

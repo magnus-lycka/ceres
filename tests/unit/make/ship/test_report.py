@@ -21,7 +21,7 @@ class TestFormatHelpers:
 
 @pytest.mark.slow
 def test_render_ship_spec_pdf_returns_pdf_bytes():
-    from ceres.report import render_ship_spec_pdf
+    from ceres.make.ship.report import render_ship_spec_pdf
     from tests.approval.ship.e2e.test_suleiman import build_suleiman
 
     pdf = render_ship_spec_pdf(build_suleiman().build_spec())
@@ -30,7 +30,7 @@ def test_render_ship_spec_pdf_returns_pdf_bytes():
 
 @pytest.mark.slow
 def test_render_ship_pdf_returns_pdf_bytes():
-    from ceres.report import render_ship_pdf
+    from ceres.make.ship.report import render_ship_pdf
     from tests.approval.ship.e2e.test_suleiman import build_suleiman
 
     pdf = render_ship_pdf(build_suleiman())
