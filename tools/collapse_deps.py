@@ -1,6 +1,9 @@
 import json, sys
 from graphviz import Digraph
 
+# run uvx pydeps src/ceres --show-deps > deps.json first,
+# then uv run tools/collapse_deps.py 2 (or 3 for one level deeper).
+
 depth = int(sys.argv[1]) if len(sys.argv) > 1 else 2
 
 

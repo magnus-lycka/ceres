@@ -3,6 +3,31 @@
 Update todo items in this document as progress is made.
 When todo items are done, please move them to docs/archive/done_todos.md
 
+## Test suite: unit coverage gaps
+
+Run `tools/check_unit_coverage.sh` to find modules with no corresponding unit
+test file.
+
+## Test suite: more usecase approval tests
+
+Candidates: complex multi-effect events (Scholar mishap 3 openly/secretly,
+mishap 5 start-again), Rogue/Entertainer/Psion events with branching choices,
+pre-careers and how they affect subsequent career qualification and commission.
+Rule of thumb: if expressing the complete observable outcome needs more than
+five plain assertions, use a snapshot.
+
+## Test suite: NPC end-to-end approval tests
+
+Add full pre-career → career(s) → muster-out tests under
+`tests/approval/character/npcs/`. Candidates: character with a pre-career
+followed by one or more regular careers; character who fails qualification and
+enters the draft.
+
+## Test suite: profiling and tuning
+
+Use `pytest --durations=20` to find slow tests and evaluate shared fixtures
+for long event-chain replays.
+
 ## Conditional NumberEntry visibility in input_specs
 
 In [src/ceres/character/input_specs.py](../src/ceres/character/input_specs.py),
