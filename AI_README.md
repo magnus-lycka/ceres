@@ -195,7 +195,8 @@ approval snapshots; annotate discrepancies with `snap.annotate(...)`.
 Keep documentation in English. Use `docs/RULE_INTERPRETATIONS.md` for general
 rule interpretations, `docs/TEST_CASE_ASSEMBLIES.md` for test-case mapping
 conventions, and topic or `plan-*.md` files in `docs/` for implementation
-plans.
+plans. When a plan is fully implemented, mark it complete at the top and move
+it to `docs/archive/` — do not delete it.
 
 ## Commands
 

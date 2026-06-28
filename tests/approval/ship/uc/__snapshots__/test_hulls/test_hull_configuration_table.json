@@ -1,0 +1,43 @@
+{
+  "data": {
+    "standard": {
+      "streamlined": 2,
+      "armour_volume_modifier": 1,
+      "cost": 5000000,
+      "points": 40.0
+    },
+    "streamlined": {
+      "streamlined": 1,
+      "armour_volume_modifier": 1.2,
+      "cost": 6000000.0,
+      "points": 40.0
+    },
+    "light_streamlined": {
+      "streamlined": 1,
+      "armour_volume_modifier": 1.2,
+      "cost": 4500000.0,
+      "points": 36.0
+    },
+    "sphere": {
+      "streamlined": 2,
+      "armour_volume_modifier": 0.9,
+      "cost": 5500000.0,
+      "points": 40.0
+    },
+    "close_structure": {
+      "streamlined": 2,
+      "armour_volume_modifier": 1.5,
+      "cost": 4000000.0,
+      "points": 40.0
+    },
+    "dispersed_structure": {
+      "streamlined": 3,
+      "armour_volume_modifier": 2.0,
+      "cost": 2500000.0,
+      "points": 36.0
+    }
+  },
+  "annotations": {
+    "light_streamlined_cost_6ton": "270000.0"
+  }
+}

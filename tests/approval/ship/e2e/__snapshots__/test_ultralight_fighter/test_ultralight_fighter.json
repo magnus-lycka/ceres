@@ -256,6 +256,6 @@
     ]
   },
   "annotations": {
-    "power_basic": "Tycho uses floor(6 * 0.2) = 1; Ceres uses ceil(6 * 0.2) = 2 per RIS-013"
+    "power_basic": "Reference data uses floor(6 * 0.2) = 1; Ceres uses ceil(6 * 0.2) = 2 per RIS-013"
   }
 }

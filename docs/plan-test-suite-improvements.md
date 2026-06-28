@@ -370,6 +370,13 @@ should wait unless they become directly relevant:
 | `character/mechanism/pending_input.py` | abstract/base branch paths |
 | `character/web/routes.py` | route error paths |
 
+**Addressed gaps (not listed above):** the six pre-career modules
+(`university.py`, `colonial_upbringing.py`, `merchant_academy.py`,
+`psionic_community.py`, `school_of_hard_knocks.py`, `spacer_community.py`)
+and `career/prisoner_events.py` now have unit tests after previously having
+0% unit test coverage. See `docs/plan-test-restructure.md` §1 for details and
+the current remaining gap list.
+
 ## Work That Should Not Be Done Now
 
 - Do not create broad permanent tests for every current `*Effect` class.

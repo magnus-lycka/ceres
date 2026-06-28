@@ -15,7 +15,20 @@ _DEFAULT_HOST = 'http://localhost:11434'
 
 
 def _career_context_lines(summary: CharacterSummary) -> str:
-    """Build career/assignment description lines for all distinct (career, assignment) pairs in history."""
+    """Build career/assignment description lines for all terms in history."""
+    from ceres.character.domain.precareer.precareer_data import PreCareerTerm
+
+    lines: list[str] = []
+    for term in summary.terms:
+        if isinstance(term, PreCareerTerm) and term.completed:
+            if term.honours:
+                suffix = ' (graduated with honours)'
+            elif term.graduated:
+                suffix = ' (graduated)'
+            else:
+                suffix = ' (did not graduate)'
+            lines.append(f'Pre-career: {term.precareer.name}{suffix}')
+
     seen: set[tuple[str, str | None]] = set()
     pairs = []
     for term in summary.career_terms:
@@ -31,10 +44,6 @@ def _career_context_lines(summary: CharacterSummary) -> str:
         if key not in seen:
             pairs.append((current, current_assignment_obj))
 
-    if not pairs:
-        return ''
-
-    lines: list[str] = []
     for career, assignment in pairs:
         if career.description:
             lines.append(f'{career.name}: {career.description}')

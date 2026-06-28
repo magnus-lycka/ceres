@@ -57,7 +57,7 @@ field on `_expected` and document why with a comment referencing the relevant
 RI entry:
 
 ```python
-# Tycho tool uses floor; ceil per RIS-013 gives 2, not 1
+# Reference data uses floor; ceil per RIS-013 gives 2, not 1
 _expected.power_basic = 2
 ```
 

@@ -1,0 +1,24 @@
+{
+  "data": {
+    "TL6": {
+      "thrust": 0.005,
+      "cost": 2000000.0,
+      "output": 0.0
+    },
+    "TL8": {
+      "thrust": 0.01,
+      "cost": 4000000.0,
+      "output": 0.0
+    },
+    "TL12": {
+      "thrust": 0.02,
+      "cost": 8000000.0,
+      "output": 0.0
+    },
+    "TL8_panel_mode": {
+      "thrust": 0.01,
+      "cost": 8000000.0,
+      "output": 10.0
+    }
+  }
+}

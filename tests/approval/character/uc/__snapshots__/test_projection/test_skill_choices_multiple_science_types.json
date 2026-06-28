@@ -1,0 +1,430 @@
+{
+  "data": {
+    "choices": [
+      {
+        "display_label": null,
+        "kind": "LIFE_SCIENCE",
+        "biology": {
+          "display_label": null,
+          "value": 1
+        },
+        "genetics": {
+          "display_label": null,
+          "value": 0
+        },
+        "psionicology": {
+          "display_label": null,
+          "value": 0
+        },
+        "xenology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "LIFE_SCIENCE",
+        "biology": {
+          "display_label": null,
+          "value": 0
+        },
+        "genetics": {
+          "display_label": null,
+          "value": 1
+        },
+        "psionicology": {
+          "display_label": null,
+          "value": 0
+        },
+        "xenology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "LIFE_SCIENCE",
+        "biology": {
+          "display_label": null,
+          "value": 0
+        },
+        "genetics": {
+          "display_label": null,
+          "value": 0
+        },
+        "psionicology": {
+          "display_label": null,
+          "value": 1
+        },
+        "xenology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "LIFE_SCIENCE",
+        "biology": {
+          "display_label": null,
+          "value": 0
+        },
+        "genetics": {
+          "display_label": null,
+          "value": 0
+        },
+        "psionicology": {
+          "display_label": null,
+          "value": 0
+        },
+        "xenology": {
+          "display_label": null,
+          "value": 1
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "PHYSICAL_SCIENCE",
+        "chemistry": {
+          "display_label": null,
+          "value": 1
+        },
+        "physics": {
+          "display_label": null,
+          "value": 0
+        },
+        "jumpspace_physics": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "PHYSICAL_SCIENCE",
+        "chemistry": {
+          "display_label": null,
+          "value": 0
+        },
+        "physics": {
+          "display_label": null,
+          "value": 1
+        },
+        "jumpspace_physics": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "PHYSICAL_SCIENCE",
+        "chemistry": {
+          "display_label": null,
+          "value": 0
+        },
+        "physics": {
+          "display_label": null,
+          "value": 0
+        },
+        "jumpspace_physics": {
+          "display_label": null,
+          "value": 1
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ROBOTIC_SCIENCE",
+        "cybernetics": {
+          "display_label": null,
+          "value": 1
+        },
+        "robotics": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ROBOTIC_SCIENCE",
+        "cybernetics": {
+          "display_label": null,
+          "value": 0
+        },
+        "robotics": {
+          "display_label": null,
+          "value": 1
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 1
+        },
+        "economics": {
+          "display_label": null,
+          "value": 0
+        },
+        "history": {
+          "display_label": null,
+          "value": 0
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 0
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 0
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 0
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 0
+        },
+        "economics": {
+          "display_label": null,
+          "value": 1
+        },
+        "history": {
+          "display_label": null,
+          "value": 0
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 0
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 0
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 0
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 0
+        },
+        "economics": {
+          "display_label": null,
+          "value": 0
+        },
+        "history": {
+          "display_label": null,
+          "value": 1
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 0
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 0
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 0
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 0
+        },
+        "economics": {
+          "display_label": null,
+          "value": 0
+        },
+        "history": {
+          "display_label": null,
+          "value": 0
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 1
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 0
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 0
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 0
+        },
+        "economics": {
+          "display_label": null,
+          "value": 0
+        },
+        "history": {
+          "display_label": null,
+          "value": 0
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 0
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 1
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 0
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 0
+        },
+        "economics": {
+          "display_label": null,
+          "value": 0
+        },
+        "history": {
+          "display_label": null,
+          "value": 0
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 0
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 0
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 1
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SOCIAL_SCIENCE",
+        "archaeology": {
+          "display_label": null,
+          "value": 0
+        },
+        "economics": {
+          "display_label": null,
+          "value": 0
+        },
+        "history": {
+          "display_label": null,
+          "value": 0
+        },
+        "linguistics": {
+          "display_label": null,
+          "value": 0
+        },
+        "philosophy": {
+          "display_label": null,
+          "value": 0
+        },
+        "psychology": {
+          "display_label": null,
+          "value": 0
+        },
+        "sophontology": {
+          "display_label": null,
+          "value": 1
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SPACE_SCIENCE",
+        "astronomy": {
+          "display_label": null,
+          "value": 1
+        },
+        "cosmology": {
+          "display_label": null,
+          "value": 0
+        },
+        "planetology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SPACE_SCIENCE",
+        "astronomy": {
+          "display_label": null,
+          "value": 0
+        },
+        "cosmology": {
+          "display_label": null,
+          "value": 1
+        },
+        "planetology": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "SPACE_SCIENCE",
+        "astronomy": {
+          "display_label": null,
+          "value": 0
+        },
+        "cosmology": {
+          "display_label": null,
+          "value": 0
+        },
+        "planetology": {
+          "display_label": null,
+          "value": 1
+        }
+      }
+    ]
+  }
+}

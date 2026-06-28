@@ -5,7 +5,7 @@ Source: refs/tycho/BotflyUltralightFighter.txt.
 Purpose:
 - exercise a 6-ton light streamlined hull with MDrive6, Crystaliron armour,
   BasicStealth, and HighTechnology fixed mount pulse laser
-- verify power_basic = 2 per RIS-013 (ceil(6 * 0.2) = 2; Tycho uses floor = 1)
+- verify power_basic = 2 per RIS-013 (ceil(6 * 0.2) = 2; reference data uses floor = 1)
 """
 
 import pytest
@@ -61,6 +61,6 @@ def test_ultralight_fighter(snapshot):
     snap = AnnotatedSnapshot(build_ultralight_fighter().build_spec().model_dump(mode='json'))
     snap.annotate(
         'power_basic',
-        'Tycho uses floor(6 * 0.2) = 1; Ceres uses ceil(6 * 0.2) = 2 per RIS-013',
+        'Reference data uses floor(6 * 0.2) = 1; Ceres uses ceil(6 * 0.2) = 2 per RIS-013',
     )
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

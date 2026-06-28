@@ -1,321 +1,124 @@
+"""Approval snapshots for ship hull components.
+
+Hull configuration table values (cost, points, modifiers) are the primary data.
+Integration with the Ship model is exercised via validation errors and spec rows.
+Pure property tests (computed fields not serialized, bracing scale breakpoints)
+live in tests/unit/make/ship/hull/test_standard.py and test_spinext.py.
+"""
+
+import pytest
+
 from ceres.make.ship import hull
-from ceres.make.ship.base import ShipBase
-from ceres.make.ship.drives import DriveSection, JDrive1, MDrive1, RDrive2, RDrive4, SpinExtPlasmaDrive
+from ceres.make.ship.drives import DriveSection, JDrive1, MDrive1, RDrive4, SpinExtPlasmaDrive
 from ceres.make.ship.ship import Ship
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
 
 
-class DummyOwner(ShipBase):
-    def __init__(self, tl, displacement):
-        super().__init__(tl=tl, displacement=displacement)
+def _hull_row(config, displacement=100) -> dict:
+    return {
+        'streamlined': config.streamlined.value,
+        'armour_volume_modifier': config.armour_volume_modifier,
+        'cost': config.cost(displacement),
+        'points': config.points(displacement),
+    }
 
 
-def test_standard_hull():
-    hull_config = hull.standard_hull
-    assert hull_config.streamlined == hull.Streamlined.PARTIAL
-    assert hull_config.armour_volume_modifier == 1
-    assert hull_config.cost(100) == 5_000_000
-    assert hull_config.points(100) == 40
+@pytest.mark.approval
+def test_hull_configuration_table(snapshot):
+    """Table values for all standard hull configurations at 100 tons."""
+    snap = AnnotatedSnapshot(
+        {
+            'standard': _hull_row(hull.standard_hull),
+            'streamlined': _hull_row(hull.streamlined_hull),
+            'light_streamlined': _hull_row(hull.streamlined_hull.model_copy(update={'light': True})),
+            'sphere': _hull_row(hull.sphere),
+            'close_structure': _hull_row(hull.close_structure),
+            'dispersed_structure': _hull_row(hull.dispersed_structure),
+        }
+    )
+    snap.annotate('light_streamlined_cost_6ton', str(hull.streamlined_hull.model_copy(update={'light': True}).cost(6)))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_spinext_primitive_hull_basic_values():
+@pytest.mark.approval
+def test_spinext_primitive_hull(snapshot):
+    """SpinExt primitive hull — base values and drive validation errors."""
     hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
-    my_ship = Ship(tl=8, displacement=100, hull=hull.Hull(configuration=hull_config))
-
-    assert hull_config.cost(100) == 1_500_000
-    assert hull_config.points(100) == 20
-    assert my_ship.hull_cost == 1_500_000
-    assert my_ship.hull_points == 20
-    assert my_ship.basic_hull_power_load == 1
-
-
-def test_spinext_primitive_hull_tl5_costs_double():
-    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
-    my_ship = Ship(tl=5, displacement=100, hull=hull.Hull(configuration=hull_config))
-
-    assert hull_config.cost(100, tl=5) == 3_000_000
-    assert my_ship.hull_cost == 3_000_000
-
-
-def test_spinext_primitive_hull_rejects_incompatible_drives():
-    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
-    my_ship = Ship(
+    base = Ship(tl=8, displacement=100, hull=hull.Hull(configuration=hull_config))
+    tl5 = Ship(tl=5, displacement=100, hull=hull.Hull(configuration=hull_config))
+    with_drives = Ship(
         tl=8,
         displacement=100,
         hull=hull.Hull(configuration=hull_config),
         drives=DriveSection(m_drive=MDrive1(), j_drive=JDrive1(), r_drive=RDrive4()),
     )
-
-    assert 'Primitive hull cannot fit manoeuvre drives' in my_ship.notes.errors
-    assert 'Primitive hull cannot fit jump drives' in my_ship.notes.errors
-    assert 'Primitive hull cannot support reaction drive Thrust above 3: 4 > 3' in my_ship.notes.errors
-
-
-def test_spinext_primitive_hull_rejects_excessive_plasma_thrust():
-    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
-    my_ship = Ship(
+    plasma_excess = Ship(
         tl=8,
         displacement=100,
         hull=hull.Hull(configuration=hull_config),
         drives=DriveSection(plasma_drive=SpinExtPlasmaDrive(thrust=4)),
     )
-
-    assert 'Primitive hull cannot support plasma drive Thrust above 3: 4 > 3' in my_ship.notes.errors
-
-
-def test_spinext_primitive_hull_tl5_rejects_reaction_thrust_above_1():
-    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
-    my_ship = Ship(
-        tl=5,
-        displacement=100,
-        hull=hull.Hull(configuration=hull_config),
-        drives=DriveSection(r_drive=RDrive2()),
+    snap = AnnotatedSnapshot(
+        {
+            'base_hull_cost': base.hull_cost,
+            'base_hull_points': base.hull_points,
+            'base_power_load': base.basic_hull_power_load,
+            'tl5_hull_cost': tl5.hull_cost,
+        }
     )
-
-    assert 'Primitive TL5 hull cannot support reaction drive Thrust above 1: 2 > 1' in my_ship.notes.errors
-
-
-def test_spinext_primitive_hull_tl5_rejects_plasma_thrust_above_1():
-    hull_config = hull.SpinExtPrimitiveHull(streamlined=hull.Streamlined.PARTIAL)
-    my_ship = Ship(
-        tl=5,
-        displacement=100,
-        hull=hull.Hull(configuration=hull_config),
-        drives=DriveSection(plasma_drive=SpinExtPlasmaDrive(thrust=1.5)),
-    )
-
-    assert 'Primitive TL5 hull cannot support plasma drive Thrust above 1: 1.5 > 1' in my_ship.notes.errors
+    snap.annotate('base_errors', str(base.notes.errors))
+    snap.annotate('with_drives_errors', str(sorted(with_drives.notes.errors)))
+    snap.annotate('plasma_excess_errors', str(plasma_excess.notes.errors))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_streamlined_hull():
-    hull_config = hull.streamlined_hull
-    assert hull_config.streamlined == hull.Streamlined.YES
-    assert hull_config.armour_volume_modifier == 1.2
-    assert hull_config.cost(100) == 6_000_000
-    assert hull_config.points(100) == 40
-
-
-def test_sphere_hull():
-    hull_config = hull.sphere
-    assert hull_config.streamlined == hull.Streamlined.PARTIAL
-    assert hull_config.armour_volume_modifier == 0.9
-    assert hull_config.cost(100) == 5_500_000
-    assert hull_config.points(100) == 40
-
-
-def test_close_hull():
-    hull_config = hull.close_structure
-    assert hull_config.streamlined == hull.Streamlined.PARTIAL
-    assert hull_config.armour_volume_modifier == 1.5
-    assert hull_config.cost(100) == 4_000_000
-    assert hull_config.points(100) == 40
-
-
-def test_light_streamlined_hull():
-    hull_config = hull.streamlined_hull.model_copy(update={'light': True})
-    assert hull_config.cost(6) == 270_000
-    assert hull_config.points(100) == 36
-
-
-def test_hull_cannot_be_both_reinforced_and_light():
-    my_ship = Ship(
-        tl=12,
-        displacement=100,
-        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'reinforced': True, 'light': True})),
-    )
-
-    assert 'Hull cannot be both reinforced and light' in my_ship.notes.errors
-
-
-def test_massive_ship_hull_points_use_large_ship_bracing_scale():
-    assert hull.standard_hull.points(24_999) == 9_999
-    assert hull.standard_hull.points(25_000) == 12_500
-    assert hull.standard_hull.points(99_999) == 49_999
-    assert hull.standard_hull.points(100_000) == 66_666
-
-
-def test_massive_ship_hull_points_keep_configuration_modifiers():
-    reinforced = hull.standard_hull.model_copy(update={'reinforced': True})
-    light = hull.standard_hull.model_copy(update={'light': True})
-
-    assert reinforced.points(25_000) == 13_750
-    assert light.points(100_000) == 60_000
-
-
-def test_armoured_bulkhead_values():
-    bulkhead = hull.ArmouredBulkhead(protected_tonnage=30.0, protected_item='M-Drive')
-    owner = DummyOwner(12, 100)
-    bulkhead.bind(owner)
-    assert bulkhead.tons == 3.0
-    assert bulkhead.cost == 600_000
-    assert 'Armoured Bulkhead for M-Drive' in bulkhead.notes.items
-    assert 'Critical hit severity reduced by 1 if critical hit severity >1' in bulkhead.notes.infos
-    assert (
-        'Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead'
-        in bulkhead.notes.warnings
-    )
-
-
-def test_armoured_bulkhead_values_are_computed_properties_not_serialized_fields():
-    bulkhead = hull.ArmouredBulkhead.model_validate(
-        {'protected_tonnage': 30.0, 'protected_item': 'M-Drive', 'tons': 999, 'cost': 999, 'power': 999}
-    )
-    bulkhead.bind(DummyOwner(12, 100))
-    dump = bulkhead.model_dump()
-
-    assert bulkhead.tons == 3.0
-    assert bulkhead.cost == 600_000
-    assert bulkhead.power == 0.0
-    assert 'tons' not in dump
-    assert 'cost' not in dump
-    assert 'power' not in dump
-
-
-def test_stealth_values_are_computed_properties_not_serialized_fields():
-    stealth = hull.BasicStealth.model_validate({'tons': 999, 'cost': 999, 'power': 999})
-    stealth.bind(DummyOwner(12, 100))
-    dump = stealth.model_dump()
-
-    assert stealth.tons == 2.0
-    assert stealth.cost == 4_000_000
-    assert stealth.power == 0.0
-    assert 'tons' not in dump
-    assert 'cost' not in dump
-    assert 'power' not in dump
-
-
-def test_radiation_shielding_cost():
-    ship_hull = hull.Hull(configuration=hull.standard_hull, radiation_shielding=True)
-    assert ship_hull.radiation_shielding_cost(400) == 10_000_000
-
-
-def test_reflec_cost():
-    ship_hull = hull.Hull(configuration=hull.standard_hull, reflec=True)
-    assert ship_hull.reflec_cost(400) == 40_000_000
-
-
-def test_reflec_spec_row_and_production_cost():
-    my_ship = Ship(
-        tl=12,
-        displacement=400,
-        hull=hull.Hull(configuration=hull.standard_hull, reflec=True),
-    )
-
-    row = my_ship.build_spec().row('Reflec', section='Hull')
-
-    assert row.tons is None
-    assert row.cost == 40_000_000
-    assert row.notes.infos == ['+3 armour protection against lasers']
-    assert my_ship.expenses.production_cost == my_ship.hull_cost + 40_000_000
-
-
-def test_reflec_cannot_be_combined_with_stealth():
-    my_ship = Ship(
-        tl=12,
-        displacement=400,
-        hull=hull.Hull(configuration=hull.standard_hull, reflec=True, stealth=hull.BasicStealth()),
-    )
-
-    assert 'Reflec cannot be combined with stealth' in my_ship.notes.errors
-
-
-def test_adjustable_hull_tl12_spec_row_and_production_cost():
-    my_ship = Ship(
+@pytest.mark.approval
+def test_hull_options(snapshot):
+    """Hull options: stealth, reflec, radiation shielding, adjustable hull, breakaway, pressure hull."""
+    reflec_ship = Ship(tl=12, displacement=400, hull=hull.Hull(configuration=hull.standard_hull, reflec=True))
+    adj12_ship = Ship(
         tl=12,
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull, adjustable_hull=hull.AdjustableHull(tl=12)),
     )
-
-    row = my_ship.build_spec().row('Adjustable Hull (TL12)', section='Hull')
-
-    assert row.tons == 20.0
-    assert row.cost == 2_000_000.0
-    assert row.notes.infos == [
-        'Can mimic ships of the same tonnage, hull configuration, hull options, and external systems',
-        'All weapons have pop-up mountings at no additional cost',
-    ]
-    assert my_ship.expenses.production_cost == my_ship.hull_cost + 2_000_000.0
-
-
-def test_adjustable_hull_tl15_spec_row_and_production_cost():
-    my_ship = Ship(
+    adj15_ship = Ship(
         tl=15,
         displacement=400,
         hull=hull.Hull(configuration=hull.standard_hull, adjustable_hull=hull.AdjustableHull(tl=15)),
     )
-
-    row = my_ship.build_spec().row('Adjustable Hull (TL15)', section='Hull')
-
-    assert row.tons == 4.0
-    assert row.cost == 20_000_000.0
-    assert my_ship.expenses.production_cost == my_ship.hull_cost + 20_000_000.0
-
-
-def test_adjustable_hull_reports_tl_error():
-    my_ship = Ship(
-        tl=11,
-        displacement=400,
-        hull=hull.Hull(configuration=hull.standard_hull, adjustable_hull=hull.AdjustableHull(tl=12)),
-    )
-
-    row = my_ship.build_spec().row('Adjustable Hull (TL12)', section='Hull')
-
-    assert 'Requires TL12, ship is TL11' in row.notes.errors
-
-
-def test_pressure_hull_values():
-    ship_hull = hull.Hull(configuration=hull.standard_hull, pressure_hull=True)
-
-    assert ship_hull.pressure_hull_tons(400) == 100
-    assert ship_hull.total_cost(400) == 200_000_000
-    assert ship_hull.build_item() == 'Standard Hull, Pressure Hull'
-
-
-def test_military_hull_requires_capital_ship_displacement():
-    my_ship = Ship(
-        tl=14,
-        displacement=5_000,
-        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'military': True})),
-    )
-
-    assert 'Military hull requires capital ship displacement: 5,000 <= 5,000 tons' in my_ship.notes.errors
-
-
-def test_military_hull_allowed_above_five_thousand_tons():
-    my_ship = Ship(
-        tl=14,
-        displacement=5_001,
-        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'military': True})),
-    )
-
-    assert 'Military hull requires capital ship displacement' not in '\n'.join(my_ship.notes.errors)
-
-
-def test_breakaway_hull_adds_connections_to_spec_and_cost():
-    my_ship = Ship(
+    breakaway_ship = Ship(
         tl=12,
         displacement=1_000,
         hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'breakaway': True})),
     )
+    pressure_hull = hull.Hull(configuration=hull.standard_hull, pressure_hull=True)
 
-    row = my_ship.build_spec().row('Breakaway Hull Connections', section='Hull')
+    reflec_row = reflec_ship.build_spec().row('Reflec', section='Hull')
+    adj12_row = adj12_ship.build_spec().row('Adjustable Hull (TL12)', section='Hull')
+    adj15_row = adj15_ship.build_spec().row('Adjustable Hull (TL15)', section='Hull')
+    breakaway_row = breakaway_ship.build_spec().row('Breakaway Hull Connections', section='Hull')
 
-    assert row.tons == 20
-    assert row.cost == 40_000_000
-    assert row.notes.infos == [
-        'Consumes 2% of combined hull tonnage for extra bulkheads and connections',
-        'Each breakaway section needs an appropriate bridge and power plant',
-        'Section drives, power plants, and weapons can be combined while sections are together',
-    ]
-    assert my_ship.expenses.production_cost == my_ship.hull_cost + 40_000_000
-
-
-def test_breakaway_hull_connections_reduce_residual_cargo_hold():
-    my_ship = Ship(
-        tl=12,
-        displacement=1_000,
-        hull=hull.Hull(configuration=hull.standard_hull.model_copy(update={'breakaway': True})),
+    snap = AnnotatedSnapshot(
+        {
+            'reflec_row': {'tons': reflec_row.tons, 'cost': reflec_row.cost, 'infos': reflec_row.notes.infos},
+            'adjustable_tl12_row': {'tons': adj12_row.tons, 'cost': adj12_row.cost},
+            'adjustable_tl15_row': {'tons': adj15_row.tons, 'cost': adj15_row.cost},
+            'breakaway_row': {'tons': breakaway_row.tons, 'cost': breakaway_row.cost},
+            'pressure_hull_tons_400': pressure_hull.pressure_hull_tons(400),
+            'pressure_hull_total_cost_400': pressure_hull.total_cost(400),
+        }
     )
-
-    row = my_ship.build_spec().row('Cargo Hold', section='Cargo')
-
-    assert row.tons == 980
+    snap.annotate('reflec_production_cost', str(reflec_ship.expenses.production_cost))
+    snap.annotate('adjustable_12_production_cost', str(adj12_ship.expenses.production_cost))
+    snap.annotate(
+        'reflec_stealth_error',
+        str(
+            'Reflec cannot be combined with stealth'
+            in Ship(
+                tl=12,
+                displacement=400,
+                hull=hull.Hull(configuration=hull.standard_hull, reflec=True, stealth=hull.BasicStealth()),
+            ).notes.errors
+        ),
+    )
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

@@ -1,0 +1,183 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Psiworld",
+        "hex": "0101",
+        "uwp": "B786577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "",
+        "allegiance": "Na",
+        "stellar": "G2 V",
+        "ss": "A",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "",
+        "worlds": 5,
+        "resource_units": 100,
+        "subsector": 1,
+        "quadrant": 1,
+        "world_x": 0,
+        "world_y": 0,
+        "remarks": "Ni",
+        "legacy_base_code": "",
+        "sector": "Test Sector",
+        "subsector_name": "Test Subsector",
+        "sector_abbreviation": "Test",
+        "allegiance_name": "Non-Aligned"
+      },
+      "birthworld": {
+        "name": "Psiworld",
+        "hex": "0101",
+        "uwp": "B786577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "",
+        "allegiance": "Na",
+        "stellar": "G2 V",
+        "ss": "A",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "",
+        "worlds": 5,
+        "resource_units": 100,
+        "subsector": 1,
+        "quadrant": 1,
+        "world_x": 0,
+        "world_y": 0,
+        "remarks": "Ni",
+        "legacy_base_code": "",
+        "sector": "Test Sector",
+        "subsector_name": "Test Subsector",
+        "sector_abbreviation": "Test",
+        "allegiance_name": "Non-Aligned"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 7,
+        "END": 7,
+        "INT": 7,
+        "EDU": 2,
+        "SOC": 7,
+        "PSI": 9
+      },
+      "psionics": {
+        "psionic_talent_skills": [],
+        "talent_acquisition_checks": 0
+      },
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "psionic_community",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Psionic Community",
+          "completed": true,
+          "graduated": false,
+          "honours": false
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "STREETWISE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "LIFE_SCIENCE",
+          "biology": {
+            "display_label": null,
+            "value": 0
+          },
+          "genetics": {
+            "display_label": null,
+            "value": 0
+          },
+          "psionicology": {
+            "display_label": null,
+            "value": 0
+          },
+          "xenology": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "CAROUSE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [],
+      "narrative": [
+        "Psionic institute training complete",
+        "Pre-career event (Psionic Community): Taking advantage of youth, you party as much as you study.",
+        "Did not graduate from Psionic Community."
+      ],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingCareerChoice",
+        "kind": "career_choice",
+        "option_count": 13,
+        "option_types": [
+          "Agent",
+          "Army",
+          "Citizen",
+          "Drifter",
+          "Entertainer",
+          "Marines",
+          "Merchant",
+          "Navy",
+          "Noble",
+          "Psion",
+          "Rogue",
+          "Scholar",
+          "Scout"
+        ]
+      }
+    ]
+  }
+}

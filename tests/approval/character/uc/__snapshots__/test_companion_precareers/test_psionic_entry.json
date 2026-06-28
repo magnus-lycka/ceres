@@ -1,0 +1,170 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Psiworld",
+        "hex": "0101",
+        "uwp": "B786577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "",
+        "allegiance": "Na",
+        "stellar": "G2 V",
+        "ss": "A",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "",
+        "worlds": 5,
+        "resource_units": 100,
+        "subsector": 1,
+        "quadrant": 1,
+        "world_x": 0,
+        "world_y": 0,
+        "remarks": "Ni",
+        "legacy_base_code": "",
+        "sector": "Test Sector",
+        "subsector_name": "Test Subsector",
+        "sector_abbreviation": "Test",
+        "allegiance_name": "Non-Aligned"
+      },
+      "birthworld": {
+        "name": "Psiworld",
+        "hex": "0101",
+        "uwp": "B786577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "",
+        "allegiance": "Na",
+        "stellar": "G2 V",
+        "ss": "A",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "",
+        "worlds": 5,
+        "resource_units": 100,
+        "subsector": 1,
+        "quadrant": 1,
+        "world_x": 0,
+        "world_y": 0,
+        "remarks": "Ni",
+        "legacy_base_code": "",
+        "sector": "Test Sector",
+        "subsector_name": "Test Subsector",
+        "sector_abbreviation": "Test",
+        "allegiance_name": "Non-Aligned"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 7,
+        "END": 7,
+        "INT": 7,
+        "EDU": 2,
+        "SOC": 7,
+        "PSI": 9
+      },
+      "psionics": {
+        "psionic_talent_skills": [],
+        "talent_acquisition_checks": 0
+      },
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "psionic_community",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Psionic Community",
+          "completed": false,
+          "graduated": false,
+          "honours": false
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "STREETWISE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [],
+      "narrative": [],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingPsionicInstituteTraining",
+        "kind": "psionic_institute_training"
+      },
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 0,
+        "option_count": 6,
+        "option_types": [
+          "ColonistProfession",
+          "FreeloaderProfession",
+          "HostileEnvironmentProfession",
+          "SpacerProfession",
+          "SportProfession",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 0,
+        "option_count": 5,
+        "option_types": [
+          "LifeScience",
+          "PhysicalScience",
+          "RoboticScience",
+          "SocialScience",
+          "SpaceScience"
+        ]
+      },
+      {
+        "type": "PendingPreCareerEvent",
+        "kind": "precareer_event"
+      },
+      {
+        "type": "PendingPreCareerGraduation",
+        "kind": "precareer_graduation"
+      }
+    ]
+  }
+}

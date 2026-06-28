@@ -1,0 +1,13 @@
+{
+  "data": {
+    "base_hull_cost": 1500000.0,
+    "base_hull_points": 20.0,
+    "base_power_load": 1.0,
+    "tl5_hull_cost": 3000000.0
+  },
+  "annotations": {
+    "base_errors": "[]",
+    "with_drives_errors": "['Primitive hull cannot fit jump drives', 'Primitive hull cannot fit manoeuvre drives', 'Primitive hull cannot support reaction drive Thrust above 3: 4 > 3']",
+    "plasma_excess_errors": "['Primitive hull cannot support plasma drive Thrust above 3: 4 > 3']"
+  }
+}

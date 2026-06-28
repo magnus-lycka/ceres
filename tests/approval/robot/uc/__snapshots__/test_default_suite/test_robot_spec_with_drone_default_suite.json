@@ -1,0 +1,208 @@
+{
+  "data": {
+    "name": "T",
+    "tl": 8,
+    "robot_notes": [],
+    "detail_sections": [
+      {
+        "title": "Chassis",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Size 3 (Dog)",
+            "col2": "+4",
+            "col3": "—",
+            "cost": "Cr400"
+          },
+          {
+            "name": "Wheels chassis",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr400"
+          }
+        ]
+      },
+      {
+        "title": "Brain",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Primitive (INT 1)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr100"
+          }
+        ]
+      },
+      {
+        "title": "Manipulators",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "(STR 5 DEX 5) × 2",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Options",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Visual Spectrum Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Voder Speaker",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Auditory Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Transceiver 5km (improved)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Drone Interface",
+            "col2": "—",
+            "col3": "—",
+            "cost": "—"
+          }
+        ]
+      },
+      {
+        "title": "Finalisation",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Remaining",
+            "col2": "4",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Zero-slot options and Zero-BW skill packages",
+            "col2": "5/16",
+            "col3": "—",
+            "cost": "—"
+          },
+          {
+            "name": "Total",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr900"
+          }
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "section": "Robot",
+        "label": "Robot",
+        "value": "",
+        "columns": [
+          [
+            "Robot",
+            "T"
+          ],
+          [
+            "Size",
+            "3"
+          ],
+          [
+            "Hits",
+            "8"
+          ],
+          [
+            "Locomotion",
+            "Wheels"
+          ],
+          [
+            "Speed",
+            "5m"
+          ],
+          [
+            "TL",
+            "8"
+          ],
+          [
+            "Cost",
+            "Cr900"
+          ]
+        ],
+        "notes": []
+      },
+      {
+        "section": "Skills",
+        "label": "Skills",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Attacks",
+        "label": "Attacks",
+        "value": "—",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Manipulators",
+        "label": "Manipulators",
+        "value": "(STR 5 DEX 5) × 2",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Endurance",
+        "label": "Endurance",
+        "value": "72 hours",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Traits",
+        "label": "Traits",
+        "value": "Armour (+2), Small (-2)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Programming",
+        "label": "Programming",
+        "value": "Primitive (INT 1)",
+        "columns": [],
+        "notes": []
+      },
+      {
+        "section": "Options",
+        "label": "Options",
+        "value": "Auditory Sensor, Drone Interface, Spare Slots ×4, Transceiver 5km (improved), Visual Spectrum Sensor, Voder Speaker",
+        "columns": [],
+        "notes": []
+      }
+    ]
+  },
+  "annotations": {
+    "used_slots": "0",
+    "default_suite_cost_impact": "0.0",
+    "has_drone_interface": "True"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "data": {
+    "FixedMount_base": {
+      "tons": 0.0,
+      "cost": 1100000.0,
+      "power": 3.0
+    },
+    "FixedMount_ht_vhy_ee": {
+      "tons": 0.0,
+      "cost": 1600000.0,
+      "power": 2.0
+    },
+    "SingleTurret": {
+      "tons": 1.0,
+      "cost": 1200000.0,
+      "power": 5.0
+    },
+    "DoubleTurret": {
+      "tons": 1.0,
+      "cost": 1750000.0,
+      "power": 5.0
+    },
+    "TripleTurret": {
+      "tons": 1.0,
+      "cost": 3000000.0,
+      "power": 5.0
+    },
+    "QuadTurret": {
+      "tons": 1.0,
+      "cost": 5000000.0,
+      "power": 10.0
+    },
+    "PulseLaserBarbette": {
+      "tons": 5.0,
+      "cost": 6000000.0,
+      "power": 12.0
+    },
+    "ParticleBarbette": {
+      "tons": 5.0,
+      "cost": 8000000.0,
+      "power": 15.0
+    },
+    "TorpedoBarbette": {
+      "tons": 5.0,
+      "cost": 3000000.0
+    },
+    "PlasmaBarbette": {
+      "tons": 5.0,
+      "cost": 5000000.0,
+      "power": 12.0
+    },
+    "triple_turret_spec_row_quantity": 2,
+    "triple_turret_spec_row_tons": 2.0,
+    "triple_turret_spec_row_cost": 8000000.0
+  },
+  "annotations": {
+    "particle_barbette_item": "Particle Barbette (Damage × 3 after armour)",
+    "torpedo_barbette_crew_commercial": "1",
+    "torpedo_barbette_crew_military": "2",
+    "accurate_notes": "['Accurate weapons gain DM+1 to attack rolls']",
+    "intense_focus_notes": "['Intense Focus weapons gain AP+2']",
+    "easy_to_repair_resilient_notes": "['Easy to Repair weapons grant DM+1 to repair attempts', 'Resilient weapons reduce weapon critical hit Severity by -1']"
+  }
+}

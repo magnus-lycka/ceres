@@ -1,0 +1,55 @@
+{
+  "data": {
+    "BeamLaser": {
+      "cost": 500000.0,
+      "power": 4.0,
+      "item": "Beam Laser"
+    },
+    "FusionGun": {
+      "cost": 2000000.0,
+      "power": 12.0,
+      "item": "Fusion Gun"
+    },
+    "LaserDrill": {
+      "cost": 150000.0,
+      "power": 4.0,
+      "item": "Laser Drill"
+    },
+    "MissileRack": {
+      "cost": 750000.0,
+      "power": 0.0,
+      "item": "Missile Rack"
+    },
+    "ParticleBeam": {
+      "cost": 4000000.0,
+      "power": 8.0,
+      "item": "Particle Beam"
+    },
+    "PlasmaGun": {
+      "cost": 2500000.0,
+      "power": 6.0,
+      "item": "Plasma Gun"
+    },
+    "PulseLaser": {
+      "cost": 1000000.0,
+      "power": 4.0,
+      "item": "Pulse Laser"
+    },
+    "Railgun": {
+      "cost": 1000000.0,
+      "power": 2.0,
+      "item": "Railgun"
+    },
+    "Sandcaster": {
+      "cost": 250000.0,
+      "power": 0.0,
+      "item": "Sandcaster"
+    }
+  },
+  "annotations": {
+    "advanced_energy_efficient_cost_modifier": "1.1",
+    "very_advanced_very_high_yield_cost_modifier": "1.25",
+    "high_technology_vhy_ee_cost_modifier": "1.5",
+    "budget_inaccurate_cost_modifier": "0.75"
+  }
+}

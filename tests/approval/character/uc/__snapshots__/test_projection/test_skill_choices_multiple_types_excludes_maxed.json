@@ -1,0 +1,54 @@
+{
+  "data": {
+    "choices": [
+      {
+        "display_label": null,
+        "kind": "ANIMALS",
+        "handling": {
+          "display_label": null,
+          "value": 1
+        },
+        "veterinary": {
+          "display_label": null,
+          "value": 0
+        },
+        "training": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ANIMALS",
+        "handling": {
+          "display_label": null,
+          "value": 0
+        },
+        "veterinary": {
+          "display_label": null,
+          "value": 1
+        },
+        "training": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ANIMALS",
+        "handling": {
+          "display_label": null,
+          "value": 0
+        },
+        "veterinary": {
+          "display_label": null,
+          "value": 0
+        },
+        "training": {
+          "display_label": null,
+          "value": 1
+        }
+      }
+    ]
+  }
+}

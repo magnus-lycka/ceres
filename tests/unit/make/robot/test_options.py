@@ -1756,3 +1756,82 @@ class TestSecondaryLocomotion:
         )
         trait_names = [t.name for t in robot.traits]
         assert 'ATV' in trait_names
+
+
+class TestRobotTransceiver:
+    """refs/robot/14_encryption_module.md — zero-slot robot transceiver table."""
+
+    @pytest.mark.parametrize(
+        'quality, range_km, expected_tl, expected_cost',
+        [
+            ('basic', 5, 7, 250.0),
+            ('improved', 5, 8, 100.0),
+            ('improved', 50, 8, 500.0),
+            ('enhanced', 50, 10, 250.0),
+            ('advanced', 50, 13, 100.0),
+            ('improved', 500, 9, 1000.0),
+            ('enhanced', 500, 11, 500.0),
+            ('advanced', 500, 14, 250.0),
+            ('improved', 5000, 9, 5000.0),
+            ('enhanced', 5000, 12, 1000.0),
+            ('advanced', 5000, 15, 500.0),
+        ],
+    )
+    def test_table_values(self, quality, range_km, expected_tl, expected_cost):
+        from ceres.make.robot.options import RobotTransceiver
+
+        t = RobotTransceiver(range_km=range_km, quality=quality)
+        assert t.tl == expected_tl
+        assert t.cost == expected_cost
+
+    def test_slots_is_zero(self):
+        from ceres.make.robot.options import RobotTransceiver
+
+        assert RobotTransceiver(range_km=5, quality='improved').slots == 0
+
+    def test_paid_transceiver_cost_added_to_robot(self):
+        from ceres.make.robot.options import RobotTransceiver
+
+        robot_base = _robot(options=[])
+        robot_with = _robot(options=[RobotTransceiver(range_km=500, quality='improved')])
+        assert robot_with.total_cost == robot_base.total_cost + 1000.0
+
+    def test_tl_check_error_if_robot_tl_too_low(self):
+        from ceres.make.robot.options import RobotTransceiver
+
+        robot = _robot(tl=8, options=[RobotTransceiver(range_km=50, quality='enhanced')])
+        errors = [n for n in robot.options[0].notes if n.category.value == 'error']
+        assert errors
+
+
+class TestVideoScreen:
+    """refs/robot/14_encryption_module.md — Video Screen table."""
+
+    @pytest.mark.parametrize(
+        'quality, expected_tl, expected_cost',
+        [
+            ('basic', 7, 200.0),
+            ('improved', 8, 500.0),
+            ('advanced', 10, 2000.0),
+        ],
+    )
+    def test_table_values(self, quality, expected_tl, expected_cost):
+        from ceres.make.robot.options import VideoScreen
+
+        vs = VideoScreen(quality=quality)
+        assert vs.tl == expected_tl
+        assert vs.cost == expected_cost
+
+    def test_is_default_suite_forces_zero_cost(self):
+        from ceres.make.robot.options import VideoScreen
+
+        vs = VideoScreen(quality='basic', is_default_suite=True)
+        assert vs.cost == 0.0
+        assert vs.tl == 7
+
+    def test_paid_screen_cost_added_to_robot(self):
+        from ceres.make.robot.options import VideoScreen
+
+        robot_base = _robot(options=[])
+        robot_with = _robot(options=[VideoScreen(quality='improved')])
+        assert robot_with.total_cost == robot_base.total_cost + 500.0

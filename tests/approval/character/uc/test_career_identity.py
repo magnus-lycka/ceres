@@ -1,296 +1,95 @@
-"""Tests for index-based career/assignment identity (replacing string identity checks)."""
+"""Approval snapshots for career assignment identity and current-assignment tracking."""
 
-from ceres.character.domain.career import NOBLE, PRISONER, PSION, SCOUT
-from ceres.character.domain.career.career_events import (
-    AdvancementHandler,
-    CareerEntryHandler,
-    SurviveHandler,
-    TermEventHandler,
-)
-from ceres.character.domain.career.loader import load_careers
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+import pytest
+
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.approval.character.helpers import (
+    CharacterSession,
+    background_skills_form,
+    career_entry_form,
+    keep_homeworld_form,
+    roll_form,
+    skill_table_form,
+    ucp_form,
+)
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
+from tests.unit.character.helpers import MOCK_WORLD
 
 
-def _full_setup():
-    from ceres.character.domain.skills import Admin, Athletics, Drive, Electronics
-
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
-    return [
-        ev1,
-        ev2,
-        # INT=9 EDU=10 → 4 background skills
-        Event(
-            fulfills=(ev2.id, 0),
-            handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Drive(), Electronics()]),
-        ),
-    ]
+def _session(ucp: str = '7869A5') -> CharacterSession:
+    session = CharacterSession()
+    session.start(VILANI, MOCK_WORLD)
+    session.submit(ucp_form(ucp))
+    session.submit(background_skills_form(Admin(), Athletics(), Carouse(), Drive()))
+    return session
 
 
-class TestCareerDataAdvancementIsSpecial:
-    def test_base_career_advancement_not_special(self):
-        scout = SCOUT
-        assert scout.advancement_is_special() is False
-
-    def test_prisoner_advancement_is_special(self):
-        prisoner = PRISONER
-        assert prisoner.advancement_is_special() is True
-
-    def test_all_non_prisoner_careers_not_special(self):
-        non_prisoner = [career for career in load_careers() if not isinstance(career, type(PRISONER))]
-        for career in non_prisoner:
-            assert career.advancement_is_special() is False, f'{career.name} should not be special'
+@pytest.mark.approval
+def test_scout_courier_assignment_after_entry(snapshot):
+    session = _session()
+    session.submit(career_entry_form('Scout', 'Courier', 7))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-class TestCareerDataAssignmentIndex:
-    def test_assignment_by_index_returns_first_assignment(self):
-        scout = SCOUT
-        result = scout.assignment_by_index(1)
-        assert result is not None
-        assert result.name == 'Courier'
-
-    def test_assignment_by_index_returns_second_assignment(self):
-        scout = SCOUT
-        result = scout.assignment_by_index(2)
-        assert result is not None
-        assert result.name == 'Surveyor'
-
-    def test_assignment_by_index_returns_third_assignment(self):
-        scout = SCOUT
-        result = scout.assignment_by_index(3)
-        assert result is not None
-        assert result.name == 'Explorer'
-
-    def test_assignment_by_index_returns_none_for_zero(self):
-        scout = SCOUT
-        assert scout.assignment_by_index(0) is None
-
-    def test_assignment_by_index_returns_none_for_out_of_range(self):
-        scout = SCOUT
-        assert scout.assignment_by_index(4) is None
-
-    def test_assignment_index_returns_one_for_first(self):
-        scout = SCOUT
-        assignment = scout.assignments[0]
-        assert scout.assignment_index(assignment) == 1
-
-    def test_assignment_index_returns_two_for_second(self):
-        scout = SCOUT
-        assignment = scout.assignments[1]
-        assert scout.assignment_index(assignment) == 2
-
-    def test_assignment_index_returns_three_for_third(self):
-        scout = SCOUT
-        assignment = scout.assignments[2]
-        assert scout.assignment_index(assignment) == 3
-
-    def test_assignment_by_index_round_trips(self):
-        for career in load_careers():
-            for i, assignment in enumerate(career.assignments, 1):
-                by_index = career.assignment_by_index(i)
-                assert by_index is assignment, f'{career.name} index {i} did not round-trip'
-                assert career.assignment_index(assignment) == i
+@pytest.mark.approval
+def test_scout_surveyor_assignment_after_entry(snapshot):
+    session = _session()
+    session.submit(career_entry_form('Scout', 'Surveyor', 7))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-class TestAssignmentRanksByIndex:
-    def test_assignment_ranks_accepts_int_index(self):
-        noble = NOBLE
-        # Noble has ranks_by_assignment with 3 assignments
-        result = noble.assignment_ranks(1)
-        # Assignment 1 is Administrator; rank 1 title is 'Clerk'
-        assert result[1].title == 'Clerk'
-
-    def test_assignment_ranks_falls_back_to_default_for_unknown_index(self):
-        scout = SCOUT
-        # Scout has no ranks_by_assignment, should return default ranks
-        result = scout.assignment_ranks(1)
-        assert result is scout.ranks
-
-    def test_rank_title_retains_latest_assignment_title_until_replaced(self):
-        psion = PSION
-        adept = psion.assignment('Adept')
-        assert adept is not None
-
-        assert psion.rank_title(False, 1, adept) == ('1', 'Initiate')
-        assert psion.rank_title(False, 2, adept) == ('2', 'Initiate')
-        assert psion.rank_title(False, 3, adept) == ('3', 'Acolyte')
-        assert psion.rank_title(False, 5, adept) == ('5', 'Acolyte')
-        assert psion.rank_title(False, 6, adept) == ('6', 'Master')
-
-    def test_rank_title_before_first_assignment_title_is_empty(self):
-        psion = PSION
-        wild_talent = psion.assignment('Wild Talent')
-        assert wild_talent is not None
-
-        assert psion.rank_title(False, 0, wild_talent) == ('0', '')
-
-    def test_available_tables_uses_assignment_object(self):
-        scout = SCOUT
-        courier = scout.assignment_by_index(1)
-        edu = 7
-        tables = scout.available_tables(edu, courier)
-        keys = [t.key for t in tables]
-        assert 'assignment1' in keys
-        assert 'service_skills' in keys
-        assert 'personal_development' in keys
-        labels = [t.label for t in tables]
-        assert 'Courier' in labels
-
-    def test_available_tables_different_assignments_return_different_tables(self):
-        scout = SCOUT
-        courier = scout.assignment_by_index(1)
-        surveyor = scout.assignment_by_index(2)
-        tables_courier = scout.available_tables(7, courier)
-        tables_surveyor = scout.available_tables(7, surveyor)
-        labels_courier = [t.label for t in tables_courier]
-        labels_surveyor = [t.label for t in tables_surveyor]
-        assert 'Courier' in labels_courier
-        assert 'Surveyor' in labels_surveyor
-        assert 'Courier' not in labels_surveyor
-        assert 'Surveyor' not in labels_courier
+@pytest.mark.approval
+def test_scout_explorer_assignment_after_entry(snapshot):
+    session = _session()
+    session.submit(career_entry_form('Scout', 'Explorer', 7))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-class TestCareerTermIndex:
-    def test_career_term_has_assignment_after_career_start(self):
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
-            ),
-        ]
-        projection = replay(1, events)
-        assert len(projection.summary.career_terms) == 1
-        assert projection.summary.career_terms[0].assignment.name == 'Courier'
-
-    def test_career_term_assignment_for_second_assignment(self):
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Surveyor'), qualification_roll=7),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.career_terms[0].assignment.name == 'Surveyor'
-
-    def test_career_term_assignment_for_third_assignment(self):
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Explorer'), qualification_roll=7),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.career_terms[0].assignment.name == 'Explorer'
+@pytest.mark.approval
+def test_noble_administrator_assignment_after_entry(snapshot):
+    # Noble requires SOC 10+; UCP '7869AB' gives SOC=11 (DM+1) so roll=9 is enough.
+    session = _session(ucp='7869AB')
+    session.submit(career_entry_form('Noble', 'Administrator', 9))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-class TestCurrentAssignment:
-    def test_current_assignment_set_after_courier(self):
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_assignment is not None
-        assert projection.summary.current_assignment.name == 'Courier'
-
-    def test_current_assignment_set_after_surveyor(self):
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Surveyor'), qualification_roll=7),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_assignment is not None
-        assert projection.summary.current_assignment.name == 'Surveyor'
-
-    def test_current_assignment_for_noble_administrator(self):
-        # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(
-                    career=NOBLE, assignment=NOBLE.assignment('Administrator'), qualification_roll=11
-                ),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_assignment is not None
-        assert projection.summary.current_assignment.name == 'Administrator'
-
-    def test_current_assignment_for_noble_dilettante(self):
-        # Noble requires SOC 10+; with SOC=5 (DM=-1) need roll >= 11
-        _base = _full_setup()
-        events = [
-            *_base,
-            Event(
-                fulfills=(_base[-1].id, 0),
-                handler=CareerEntryHandler(
-                    career=NOBLE, assignment=NOBLE.assignment('Dilettante'), qualification_roll=11
-                ),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_assignment is not None
-        assert projection.summary.current_assignment.name == 'Dilettante'
-
-    def test_assignment_change_updates_current_assignment(self):
-        from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
-
-        d = CharacterDriver()
-        d.start(VILANI, MOCK_WORLD)
-        d.ucp('7869A5')
-        d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
-        d.career('Scout', 'Courier', roll=7)
-        assert d.projection.summary.current_assignment is not None
-        assert d.projection.summary.current_assignment.name == 'Courier'
-        d.survive(roll=7)
-        d.term_event(roll=5)
-        d.advancement(roll=9)
-        d.switch_assignment('Surveyor', roll=5)
-        assert d.projection.summary.current_assignment is not None
-        assert d.projection.summary.current_assignment.name == 'Surveyor'
+@pytest.mark.approval
+def test_noble_dilettante_assignment_after_entry(snapshot):
+    session = _session(ucp='7869AB')
+    session.submit(career_entry_form('Noble', 'Dilettante', 9))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-class TestAdvancementEventUsesSpecialMethod:
-    """Verify that AdvancementEvent uses advancement_is_special() not career.name == 'Prisoner'."""
+@pytest.mark.approval
+def test_assignment_change_updates_current_assignment(snapshot):
+    """Switching assignment mid-career updates current_assignment."""
+    session = _session()
+    session.submit(career_entry_form('Scout', 'Courier', 7))
+    session.submit(keep_homeworld_form())  # PendingHomeworldChangeOffered (MOCK_WORLD has Scout base)
+    session.submit(roll_form(7))  # survive
+    session.submit(roll_form(5))  # term_event
+    session.submit(roll_form(9))  # advancement (success: DEX 8+, DEX=8, DM+0, 9 ≥ 8)
+    session.submit(skill_table_form('service_skills', 1))  # PendingSkillTable queued before assignment change
+    session.submit({'choice': 'switch'})  # PendingAssignmentChangeChoice → switch
+    session.submit({'assignment': 'Surveyor', 'roll': '5'})  # PendingSwitchAssignment
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
-    def test_non_prisoner_advancement_applies_normally(self):
-        # A Scout Courier survives, then advances — should use normal advancement logic.
-        # Survive pending is 4.0, term event 5.0, advancement 6.0 (from career_progress_pending).
-        _base = _full_setup()
-        ev4 = Event(
-            fulfills=(_base[-1].id, 0),
-            handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
-        )
-        ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
-        ev6 = Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=5))
-        events = [
-            *_base,
-            ev4,
-            ev5,
-            ev6,
-            Event(fulfills=(ev6.id, 0), handler=AdvancementHandler(roll=9)),
-        ]
-        projection = replay(1, events)
-        # Should not crash and should still be in Scout career
-        assert projection.summary.current_career is not None
-        assert projection.summary.current_career.name == 'Scout'
+
+@pytest.mark.approval
+def test_scout_current_career_after_normal_advancement(snapshot):
+    """current_career remains Scout after survive + term_event + advancement."""
+    session = _session()
+    session.submit(career_entry_form('Scout', 'Courier', 7))
+    session.submit(keep_homeworld_form())
+    session.submit(roll_form(8))  # survive
+    session.submit(roll_form(5))  # term_event
+    session.submit(roll_form(9))  # advancement
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

@@ -1,0 +1,260 @@
+{
+  "data": {
+    "name": "Test",
+    "age": 22,
+    "sophont": {
+      "name": "Humaniti",
+      "ucp_stats": [
+        "STR",
+        "DEX",
+        "END",
+        "INT",
+        "EDU",
+        "SOC"
+      ],
+      "allegiance_pattern": "*",
+      "remarks_codes": []
+    },
+    "homeworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "birthworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "characteristics": {
+      "STR": 7,
+      "DEX": 8,
+      "END": 7,
+      "INT": 7,
+      "EDU": 2,
+      "SOC": 5
+    },
+    "psionics": null,
+    "last_career": null,
+    "last_career_ejected": false,
+    "last_assignment": null,
+    "rank": 0,
+    "terms": [
+      {
+        "kind": "spacer_community",
+        "event": null,
+        "mishap": null,
+        "prison": null,
+        "precareer": "Spacer Community",
+        "completed": true,
+        "graduated": true,
+        "honours": false
+      },
+      {
+        "kind": "scholar_term",
+        "event": null,
+        "mishap": null,
+        "prison": null,
+        "career": {
+          "kind": "SCHOLAR_CAREER"
+        },
+        "assignment": {
+          "name": "Field Researcher",
+          "description": "You are an explorer or field researcher, equally at home in the laboratory or wilderness.",
+          "survival": {
+            "characteristic": "END",
+            "target": 6
+          },
+          "advancement": {
+            "characteristic": "INT",
+            "target": 6
+          }
+        },
+        "commission": false,
+        "rank": 0,
+        "muster_out": {
+          "terms": 1,
+          "cash_count": 0,
+          "benefits": [],
+          "extra_rolls": 0,
+          "lost_rolls": 0,
+          "benefit_roll_dms": [],
+          "used": false,
+          "rolls_remaining": 0,
+          "pending_setup": false
+        },
+        "forced_stay": false,
+        "forced_leave": false
+      }
+    ],
+    "drafted": false,
+    "skills": [
+      {
+        "display_label": null,
+        "kind": "ADMIN",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "VACC_SUIT",
+        "level": {
+          "display_label": null,
+          "value": 1
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ASTROGATION",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ELECTRONICS",
+        "comms": {
+          "display_label": null,
+          "value": 0
+        },
+        "computers": {
+          "display_label": null,
+          "value": 0
+        },
+        "remote_ops": {
+          "display_label": null,
+          "value": 0
+        },
+        "sensors": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "CAROUSE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "PILOT",
+        "small_craft": {
+          "display_label": null,
+          "value": 0
+        },
+        "spacecraft": {
+          "display_label": null,
+          "value": 0
+        },
+        "capital_ships": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ENGINEER",
+        "m_drive": {
+          "display_label": null,
+          "value": 1
+        },
+        "j_drive": {
+          "display_label": null,
+          "value": 0
+        },
+        "life_support": {
+          "display_label": null,
+          "value": 0
+        },
+        "power": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "DIPLOMAT",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "MEDIC",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "INVESTIGATE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      }
+    ],
+    "connections": [],
+    "problems": [
+      "Spacer Community graduation: DM+1 to enlist, commission, and promotion in Merchant (Free Trader). Apply manually."
+    ],
+    "narrative": [
+      "Pre-career event (Spacer Community): Taking advantage of youth, you party as much as you study.",
+      "Graduated from Spacer Community."
+    ],
+    "cash": 0,
+    "dead": false,
+    "parole_threshold": null
+  }
+}

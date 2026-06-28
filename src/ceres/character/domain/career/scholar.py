@@ -44,7 +44,6 @@ from ceres.character.domain.career.common_pending import (
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.health.health_events import PendingAgingRoll
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -136,13 +135,9 @@ class ScholarMishap5GiveUp(ChoiceBase):
         projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
         if projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
-        projection.summary.age += 4
-        if projection.summary.age >= 34:
+        if projection.advance_age(event.id, 0):
             projection.clear_current_career()
             projection.summary.career_terms[-1].require_muster_out().pending_setup = True
-            projection.pending_inputs.append(
-                PendingAgingRoll(pending_id=(event.id, 0), instruction='Roll 2D on Aging table')
-            )
         else:
             muster_out_setup(projection, event.id, 0)
 

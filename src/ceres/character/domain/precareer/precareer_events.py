@@ -4,7 +4,7 @@ from typing import Any, Literal, cast
 from pydantic import Field
 
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_data import PreCareerData, _PreCareerField
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
@@ -49,7 +49,7 @@ def _expand_skill_to_spec_instances(skill: AnySkill) -> list[AnySkill]:
 
 class PreCareerEntryHandler(EventHandlerBase):
     kind: Literal['precareer_entry_event'] = 'precareer_entry_event'
-    precareer: PreCareerData
+    precareer: _PreCareerField
     roll: int  # 2D result for entry check (before characteristic DM)
 
     model_config = {'arbitrary_types_allowed': True}

@@ -1,0 +1,234 @@
+{
+  "data": {
+    "Workshop": {
+      "tons": 6.0,
+      "cost": 900000.0,
+      "power": 0.0
+    },
+    "Laboratory": {
+      "tons": 4.0,
+      "cost": 1000000.0,
+      "power": 0.0
+    },
+    "LibraryFacility": {
+      "tons": 4.0,
+      "cost": 4000000.0,
+      "power": 0.0
+    },
+    "BriefingRoom": {
+      "tons": 4.0,
+      "cost": 500000.0,
+      "power": 0.0
+    },
+    "CommandBridge": {
+      "tons": 40.0,
+      "cost": 30000000.0,
+      "power": 0.0
+    },
+    "Armoury": {
+      "tons": 1.0,
+      "cost": 250000.0,
+      "power": 0.0
+    },
+    "WetBar": {
+      "tons": 0.0,
+      "cost": 2000.0,
+      "power": 0.0
+    },
+    "MedicalBay": {
+      "tons": 4.0,
+      "cost": 2000000.0,
+      "power": 1.0
+    },
+    "MedicalBay_with_autodoc": {
+      "tons": 4.0,
+      "cost": 2100000.0,
+      "power": 1.0
+    },
+    "GravScreen": {
+      "tons": 2.0,
+      "cost": 2000000.0,
+      "power": 4.0
+    },
+    "GravityWellGenerator": {
+      "tons": 100.0,
+      "cost": 120000000.0,
+      "power": 500.0
+    },
+    "JumpFilter": {
+      "tons": 0.0,
+      "cost": 5000000.0,
+      "power": 1.0
+    },
+    "PsionicShielding": {
+      "tons": 4.0,
+      "cost": 2000000.0,
+      "power": 0.0
+    },
+    "AdvancedPsionicShielding": {
+      "tons": 0.0,
+      "cost": 4000000.0,
+      "power": 0.0
+    },
+    "AccelerationBench": {
+      "tons": 1.0,
+      "cost": 10000.0,
+      "power": 0.0
+    },
+    "AccelerationSeat": {
+      "tons": 0.5,
+      "cost": 30000.0,
+      "power": 0.0
+    },
+    "Brewery_20L": {
+      "tons": 1.0,
+      "cost": 100000.0,
+      "power": 0.0
+    },
+    "GourmetKitchen_4": {
+      "tons": 4.0,
+      "cost": 800000.0,
+      "power": 0.0
+    },
+    "BasicReEntryCapsule": {
+      "tons": 0.5,
+      "cost": 20000.0,
+      "power": 0.0
+    },
+    "AssaultReEntryCapsule": {
+      "tons": 0.5,
+      "cost": 50000.0,
+      "power": 0.0
+    },
+    "HighSurvivabilityReEntryCapsule": {
+      "tons": 0.5,
+      "cost": 100000.0,
+      "power": 0.0
+    },
+    "ReEntryPod": {
+      "tons": 1.0,
+      "cost": 150000.0,
+      "power": 0.0
+    },
+    "Airlock_3": {
+      "tons": 3.0,
+      "cost": 300000.0,
+      "power": 0.0
+    },
+    "Aerofins": {
+      "tons": 20.0,
+      "cost": 2000000.0,
+      "power": 0.0
+    },
+    "BreachingTube": {
+      "tons": 3.0,
+      "cost": 3000000.0,
+      "power": 0.0
+    },
+    "ForcedLinkage_Basic": {
+      "tons": 2.0,
+      "cost": 50000.0,
+      "power": 0.0
+    },
+    "ForcedLinkage_Improved": {
+      "tons": 2.0,
+      "cost": 75000.0,
+      "power": 0.0
+    },
+    "ForcedLinkage_Enhanced": {
+      "tons": 2.0,
+      "cost": 100000.0,
+      "power": 0.0
+    },
+    "ForcedLinkage_Advanced": {
+      "tons": 2.0,
+      "cost": 500000.0,
+      "power": 0.0
+    },
+    "HolographicHull": {
+      "tons": 0.0,
+      "cost": 40000000.0,
+      "power": 200.0
+    },
+    "HotTub_2": {
+      "tons": 0.5,
+      "cost": 6000.0,
+      "power": 0.0
+    },
+    "ProbeDrones_10": {
+      "tons": 2.0,
+      "cost": 1000000.0,
+      "power": 0.0
+    },
+    "AdvancedProbeDrones_10": {
+      "tons": 2.0,
+      "cost": 1600000.0,
+      "power": 0.0
+    },
+    "RepairDrones": {
+      "tons": 4.0,
+      "cost": 800000.0,
+      "power": 0.0
+    },
+    "MiningDrones_10": {
+      "tons": 20.0,
+      "cost": 2000000.0,
+      "power": 0.0
+    },
+    "TrainingFacility_2": {
+      "tons": 4.0,
+      "cost": 800000.0,
+      "power": 0.0
+    },
+    "CommonArea_2": {
+      "tons": 2.0,
+      "cost": 200000.0,
+      "power": 0.0
+    },
+    "SwimmingPool_2": {
+      "tons": 2.0,
+      "cost": 40000.0,
+      "power": 0.0
+    },
+    "Theatre_2": {
+      "tons": 2.0,
+      "cost": 200000.0,
+      "power": 0.0
+    },
+    "Theatre_2_advanced": {
+      "tons": 2.0,
+      "cost": 400000.0,
+      "power": 0.0
+    },
+    "ZeroGRoom_2": {
+      "tons": 2.0,
+      "cost": 50000.0,
+      "power": 0.0
+    },
+    "CommercialZone_240": {
+      "tons": 240.0,
+      "cost": 48000000.0,
+      "power": 1.0
+    },
+    "Biosphere_4": {
+      "tons": 4.0,
+      "cost": 800000.0,
+      "power": 4.0
+    },
+    "UNREPSystem_25": {
+      "tons": 25.0,
+      "cost": 12500000.0,
+      "power": 25.0
+    },
+    "MultiEnvironmentSpace_40": {
+      "tons": 2.0,
+      "cost": 1000000.0,
+      "power": 2.0
+    },
+    "ConstructionDeck_100": {
+      "tons": 100.0,
+      "cost": 50000000.0,
+      "power": 100.0
+    }
+  }
+}

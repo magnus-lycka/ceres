@@ -1,0 +1,875 @@
+{
+  "data": {
+    "name": "Test",
+    "age": 22,
+    "sophont": {
+      "name": "Vilani",
+      "ucp_stats": [
+        "STR",
+        "DEX",
+        "END",
+        "INT",
+        "EDU",
+        "SOC"
+      ],
+      "allegiance_pattern": "Im*",
+      "remarks_codes": []
+    },
+    "homeworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "birthworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "characteristics": {
+      "STR": 7,
+      "DEX": 8,
+      "END": 6,
+      "INT": 9,
+      "EDU": 10,
+      "SOC": 9
+    },
+    "psionics": null,
+    "last_career": null,
+    "last_career_ejected": false,
+    "last_assignment": null,
+    "rank": 1,
+    "terms": [
+      {
+        "kind": "army_term",
+        "event": "Surrounded and outnumbered by the enemy, you hold out until relief arrives. Gain DM+2 to your next advancement roll.",
+        "mishap": null,
+        "prison": null,
+        "career": {
+          "kind": "ARMY_CAREER"
+        },
+        "assignment": {
+          "name": "Infantry",
+          "description": "You are one of the Poor Bloody Infantry on the ground.",
+          "survival": {
+            "characteristic": "STR",
+            "target": 6
+          },
+          "advancement": {
+            "characteristic": "EDU",
+            "target": 6
+          }
+        },
+        "commission": true,
+        "rank": 1,
+        "muster_out": {
+          "terms": 1,
+          "cash_count": 0,
+          "benefits": [],
+          "extra_rolls": 0,
+          "lost_rolls": 0,
+          "benefit_roll_dms": [],
+          "used": false,
+          "rolls_remaining": 0,
+          "pending_setup": false
+        },
+        "forced_stay": false,
+        "forced_leave": false
+      }
+    ],
+    "drafted": false,
+    "skills": [
+      {
+        "display_label": null,
+        "kind": "ADMIN",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ATHLETICS",
+        "dexterity": {
+          "display_label": null,
+          "value": 0
+        },
+        "endurance": {
+          "display_label": null,
+          "value": 0
+        },
+        "strength": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "CAROUSE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "DRIVE",
+        "hovercraft": {
+          "display_label": null,
+          "value": 0
+        },
+        "mole": {
+          "display_label": null,
+          "value": 0
+        },
+        "track": {
+          "display_label": null,
+          "value": 0
+        },
+        "walker": {
+          "display_label": null,
+          "value": 0
+        },
+        "wheel": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "VACC_SUIT",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "GUN_COMBAT",
+        "archaic": {
+          "display_label": null,
+          "value": 0
+        },
+        "energy": {
+          "display_label": null,
+          "value": 0
+        },
+        "slug": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "RECON",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "MELEE",
+        "unarmed": {
+          "display_label": null,
+          "value": 0
+        },
+        "blade": {
+          "display_label": null,
+          "value": 0
+        },
+        "bludgeon": {
+          "display_label": null,
+          "value": 0
+        },
+        "natural": {
+          "display_label": null,
+          "value": 0
+        },
+        "grapple": {
+          "display_label": null,
+          "value": 0
+        },
+        "striking": {
+          "display_label": null,
+          "value": 0
+        },
+        "fencing": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "HEAVY_WEAPONS",
+        "artillery": {
+          "display_label": null,
+          "value": 0
+        },
+        "portable": {
+          "display_label": null,
+          "value": 0
+        },
+        "vehicle": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "LEADERSHIP",
+        "level": {
+          "display_label": null,
+          "value": 1
+        }
+      }
+    ],
+    "connections": [],
+    "problems": [],
+    "narrative": [
+      "Term 1 event (Army): Surrounded and outnumbered by the enemy, you hold out until relief arrives. Gain DM+2 to your next advancement roll."
+    ],
+    "cash": 0,
+    "dead": false,
+    "parole_threshold": null
+  },
+  "annotations": {
+    "session_log": [
+      {
+        "sophont": "Vilani",
+        "homeworld": "Hexx",
+        "name": "Test"
+      },
+      [
+        {
+          "name": "STR",
+          "label": "STR",
+          "min": 1,
+          "max": 15
+        },
+        {
+          "name": "DEX",
+          "label": "DEX",
+          "min": 1,
+          "max": 15
+        },
+        {
+          "name": "END",
+          "label": "END",
+          "min": 1,
+          "max": 15
+        },
+        {
+          "name": "INT",
+          "label": "INT",
+          "min": 1,
+          "max": 15
+        },
+        {
+          "name": "EDU",
+          "label": "EDU",
+          "min": 1,
+          "max": 15
+        },
+        {
+          "name": "SOC",
+          "label": "SOC",
+          "min": 1,
+          "max": 15
+        }
+      ],
+      {
+        "STR": "7",
+        "DEX": "8",
+        "END": "6",
+        "INT": "9",
+        "EDU": "10",
+        "SOC": "9"
+      },
+      [
+        {
+          "name": "skill",
+          "label": "Skills",
+          "options": [
+            [
+              "Admin",
+              "{\"display_label\":null,\"kind\":\"ADMIN\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Animals",
+              "{\"display_label\":null,\"kind\":\"ANIMALS\",\"handling\":{\"display_label\":null,\"value\":0},\"veterinary\":{\"display_label\":null,\"value\":0},\"training\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Athletics",
+              "{\"display_label\":null,\"kind\":\"ATHLETICS\",\"dexterity\":{\"display_label\":null,\"value\":0},\"endurance\":{\"display_label\":null,\"value\":0},\"strength\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Carouse",
+              "{\"display_label\":null,\"kind\":\"CAROUSE\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Colonist Profession",
+              "{\"display_label\":null,\"kind\":\"COLONIST_PROFESSION\",\"farming\":{\"display_label\":null,\"value\":0},\"ranching\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Creative Art",
+              "{\"display_label\":null,\"kind\":\"CREATIVE_ART\",\"visual_media\":{\"display_label\":null,\"value\":0},\"exotic_media\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Drive",
+              "{\"display_label\":null,\"kind\":\"DRIVE\",\"hovercraft\":{\"display_label\":null,\"value\":0},\"mole\":{\"display_label\":null,\"value\":0},\"track\":{\"display_label\":null,\"value\":0},\"walker\":{\"display_label\":null,\"value\":0},\"wheel\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Electronics",
+              "{\"display_label\":null,\"kind\":\"ELECTRONICS\",\"comms\":{\"display_label\":null,\"value\":0},\"computers\":{\"display_label\":null,\"value\":0},\"remote_ops\":{\"display_label\":null,\"value\":0},\"sensors\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Flyer",
+              "{\"display_label\":null,\"kind\":\"FLYER\",\"airship\":{\"display_label\":null,\"value\":0},\"grav\":{\"display_label\":null,\"value\":0},\"ornithopter\":{\"display_label\":null,\"value\":0},\"rotor\":{\"display_label\":null,\"value\":0},\"wing\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Freeloader Profession",
+              "{\"display_label\":null,\"kind\":\"FREELOADER_PROFESSION\",\"scrounging\":{\"display_label\":null,\"value\":0},\"security\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Hostile Environment Profession",
+              "{\"display_label\":null,\"kind\":\"HOSTILE_ENVIRONMENT_PROFESSION\",\"contaminant\":{\"display_label\":null,\"value\":0},\"low_g\":{\"display_label\":null,\"value\":0},\"high_g\":{\"display_label\":null,\"value\":0},\"underwater\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Aekhu",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_AEKHU\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Arrghoun",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_ARRGHOUN\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Bilanidin",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_VILANI\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Galanglic",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_GALANGLIC\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Gvegh",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_GVEGH\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Irilitok",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_IRILITOK\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Logaksu",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_LOGAKSU\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Ovaghoun",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_OVAGHOUN\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Oynprith",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_OYNPRITH\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Sagamål",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_SAGAMAAL\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Suedzuk",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_SUEDZUK\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Te-Zlodh",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_DARRIAN\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Trokh",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_TROKH\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Vuakedh",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_VUAKEDH\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Language Zdetl",
+              "{\"display_label\":null,\"kind\":\"LANGUAGE_ZDETL\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Life Science",
+              "{\"display_label\":null,\"kind\":\"LIFE_SCIENCE\",\"biology\":{\"display_label\":null,\"value\":0},\"genetics\":{\"display_label\":null,\"value\":0},\"psionicology\":{\"display_label\":null,\"value\":0},\"xenology\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Mechanic",
+              "{\"display_label\":null,\"kind\":\"MECHANIC\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Medic",
+              "{\"display_label\":null,\"kind\":\"MEDIC\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Performing Art",
+              "{\"display_label\":null,\"kind\":\"PERFORMING_ART\",\"performer\":{\"display_label\":null,\"value\":0},\"instrument\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Physical Science",
+              "{\"display_label\":null,\"kind\":\"PHYSICAL_SCIENCE\",\"chemistry\":{\"display_label\":null,\"value\":0},\"physics\":{\"display_label\":null,\"value\":0},\"jumpspace_physics\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Presentation Art",
+              "{\"display_label\":null,\"kind\":\"PRESENTATION_ART\",\"holography\":{\"display_label\":null,\"value\":0},\"writing\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Robotic Science",
+              "{\"display_label\":null,\"kind\":\"ROBOTIC_SCIENCE\",\"cybernetics\":{\"display_label\":null,\"value\":0},\"robotics\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Seafarer",
+              "{\"display_label\":null,\"kind\":\"SEAFARER\",\"ocean_ships\":{\"display_label\":null,\"value\":0},\"personal\":{\"display_label\":null,\"value\":0},\"sail\":{\"display_label\":null,\"value\":0},\"submarine\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Social Science",
+              "{\"display_label\":null,\"kind\":\"SOCIAL_SCIENCE\",\"archaeology\":{\"display_label\":null,\"value\":0},\"economics\":{\"display_label\":null,\"value\":0},\"history\":{\"display_label\":null,\"value\":0},\"linguistics\":{\"display_label\":null,\"value\":0},\"philosophy\":{\"display_label\":null,\"value\":0},\"psychology\":{\"display_label\":null,\"value\":0},\"sophontology\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Space Science",
+              "{\"display_label\":null,\"kind\":\"SPACE_SCIENCE\",\"astronomy\":{\"display_label\":null,\"value\":0},\"cosmology\":{\"display_label\":null,\"value\":0},\"planetology\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Spacer Profession",
+              "{\"display_label\":null,\"kind\":\"SPACER_PROFESSION\",\"belter\":{\"display_label\":null,\"value\":0},\"crewmember\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Sport Profession",
+              "{\"display_label\":null,\"kind\":\"SPORT_PROFESSION\",\"atmosphere_surfing\":{\"display_label\":null,\"value\":0},\"golf\":{\"display_label\":null,\"value\":0},\"motorsports\":{\"display_label\":null,\"value\":0},\"racquet_sports\":{\"display_label\":null,\"value\":0},\"team_ball_sports\":{\"display_label\":null,\"value\":0},\"track_and_field\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Streetwise",
+              "{\"display_label\":null,\"kind\":\"STREETWISE\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Survival",
+              "{\"display_label\":null,\"kind\":\"SURVIVAL\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Vacc Suit",
+              "{\"display_label\":null,\"kind\":\"VACC_SUIT\",\"level\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Worker Profession",
+              "{\"display_label\":null,\"kind\":\"WORKER_PROFESSION\",\"armourer\":{\"display_label\":null,\"value\":0},\"biologicals\":{\"display_label\":null,\"value\":0},\"civil_engineering\":{\"display_label\":null,\"value\":0},\"construction\":{\"display_label\":null,\"value\":0},\"hydroponics\":{\"display_label\":null,\"value\":0},\"metalworking\":{\"display_label\":null,\"value\":0},\"polymers\":{\"display_label\":null,\"value\":0}}"
+            ]
+          ],
+          "min_select": 4,
+          "max_select": 4,
+          "default": null
+        }
+      ],
+      {
+        "skill": [
+          "{\"display_label\":null,\"kind\":\"ADMIN\",\"level\":{\"display_label\":null,\"value\":0}}",
+          "{\"display_label\":null,\"kind\":\"ATHLETICS\",\"dexterity\":{\"display_label\":null,\"value\":0},\"endurance\":{\"display_label\":null,\"value\":0},\"strength\":{\"display_label\":null,\"value\":0}}",
+          "{\"display_label\":null,\"kind\":\"CAROUSE\",\"level\":{\"display_label\":null,\"value\":0}}",
+          "{\"display_label\":null,\"kind\":\"DRIVE\",\"hovercraft\":{\"display_label\":null,\"value\":0},\"mole\":{\"display_label\":null,\"value\":0},\"track\":{\"display_label\":null,\"value\":0},\"walker\":{\"display_label\":null,\"value\":0},\"wheel\":{\"display_label\":null,\"value\":0}}"
+        ]
+      },
+      [
+        {
+          "career_options": [
+            {
+              "name": "Agent",
+              "description": "Law enforcement agencies, corporate operatives, spies and others who work in the shadows.",
+              "qualification": {
+                "characteristic": "INT",
+                "target": 6
+              },
+              "assignments": [
+                {
+                  "name": "Law Enforcement",
+                  "description": "You are a police officer or detective."
+                },
+                {
+                  "name": "Intelligence",
+                  "description": "You work as a spy or saboteur."
+                },
+                {
+                  "name": "Corporate",
+                  "description": "You work for a corporation, spying on rival organisations."
+                }
+              ]
+            },
+            {
+              "name": "Army",
+              "description": "Members of the planetary armed fighting forces. Soldiers deal with planetary surface actions, battles and campaigns. Such individuals may also be mercenaries for hire.",
+              "qualification": {
+                "characteristic": "END",
+                "target": 5
+              },
+              "assignments": [
+                {
+                  "name": "Support",
+                  "description": "You are an engineer, cook or in some other role behind the front lines."
+                },
+                {
+                  "name": "Infantry",
+                  "description": "You are one of the Poor Bloody Infantry on the ground."
+                },
+                {
+                  "name": "Cavalry",
+                  "description": "You are one of the crew of a gunship or tank."
+                }
+              ]
+            },
+            {
+              "name": "Citizen",
+              "description": "Individuals serving in a corporation, bureaucracy or industry, or who are making a new life on an untamed planet.",
+              "qualification": {
+                "characteristic": "EDU",
+                "target": 5
+              },
+              "assignments": [
+                {
+                  "name": "Corporate",
+                  "description": "You are an executive or manager in a large corporation."
+                },
+                {
+                  "name": "Worker",
+                  "description": "You are a blue collar worker on an industrial world."
+                },
+                {
+                  "name": "Colonist",
+                  "description": "You are building a new life on a recently settled world that still needs taming."
+                }
+              ]
+            },
+            {
+              "name": "Drifter",
+              "description": "Wanderers, hitchhikers and travellers, drifters are those who roam the stars without obvious purpose or direction.",
+              "qualification": {
+                "characteristic": "END",
+                "target": 0
+              },
+              "assignments": [
+                {
+                  "name": "Barbarian",
+                  "description": "You live on a primitive world without the benefits of technology."
+                },
+                {
+                  "name": "Wanderer",
+                  "description": "You are a space bum, living hand-to-mouth in slums and spaceports across the galaxy."
+                },
+                {
+                  "name": "Scavenger",
+                  "description": "You work as a belter (asteroid miner) or on a salvage crew."
+                }
+              ]
+            },
+            {
+              "name": "Entertainer",
+              "description": "Individuals who are involved with the media, whether as reporters, artists or celebrities.",
+              "qualification": {
+                "characteristic": "INT",
+                "target": 5
+              },
+              "assignments": [
+                {
+                  "name": "Artist",
+                  "description": "You are a writer, holographer or other creative."
+                },
+                {
+                  "name": "Journalist",
+                  "description": "You report on local or galactic events for a news feed, the TAS or other organisation."
+                },
+                {
+                  "name": "Performer",
+                  "description": "You are an actor, dancer, acrobat, professional athlete or other public performer."
+                }
+              ]
+            },
+            {
+              "name": "Marines",
+              "description": "Members of the armed fighting forces carried aboard starships, marines deal with piracy and boarding actions in space, defend the starports and bases belonging to the navy and supplement ground forces such as the army.",
+              "qualification": {
+                "characteristic": "END",
+                "target": 6
+              },
+              "assignments": [
+                {
+                  "name": "Support",
+                  "description": "You are a quartermaster, engineer or battlefield medic in the marines."
+                },
+                {
+                  "name": "Star Marine",
+                  "description": "You are trained to fight boarding actions and capture enemy vessels."
+                },
+                {
+                  "name": "Ground Assault",
+                  "description": "You are kicked out of a spacecraft in high orbit and told to 'capture that planet'."
+                }
+              ]
+            },
+            {
+              "name": "Merchant",
+              "description": "Members of a commercial enterprise. Merchants may crew the ships of the huge trading corporations or they may work for independent free traders who carry chance cargoes and passengers between worlds.",
+              "qualification": {
+                "characteristic": "INT",
+                "target": 4
+              },
+              "assignments": [
+                {
+                  "name": "Merchant Marine",
+                  "description": "You work on one of the massive cargo haulers run by the Imperium or a megacorporation."
+                },
+                {
+                  "name": "Free Trader",
+                  "description": "You are part of the crew of a tramp trader."
+                },
+                {
+                  "name": "Broker",
+                  "description": "You work in a planetside brokerage or starport."
+                }
+              ]
+            },
+            {
+              "name": "Navy",
+              "description": "Members of the interstellar navy that patrols space between the stars. The navy has the responsibility for the protection of society from foreign powers and lawless elements in the interstellar trade channels.",
+              "qualification": {
+                "characteristic": "INT",
+                "target": 6
+              },
+              "assignments": [
+                {
+                  "name": "Line/Crew",
+                  "description": "You serve as a general crewman or officer on a ship of the line."
+                },
+                {
+                  "name": "Engineer/Gunner",
+                  "description": "You serve as a specialist technician on a starship."
+                },
+                {
+                  "name": "Flight",
+                  "description": "You are a pilot of a shuttle, fighter or other light craft."
+                }
+              ]
+            },
+            {
+              "name": "Noble",
+              "description": "Individuals of the upper class who perform little consistent function but often have large amounts of ready money.",
+              "qualification": {
+                "characteristic": "SOC",
+                "target": 10
+              },
+              "assignments": [
+                {
+                  "name": "Administrator",
+                  "description": "You serve in the planetary government or even ruled over a fiefdom or other domain."
+                },
+                {
+                  "name": "Diplomat",
+                  "description": "You are a diplomat or other state official."
+                },
+                {
+                  "name": "Dilettante",
+                  "description": "You are known for being known and have absolutely no useful function in society."
+                }
+              ]
+            },
+            {
+              "name": "Rogue",
+              "description": "Criminal elements familiar with the rougher or more illegal methods of attaining goals.",
+              "qualification": {
+                "characteristic": "DEX",
+                "target": 6
+              },
+              "assignments": [
+                {
+                  "name": "Thief",
+                  "description": "You steal from the rich and give to… well, yourself, actually."
+                },
+                {
+                  "name": "Enforcer",
+                  "description": "You are a leg breaker, thug or assassin for a criminal group."
+                },
+                {
+                  "name": "Pirate",
+                  "description": "You are a space-going corsair."
+                }
+              ]
+            },
+            {
+              "name": "Scholar",
+              "description": "Individuals trained in technological or research sciences who conduct scientific investigations into materials, situations and phenomena, or who practise medicine.",
+              "qualification": {
+                "characteristic": "INT",
+                "target": 6
+              },
+              "assignments": [
+                {
+                  "name": "Field Researcher",
+                  "description": "You are an explorer or field researcher, equally at home in the laboratory or wilderness."
+                },
+                {
+                  "name": "Scientist",
+                  "description": "You are a researcher in some corporation or research institution or a mad scientist in an orbiting laboratory."
+                },
+                {
+                  "name": "Physician",
+                  "description": "You are a doctor, healer or medical researcher."
+                }
+              ]
+            },
+            {
+              "name": "Scout",
+              "description": "Members of the exploratory service. Scouts explore new areas, map and survey known or newly discovered areas and maintain communication ships which carry information and messages between the worlds of the galaxy.",
+              "qualification": {
+                "characteristic": "INT",
+                "target": 5
+              },
+              "assignments": [
+                {
+                  "name": "Courier",
+                  "description": "You are responsible for shuttling messages and high value packages around the galaxy."
+                },
+                {
+                  "name": "Surveyor",
+                  "description": "You visit border worlds and assess their worth."
+                },
+                {
+                  "name": "Explorer",
+                  "description": "You go wherever the map is blank, exploring unknown worlds and uncharted space."
+                }
+              ]
+            }
+          ],
+          "precareer_options": [],
+          "can_finish": false
+        }
+      ],
+      {
+        "career": "Army",
+        "assignment": "Infantry",
+        "roll": "8"
+      },
+      [
+        {
+          "name": "roll",
+          "label": "2D roll (2–12)",
+          "min": 2,
+          "max": 12
+        }
+      ],
+      {
+        "roll": "8"
+      },
+      [
+        {
+          "name": "skill",
+          "label": "Choose a skill",
+          "options": [
+            [
+              "Gun Combat (Archaic)",
+              "{\"display_label\":null,\"kind\":\"GUN_COMBAT\",\"archaic\":{\"display_label\":null,\"value\":1},\"energy\":{\"display_label\":null,\"value\":0},\"slug\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Gun Combat (Energy)",
+              "{\"display_label\":null,\"kind\":\"GUN_COMBAT\",\"archaic\":{\"display_label\":null,\"value\":0},\"energy\":{\"display_label\":null,\"value\":1},\"slug\":{\"display_label\":null,\"value\":0}}"
+            ],
+            [
+              "Gun Combat (Slug)",
+              "{\"display_label\":null,\"kind\":\"GUN_COMBAT\",\"archaic\":{\"display_label\":null,\"value\":0},\"energy\":{\"display_label\":null,\"value\":0},\"slug\":{\"display_label\":null,\"value\":1}}"
+            ]
+          ],
+          "min_select": 1,
+          "max_select": 1,
+          "default": null
+        }
+      ],
+      {
+        "skill": "{\"display_label\":null,\"kind\":\"GUN_COMBAT\",\"archaic\":{\"display_label\":null,\"value\":0},\"energy\":{\"display_label\":null,\"value\":0},\"slug\":{\"display_label\":null,\"value\":0}}"
+      },
+      [
+        {
+          "name": "roll",
+          "label": "2D roll (2–12)",
+          "min": 2,
+          "max": 12
+        }
+      ],
+      {
+        "roll": "9"
+      },
+      [
+        {
+          "name": "choice",
+          "label": "Commission",
+          "options": [
+            [
+              "Attempt commission",
+              "attempt"
+            ],
+            [
+              "Skip (roll advancement)",
+              "skip"
+            ]
+          ],
+          "min_select": 1,
+          "max_select": 1,
+          "default": null
+        },
+        {
+          "name": "roll",
+          "label": "Commission roll (2D, if attempting)",
+          "min": 2,
+          "max": 12
+        }
+      ],
+      {
+        "choice": "attempt",
+        "roll": "8"
+      }
+    ]
+  }
+}

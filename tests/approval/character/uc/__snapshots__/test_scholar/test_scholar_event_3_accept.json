@@ -235,7 +235,7 @@
         },
         "planetology": {
           "display_label": null,
-          "value": 1
+          "value": 0
         }
       },
       {
@@ -266,7 +266,7 @@
         "origin": "Scholar event 3",
         "name": "",
         "note": "",
-        "kind": "connection_enemy"
+        "kind": "connection_contact"
       }
     ],
     "problems": [],

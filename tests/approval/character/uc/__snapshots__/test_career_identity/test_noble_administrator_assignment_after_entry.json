@@ -1,0 +1,241 @@
+{
+  "data": {
+    "name": "Test",
+    "age": 18,
+    "sophont": {
+      "name": "Vilani",
+      "ucp_stats": [
+        "STR",
+        "DEX",
+        "END",
+        "INT",
+        "EDU",
+        "SOC"
+      ],
+      "allegiance_pattern": "Im*",
+      "remarks_codes": []
+    },
+    "homeworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "birthworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "characteristics": {
+      "STR": 7,
+      "DEX": 8,
+      "END": 6,
+      "INT": 9,
+      "EDU": 10,
+      "SOC": 11
+    },
+    "psionics": null,
+    "last_career": null,
+    "last_career_ejected": false,
+    "last_assignment": null,
+    "rank": 0,
+    "terms": [
+      {
+        "kind": "noble_term",
+        "event": null,
+        "mishap": null,
+        "prison": null,
+        "career": {
+          "kind": "NOBLE_CAREER"
+        },
+        "assignment": {
+          "name": "Administrator",
+          "description": "You serve in the planetary government or even ruled over a fiefdom or other domain.",
+          "survival": {
+            "characteristic": "INT",
+            "target": 4
+          },
+          "advancement": {
+            "characteristic": "EDU",
+            "target": 6
+          }
+        },
+        "commission": false,
+        "rank": 0,
+        "muster_out": {
+          "terms": 1,
+          "cash_count": 0,
+          "benefits": [],
+          "extra_rolls": 0,
+          "lost_rolls": 0,
+          "benefit_roll_dms": [],
+          "used": false,
+          "rolls_remaining": 0,
+          "pending_setup": false
+        },
+        "forced_stay": false,
+        "forced_leave": false
+      }
+    ],
+    "drafted": false,
+    "skills": [
+      {
+        "display_label": null,
+        "kind": "ADMIN",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ATHLETICS",
+        "dexterity": {
+          "display_label": null,
+          "value": 0
+        },
+        "endurance": {
+          "display_label": null,
+          "value": 0
+        },
+        "strength": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "CAROUSE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "DRIVE",
+        "hovercraft": {
+          "display_label": null,
+          "value": 0
+        },
+        "mole": {
+          "display_label": null,
+          "value": 0
+        },
+        "track": {
+          "display_label": null,
+          "value": 0
+        },
+        "walker": {
+          "display_label": null,
+          "value": 0
+        },
+        "wheel": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ADVOCATE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "ELECTRONICS",
+        "comms": {
+          "display_label": null,
+          "value": 0
+        },
+        "computers": {
+          "display_label": null,
+          "value": 0
+        },
+        "remote_ops": {
+          "display_label": null,
+          "value": 0
+        },
+        "sensors": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "DIPLOMAT",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "INVESTIGATE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      },
+      {
+        "display_label": null,
+        "kind": "PERSUADE",
+        "level": {
+          "display_label": null,
+          "value": 0
+        }
+      }
+    ],
+    "connections": [],
+    "problems": [],
+    "narrative": [],
+    "cash": 0,
+    "dead": false,
+    "parole_threshold": null
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "data": {
+    "can_attempt_commission": false,
+    "name": "Test",
+    "age": 18,
+    "sophont": {
+      "name": "Vilani",
+      "ucp_stats": [
+        "STR",
+        "DEX",
+        "END",
+        "INT",
+        "EDU",
+        "SOC"
+      ],
+      "allegiance_pattern": "Im*",
+      "remarks_codes": []
+    },
+    "homeworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "birthworld": {
+      "name": "Hexx",
+      "hex": "2715",
+      "uwp": "B78A577-D",
+      "pbg": "314",
+      "zone": "",
+      "bases": "NS",
+      "allegiance": "ImDd",
+      "stellar": "F6 V",
+      "ss": "H",
+      "ix": "{ 1 }",
+      "ex": "(C45+1)",
+      "cx": "[565D]",
+      "nobility": "Bc",
+      "worlds": 11,
+      "resource_units": 240,
+      "subsector": 7,
+      "quadrant": 1,
+      "world_x": -102,
+      "world_y": -25,
+      "remarks": "Ni Wa Pr Ht",
+      "legacy_base_code": "NS",
+      "sector": "Trojan Reach",
+      "subsector_name": "Tobia",
+      "sector_abbreviation": "Troj",
+      "allegiance_name": "Third Imperium, Domain of Deneb"
+    },
+    "characteristics": {
+      "SOC": 7
+    },
+    "psionics": null,
+    "last_career": null,
+    "last_career_ejected": false,
+    "last_assignment": null,
+    "rank": null,
+    "terms": [
+      {
+        "kind": "CAREER_TERM",
+        "event": null,
+        "mishap": null,
+        "prison": null,
+        "career": {
+          "kind": "ARMY_CAREER"
+        },
+        "assignment": {
+          "name": "Infantry",
+          "description": "You are one of the Poor Bloody Infantry on the ground.",
+          "survival": {
+            "characteristic": "STR",
+            "target": 6
+          },
+          "advancement": {
+            "characteristic": "EDU",
+            "target": 6
+          }
+        },
+        "commission": false,
+        "rank": 0,
+        "muster_out": {
+          "terms": 1,
+          "cash_count": 0,
+          "benefits": [],
+          "extra_rolls": 0,
+          "lost_rolls": 0,
+          "benefit_roll_dms": [],
+          "used": false,
+          "rolls_remaining": 0,
+          "pending_setup": false
+        },
+        "forced_stay": false,
+        "forced_leave": false
+      },
+      {
+        "kind": "CAREER_TERM",
+        "event": null,
+        "mishap": null,
+        "prison": null,
+        "career": {
+          "kind": "ARMY_CAREER"
+        },
+        "assignment": {
+          "name": "Infantry",
+          "description": "You are one of the Poor Bloody Infantry on the ground.",
+          "survival": {
+            "characteristic": "STR",
+            "target": 6
+          },
+          "advancement": {
+            "characteristic": "EDU",
+            "target": 6
+          }
+        },
+        "commission": false,
+        "rank": 0,
+        "muster_out": {
+          "terms": 1,
+          "cash_count": 0,
+          "benefits": [],
+          "extra_rolls": 0,
+          "lost_rolls": 0,
+          "benefit_roll_dms": [],
+          "used": false,
+          "rolls_remaining": 0,
+          "pending_setup": false
+        },
+        "forced_stay": false,
+        "forced_leave": false
+      }
+    ],
+    "drafted": false,
+    "skills": [],
+    "connections": [],
+    "problems": [],
+    "narrative": [],
+    "cash": 0,
+    "dead": false,
+    "parole_threshold": null
+  }
+}

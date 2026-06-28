@@ -197,6 +197,6 @@
     ]
   },
   "annotations": {
-    "power_basic": "Ceres gives 2 (ceil(6 * 0.2) per RIS-013); Tycho stat block shows 1 (uses floor)"
+    "power_basic": "Ceres gives 2 (ceil(6 * 0.2) per RIS-013); reference data shows 1 (uses floor)"
   }
 }

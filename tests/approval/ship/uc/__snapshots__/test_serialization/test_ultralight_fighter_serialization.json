@@ -1,0 +1,255 @@
+{
+  "data": {
+    "display_label": null,
+    "tl": 12,
+    "displacement": 6,
+    "ship_class": "Botfly",
+    "ship_type": "Ultralight Fighter",
+    "military": true,
+    "crew": {
+      "display_label": null,
+      "roles": null
+    },
+    "occupants": null,
+    "design_type": "STANDARD",
+    "hull": {
+      "display_label": null,
+      "configuration": {
+        "display_label": null,
+        "description": "Light Streamlined Hull",
+        "streamlined": 1,
+        "armour_volume_modifier": 1.2,
+        "hull_points_modifier": 1.0,
+        "hull_cost_modifier": 1.2,
+        "reinforced": false,
+        "light": true,
+        "military": false,
+        "non_gravity": false,
+        "double": false,
+        "hamster_cage": false,
+        "breakaway": false,
+        "protection": 0,
+        "usage_factor": 1.0
+      },
+      "armour": {
+        "armoured_bulkhead": false,
+        "display_label": null,
+        "hardened": false,
+        "description": "Crystaliron",
+        "protection": 6
+      },
+      "stealth": {
+        "armoured_bulkhead": false,
+        "tl": 7,
+        "display_label": null,
+        "hardened": false,
+        "description": "Basic Stealth"
+      },
+      "pressure_hull": false,
+      "adjustable_hull": null,
+      "airlocks": [],
+      "aerofins": null,
+      "heat_shielding": false,
+      "radiation_shielding": false,
+      "reflec": false
+    },
+    "drives": {
+      "tons": 0.0,
+      "power": 0.0,
+      "armoured_bulkhead": false,
+      "cost": 0.0,
+      "tl": 0,
+      "display_label": null,
+      "hardened": false,
+      "m_drive": {
+        "armoured_bulkhead": false,
+        "tl": 12,
+        "display_label": null,
+        "hardened": false,
+        "customisation": null,
+        "drive_type": "mdrive_6",
+        "concealed": false
+      },
+      "r_drive": null,
+      "j_drive": null,
+      "plasma_drive": null,
+      "solar_sail": null
+    },
+    "power": {
+      "tons": 0.0,
+      "power": 0.0,
+      "armoured_bulkhead": false,
+      "cost": 0.0,
+      "tl": 0,
+      "display_label": null,
+      "hardened": false,
+      "plant": {
+        "armoured_bulkhead": false,
+        "tl": 12,
+        "display_label": null,
+        "hardened": false,
+        "customisation": null,
+        "output": 8.0,
+        "plant_type": "fusion_tl12"
+      },
+      "solar": [],
+      "batteries": [],
+      "emergency_power_system": null
+    },
+    "fuel": {
+      "display_label": null,
+      "jump_fuel": null,
+      "collector": null,
+      "operation_fuel": {
+        "armoured_bulkhead": false,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "weeks": 1
+      },
+      "reaction_fuel": null,
+      "fuel_scoops": {
+        "armoured_bulkhead": false,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "description": "Fuel Scoops",
+        "free": true
+      },
+      "fuel_processor": null,
+      "fuel_refinery": null,
+      "ramscoop": null,
+      "metal_hydride_storage": null
+    },
+    "command": {
+      "display_label": null,
+      "bridge": null,
+      "cockpit": {
+        "armoured_bulkhead": false,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "holographic": true,
+        "dual": false,
+        "ejector_seat": false
+      }
+    },
+    "computer": {
+      "display_label": null,
+      "hardware": {
+        "armoured_bulkhead": false,
+        "tl": 7,
+        "display_label": null,
+        "processing": 5,
+        "retro_levels": 0,
+        "kind": "computer_5",
+        "bis": false,
+        "fib": false,
+        "proto_levels": 0
+      },
+      "backup_hardware": null,
+      "software": []
+    },
+    "sensors": {
+      "display_label": null,
+      "primary": {
+        "armoured_bulkhead": false,
+        "tl": 9,
+        "display_label": null,
+        "hardened": false,
+        "low_intercept": "NONE",
+        "description": "Civilian Grade Sensors"
+      },
+      "deep_penetration_scanners": null,
+      "life_scanner": null,
+      "life_scanner_analysis_suite": null,
+      "mail_distribution_array": null,
+      "mineral_detection_suite": null,
+      "shallow_penetration_suite": null,
+      "countermeasures": null,
+      "signal_processing": null,
+      "distributed_array": null,
+      "extended_arrays": null,
+      "extension_net": null,
+      "sensor_stations": null
+    },
+    "screens": null,
+    "craft": null,
+    "automation": {
+      "armoured_bulkhead": false,
+      "tl": 0,
+      "display_label": null,
+      "hardened": false,
+      "level": "standard_auto"
+    },
+    "cargo": null,
+    "habitation": null,
+    "systems": null,
+    "weapons": {
+      "display_label": null,
+      "turrets": [],
+      "fixed_mounts": [
+        {
+          "armoured_bulkhead": false,
+          "tl": 9,
+          "display_label": null,
+          "hardened": false,
+          "pop_up": false,
+          "weapons": [
+            {
+              "display_label": null,
+              "weapon_type": "pulse_laser",
+              "customisation": {
+                "display_label": null,
+                "grade": "HIGH_TECHNOLOGY",
+                "modifications": [
+                  {
+                    "display_label": null,
+                    "description": "",
+                    "name": "Very High Yield",
+                    "advantage": 2,
+                    "disadvantage": 0,
+                    "cost_multiplier": 1.0,
+                    "tons_delta_percent": 0.0,
+                    "power_multiplier": 1.0,
+                    "output_multiplier": 1.0,
+                    "fuel_delta_percent": 0.0,
+                    "tl_delta": 0,
+                    "info_notes": []
+                  },
+                  {
+                    "display_label": null,
+                    "description": "",
+                    "name": "Energy Efficient",
+                    "advantage": 1,
+                    "disadvantage": 0,
+                    "cost_multiplier": 1.0,
+                    "tons_delta_percent": 0.0,
+                    "power_multiplier": 0.75,
+                    "output_multiplier": 1.0,
+                    "fuel_delta_percent": 0.0,
+                    "tl_delta": 0,
+                    "info_notes": []
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "carronades": [],
+      "barbettes": [],
+      "spinal_mounts": [],
+      "bays": [],
+      "point_defense_batteries": [],
+      "missile_storage": null,
+      "torpedo_storage": null,
+      "sandcaster_canister_storage": null
+    }
+  },
+  "annotations": {
+    "production_cost": "6837833.333333",
+    "hull_points": "2.0",
+    "round_trip_idempotent": "True"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "data": {
+    "display_label": null,
+    "tl": 12,
+    "size": 1,
+    "locomotion": {
+      "display_label": null,
+      "speed_reduction": 0,
+      "speed_increase": 0,
+      "kind": "NONE"
+    },
+    "name": "Lab",
+    "brain": {
+      "display_label": null,
+      "brain_tl": 12,
+      "installed_skills": [],
+      "int_upgrade": 0,
+      "bandwidth": 2,
+      "kind": "ADVANCED",
+      "hardened": false
+    },
+    "options": [
+      {
+        "cost": 0.0,
+        "tl": 8,
+        "display_label": null
+      },
+      {
+        "cost": 0.0,
+        "tl": 8,
+        "display_label": null,
+        "quality": "standard"
+      },
+      {
+        "cost": 0.0,
+        "tl": 8,
+        "display_label": null,
+        "quality": "standard"
+      },
+      {
+        "cost": 0.0,
+        "tl": 8,
+        "display_label": null
+      },
+      {
+        "cost": 0.0,
+        "tl": 8,
+        "display_label": null,
+        "medium": "radio_comm",
+        "range_km": 5,
+        "mass_kg": 0.0,
+        "quality": "improved",
+        "is_default_suite": true
+      }
+    ],
+    "manipulators": [
+      {
+        "cost": 100.0,
+        "tl": 0,
+        "display_label": null,
+        "kind": "MANIPULATOR",
+        "size": null,
+        "str_bonus": 0,
+        "dex_bonus": 0
+      },
+      {
+        "cost": 100.0,
+        "tl": 0,
+        "display_label": null,
+        "kind": "MANIPULATOR",
+        "size": null,
+        "str_bonus": 0,
+        "dex_bonus": 0
+      }
+    ],
+    "legs": [],
+    "attacks": []
+  },
+  "annotations": {
+    "base_armour": "4",
+    "round_trip_locomotion": "NoneLocomotion",
+    "round_trip_brain": "AdvancedBrain"
+  }
+}

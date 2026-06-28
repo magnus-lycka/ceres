@@ -1,0 +1,43 @@
+{
+  "data": {
+    "BasicReEntryCapsule": {
+      "tl": 8,
+      "capacity": 1,
+      "protection": null,
+      "detection_dm": null,
+      "attack_dm": null
+    },
+    "AssaultReEntryCapsule": {
+      "tl": 10,
+      "capacity": 1,
+      "protection": 20,
+      "detection_dm": -2,
+      "attack_dm": null
+    },
+    "HighSurvivabilityReEntryCapsule": {
+      "tl": 14,
+      "capacity": 1,
+      "protection": 30,
+      "detection_dm": -4,
+      "attack_dm": -2
+    },
+    "ReEntryPod": {
+      "tl": 9,
+      "capacity": 2,
+      "protection": null,
+      "detection_dm": null,
+      "attack_dm": null
+    },
+    "capsule_spec_row": {
+      "tons": 0.5,
+      "cost": 100000.0
+    },
+    "pod_spec_row": {
+      "tons": 1.0,
+      "cost": 150000.0
+    }
+  },
+  "annotations": {
+    "capsule_infos": "['Emergency escape and planetary insertion system for one person', 'Protection +30', 'DM-4 to detect', 'DM-2 against attacks']"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "choices": [
+      {
+        "display_label": null,
+        "kind": "ADMIN",
+        "level": {
+          "display_label": null,
+          "value": 1
+        }
+      }
+    ]
+  }
+}

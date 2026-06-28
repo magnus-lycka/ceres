@@ -1,0 +1,206 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "birthworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 7,
+        "END": 7,
+        "INT": 7,
+        "EDU": 3,
+        "SOC": 7
+      },
+      "psionics": null,
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "merchant_academy_business",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Merchant Academy (Business)",
+          "completed": true,
+          "graduated": true,
+          "honours": false
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ADVOCATE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "BROKER",
+          "level": {
+            "display_label": null,
+            "value": 1
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "STREETWISE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "DECEPTION",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "PERSUADE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "CAROUSE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [
+        "Merchant Academy (Business) graduation: may enter Merchant (correct branch) or Citizen automatically at rank 1 if this is the first career entered after the academy. Apply manually.",
+        "Merchant Academy (Business) graduation: DM+1 on all advancement checks in Merchant or Citizen. Apply manually."
+      ],
+      "narrative": [
+        "Pre-career event (Merchant Academy (Business)): Taking advantage of youth, you party as much as you study.",
+        "Graduated from Merchant Academy (Business)."
+      ],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 1,
+        "option_count": 6,
+        "option_types": [
+          "Admin",
+          "Advocate",
+          "Broker",
+          "Deception",
+          "Persuade",
+          "Streetwise"
+        ]
+      },
+      {
+        "type": "PendingCareerChoice",
+        "kind": "career_choice",
+        "option_count": 12,
+        "option_types": [
+          "Agent",
+          "Army",
+          "Citizen",
+          "Drifter",
+          "Entertainer",
+          "Marines",
+          "Merchant",
+          "Navy",
+          "Noble",
+          "Rogue",
+          "Scholar",
+          "Scout"
+        ]
+      }
+    ]
+  }
+}

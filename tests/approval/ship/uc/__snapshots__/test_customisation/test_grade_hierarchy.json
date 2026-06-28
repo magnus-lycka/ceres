@@ -1,0 +1,89 @@
+{
+  "data": {
+    "Advanced_SizeReduction": {
+      "note_text": "Advanced: Size Reduction",
+      "cost_multiplier": 1.1,
+      "tons_multiplier": 0.9,
+      "tl_delta": 1,
+      "errors": []
+    },
+    "VeryAdvanced_VeryHighYield": {
+      "note_text": "Very Advanced: Very High Yield",
+      "cost_multiplier": 1.25,
+      "tons_multiplier": 1.0,
+      "tl_delta": 2,
+      "errors": []
+    },
+    "HighTechnology_SizeReduction_x3": {
+      "note_text": "High Technology: Size Reduction × 3",
+      "cost_multiplier": 1.5,
+      "tons_multiplier": 0.7,
+      "tl_delta": 3,
+      "errors": []
+    },
+    "HighTechnology_VHY_EnergyEfficient": {
+      "note_text": "High Technology: Very High Yield, Energy Efficient",
+      "cost_multiplier": 1.5,
+      "tons_multiplier": 1.0,
+      "tl_delta": 3,
+      "errors": []
+    },
+    "Budget_IncreasedSize": {
+      "note_text": "Budget: Increased Size",
+      "cost_multiplier": 0.75,
+      "tons_multiplier": 1.25,
+      "tl_delta": 0,
+      "errors": []
+    },
+    "EarlyPrototype_IncreasedSize_x2": {
+      "note_text": "Early Prototype: Increased Size × 2",
+      "cost_multiplier": 11.0,
+      "tons_multiplier": 3.0,
+      "tl_delta": -2,
+      "errors": []
+    },
+    "Prototype_IncreasedSize": {
+      "note_text": "Prototype: Increased Size",
+      "cost_multiplier": 6.0,
+      "tons_multiplier": 1.25,
+      "tl_delta": -1,
+      "errors": []
+    },
+    "Advanced_TwoReductions_error": {
+      "note_text": "Advanced: Size Reduction × 2",
+      "cost_multiplier": 1.1,
+      "tons_multiplier": 0.8,
+      "tl_delta": 1,
+      "errors": [
+        "Advanced requires 1 advantage point(s) and 0 disadvantage point(s), got 2 and 0"
+      ]
+    },
+    "Budget_SizeReduction_error": {
+      "note_text": "Budget: Size Reduction",
+      "cost_multiplier": 0.75,
+      "tons_multiplier": 0.9,
+      "tl_delta": 0,
+      "errors": [
+        "Budget requires 0 advantage point(s) and 1 disadvantage point(s), got 1 and 0"
+      ]
+    },
+    "HighTechnology_TwoPoints_error": {
+      "note_text": "High Technology: Very High Yield × 2",
+      "cost_multiplier": 1.5,
+      "tons_multiplier": 1.0,
+      "tl_delta": 3,
+      "errors": [
+        "HighTechnology requires 3 advantage point(s) and 0 disadvantage point(s), got 4 and 0"
+      ]
+    },
+    "VeryAdvanced_ThreePoints_error": {
+      "note_text": "Very Advanced: Very High Yield × 3",
+      "cost_multiplier": 1.25,
+      "tons_multiplier": 1.0,
+      "tl_delta": 2,
+      "errors": [
+        "VeryAdvanced requires 2 advantage point(s) and 0 disadvantage point(s), got 6 and 0"
+      ]
+    }
+  }
+}

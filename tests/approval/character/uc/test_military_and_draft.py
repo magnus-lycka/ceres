@@ -1,211 +1,153 @@
-from ceres.character.domain.career import ARMY, MARINES, MERCHANT, NAVY
-from ceres.character.domain.career.career_events import (
-    CareerEntryHandler,
-    CommissionHandler,
-    DraftAssignmentHandler,
-    DraftHandler,
-    PendingAdvancement,
-    PendingCommissionChoice,
-    PendingDraftAssignmentChoice,
-    PendingDraftChoice,
-    SurviveHandler,
-    TermEventHandler,
-)
+"""Approval snapshots for draft, commission, and qualification-DM flows."""
+
+import pytest
+
+from ceres.character.domain.career import ARMY
 from ceres.character.domain.career.loader import load_careers
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Leadership
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
+from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.replay import replay
+from tests.approval.character.helpers import (
+    CharacterSession,
+    background_skills_form,
+    career_entry_form,
+    commission_form,
+    draft_assignment_form,
+    draft_form,
+    roll_form,
+    skill_form,
+    ucp_form,
+)
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
 from tests.unit.character.helpers import MOCK_WORLD
 
 
-def _setup(ucp: str = '7869A5') -> list:
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp=ucp))
-    return [
-        ev1,
-        ev2,
-        Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
-    ]
+def _session(ucp: str = '7869A5') -> CharacterSession:
+    session = CharacterSession()
+    session.start(VILANI, MOCK_WORLD)
+    session.submit(ucp_form(ucp))
+    session.submit(background_skills_form(Admin(), Athletics(), Carouse(), Drive()))
+    return session
 
 
-def test_new_core_careers_load():
-    assert MERCHANT.assignment('Merchant Marine') is not None
-    assert ARMY.assignment('Infantry') is not None
-    assert MARINES.assignment('Star Marine') is not None
-    assert NAVY.assignment('Line/Crew') is not None
+@pytest.mark.approval
+def test_draftable_careers(snapshot):
+    """Careers that implement draft are enumerated correctly."""
+    draft_careers = sorted(c.name for c in load_careers() if c.does_draft())
+    snap = AnnotatedSnapshot({'draft_careers': draft_careers})
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_failed_qualification_creates_draft_choice():
-    _s = _setup()
-    events = [
-        *_s,
-        Event(
-            fulfills=(_s[-1].id, 0),
-            handler=CareerEntryHandler(
-                career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
-            ),
-        ),
-    ]
-
-    projection = replay(1, events)
-
-    pending = next(p for p in projection.pending_inputs if isinstance(p, PendingDraftChoice))
-    assert pending.can_draft is True
-    assert projection.summary.current_career is None
+@pytest.mark.approval
+def test_failed_qualification_leaves_no_current_career(snapshot):
+    """Failing qualification clears current_career and queues a draft choice."""
+    session = _session()
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Merchant', 'Merchant Marine', 2))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_draftable_careers_tell_whether_this_character_can_be_drafted():
-    replay(1, _setup())
-
-    draft_careers = [career.name for career in load_careers() if career.does_draft()]
-
-    assert {'Navy', 'Army', 'Marines', 'Merchant', 'Scout', 'Agent'} <= set(draft_careers)
-    assert 'Citizen' not in draft_careers
-
-
-def test_draft_event_records_selected_career_and_assignment():
-    _base = _setup()
-    ev4 = Event(
-        fulfills=(_base[-1].id, 0),
-        handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=2),
-    )
-    events = [
-        *_base,
-        ev4,
-        Event(
-            fulfills=(ev4.id, 0),
-            handler=DraftHandler(career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine')),
-        ),
-    ]
-
-    projection = replay(1, events)
-
-    assert projection.summary.drafted
-    assert projection.summary.current_career is not None
-    assert projection.summary.current_career.name == 'Merchant'
-    assert projection.summary.current_assignment is not None
-    assert projection.summary.current_assignment.name == 'Merchant Marine'
+@pytest.mark.approval
+def test_draft_alternative_sets_career_and_assignment(snapshot):
+    """Taking the draft alternative (Drifter) directly sets current career and assignment."""
+    session = _session()
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Army', 'Infantry', 2))
+        session.submit(draft_form('alternative', assignment='Barbarian'))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_draft_to_career_with_multiple_assignments_asks_player_to_choose_assignment():
-    _base = _setup()
-    ev4 = Event(
-        fulfills=(_base[-1].id, 0),
-        handler=CareerEntryHandler(
-            career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
-        ),
-    )
-    events = [
-        *_base,
-        ev4,
-        Event(fulfills=(ev4.id, 0), handler=DraftHandler(career=ARMY)),
-    ]
-
-    projection = replay(1, events)
-
-    pending = next(p for p in projection.pending_inputs if isinstance(p, PendingDraftAssignmentChoice))
-    assert pending.career.name == 'Army'
-    assert list(pending.career.draft_assignments) == ['Support', 'Infantry', 'Cavalry']
-    assert projection.summary.current_career is None
+@pytest.mark.approval
+def test_draft_to_multi_assignment_career_waits_for_choice(snapshot):
+    """Drafting to a multi-assignment career leaves current_career None pending assignment choice."""
+    session = _session()
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Merchant', 'Merchant Marine', 2))
+        session.submit(draft_form('draft', roll=2))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_draft_assignment_choice_starts_selected_assignment():
-    _base = _setup()
-    ev4 = Event(
-        fulfills=(_base[-1].id, 0),
-        handler=CareerEntryHandler(
-            career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=2
-        ),
-    )
-    ev5 = Event(fulfills=(ev4.id, 0), handler=DraftHandler(career=ARMY))
-    events = [
-        *_base,
-        ev4,
-        ev5,
-        Event(fulfills=(ev5.id, 0), handler=DraftAssignmentHandler(career=ARMY, assignment=ARMY.assignment('Cavalry'))),
-    ]
-
-    projection = replay(1, events)
-
-    assert projection.summary.drafted
-    assert projection.summary.current_career is not None
-    assert projection.summary.current_career.name == 'Army'
-    assert projection.summary.current_assignment is not None
-    assert projection.summary.current_assignment.name == 'Cavalry'
+@pytest.mark.approval
+def test_draft_assignment_choice_sets_assignment(snapshot):
+    """Selecting an assignment after draft sets current_career and current_assignment."""
+    session = _session()
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Merchant', 'Merchant Marine', 2))
+        session.submit(draft_form('draft', roll=2))
+        session.submit(draft_assignment_form('Cavalry'))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_merchant_does_not_offer_commission_before_advancement():
-    _base = _setup()
-    ev4 = Event(
-        fulfills=(_base[-1].id, 0),
-        handler=CareerEntryHandler(
-            career=MERCHANT, assignment=MERCHANT.assignment('Merchant Marine'), qualification_roll=8
-        ),
-    )
-    ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
-    events = [
-        *_base,
-        ev4,
-        ev5,
-        Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=9)),
-    ]
-
-    projection = replay(1, events)
-
-    assert not any(isinstance(p, PendingCommissionChoice) for p in projection.pending_inputs)
+@pytest.mark.approval
+def test_merchant_no_commission_before_advancement(snapshot):
+    """Merchant does not offer commission; after term_event only PendingAdvancement queued."""
+    session = _session()
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Merchant', 'Merchant Marine', 8))
+        session.submit(roll_form(8))
+        session.submit(roll_form(9))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_army_first_term_offers_commission_before_advancement():
-    _base = _setup(ucp='7869A9')
-    ev4 = Event(
-        fulfills=(_base[-1].id, 0),
-        handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
-    )
-    ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
-    events = [
-        *_base,
-        ev4,
-        ev5,
-        Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=9)),
-    ]
-
-    projection = replay(1, events)
-
-    pending = next(p for p in projection.pending_inputs if isinstance(p, PendingCommissionChoice))
-    assert set(pending.options) == {'attempt', 'skip'}
+@pytest.mark.approval
+def test_army_commission_offered_after_survive_and_event(snapshot):
+    """Army first term: commission choice is queued after survive + term_event."""
+    session = _session(ucp='7869A9')
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Army', 'Infantry', 8))
+        session.submit(roll_form(8))
+        session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(9))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_successful_commission_sets_officer_rank_and_skips_advancement():
-    _base = _setup(ucp='7869A9')
-    ev4 = Event(
-        fulfills=(_base[-1].id, 0),
-        handler=CareerEntryHandler(career=ARMY, assignment=ARMY.assignment('Infantry'), qualification_roll=8),
-    )
-    ev5 = Event(fulfills=(ev4.id, 0), handler=SurviveHandler(roll=8))
-    ev6 = Event(fulfills=(ev5.id, 0), handler=TermEventHandler(roll=10))
-    events = [
-        *_base,
-        ev4,
-        ev5,
-        ev6,
-        Event(fulfills=(ev6.id, 0), handler=CommissionHandler(attempt=True, roll=8)),
-    ]
-
-    projection = replay(1, events)
-
-    assert projection.summary.rank == 1
-    assert projection.summary.career_terms[-1].commission
-    assert projection.summary.skill_level(Leadership) == 1
-    assert not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+@pytest.mark.approval
+def test_successful_commission(snapshot):
+    """Successful commission sets rank=1, grants Leadership, skips advancement."""
+    session = _session(ucp='7869A9')
+    snap = AnnotatedSnapshot({})
+    try:
+        session.submit(career_entry_form('Army', 'Infantry', 8))
+        session.submit(roll_form(8))
+        session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(9))
+        session.submit(commission_form(attempt=True, roll=8))
+        snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    finally:
+        snap.annotate('session_log', session.log)
+        assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_qualification_dm_is_consumed_on_career_entry():
-    from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-    from ceres.character.domain.characteristics import Chars
-
-    army = ARMY
+@pytest.mark.approval
+def test_qualification_dm_consumed_on_career_entry(snapshot):
+    """A pending_qualification_dm of +10 allows a roll of 0 to qualify, then DM resets to 0."""
+    infantry = ARMY.assignment('Infantry')
+    assert infantry is not None
     proj = CharacterProjection(
         character_id=1,
         summary=CharacterSummary(
@@ -215,12 +157,12 @@ def test_qualification_dm_is_consumed_on_career_entry():
             characteristics={Chars.END: 7},
         ),
     )
-    # DM of +10 ensures a roll of 0 still qualifies (Army END 5+)
     proj.pending_qualification_dm = 10
-    infantry = army.assignment('Infantry')
-    assert infantry is not None
-    army.start_career(proj, infantry, event_id=6, qualification_roll=0)
-
-    assert proj.summary.current_career is not None
-    assert proj.summary.current_career.name == 'Army'
-    assert proj.pending_qualification_dm == 0
+    ARMY.start_career(proj, infantry, event_id=6, qualification_roll=0)
+    snap = AnnotatedSnapshot(
+        {
+            **proj.summary.model_dump(mode='json'),
+            'pending_qualification_dm': proj.pending_qualification_dm,
+        }
+    )
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

@@ -171,6 +171,36 @@ pipeline from domain objects to a rendered spec.
 Each test file has a `build_<name>()` function. `AnnotatedSnapshot` wraps the
 data and allows notes explaining known discrepancies from source material.
 
+### AnnotatedSnapshot — data and annotations
+
+`AnnotatedSnapshot(data)` takes the primary dict (e.g. `model_dump(mode='json')` or the
+template context dict) and stores it in the snapshot as `"data"`. The snapshot comparison
+fails whenever the data changes.
+
+`snap.annotate(key, value)` adds an entry to the snapshot's `"annotations"` dict.
+Annotations have two uses:
+
+**Active tracking** — include a computed or derived value that is not part of the primary
+data structure. If that value changes between runs, the snapshot fails just like a change
+in `"data"` would. Use this to track things that matter but are absent from the dump —
+slot counts, total cost, derived properties, round-trip fidelity:
+
+```python
+snap = AnnotatedSnapshot(robot.model_dump(mode='json'))
+snap.annotate('base_armour', str(robot.base_armour))
+snap.annotate('used_slots', str(robot.used_slots))
+snap.annotate('default_suite_cost_impact', str(robot.total_cost - empty.total_cost))
+```
+
+**Passive notes** — explain a known discrepancy from source material, a deliberate rule
+interpretation, or any context a future reader would need:
+
+```python
+snap.annotate('power_basic', 'Reference data uses floor(6 * 0.2) = 1; Ceres uses ceil per RIS-013 = 2')
+```
+
+Avoid annotating things already captured by `"data"` — that is redundant.
+
 ### Gallery Tests — `tests/gallery/`
 
 Generated-output tests that produce HTML, Typst, PDF, and JSON artifacts.

@@ -1,0 +1,229 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "birthworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 7,
+        "END": 7,
+        "INT": 7,
+        "EDU": 2,
+        "SOC": 7
+      },
+      "psionics": null,
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "merchant_academy_shipboard",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Merchant Academy (Shipboard)",
+          "completed": false,
+          "graduated": false,
+          "honours": false
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "PILOT",
+          "small_craft": {
+            "display_label": null,
+            "value": 0
+          },
+          "spacecraft": {
+            "display_label": null,
+            "value": 0
+          },
+          "capital_ships": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "VACC_SUIT",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ATHLETICS",
+          "dexterity": {
+            "display_label": null,
+            "value": 0
+          },
+          "endurance": {
+            "display_label": null,
+            "value": 0
+          },
+          "strength": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "MECHANIC",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ENGINEER",
+          "m_drive": {
+            "display_label": null,
+            "value": 0
+          },
+          "j_drive": {
+            "display_label": null,
+            "value": 0
+          },
+          "life_support": {
+            "display_label": null,
+            "value": 0
+          },
+          "power": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ELECTRONICS",
+          "comms": {
+            "display_label": null,
+            "value": 0
+          },
+          "computers": {
+            "display_label": null,
+            "value": 0
+          },
+          "remote_ops": {
+            "display_label": null,
+            "value": 0
+          },
+          "sensors": {
+            "display_label": null,
+            "value": 0
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [],
+      "narrative": [],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 1,
+        "option_count": 6,
+        "option_types": [
+          "Broker",
+          "Drive",
+          "Electronics",
+          "Persuade",
+          "Steward",
+          "VaccSuit"
+        ]
+      },
+      {
+        "type": "PendingPreCareerEvent",
+        "kind": "precareer_event"
+      },
+      {
+        "type": "PendingPreCareerGraduation",
+        "kind": "precareer_graduation"
+      }
+    ]
+  }
+}

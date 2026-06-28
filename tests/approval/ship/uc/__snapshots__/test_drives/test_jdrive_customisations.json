@@ -1,0 +1,27 @@
+{
+  "data": {
+    "decreased_fuel_x2": {
+      "tl": 11,
+      "tons": 27.5,
+      "cost": 51562500.0,
+      "power": 90.0
+    },
+    "early_jump": {
+      "tl": 11,
+      "tons": 15.0,
+      "cost": 24750000.0,
+      "power": 40.0
+    },
+    "stealth_jump": {
+      "tl": 11,
+      "tons": 15.0,
+      "cost": 28125000.0,
+      "power": 40.0
+    }
+  },
+  "annotations": {
+    "decreased_fuel_infos": "['Very Advanced: Decreased Fuel × 2']",
+    "early_jump_infos": "['Advanced: Early Jump', 'Can jump at the 90-diameter limit']",
+    "stealth_jump_infos": "['Very Advanced: Stealth Jump', 'Reduces jump emergence radiation signature']"
+  }
+}

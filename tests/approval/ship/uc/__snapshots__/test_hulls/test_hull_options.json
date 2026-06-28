@@ -1,0 +1,30 @@
+{
+  "data": {
+    "reflec_row": {
+      "tons": null,
+      "cost": 40000000.0,
+      "infos": [
+        "+3 armour protection against lasers"
+      ]
+    },
+    "adjustable_tl12_row": {
+      "tons": 20.0,
+      "cost": 2000000.0
+    },
+    "adjustable_tl15_row": {
+      "tons": 4.0,
+      "cost": 20000000.0
+    },
+    "breakaway_row": {
+      "tons": 20.0,
+      "cost": 40000000.0
+    },
+    "pressure_hull_tons_400": 100.0,
+    "pressure_hull_total_cost_400": 200000000
+  },
+  "annotations": {
+    "reflec_production_cost": "60000000.0",
+    "adjustable_12_production_cost": "22000000.0",
+    "reflec_stealth_error": "True"
+  }
+}

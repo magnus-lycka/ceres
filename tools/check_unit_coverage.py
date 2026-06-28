@@ -168,35 +168,39 @@ src/ceres/worlds/sector_filters.py\
 
 
 def is_empty_init(path: Path) -> bool:
-    return path.name == "__init__.py" and path.stat().st_size == 0
+    return path.name == '__init__.py' and path.stat().st_size == 0
 
 
 def test_path_for(src: Path) -> Path:
-    rel = src.relative_to(REPO_ROOT / "src" / "ceres")
-    return REPO_ROOT / "tests" / "unit" / rel.parent / f"test_{rel.name}"
+    rel = src.relative_to(REPO_ROOT / 'src' / 'ceres')
+    return REPO_ROOT / 'tests' / 'unit' / rel.parent / f'test_{rel.name}'
 
 
 def measure_coverage(test_file: Path, src_file: Path) -> int | None:
     result = subprocess.run(
         [
-            "uv", "run", "pytest",
-            f"--cov={src_file.relative_to(REPO_ROOT)}",
-            "--cov-branch",
-            "--cov-report=term-missing",
-            "-q", "--tb=no",
+            'uv',
+            'run',
+            'pytest',
+            f'--cov={src_file.relative_to(REPO_ROOT)}',
+            '--cov-branch',
+            '--cov-report=term-missing',
+            '-q',
+            '--tb=no',
             str(test_file.relative_to(REPO_ROOT)),
         ],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
+        check=False,
     )
     target = str(src_file.relative_to(REPO_ROOT))
     for line in (result.stdout + result.stderr).splitlines():
         if target in line:
             parts = line.split()
             try:
-                return int(parts[-1].rstrip("%"))
-            except (ValueError, IndexError):
+                return int(parts[-1].rstrip('%'))
+            except ValueError, IndexError:
                 return None
     return None
 
@@ -215,37 +219,33 @@ def main() -> int:
         test_file = test_path_for(src)
 
         if not test_file.exists():
-            rows.append(("NO TEST", src_str, str(test_file.relative_to(REPO_ROOT))))
+            rows.append(('NO TEST', src_str, str(test_file.relative_to(REPO_ROOT))))
             no_test += 1
             continue
 
         pct = measure_coverage(test_file, src)
 
         if pct is None:
-            rows.append(("NO DATA", src_str, str(test_file.relative_to(REPO_ROOT))))
+            rows.append(('NO DATA', src_str, str(test_file.relative_to(REPO_ROOT))))
             fails += 1
         elif pct < TARGET_PCT:
-            rows.append((f"{pct}%", src_str, str(test_file.relative_to(REPO_ROOT))))
+            rows.append((f'{pct}%', src_str, str(test_file.relative_to(REPO_ROOT))))
             fails += 1
         else:
-            rows.append((f"{pct}%", src_str, ""))
+            rows.append((f'{pct}%', src_str, ''))
             passes += 1
 
     src_w = max((len(r[1]) for r in rows), default=40)
-    test_w = max((len(r[2]) for r in rows), default=40)
 
     for status, src_label, detail in rows:
-        ok = status.endswith("%") and int(status[:-1]) >= TARGET_PCT
-        marker = "PASS" if ok else "FAIL"
-        print(f"{marker}  {status:>7}  {src_label:<{src_w}}  {detail}")
+        ok = status.endswith('%') and int(status[:-1]) >= TARGET_PCT
+        marker = 'PASS' if ok else 'FAIL'
+        print(f'{marker}  {status:>7}  {src_label:<{src_w}}  {detail}')
 
     print()
-    print(
-        f"passed={passes}  failed={fails}  no_test={no_test}"
-        f"  skipped_empty_init={skipped}"
-    )
+    print(f'passed={passes}  failed={fails}  no_test={no_test}  skipped_empty_init={skipped}')
     return 0 if (fails == 0 and no_test == 0) else 1
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

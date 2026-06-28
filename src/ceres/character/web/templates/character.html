@@ -80,16 +80,15 @@
 </div>
 
 {# Pre-career Education #}
-{% if summary.precareer_completed or summary.precareer %}
+{% set precareer_terms = summary.precareer_terms %}
+{% if precareer_terms %}
 <div class="mb-6">
   <h2 class="text-xs uppercase tracking-widest text-gray-600 mb-3">Education</h2>
-  <p class="text-sm text-gray-300">
-    {% if summary.precareer_completed %}
-      {{ summary.precareer_completed.name }}
-    {% else %}
-      {{ summary.precareer.name }} <span class="text-gray-600">(in progress)</span>
-    {% endif %}
-  </p>
+  <div class="text-sm text-gray-300 space-y-1">
+    {% for term in precareer_terms %}
+    <p>{{ term.precareer.name }}{% if not term.completed %} <span class="text-gray-600">(in progress)</span>{% elif term.honours %} <span class="text-gray-600">(with honours)</span>{% elif not term.graduated %} <span class="text-gray-600">(did not graduate)</span>{% endif %}</p>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 

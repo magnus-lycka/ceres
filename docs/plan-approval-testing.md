@@ -2,12 +2,35 @@
 
 ## Decision
 
-**Syrupy (Option B) is the chosen approach.** The inline-snapshot vs. Syrupy
-experiment is complete. Use Syrupy with `JSONSnapshotExtension` for all complex
-state-delta approval tests. Do not implement Option C (custom fixtures).
+**Syrupy (Option B) is the chosen approach.** All phases below are complete.
+Use Syrupy with `AnnotatedJSONSnapshotExtension` (a thin subclass of
+`JSONSnapshotExtension` defined in `tests/approval/snapshot.py`) for all
+complex state-delta approval tests. Do not implement Option C (custom fixtures).
 
 The snapshot update workflow is `pytest --snapshot-update`. Snapshot files live
 under `__snapshots__/` beside the test file, committed to the repository.
+
+### Snapshot pattern
+
+```python
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
+
+@pytest.mark.approval
+def test_some_scenario(snapshot):
+    d = _setup_helper()
+    # drive to natural resolution point
+    snap = AnnotatedSnapshot(d.projection.summary.model_dump(mode='json'))
+    snap.annotate('some.key', 'Why this differs from source material')
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
+```
+
+`AnnotatedSnapshot` wraps the data dict and carries optional `annotations`
+keyed by JSON path, serialised alongside the snapshot data. Use
+`snap.annotate(key, note)` to explain deliberate discrepancies from source
+material. Annotations appear in the snapshot file under an `"annotations"` key.
+
+All tests under `tests/approval/` must use this pattern, not hardcoded `assert`
+statements. See `docs/plan-test-restructure.md` §4 for the conversion backlog.
 
 ## Concept
 
@@ -371,33 +394,24 @@ for migration. The migration steps:
 The resulting tests will be shorter, cleaner, and the references will be easier
 to update when Scholar event 3 behaviour changes.
 
-## Phases
+## Phases (all complete)
 
-### Phase 1: Core infrastructure (minimum viable)
+### Phase 1: Core infrastructure — **complete**
 
-- `ApprovalContext` class in `tests/character/helpers.py` or a new
-  `tests/character/approval.py`
-- `approval` pytest fixture in `conftest.py`
-- Fixture file load/compare logic
-- `@pytest.mark.approval` registration in `pyproject.toml`
-- Tests run and fail on mismatch; no interactive tool yet (mismatch message
-  shows the diff as text)
+Syrupy with `AnnotatedJSONSnapshotExtension` adopted. `@pytest.mark.approval`
+registered in `pyproject.toml`. Tests run with `--with-snapshots` or
+`--all-tests`; `--snapshot-update` regenerates fixtures.
 
-### Phase 2: Review tool
+### Phase 2: Review tool — **complete (not needed)**
 
-- `ceres/tools/approval_review.py` (or pytest plugin)
-- Iterate over failing approval tests, show diff, prompt A/K/S/Q
-- Auto-detect volatile paths on approval
-- `rich` rendering for readable diffs
+`pytest --snapshot-update` and the built-in Syrupy diff output are sufficient.
+The custom interactive review tool was not implemented.
 
-### Phase 3: Migration and guidance
+### Phase 3: Migration and guidance — **in progress**
 
-- Migrate existing `projection_diff` tests to the new structure
-- Remove the old `projection_diff` helper (or keep it as the underlying
-  primitive used by `ApprovalContext`)
-- Document in CLAUDE.md: when to use approval tests, when to use targeted
-  assertions
-- Add orphaned-fixture detection to the review tool
+Existing approval tests with hardcoded assertions are being converted to the
+snapshot pattern. See `docs/plan-test-restructure.md` §4 for the conversion
+backlog and status.
 
 ## Open questions
 

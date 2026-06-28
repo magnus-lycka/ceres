@@ -187,6 +187,10 @@ class TestDiff:
         changes = diff_summaries(before, after)
         assert any('Cash +Cr5,000' in c for c in changes)
 
+    def test_empty_when_nothing_changed(self):
+        s = _summary()
+        assert diff_summaries(s, s) == []
+
 
 class TestDecreaseCharacteristic:
     def test_psi_removed_when_reaches_zero(self):

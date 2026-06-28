@@ -1,0 +1,240 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "birthworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 7,
+        "END": 8,
+        "INT": 8,
+        "EDU": 3,
+        "SOC": 8
+      },
+      "psionics": null,
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "army_academy",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Army Academy",
+          "completed": true,
+          "graduated": true,
+          "honours": true
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ATHLETICS",
+          "dexterity": {
+            "display_label": null,
+            "value": 0
+          },
+          "endurance": {
+            "display_label": null,
+            "value": 0
+          },
+          "strength": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "GUN_COMBAT",
+          "archaic": {
+            "display_label": null,
+            "value": 0
+          },
+          "energy": {
+            "display_label": null,
+            "value": 0
+          },
+          "slug": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "RECON",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "MELEE",
+          "unarmed": {
+            "display_label": null,
+            "value": 0
+          },
+          "blade": {
+            "display_label": null,
+            "value": 0
+          },
+          "bludgeon": {
+            "display_label": null,
+            "value": 0
+          },
+          "natural": {
+            "display_label": null,
+            "value": 0
+          },
+          "grapple": {
+            "display_label": null,
+            "value": 0
+          },
+          "striking": {
+            "display_label": null,
+            "value": 0
+          },
+          "fencing": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "HEAVY_WEAPONS",
+          "artillery": {
+            "display_label": null,
+            "value": 0
+          },
+          "portable": {
+            "display_label": null,
+            "value": 0
+          },
+          "vehicle": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "CAROUSE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [
+        "Army Academy graduation: if entering Army, select any three Service Skills and increase them to level 1. Apply manually.",
+        "Army Academy graduation: entitled to a commission roll at the start of your first Army career term with DM+2 (automatic with honours). Apply manually."
+      ],
+      "narrative": [
+        "Pre-career event (Army Academy): Taking advantage of youth, you party as much as you study.",
+        "Graduated from Army Academy with honours!"
+      ],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingCareerChoice",
+        "kind": "career_choice",
+        "option_count": 12,
+        "option_types": [
+          "Agent",
+          "Army",
+          "Citizen",
+          "Drifter",
+          "Entertainer",
+          "Marines",
+          "Merchant",
+          "Navy",
+          "Noble",
+          "Rogue",
+          "Scholar",
+          "Scout"
+        ]
+      }
+    ]
+  }
+}

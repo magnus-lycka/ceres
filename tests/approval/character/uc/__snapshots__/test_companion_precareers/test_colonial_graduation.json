@@ -1,0 +1,376 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "birthworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 7,
+        "END": 8,
+        "INT": 7,
+        "EDU": 2,
+        "SOC": 7
+      },
+      "psionics": null,
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "colonial_upbringing",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Colonial Upbringing",
+          "completed": true,
+          "graduated": true,
+          "honours": false
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ANIMALS",
+          "handling": {
+            "display_label": null,
+            "value": 0
+          },
+          "veterinary": {
+            "display_label": null,
+            "value": 0
+          },
+          "training": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "ATHLETICS",
+          "dexterity": {
+            "display_label": null,
+            "value": 0
+          },
+          "endurance": {
+            "display_label": null,
+            "value": 0
+          },
+          "strength": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "DRIVE",
+          "hovercraft": {
+            "display_label": null,
+            "value": 0
+          },
+          "mole": {
+            "display_label": null,
+            "value": 0
+          },
+          "track": {
+            "display_label": null,
+            "value": 0
+          },
+          "walker": {
+            "display_label": null,
+            "value": 0
+          },
+          "wheel": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "GUN_COMBAT",
+          "archaic": {
+            "display_label": null,
+            "value": 0
+          },
+          "energy": {
+            "display_label": null,
+            "value": 0
+          },
+          "slug": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "MECHANIC",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "MEDIC",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "NAVIGATION",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "RECON",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "SEAFARER",
+          "ocean_ships": {
+            "display_label": null,
+            "value": 0
+          },
+          "personal": {
+            "display_label": null,
+            "value": 0
+          },
+          "sail": {
+            "display_label": null,
+            "value": 0
+          },
+          "submarine": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "SURVIVAL",
+          "level": {
+            "display_label": null,
+            "value": 1
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "COLONIST_PROFESSION",
+          "farming": {
+            "display_label": null,
+            "value": 0
+          },
+          "ranching": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "CAROUSE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "JACK_OF_ALL_TRADES",
+          "level": {
+            "display_label": null,
+            "value": 1
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [
+        "Colonial Upbringing graduation: decrease EDU by D3. Apply manually.",
+        "Colonial Upbringing graduation: total starting age is 22+2D3; add 2D3 extra years to current age. Apply manually."
+      ],
+      "narrative": [
+        "Pre-career event (Colonial Upbringing): Taking advantage of youth, you party as much as you study.",
+        "Graduated from Colonial Upbringing."
+      ],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 1,
+        "option_count": 16,
+        "option_types": [
+          "Animals",
+          "Athletics",
+          "ColonistProfession",
+          "Drive",
+          "FreeloaderProfession",
+          "GunCombat",
+          "HostileEnvironmentProfession",
+          "Mechanic",
+          "Medic",
+          "Navigation",
+          "Recon",
+          "Seafarer",
+          "SpacerProfession",
+          "SportProfession",
+          "Survival",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 1,
+        "option_count": 16,
+        "option_types": [
+          "Animals",
+          "Athletics",
+          "ColonistProfession",
+          "Drive",
+          "FreeloaderProfession",
+          "GunCombat",
+          "HostileEnvironmentProfession",
+          "Mechanic",
+          "Medic",
+          "Navigation",
+          "Recon",
+          "Seafarer",
+          "SpacerProfession",
+          "SportProfession",
+          "Survival",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 1,
+        "option_count": 16,
+        "option_types": [
+          "Animals",
+          "Athletics",
+          "ColonistProfession",
+          "Drive",
+          "FreeloaderProfession",
+          "GunCombat",
+          "HostileEnvironmentProfession",
+          "Mechanic",
+          "Medic",
+          "Navigation",
+          "Recon",
+          "Seafarer",
+          "SpacerProfession",
+          "SportProfession",
+          "Survival",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingCareerChoice",
+        "kind": "career_choice",
+        "option_count": 12,
+        "option_types": [
+          "Agent",
+          "Army",
+          "Citizen",
+          "Drifter",
+          "Entertainer",
+          "Marines",
+          "Merchant",
+          "Navy",
+          "Noble",
+          "Rogue",
+          "Scholar",
+          "Scout"
+        ]
+      }
+    ]
+  }
+}

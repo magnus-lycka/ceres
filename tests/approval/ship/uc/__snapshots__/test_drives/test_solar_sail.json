@@ -1,0 +1,11 @@
+{
+  "data": {
+    "tons": 10.0,
+    "cost": 2000000.0,
+    "power": 0.0,
+    "item": "Solar Sail"
+  },
+  "annotations": {
+    "infos": "['Effective Thrust 0 while using the solar sail as primary propulsion', 'Requires several days to change course or speed', 'Jump drives cannot be engaged while the solar sail is deployed']"
+  }
+}

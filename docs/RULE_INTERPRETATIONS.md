@@ -309,11 +309,11 @@ For non-gravity hulls, the 50% reduction is applied before rounding:
 
     basic_ship_systems_power = ceil(displacement × 0.2 × 0.5)
 
-**Note on third-party tools**: The Tycho tool export for the Belt Racer
+**Note on reference data**: The reference data for the Belt Racer
 (6-ton light hull) shows Basic Ship Systems = 1. Since the official Small
 Craft Catalogue sources consistently show 2 for a standard 6-ton hull, and
-Tycho may use floor rather than ceil, the Belt Racer stat block deviation
-is treated as a Tycho tool difference, not evidence of a light-hull modifier.
+the reference data may use floor rather than ceil, the Belt Racer stat block deviation
+is treated as a reference data difference, not evidence of a light-hull modifier.
 The rules text on light hulls (refs/hg/05_specialised_hull_types.md) states
 only cost and hull-point effects — no power modifier.
 

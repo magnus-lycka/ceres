@@ -48,6 +48,6 @@ def test_belt_racer(snapshot):
     snap = AnnotatedSnapshot(build_belt_racer().build_spec().model_dump(mode='json'))
     snap.annotate(
         'power_basic',
-        'Ceres gives 2 (ceil(6 * 0.2) per RIS-013); Tycho stat block shows 1 (uses floor)',
+        'Ceres gives 2 (ceil(6 * 0.2) per RIS-013); reference data shows 1 (uses floor)',
     )
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

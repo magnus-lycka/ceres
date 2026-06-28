@@ -1,0 +1,21 @@
+{
+  "data": {
+    "base": {
+      "tons": 10.0,
+      "cost": 4000000.0,
+      "power": 10.0,
+      "fuel_per_hour": 0.5,
+      "item": "SpinExt Plasma Drive, Thrust 0.5"
+    },
+    "with_mods": {
+      "tons": 9.0,
+      "cost": 3600000.0,
+      "power": 7.2,
+      "fuel_per_hour": 0.4,
+      "item": "SpinExt Plasma Drive, Thrust 0.5 (Energy Efficient, Fuel Efficient, Size Reduction)"
+    }
+  },
+  "annotations": {
+    "base_infos": "['Uses standard liquid hydrogen fuel', 'Consumes 0.5 tons of fuel per hour', 'Does not require or benefit from a gravity field, so it works in deep space']"
+  }
+}

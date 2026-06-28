@@ -1,0 +1,242 @@
+{
+  "data": {
+    "summary": {
+      "name": "Test",
+      "age": 22,
+      "sophont": {
+        "name": "Humaniti",
+        "ucp_stats": [
+          "STR",
+          "DEX",
+          "END",
+          "INT",
+          "EDU",
+          "SOC"
+        ],
+        "allegiance_pattern": "*",
+        "remarks_codes": []
+      },
+      "homeworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "birthworld": {
+        "name": "Hexx",
+        "hex": "2715",
+        "uwp": "B78A577-D",
+        "pbg": "314",
+        "zone": "",
+        "bases": "NS",
+        "allegiance": "ImDd",
+        "stellar": "F6 V",
+        "ss": "H",
+        "ix": "{ 1 }",
+        "ex": "(C45+1)",
+        "cx": "[565D]",
+        "nobility": "Bc",
+        "worlds": 11,
+        "resource_units": 240,
+        "subsector": 7,
+        "quadrant": 1,
+        "world_x": -102,
+        "world_y": -25,
+        "remarks": "Ni Wa Pr Ht",
+        "legacy_base_code": "NS",
+        "sector": "Trojan Reach",
+        "subsector_name": "Tobia",
+        "sector_abbreviation": "Troj",
+        "allegiance_name": "Third Imperium, Domain of Deneb"
+      },
+      "characteristics": {
+        "STR": 7,
+        "DEX": 8,
+        "END": 7,
+        "INT": 7,
+        "EDU": 2,
+        "SOC": 5
+      },
+      "psionics": null,
+      "last_career": null,
+      "last_career_ejected": false,
+      "last_assignment": null,
+      "rank": null,
+      "terms": [
+        {
+          "kind": "spacer_community",
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Spacer Community",
+          "completed": true,
+          "graduated": true,
+          "honours": true
+        }
+      ],
+      "drafted": false,
+      "skills": [
+        {
+          "display_label": null,
+          "kind": "ADMIN",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "VACC_SUIT",
+          "level": {
+            "display_label": null,
+            "value": 1
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "STEALTH",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "CAROUSE",
+          "level": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "PILOT",
+          "small_craft": {
+            "display_label": null,
+            "value": 0
+          },
+          "spacecraft": {
+            "display_label": null,
+            "value": 0
+          },
+          "capital_ships": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
+          "kind": "JACK_OF_ALL_TRADES",
+          "level": {
+            "display_label": null,
+            "value": 1
+          }
+        }
+      ],
+      "connections": [],
+      "problems": [
+        "Spacer Community graduation: DM+1 to enlist, commission, and promotion in Merchant (Free Trader). Apply manually."
+      ],
+      "narrative": [
+        "Pre-career event (Spacer Community): Taking advantage of youth, you party as much as you study.",
+        "Graduated from Spacer Community with honours!"
+      ],
+      "cash": 0,
+      "dead": false,
+      "parole_threshold": null
+    },
+    "pending_inputs": [
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 0,
+        "option_count": 9,
+        "option_types": [
+          "Astrogation",
+          "ColonistProfession",
+          "Electronics",
+          "Engineer",
+          "FreeloaderProfession",
+          "HostileEnvironmentProfession",
+          "SpacerProfession",
+          "SportProfession",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 0,
+        "option_count": 9,
+        "option_types": [
+          "Astrogation",
+          "ColonistProfession",
+          "Electronics",
+          "Engineer",
+          "FreeloaderProfession",
+          "HostileEnvironmentProfession",
+          "SpacerProfession",
+          "SportProfession",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingPreCareerSkillChoice",
+        "kind": "precareer_skill_choice",
+        "level": 1,
+        "option_count": 9,
+        "option_types": [
+          "Astrogation",
+          "ColonistProfession",
+          "Electronics",
+          "Engineer",
+          "FreeloaderProfession",
+          "HostileEnvironmentProfession",
+          "SpacerProfession",
+          "SportProfession",
+          "WorkerProfession"
+        ]
+      },
+      {
+        "type": "PendingCareerChoice",
+        "kind": "career_choice",
+        "option_count": 12,
+        "option_types": [
+          "Agent",
+          "Army",
+          "Citizen",
+          "Drifter",
+          "Entertainer",
+          "Marines",
+          "Merchant",
+          "Navy",
+          "Noble",
+          "Rogue",
+          "Scholar",
+          "Scout"
+        ]
+      }
+    ]
+  }
+}

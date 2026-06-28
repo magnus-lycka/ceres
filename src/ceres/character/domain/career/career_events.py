@@ -161,8 +161,6 @@ class MishapHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        from ceres.character.domain.health.health_events import PendingAgingRoll
-
         career = projection.get_current_career()
         mishap = career.mishaps.get(self.roll)
         pending_idx = 0
@@ -183,13 +181,9 @@ class MishapHandler(EventHandlerBase):
             purge_career_pendings(projection)
             if projection.summary.career_terms:
                 projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
-            projection.summary.age += 4
-            if projection.summary.age >= 34:
+            if projection.advance_age(event.id, pending_idx):
                 projection.clear_current_career(ejected=True)
                 projection.summary.career_terms[-1].require_muster_out().pending_setup = True
-                projection.pending_inputs.append(
-                    PendingAgingRoll(pending_id=(event.id, pending_idx), instruction='Roll 2D on Aging table')
-                )
             else:
                 muster_out_setup(projection, event.id, pending_idx, ejected=True)
 
@@ -466,17 +460,11 @@ def _apply_mishap_ejection(
     pending_idx: int,
     lose_current_term: bool = True,
 ) -> int:
-    from ceres.character.domain.health.health_events import PendingAgingRoll
-
     if lose_current_term and projection.summary.career_terms:
         projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
-    projection.summary.age += 4
-    if projection.summary.age >= 34:
+    if projection.advance_age(source_event_id, pending_idx):
         projection.clear_current_career(ejected=True)
         projection.summary.career_terms[-1].require_muster_out().pending_setup = True
-        projection.pending_inputs.append(
-            PendingAgingRoll(pending_id=(source_event_id, pending_idx), instruction='Roll 2D on Aging table')
-        )
         return pending_idx + 1
     return muster_out_setup(projection, source_event_id, pending_idx, ejected=True)
 
@@ -488,46 +476,33 @@ def purge_career_pendings(projection: CharacterProjection) -> None:
 
 
 def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:
-    from ceres.character.domain.health.health_events import PendingAgingRoll
-
     if projection.prisoner_freed:
         projection.prisoner_freed = False
-        projection.summary.age += 4
         career = projection.summary.current_career
-        if projection.summary.age >= 34:
+        if projection.advance_age(event_id, idx):
             projection.clear_current_career()
             if projection.summary.career_terms:
                 projection.summary.career_terms[-1].require_muster_out().pending_setup = True
             projection.pending_reenlist = False
-            projection.pending_inputs.append(
-                PendingAgingRoll(pending_id=(event_id, idx), instruction='Roll 2D on Aging table')
-            )
         elif career:
             muster_out_setup(projection, event_id, idx)
         return
 
-    projection.summary.age += 4
     current_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
     forced_leave = current_term.forced_leave if current_term else False
     forced_stay = current_term.forced_stay if current_term else False
+    aging_triggered = projection.advance_age(event_id, idx)
     if forced_leave:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career:
-            if projection.summary.age >= 34:
+            if aging_triggered:
                 projection.clear_current_career()
                 projection.summary.career_terms[-1].require_muster_out().pending_setup = True
                 projection.pending_reenlist = False
-                projection.pending_inputs.append(
-                    PendingAgingRoll(pending_id=(event_id, idx), instruction='Roll 2D on Aging table')
-                )
             else:
                 muster_out_setup(projection, event_id, idx)
         return
-    if projection.summary.age >= 34:
-        projection.pending_inputs.append(
-            PendingAgingRoll(pending_id=(event_id, idx), instruction='Roll 2D on Aging table')
-        )
-    else:
+    if not aging_triggered:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
             can_muster_out = not career.advancement_is_special() and not forced_stay

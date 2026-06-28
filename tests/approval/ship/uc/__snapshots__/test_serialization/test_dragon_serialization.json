@@ -1,0 +1,615 @@
+{
+  "data": {
+    "display_label": null,
+    "tl": 13,
+    "displacement": 400,
+    "ship_class": "Dragon",
+    "ship_type": "System Defense Boat",
+    "military": true,
+    "crew": {
+      "display_label": null,
+      "roles": [
+        {
+          "role": "CAPTAIN",
+          "level": 1
+        },
+        {
+          "role": "PILOT",
+          "level": 1
+        },
+        {
+          "role": "PILOT",
+          "level": 1
+        },
+        {
+          "role": "PILOT",
+          "level": 1
+        },
+        {
+          "role": "ASTROGATOR",
+          "level": 1
+        },
+        {
+          "role": "ENGINEER",
+          "level": 1
+        },
+        {
+          "role": "ENGINEER",
+          "level": 1
+        },
+        {
+          "role": "MAINTENANCE",
+          "level": 1
+        },
+        {
+          "role": "MEDIC",
+          "level": 1
+        },
+        {
+          "role": "GUNNER",
+          "level": 1
+        },
+        {
+          "role": "GUNNER",
+          "level": 1
+        },
+        {
+          "role": "GUNNER",
+          "level": 1
+        },
+        {
+          "role": "GUNNER",
+          "level": 1
+        },
+        {
+          "role": "GUNNER",
+          "level": 1
+        },
+        {
+          "role": "GUNNER",
+          "level": 1
+        },
+        {
+          "role": "SENSOR OPERATOR",
+          "level": 1
+        },
+        {
+          "role": "SENSOR OPERATOR",
+          "level": 1
+        },
+        {
+          "role": "SENSOR OPERATOR",
+          "level": 1
+        },
+        {
+          "role": "OFFICER",
+          "level": 1
+        }
+      ]
+    },
+    "occupants": null,
+    "design_type": "STANDARD",
+    "hull": {
+      "display_label": null,
+      "configuration": {
+        "display_label": null,
+        "description": "Streamlined Hull",
+        "streamlined": 1,
+        "armour_volume_modifier": 1.2,
+        "hull_points_modifier": 1.0,
+        "hull_cost_modifier": 1.2,
+        "reinforced": true,
+        "light": false,
+        "military": false,
+        "non_gravity": false,
+        "double": false,
+        "hamster_cage": false,
+        "breakaway": false,
+        "protection": 0,
+        "usage_factor": 1.0
+      },
+      "armour": {
+        "armoured_bulkhead": false,
+        "display_label": null,
+        "hardened": false,
+        "description": "Crystaliron",
+        "protection": 13
+      },
+      "stealth": {
+        "armoured_bulkhead": false,
+        "tl": 10,
+        "display_label": null,
+        "hardened": false,
+        "description": "Improved Stealth"
+      },
+      "pressure_hull": false,
+      "adjustable_hull": null,
+      "airlocks": [
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "size": 2.0,
+          "booby_trap": null
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "size": 2.0,
+          "booby_trap": null
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "size": 2.0,
+          "booby_trap": null
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "size": 2.0,
+          "booby_trap": null
+        }
+      ],
+      "aerofins": null,
+      "heat_shielding": false,
+      "radiation_shielding": true,
+      "reflec": false
+    },
+    "drives": {
+      "tons": 0.0,
+      "power": 0.0,
+      "armoured_bulkhead": false,
+      "cost": 0.0,
+      "tl": 0,
+      "display_label": null,
+      "hardened": false,
+      "m_drive": {
+        "armoured_bulkhead": true,
+        "tl": 13,
+        "display_label": null,
+        "hardened": false,
+        "customisation": null,
+        "drive_type": "mdrive_7",
+        "concealed": false
+      },
+      "r_drive": null,
+      "j_drive": null,
+      "plasma_drive": null,
+      "solar_sail": null
+    },
+    "power": {
+      "tons": 0.0,
+      "power": 0.0,
+      "armoured_bulkhead": false,
+      "cost": 0.0,
+      "tl": 0,
+      "display_label": null,
+      "hardened": false,
+      "plant": {
+        "armoured_bulkhead": true,
+        "tl": 12,
+        "display_label": null,
+        "hardened": false,
+        "customisation": null,
+        "output": 450.0,
+        "plant_type": "fusion_tl12"
+      },
+      "solar": [],
+      "batteries": [],
+      "emergency_power_system": null
+    },
+    "fuel": {
+      "display_label": null,
+      "jump_fuel": null,
+      "collector": null,
+      "operation_fuel": {
+        "armoured_bulkhead": true,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "weeks": 16
+      },
+      "reaction_fuel": null,
+      "fuel_scoops": {
+        "armoured_bulkhead": false,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "description": "Fuel Scoops",
+        "free": true
+      },
+      "fuel_processor": null,
+      "fuel_refinery": null,
+      "ramscoop": null,
+      "metal_hydride_storage": null
+    },
+    "command": {
+      "display_label": null,
+      "bridge": {
+        "armoured_bulkhead": true,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "small": false,
+        "holographic": true,
+        "detachable": false
+      },
+      "cockpit": null
+    },
+    "computer": {
+      "display_label": null,
+      "hardware": {
+        "armoured_bulkhead": false,
+        "tl": 13,
+        "display_label": null,
+        "processing": 25,
+        "retro_levels": 0,
+        "kind": "computer_25",
+        "bis": false,
+        "fib": true,
+        "proto_levels": 0
+      },
+      "backup_hardware": {
+        "armoured_bulkhead": false,
+        "tl": 12,
+        "display_label": null,
+        "processing": 20,
+        "retro_levels": 0,
+        "kind": "computer_20",
+        "bis": false,
+        "fib": true,
+        "proto_levels": 0
+      },
+      "software": [
+        {
+          "display_label": null,
+          "package": "auto_repair",
+          "rating": 1
+        },
+        {
+          "display_label": null,
+          "package": "fire_control",
+          "rating": 2
+        },
+        {
+          "display_label": null,
+          "package": "evade",
+          "rating": 1
+        }
+      ]
+    },
+    "sensors": {
+      "display_label": null,
+      "primary": {
+        "armoured_bulkhead": true,
+        "tl": 12,
+        "display_label": null,
+        "hardened": false,
+        "low_intercept": "NONE",
+        "description": "Improved Sensors"
+      },
+      "deep_penetration_scanners": null,
+      "life_scanner": null,
+      "life_scanner_analysis_suite": null,
+      "mail_distribution_array": null,
+      "mineral_detection_suite": null,
+      "shallow_penetration_suite": null,
+      "countermeasures": {
+        "armoured_bulkhead": true,
+        "tl": 13,
+        "display_label": null,
+        "hardened": false,
+        "description": "Countermeasures Suite"
+      },
+      "signal_processing": {
+        "armoured_bulkhead": true,
+        "tl": 13,
+        "display_label": null,
+        "hardened": false,
+        "description": "Enhanced Signal Processing"
+      },
+      "distributed_array": null,
+      "extended_arrays": {
+        "armoured_bulkhead": true,
+        "tl": 11,
+        "display_label": null,
+        "hardened": false,
+        "description": "Extended Arrays"
+      },
+      "extension_net": null,
+      "sensor_stations": {
+        "armoured_bulkhead": true,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "count": 2
+      }
+    },
+    "screens": null,
+    "craft": null,
+    "automation": {
+      "armoured_bulkhead": false,
+      "tl": 0,
+      "display_label": null,
+      "hardened": false,
+      "level": "standard_auto"
+    },
+    "cargo": null,
+    "habitation": {
+      "display_label": null,
+      "staterooms": [
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "kind": "standard",
+          "occupancy": 2
+        }
+      ],
+      "low_berths": [],
+      "emergency_low_berths": [],
+      "brig": null,
+      "brigs": [],
+      "barracks": [],
+      "cabin_space": null,
+      "common_area": {
+        "armoured_bulkhead": false,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "tons": 10.0,
+        "description": "Common Area"
+      },
+      "common_areas": [],
+      "entertainment": null,
+      "swimming_pool": null,
+      "hot_tubs": [],
+      "theatres": [],
+      "wet_bar": null,
+      "stables": []
+    },
+    "systems": {
+      "display_label": null,
+      "internal_systems": [
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "system_type": "ARMOURY",
+          "description": "Armoury"
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "tons": 4.0,
+          "system_type": "BIOSPHERE",
+          "description": "Biosphere"
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "system_type": "MEDICAL_BAY",
+          "autodoc": null
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "system_type": "TRAINING_FACILITY",
+          "trainees": 2
+        },
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "system_type": "WORKSHOP",
+          "description": "Workshop"
+        }
+      ],
+      "drones": [
+        {
+          "armoured_bulkhead": false,
+          "tl": 0,
+          "display_label": null,
+          "hardened": false,
+          "drone_type": "REPAIR_DRONES",
+          "description": "Repair Drones"
+        }
+      ]
+    },
+    "weapons": {
+      "display_label": null,
+      "turrets": [],
+      "fixed_mounts": [],
+      "carronades": [],
+      "barbettes": [
+        {
+          "armoured_bulkhead": true,
+          "tl": 11,
+          "display_label": null,
+          "hardened": false,
+          "customisation": null,
+          "barbette_type": "particle_barbette"
+        },
+        {
+          "armoured_bulkhead": true,
+          "tl": 11,
+          "display_label": null,
+          "hardened": false,
+          "customisation": null,
+          "barbette_type": "particle_barbette"
+        }
+      ],
+      "spinal_mounts": [],
+      "bays": [
+        {
+          "armoured_bulkhead": true,
+          "tl": 7,
+          "display_label": null,
+          "hardened": false,
+          "customisation": {
+            "display_label": null,
+            "grade": "HIGH_TECHNOLOGY",
+            "modifications": [
+              {
+                "display_label": null,
+                "description": "",
+                "name": "Size Reduction",
+                "advantage": 1,
+                "disadvantage": 0,
+                "cost_multiplier": 1.0,
+                "tons_delta_percent": -0.1,
+                "power_multiplier": 1.0,
+                "output_multiplier": 1.0,
+                "fuel_delta_percent": 0.0,
+                "tl_delta": 0,
+                "info_notes": []
+              },
+              {
+                "display_label": null,
+                "description": "",
+                "name": "Size Reduction",
+                "advantage": 1,
+                "disadvantage": 0,
+                "cost_multiplier": 1.0,
+                "tons_delta_percent": -0.1,
+                "power_multiplier": 1.0,
+                "output_multiplier": 1.0,
+                "fuel_delta_percent": 0.0,
+                "tl_delta": 0,
+                "info_notes": []
+              },
+              {
+                "display_label": null,
+                "description": "",
+                "name": "Size Reduction",
+                "advantage": 1,
+                "disadvantage": 0,
+                "cost_multiplier": 1.0,
+                "tons_delta_percent": -0.1,
+                "power_multiplier": 1.0,
+                "output_multiplier": 1.0,
+                "fuel_delta_percent": 0.0,
+                "tl_delta": 0,
+                "info_notes": []
+              }
+            ]
+          },
+          "bay_type": "small_missile_bay"
+        }
+      ],
+      "point_defense_batteries": [
+        {
+          "armoured_bulkhead": true,
+          "tl": 12,
+          "display_label": null,
+          "hardened": false,
+          "customisation": null,
+          "battery_type": "laser_point_defense_2"
+        }
+      ],
+      "missile_storage": {
+        "armoured_bulkhead": true,
+        "tl": 0,
+        "display_label": null,
+        "hardened": false,
+        "count": 480
+      },
+      "torpedo_storage": null,
+      "sandcaster_canister_storage": null
+    }
+  },
+  "annotations": {
+    "production_cost": "308250000.0",
+    "hull_points": "176.0",
+    "round_trip_idempotent": "True"
+  }
+}

@@ -66,6 +66,45 @@ class TestTermDataInterface:
             assert precareer.source != ''
 
 
+class TestTermNotes:
+    def _term(self, **kwargs):
+        from ceres.character.domain.career.army import ARMY
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        support = ARMY.assignment('Support')
+        assert support is not None
+        return CareerTerm(career=ARMY, assignment=support, **kwargs)
+
+    def test_empty_notes_when_no_fields(self):
+        term = self._term()
+        assert len(term.notes) == 0
+
+    def test_event_becomes_content_note(self):
+        term = self._term(event='You are promoted.')
+        notes = term.notes
+        assert len(notes.contents) == 1
+        assert notes.contents[0] == 'You are promoted.'
+
+    def test_mishap_becomes_warning_note(self):
+        term = self._term(mishap='Injured in battle.')
+        notes = term.notes
+        assert len(notes.warnings) == 1
+        assert notes.warnings[0] == 'Injured in battle.'
+
+    def test_prison_becomes_error_note(self):
+        term = self._term(prison='Crime: Theft')
+        notes = term.notes
+        assert len(notes.errors) == 1
+        assert notes.errors[0] == 'Crime: Theft'
+
+    def test_all_three_fields_together(self):
+        term = self._term(event='Survived.', mishap='Wounded.', prison='Caught.')
+        notes = term.notes
+        assert len(notes.contents) == 1
+        assert len(notes.warnings) == 1
+        assert len(notes.errors) == 1
+
+
 class TestCareerDataSubclassPattern:
     def test_all_loaded_careers_are_specific_subclasses(self):
         """Every career must be an instance of a named CareerData subclass, not CareerData directly."""

@@ -148,17 +148,33 @@ _NOTE_CATEGORY_COLOR = {
 
 
 def _term_detail_rows(summary) -> list[dict[str, Any]]:
-    return [
-        {
-            'career': term.career.name,
-            'assignment': term.assignment.name,
-            'notes': [
-                {'text': n.message, 'color': _NOTE_CATEGORY_COLOR.get(n.category.value, 'text-gray-500')}
-                for n in term.notes
-            ],
-        }
-        for term in summary.career_terms
-    ]
+    from ceres.character.domain.precareer.precareer_data import PreCareerTerm
+
+    rows = []
+    for term in summary.terms:
+        if isinstance(term, PreCareerTerm):
+            rows.append(
+                {
+                    'career': term.precareer.name,
+                    'assignment': 'Pre-career',
+                    'notes': [
+                        {'text': n.message, 'color': _NOTE_CATEGORY_COLOR.get(n.category.value, 'text-gray-500')}
+                        for n in term.notes
+                    ],
+                }
+            )
+        else:
+            rows.append(
+                {
+                    'career': term.career.name,
+                    'assignment': term.assignment.name,
+                    'notes': [
+                        {'text': n.message, 'color': _NOTE_CATEGORY_COLOR.get(n.category.value, 'text-gray-500')}
+                        for n in term.notes
+                    ],
+                }
+            )
+    return rows
 
 
 def _projection_context(projection: CharacterProjection, character_id: int) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 """Approval snapshot for the Strandbell System Defense Boat.
 
-Source: refs/tycho/sdb.md (Tycho design tool output for a 200-ton TL-15 SDB).
+Source: refs/tycho/sdb.md (reference data for a 200-ton TL-15 SDB).
 
 Purpose:
 - exercise a 200-ton military standard reinforced hull with Crystaliron armour

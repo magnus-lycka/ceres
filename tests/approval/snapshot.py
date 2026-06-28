@@ -13,6 +13,7 @@ update just re-serializes whatever ``annotate()`` calls are present.
 """
 
 import json
+from typing import Any
 
 from syrupy.extensions.json import JSONSnapshotExtension
 
@@ -20,9 +21,9 @@ from syrupy.extensions.json import JSONSnapshotExtension
 class AnnotatedSnapshot:
     def __init__(self, data: dict) -> None:
         self._data = data
-        self._annotations: dict[str, str] = {}
+        self._annotations: dict[str, Any] = {}
 
-    def annotate(self, key: str, note: str) -> AnnotatedSnapshot:
+    def annotate(self, key: str, note: Any) -> AnnotatedSnapshot:
         self._annotations[key] = note
         return self
 

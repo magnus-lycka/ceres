@@ -2,10 +2,9 @@ from typing import TYPE_CHECKING, Annotated, ClassVar, Literal, cast
 
 from pydantic import Field
 
-from ceres.gear.software import AnySoftware, FixedSoftwarePackage, RatedSoftwarePackage
+from ceres.gear.software import AnySoftware, FixedSoftwarePackage, RatedSoftwarePackage, _ComputerPartLike
 
 if TYPE_CHECKING:
-    from ceres.gear.computer import ComputerPart
     from ceres.make.ship.computer import ComputerBase
 
 
@@ -38,7 +37,7 @@ class JumpControl(RatedSoftwarePackage):
         7: {'bandwidth': 35, 'tl': 16, 'cost': 700_000.0},
     }
 
-    def validate_on_computer(self, computer: ComputerPart) -> None:
+    def validate_on_computer(self, computer: _ComputerPartLike) -> None:
         self._validate_tl_on_computer(computer)
         ship_computer = cast('ComputerBase', computer)
         effective_tl = self._computer_effective_tl(computer)

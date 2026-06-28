@@ -71,6 +71,12 @@ class CharacterSummary(BaseModel):
         return [t for t in self.terms if isinstance(t, CareerTerm)]
 
     @property
+    def precareer_terms(self) -> list[PreCareerTerm]:
+        from ceres.character.domain.precareer.precareer_data import PreCareerTerm as _PreCareerTerm
+
+        return [t for t in self.terms if isinstance(t, _PreCareerTerm)]
+
+    @property
     def current_precareer_term(self) -> PreCareerTerm | None:
         from ceres.character.domain.precareer.precareer_data import PreCareerTerm as _PreCareerTerm
 
@@ -207,6 +213,18 @@ class CharacterSummary(BaseModel):
             a_display = f'{a_code} {a_title}'.strip() if a_title else a_code
             changes.append(f'Rank {b_display} → {a_display}')
 
+        from ceres.character.domain.precareer.precareer_data import PreCareerTerm as _PCT
+
+        for i, after_t in enumerate(other.terms):
+            before_t = self.terms[i] if i < len(self.terms) else None
+            if isinstance(after_t, _PCT):
+                if before_t is None:
+                    changes.append(f'Pre-career: {after_t.precareer.name}')
+                elif isinstance(before_t, _PCT) and not before_t.completed and after_t.completed:
+                    result = 'graduated' if after_t.graduated else 'did not graduate'
+                    suffix = ' with honours' if after_t.honours else ''
+                    changes.append(f'Pre-career {after_t.precareer.name}: {result}{suffix}')
+
         for i, after_term in enumerate(other.career_terms):
             before_term = self.career_terms[i] if i < len(self.career_terms) else None
             if not (before_term and before_term.forced_stay) and after_term.forced_stay:
@@ -316,6 +334,18 @@ class CharacterProjection(BaseModel):
 
     def has_blocking_pending(self) -> bool:
         return any(p.blocking for p in self.pending_inputs)
+
+    def advance_age(self, event_id: int, pending_idx: int) -> bool:
+        """Increment age by 4 and queue PendingAgingRoll if now >= 34. Return True if triggered."""
+        from ceres.character.domain.health.health_events import PendingAgingRoll
+
+        self.summary.age += 4
+        if self.summary.age >= 34:
+            self.pending_inputs.append(
+                PendingAgingRoll(pending_id=(event_id, pending_idx), instruction='Roll 2D on Aging table')
+            )
+            return True
+        return False
 
     def clear_current_career(self, ejected: bool = False) -> None:
         if self.summary.current_career is not None:

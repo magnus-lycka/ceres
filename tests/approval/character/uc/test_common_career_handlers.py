@@ -1,66 +1,49 @@
-"""Tests for shared career handlers."""
+"""Approval snapshots for shared career handlers (CommonMishap1)."""
 
-from ceres.character.domain.career.career_events import PendingCareerChoice, PendingChoices
+import pytest
+
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.health.health_events import (
-    PendingDoubleInjuryRoll,
-    PendingNearlyKilled,
-    PendingSeverelyInjured,
-)
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive
 from ceres.character.domain.sophont import VILANI
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.approval.character.helpers import (
+    CharacterSession,
+    background_skills_form,
+    career_entry_form,
+    choice_form,
+    double_injury_form,
+    roll_form,
+    ucp_form,
+)
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
+from tests.unit.character.helpers import MOCK_WORLD
 
 
-def _setup_through_mishap1() -> CharacterDriver:
-    d = CharacterDriver()
-    d.start(VILANI, MOCK_WORLD)
-    d.ucp('7869A5')
-    d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
-    d.career('Citizen', 'Corporate', roll=4)
-    d.survive(2)
-    d.mishap(1)
-    return d
+def _session_at_mishap1() -> CharacterSession:
+    """Character through Citizen Corporate term, survived with roll=2 (mishap 1 triggered)."""
+    session = CharacterSession()
+    session.start(VILANI, MOCK_WORLD)
+    session.submit(ucp_form('7869A5'))
+    session.submit(background_skills_form(Admin(), Athletics(), Carouse(), Drive()))
+    session.submit(career_entry_form('Citizen', 'Corporate', 4))
+    session.submit(roll_form(2))  # survive fail (END 6+, END=6, DM+0, 2 < 6)
+    session.submit(roll_form(1))  # mishap 1 → queues PendingChoices with CommonMishap1 options
+    return session
 
 
-class TestCommonMishap1Handler:
-    def test_creates_choice_between_severe_and_double_roll(self):
-        d = _setup_through_mishap1()
-        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
-        assert pending is not None
-        assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+@pytest.mark.approval
+def test_mishap1_severe_branch(snapshot):
+    """Choosing severe injury: career ends immediately, injury table queued."""
+    session = _session_at_mishap1()
+    session.submit(choice_form(CommonMishap1Severe))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
-    def test_severe_branch_queues_severely_injured_pending(self):
-        # Injury table result 2 = roll 1D, reduce chosen physical stat by that amount
-        d = _setup_through_mishap1()
-        d.career_choice(CommonMishap1Severe)
-        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingSeverelyInjured)), None)
-        assert pending is not None
 
-    def test_severe_branch_ends_career(self):
-        d = _setup_through_mishap1()
-        d.career_choice(CommonMishap1Severe)
-        assert d.projection.summary.current_career is None
-
-    def test_double_roll_branch_queues_double_injury_roll(self):
-        d = _setup_through_mishap1()
-        d.career_choice(CommonMishap1DoubleRoll)
-        pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingDoubleInjuryRoll)), None)
-        assert pending is not None
-
-    def test_double_roll_branch_ends_career(self):
-        d = _setup_through_mishap1()
-        d.career_choice(CommonMishap1DoubleRoll)
-        assert d.projection.summary.current_career is None
-
-    def test_double_roll_injury_result_precedes_career_choice(self):
-        # After resolving the double roll, the injury result must come before any career choice
-        d = _setup_through_mishap1()
-        d.career_choice(CommonMishap1DoubleRoll)
-        d.double_injury_roll(1, 1)  # min=1 → nearly killed
-        pendings = d.projection.pending_inputs
-        nearly_killed_idx = next((i for i, p in enumerate(pendings) if isinstance(p, PendingNearlyKilled)), None)
-        career_idx = next((i for i, p in enumerate(pendings) if isinstance(p, PendingCareerChoice)), None)
-        assert nearly_killed_idx is not None
-        if career_idx is not None:
-            assert nearly_killed_idx < career_idx
+@pytest.mark.approval
+def test_mishap1_double_roll_branch_nearly_killed(snapshot):
+    """Choosing double roll then rolling minimum (1,1): career ends, nearly-killed result queued."""
+    session = _session_at_mishap1()
+    session.submit(choice_form(CommonMishap1DoubleRoll))
+    session.submit(double_injury_form(1, 1))
+    snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
+    assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

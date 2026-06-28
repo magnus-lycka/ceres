@@ -1,0 +1,94 @@
+{
+  "data": {
+    "SmallMissileBay": {
+      "tons": 50.0,
+      "cost": 12000000.0,
+      "power": 5.0,
+      "hardpoints": 1
+    },
+    "SmallMissileBay_size_reduction": {
+      "tons": 45.0,
+      "cost": 13200000.0,
+      "power": 5.0,
+      "hardpoints": 1
+    },
+    "MediumMissileBay": {
+      "tons": 100.0,
+      "cost": 20000000.0,
+      "power": 10.0,
+      "hardpoints": 1
+    },
+    "MediumParticleBeamBay": {
+      "tons": 100.0,
+      "cost": 40000000.0,
+      "power": 50.0,
+      "hardpoints": 1
+    },
+    "MediumParticleBeamBay_hy_2sr": {
+      "tons": 80.0,
+      "cost": 60000000.0,
+      "power": 50.0,
+      "hardpoints": 1
+    },
+    "LargeTorpedoBay": {
+      "tons": 500.0,
+      "cost": 10000000.0,
+      "power": 10.0,
+      "hardpoints": 5
+    },
+    "LargeHullcutterBay": {
+      "tons": 500.0,
+      "cost": 110000000.0,
+      "power": 100.0,
+      "hardpoints": 5
+    },
+    "LargeMesonGunBay": {
+      "tons": 500.0,
+      "cost": 250000000.0,
+      "power": 120.0,
+      "hardpoints": 5
+    },
+    "GeneralPurposeMassDriverBay_extra3": {
+      "tons": 56.0,
+      "cost": 4225000.0,
+      "power": 19.0,
+      "launch_capacity": 53.0
+    },
+    "PlasmaCarronade": {
+      "tons": 4.0,
+      "cost": 10000000.0,
+      "power": 35.0,
+      "hardpoints": 4
+    },
+    "FusionCarronade": {
+      "tons": 4.0,
+      "cost": 12000000.0,
+      "power": 45.0,
+      "hardpoints": 4
+    },
+    "LaserPointDefenseBattery2": {
+      "tons": 20.0,
+      "cost": 10000000.0,
+      "power": 20.0,
+      "hardpoints": 1
+    },
+    "GaussPointDefenseBattery3": {
+      "tons": 20.0,
+      "cost": 10000000.0,
+      "power": 25.0,
+      "hardpoints": 1
+    },
+    "TorpedoInterceptorCluster": {
+      "tons": 1.0,
+      "cost": 1000000.0,
+      "power": 1.0,
+      "hardpoints": 1
+    }
+  },
+  "annotations": {
+    "hullcutter_infos": "['Reductor: target armour is reduced by -1 per damage die before damage is applied']",
+    "carronade_plasma_infos": "['Damage: 12D; Weak trait doubles target armour against damage']",
+    "torpedo_interceptor_infos": "['One-shot system; must be replaced dockside after firing', 'Four interceptors; each kills one missile on 6+ or torpedo on 8+']",
+    "gpmdb_infos": "['Can launch 53 tons; DM-4 to attack rolls against manoeuvring targets']"
+  }
+}

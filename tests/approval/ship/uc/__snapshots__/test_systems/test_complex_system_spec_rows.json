@@ -1,0 +1,81 @@
+{
+  "data": {
+    "vault_8_armour": 8,
+    "vault_8_hull_points": 1,
+    "vault_40_armour": 10,
+    "vault_40_hull_points": 8,
+    "vault_row": {
+      "tons": 8.0,
+      "cost": 4000000.0
+    },
+    "forced_linkage_tl": 12,
+    "forced_linkage_pilot_dm": 0,
+    "fla_row": {
+      "tons": 2.0,
+      "cost": 100000.0,
+      "infos": [
+        "Pilot check DM +0",
+        "Requires Thrust advantage of at least 1 over the target",
+        "Cannot target ships above 5000 tons",
+        "May be combined with a breaching tube"
+      ]
+    },
+    "holo_row": {
+      "tons": null,
+      "cost": 20000000.0,
+      "power": -100.0,
+      "infos": [
+        "Can change hull colours, add graphics, and alter visual appearance without changing shape"
+      ]
+    },
+    "tube_row": {
+      "tons": 3.0,
+      "cost": 3000000.0,
+      "infos": [
+        "DM +1 to Boarding Actions rolls",
+        "Can only attach to disabled or otherwise inert ships",
+        "Destroyed if either ship moves while attached; attached ship receives 2D damage"
+      ]
+    },
+    "booby_row": {
+      "tons": 2.0,
+      "cost": 1200000.0,
+      "infos": [
+        "Booby-trapped: 8D damage/round"
+      ]
+    },
+    "construction_row": {
+      "tons": 100.0,
+      "cost": 50000000.0,
+      "power": -100.0,
+      "infos": [
+        "Can build or repair ships up to 50 tons at TL12"
+      ]
+    },
+    "booby_trap_table": {
+      "TL6": {
+        "tl": 6,
+        "cost": 100000.0,
+        "damage": "3D"
+      },
+      "TL8": {
+        "tl": 8,
+        "cost": 300000.0,
+        "damage": "5D"
+      },
+      "TL10": {
+        "tl": 10,
+        "cost": 500000.0,
+        "damage": "6D"
+      },
+      "TL12": {
+        "tl": 12,
+        "cost": 1000000.0,
+        "damage": "8D"
+      }
+    }
+  },
+  "annotations": {
+    "vault_infos": "['Vault armour and Hull points protect contents only, not the ship', 'Contents can survive in vacuum for a limited time if the ship is destroyed']"
+  }
+}

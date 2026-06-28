@@ -1,9 +1,14 @@
+"""Approval snapshots for CharacterSummary computed properties and diff."""
+
+import pytest
+
 from ceres.character.domain.career import CITIZEN, PSION, SCOUT
 from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.character_state import CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Admin, Level
 from ceres.character.domain.sophont import HUMANITI
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
 from tests.unit.character.helpers import MOCK_WORLD
 
 
@@ -14,7 +19,17 @@ def _summary(**kwargs) -> CharacterSummary:
     return CharacterSummary(**kwargs)
 
 
-def test_ucp_uses_sophont_characteristic_order_and_ehex_codes() -> None:
+def _snap(summary: CharacterSummary) -> AnnotatedSnapshot:
+    data = summary.model_dump(mode='json')
+    data['_ucp'] = summary.ucp
+    data['_rank_title'] = list(summary.rank_title)
+    data['_latest_career'] = summary.latest_career.name if summary.latest_career else None
+    return AnnotatedSnapshot(data)
+
+
+@pytest.mark.approval
+def test_ucp_encoding(snapshot):
+    """UCP uses sophont stat order and eHex for values above 9."""
     summary = CharacterSummary(
         name='Aria',
         sophont=HUMANITI,
@@ -28,43 +43,51 @@ def test_ucp_uses_sophont_characteristic_order_and_ehex_codes() -> None:
             Chars.SOC: 11,
         },
     )
+    assert _snap(summary) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
-    assert summary.ucp == '89A67B'
 
-
-def test_ucp_is_absent_until_every_ucp_characteristic_exists() -> None:
+@pytest.mark.approval
+def test_ucp_absent_when_incomplete(snapshot):
+    """UCP is None until every UCP characteristic is present."""
     summary = CharacterSummary(
         name='Aria',
         sophont=HUMANITI,
         homeworld=MOCK_WORLD,
         characteristics={Chars.STR: 8},
     )
+    assert _snap(summary) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
-    assert summary.ucp is None
 
-
-def test_latest_career_prefers_current_career_then_last_career() -> None:
+@pytest.mark.approval
+def test_latest_career_prefers_current_over_last(snapshot):
+    """latest_career returns the current career term career, not last_career."""
     citizen_assignment = CITIZEN.assignment('Corporate')
     assert citizen_assignment is not None
-    current = CharacterSummary(
+    summary = CharacterSummary(
         name='Aria',
         sophont=HUMANITI,
         homeworld=MOCK_WORLD,
         terms=[CareerTerm(career=CITIZEN, assignment=citizen_assignment)],
         last_career=SCOUT,
     )
-    former = CharacterSummary(
+    assert _snap(summary) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
+
+
+@pytest.mark.approval
+def test_latest_career_falls_back_to_last_career(snapshot):
+    """latest_career returns last_career when no current career terms are present."""
+    summary = CharacterSummary(
         name='Aria',
         sophont=HUMANITI,
         homeworld=MOCK_WORLD,
         last_career=SCOUT,
     )
-
-    assert current.latest_career is CITIZEN
-    assert former.latest_career is SCOUT
+    assert _snap(summary) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_rank_title_retains_title_from_previous_rank() -> None:
+@pytest.mark.approval
+def test_rank_title_retained_from_prior_rank(snapshot):
+    """rank_title retains the title from the most recently titled rank level."""
     psion = PSION
     adept = psion.assignment('Adept')
     assert adept is not None
@@ -75,49 +98,52 @@ def test_rank_title_retains_title_from_previous_rank() -> None:
         rank=2,
         terms=[CareerTerm(career=psion, assignment=adept, rank=2)],
     )
-
-    assert summary.rank_title == ('2', 'Initiate')
-
-
-# ── CharacterSummary.diff ──────────────────────────────────────────────────────
+    assert _snap(summary) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_returns_empty_list_when_nothing_changed() -> None:
+@pytest.mark.approval
+def test_diff_empty_when_unchanged(snapshot):
     s = _summary(characteristics={}, skills=[])
-    assert s.diff(s) == []
+    assert AnnotatedSnapshot({'diff': s.diff(s)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_reports_new_narrative_entries() -> None:
+@pytest.mark.approval
+def test_diff_new_narrative_entry(snapshot):
     before = _summary(narrative=['Term 1'])
     after = _summary(narrative=['Term 1', 'Survived the storm'])
-    assert any('Survived the storm' in c for c in before.diff(after))
+    assert AnnotatedSnapshot({'diff': before.diff(after)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_reports_characteristic_change() -> None:
+@pytest.mark.approval
+def test_diff_characteristic_change(snapshot):
     before = _summary(characteristics={Chars.STR: 7, Chars.DEX: 8})
     after = _summary(characteristics={Chars.STR: 8, Chars.DEX: 8})
-    assert any('STR' in c and '7' in c and '8' in c for c in before.diff(after))
+    assert AnnotatedSnapshot({'diff': before.diff(after)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_reports_newly_gained_skill() -> None:
+@pytest.mark.approval
+def test_diff_newly_gained_skill(snapshot):
     before = _summary()
     after = _summary(skills=[Admin()])
-    assert any('Admin' in c for c in before.diff(after))
+    assert AnnotatedSnapshot({'diff': before.diff(after)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_reports_skill_level_increase() -> None:
+@pytest.mark.approval
+def test_diff_skill_level_increase(snapshot):
     before = _summary(skills=[Admin()])
     after = _summary(skills=[Admin(level=Level(value=1))])
-    assert any('Admin' in c and '0' in c and '1' in c for c in before.diff(after))
+    assert AnnotatedSnapshot({'diff': before.diff(after)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_reports_rank_change() -> None:
+@pytest.mark.approval
+def test_diff_rank_change(snapshot):
     before = _summary(rank=0)
     after = _summary(rank=1)
-    assert any('Rank' in c and '1' in c for c in before.diff(after))
+    assert AnnotatedSnapshot({'diff': before.diff(after)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
 
 
-def test_diff_reports_cash_change() -> None:
+@pytest.mark.approval
+def test_diff_cash_change(snapshot):
     before = _summary(cash=0)
     after = _summary(cash=5000)
-    assert any('5000' in c or '5,000' in c for c in before.diff(after))
+    assert AnnotatedSnapshot({'diff': before.diff(after)}) == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

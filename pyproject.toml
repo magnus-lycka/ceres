@@ -27,6 +27,7 @@ build-backend = "uv_build"
 dev = [
     "deepdiff>=8.0",
     "deptry>=0.25.1",
+    "graphviz>=0.21",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",
@@ -95,7 +96,7 @@ max-branches = 12
 max-statements = 50
 
 [tool.deptry]
-exclude = ["tests", ".venv", ".claude", "graphify-corpus"]
+exclude = ["tests", ".venv", ".claude", "graphify-corpus", "tools"]
 known_first_party = ["ceres"]
 
 [tool.deptry.per_rule_ignores]

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar, Literal, Protocol
 
 from pydantic import ConfigDict, Field, PrivateAttr, field_validator
 
@@ -8,8 +8,23 @@ from ceres.character.domain.skills import AnySkill, Skill, active_speciality_fie
 from ceres.gear.skill_keys import SkillCostKey, key_matches_skill
 from ceres.shared import CeresModel, NoteList, _Note
 
-if TYPE_CHECKING:
-    from ceres.gear.computer import ComputerPart
+
+class _AssemblyLike(Protocol):
+    tl: int
+
+
+class _ComputerPartLike(Protocol):
+    @property
+    def processing(self) -> int: ...
+
+    @property
+    def retro_levels(self) -> int: ...
+
+    @property
+    def assembly(self) -> _AssemblyLike: ...
+
+    @property
+    def description(self) -> str: ...
 
 
 class SoftwarePackage(CeresModel, ABC):
@@ -32,16 +47,16 @@ class SoftwarePackage(CeresModel, ABC):
     @abstractmethod
     def cost(self) -> float: ...
 
-    def _computer_effective_tl(self, computer: ComputerPart) -> int:
+    def _computer_effective_tl(self, computer: _ComputerPartLike) -> int:
         return getattr(computer, 'effective_tl', computer.assembly.tl - computer.retro_levels)
 
-    def _validate_tl_on_computer(self, computer: ComputerPart) -> bool:
+    def _validate_tl_on_computer(self, computer: _ComputerPartLike) -> bool:
         effective_tl = self._computer_effective_tl(computer)
         if self.tl > effective_tl:
             self.warning(f'{self.description} requires TL{self.tl}, but computer effective TL is {effective_tl}')
         return True
 
-    def validate_on_computer(self, computer: ComputerPart) -> None:
+    def validate_on_computer(self, computer: _ComputerPartLike) -> None:
         self._validate_tl_on_computer(computer)
 
 
@@ -67,7 +82,7 @@ class FixedSoftwarePackage(SoftwarePackage):
     def cost(self) -> float:
         return self._cost
 
-    def validate_on_computer(self, computer: ComputerPart) -> None:
+    def validate_on_computer(self, computer: _ComputerPartLike) -> None:
         super().validate_on_computer(computer)
         if computer.processing < self.bandwidth:
             self.error(f'{computer.description} cannot run {self.description}')
@@ -116,7 +131,7 @@ class RatedSoftwarePackage(SoftwarePackage):
     def effective_rating(self) -> int | None:
         return self._effective_rating
 
-    def validate_on_computer(self, computer: ComputerPart) -> None:
+    def validate_on_computer(self, computer: _ComputerPartLike) -> None:
         super().validate_on_computer(computer)
         if computer.processing < self.bandwidth:
             self.error(f'{computer.description} cannot run {self.description}')

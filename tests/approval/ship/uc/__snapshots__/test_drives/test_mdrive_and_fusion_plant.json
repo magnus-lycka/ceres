@@ -1,0 +1,43 @@
+{
+  "data": {
+    "MDrive1": {
+      "tl": 9,
+      "tons": 2.0,
+      "cost": 4000000.0,
+      "power": 20.0
+    },
+    "MDrive2": {
+      "tl": 10,
+      "tons": 4.0,
+      "cost": 8000000.0,
+      "power": 40.0
+    },
+    "MDrive5": {
+      "tl": 11,
+      "tons": 10.0,
+      "cost": 20000000.0,
+      "power": 100.0
+    },
+    "MDrive6": {
+      "tl": 12,
+      "tons": 12.0,
+      "cost": 24000000.0,
+      "power": 120.0
+    },
+    "FusionPlantTL8_output40": {
+      "tl": 8,
+      "tons": 4.0,
+      "cost": 2000000.0
+    },
+    "FusionPlantTL12_output40": {
+      "tl": 12,
+      "tons": 2.6667,
+      "cost": 2666666.67
+    },
+    "FusionPlantTL15_output40": {
+      "tl": 15,
+      "tons": 2.0,
+      "cost": 4000000.0
+    }
+  }
+}
