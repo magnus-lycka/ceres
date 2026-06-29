@@ -1,6 +1,6 @@
 # Plan: Decouple ceres.report from domain packages
 
-## Status: Not started
+## Status: Complete
 
 ## Problem
 

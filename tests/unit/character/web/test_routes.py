@@ -3,19 +3,24 @@
 from fastapi.testclient import TestClient
 import pytest
 
+from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.career.career_events import CareerEntryHandler, ReenlistHandler
 from ceres.character.domain.character_start import UcpHandler
 from ceres.character.domain.sophont import HUMANITI
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.web.app import build_app
 from tests.unit.character.helpers import MOCK_WORLD
 
 
 class TestCharacterListDoesNotReplay:
     def test_character_list_uses_stored_summary_not_replay(self, monkeypatch):
-        with SqliteCharacterBackend(':memory:') as backend:
-            backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
+        with create_backend(':memory:') as backend:
+            backend.start(
+                make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Stored'),
+                sophont_name=HUMANITI.name,
+                player='NPC',
+                name='Stored',
+            )
             monkeypatch.setattr(
                 backend,
                 'get_projection',

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ceres import settings
+from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.settings import cache_dir, config_dir, data_dir
@@ -42,8 +43,13 @@ def test_settings_directories_come_from_platformdirs(monkeypatch, tmp_path):
 def test_sqlite_character_backend_defaults_to_ceres_data_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, 'data_dir', lambda: tmp_path / 'data')
 
-    with SqliteCharacterBackend() as backend:
-        backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+    with create_backend() as backend:
+        backend.start(
+            make_start_event(VILANI, MOCK_WORLD, 'NPC', 'Boss'),
+            sophont_name=VILANI.name,
+            player='NPC',
+            name='Boss',
+        )
 
     assert (tmp_path / 'data' / 'characters.sqlite').exists()
 
@@ -52,6 +58,11 @@ def test_sqlite_character_backend_creates_database_parent_directory(tmp_path):
     database = tmp_path / 'missing' / 'characters.sqlite'
 
     with SqliteCharacterBackend(database) as backend:
-        backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+        backend.start(
+            make_start_event(VILANI, MOCK_WORLD, 'NPC', 'Boss'),
+            sophont_name=VILANI.name,
+            player='NPC',
+            name='Boss',
+        )
 
     assert database.exists()

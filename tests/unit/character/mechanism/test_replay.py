@@ -1,5 +1,6 @@
 import pytest
 
+from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.career import CITIZEN, DRIFTER, SCOUT
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
@@ -42,7 +43,6 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError, replay
-from ceres.character.mechanism.store import SqliteCharacterBackend
 from tests.unit.character.helpers import MOCK_WORLD
 
 
@@ -330,9 +330,14 @@ class TestBackgroundSkillsEvent:
 
 class TestReplayFromPersistedEventLog:
     def test_replaying_persisted_event_log_rebuilds_identical_projection(self):
-        backend = SqliteCharacterBackend(':memory:')
+        backend = create_backend(':memory:')
         try:
-            row = backend.start(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss')
+            row = backend.start(
+                make_start_event(VILANI, MOCK_WORLD, 'NPC', 'Boss'),
+                sophont_name=VILANI.name,
+                player='NPC',
+                name='Boss',
+            )
             character_id = row['id']
             projection = backend.get_projection(character_id)
             assert projection is not None

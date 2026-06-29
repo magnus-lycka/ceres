@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 import httpx
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
+from ceres.character.app import make_start_event
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_state import CharacterProjection, diff_summaries
 from ceres.character.domain.precareer.loader import load_precareers
@@ -359,9 +360,12 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             reference_hex = combined_match.group(2)
         reference_sector_coordinates: tuple[int, int] | None = None
         if not reference_hex and character_id:
-            projection = backend.get_projection(int(character_id))
-            if projection is not None and projection.summary.homeworld.sector_abbreviation == sector_abbreviation:
-                reference_hex = projection.summary.homeworld.hex
+            raw_proj = backend.get_projection(int(character_id))
+            projection_for_world = raw_proj if isinstance(raw_proj, CharacterProjection) else None
+            if projection_for_world is not None:
+                hw = projection_for_world.summary.homeworld
+                if hw is not None and hw.sector_abbreviation == sector_abbreviation:
+                    reference_hex = hw.hex
         if reference_hex:
             if reference_sector and reference_sector != sector_abbreviation:
                 reference_sector_coordinates = _sector_coordinates(reference_sector)
@@ -496,8 +500,8 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
                 status_code=422,
             )
         row = backend.start(
-            sophont=sophont_obj,
-            homeworld=homeworld,
+            make_start_event(sophont_obj, homeworld, form_defaults['player'], name),
+            sophont_name=sophont_obj.name,
             player=form_defaults['player'],
             name=name,
         )
@@ -567,9 +571,10 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.post('/characters/{character_id}/events', response_class=HTMLResponse)
     async def post_event(request: Request, character_id: int) -> Any:
-        projection = backend.get_projection(character_id)
-        if projection is None:
+        raw_projection = backend.get_projection(character_id)
+        if not isinstance(raw_projection, CharacterProjection):
             return HTMLResponse('<p class="text-red-400">Character not found</p>', status_code=404)
+        projection = raw_projection
 
         form = await request.form()
         fulfills = str(form.get('fulfills', ''))

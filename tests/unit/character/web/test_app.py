@@ -3,13 +3,13 @@
 from fastapi import FastAPI
 import pytest
 
-from ceres.character.mechanism.store import SqliteCharacterBackend
+from ceres.character.app import create_backend
 from ceres.character.web.app import build_app
 
 
 @pytest.fixture
 def backend():
-    with SqliteCharacterBackend(':memory:') as b:
+    with create_backend(':memory:') as b:
         yield b
 
 

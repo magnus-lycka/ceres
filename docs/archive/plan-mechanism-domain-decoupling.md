@@ -1,6 +1,6 @@
 # Plan: Decouple character.mechanism from character.domain
 
-## Status: Not started
+## Status: Complete
 
 ## Problem
 

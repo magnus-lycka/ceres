@@ -3,10 +3,10 @@
 from fastapi.testclient import TestClient
 import pytest
 
+from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.career import CITIZEN
 from ceres.character.domain.character_start import PendingUcp
 from ceres.character.domain.sophont import HUMANITI
-from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.web.app import build_app
 from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
 from tests.unit.character.helpers import MOCK_WORLD
@@ -14,7 +14,7 @@ from tests.unit.character.helpers import MOCK_WORLD
 
 @pytest.fixture
 def client_with_backend():
-    with SqliteCharacterBackend(':memory:') as backend:
+    with create_backend(':memory:') as backend:
         yield TestClient(build_app(backend), follow_redirects=True), backend
 
 
@@ -26,7 +26,12 @@ def test_character_list(client_with_backend, monkeypatch, snapshot):
     from ceres.character.domain.characteristics import Chars
 
     client, backend = client_with_backend
-    backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Aria')
+    backend.start(
+        make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Aria'),
+        sophont_name=HUMANITI.name,
+        player='NPC',
+        name='Aria',
+    )
     citizen = CITIZEN
     assignment = citizen.assignment('Colonist')
     assert assignment is not None
@@ -58,7 +63,12 @@ def test_character_list(client_with_backend, monkeypatch, snapshot):
 def test_wizard(client_with_backend, snapshot):
     """Wizard page for a freshly created character — UCP pending input form."""
     client, backend = client_with_backend
-    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Clio')
+    row = backend.start(
+        make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Clio'),
+        sophont_name=HUMANITI.name,
+        player='NPC',
+        name='Clio',
+    )
     r = client.get(f'/ui/characters/{row["id"]}/wizard')
     snap = AnnotatedSnapshot({'status_code': r.status_code, 'body': r.text})
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)
@@ -68,7 +78,12 @@ def test_wizard(client_with_backend, snapshot):
 def test_event_submission(client_with_backend, snapshot):
     """HTMX response after submitting UCP — shows next pending and OOB summary updates."""
     client, backend = client_with_backend
-    row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Oryn')
+    row = backend.start(
+        make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Oryn'),
+        sophont_name=HUMANITI.name,
+        player='NPC',
+        name='Oryn',
+    )
     projection = backend.get_projection(row['id'])
     assert projection is not None
     pi = projection.pending_inputs[0]

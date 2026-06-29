@@ -6,6 +6,7 @@ import textwrap
 
 import pytest
 
+from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.career import CITIZEN
 from ceres.character.domain.career.entry import CareerEntryHandler
 from ceres.character.domain.character_start import PendingUcp, UcpHandler
@@ -23,8 +24,13 @@ def _append_ucp(backend: SqliteCharacterBackend, character_id: int, ucp: str) ->
 
 
 def test_store_persists_latest_character_summary() -> None:
-    with SqliteCharacterBackend(':memory:') as backend:
-        row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
+    with create_backend(':memory:') as backend:
+        row = backend.start(
+            make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Stored'),
+            sophont_name=HUMANITI.name,
+            player='NPC',
+            name='Stored',
+        )
         _append_ucp(backend, row['id'], '89A67B')
 
         summary = backend.get_summary(row['id'])
@@ -35,8 +41,13 @@ def test_store_persists_latest_character_summary() -> None:
 
 
 def test_rollback_updates_persisted_character_summary() -> None:
-    with SqliteCharacterBackend(':memory:') as backend:
-        row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Stored')
+    with create_backend(':memory:') as backend:
+        row = backend.start(
+            make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Stored'),
+            sophont_name=HUMANITI.name,
+            player='NPC',
+            name='Stored',
+        )
         _append_ucp(backend, row['id'], '89A67B')
 
         assert backend.rollback_last_event(row['id'])
@@ -64,12 +75,17 @@ def test_store_adds_summary_column_to_legacy_database(tmp_path: Path) -> None:
 
 def test_store_backfills_missing_legacy_summary(tmp_path: Path) -> None:
     database = tmp_path / 'legacy.sqlite'
-    with SqliteCharacterBackend(database) as backend:
-        row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='NPC', name='Legacy')
+    with create_backend(database) as backend:
+        row = backend.start(
+            make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Legacy'),
+            sophont_name=HUMANITI.name,
+            player='NPC',
+            name='Legacy',
+        )
         backend.connection.execute('update characters set summary = null where id = ?', (row['id'],))
         backend.connection.commit()
 
-    with SqliteCharacterBackend(database) as backend:
+    with create_backend(database) as backend:
         summary = backend.get_summary(row['id'])
 
     assert summary is not None
@@ -88,9 +104,9 @@ def test_store_loads_career_event_in_a_fresh_process(tmp_path: Path) -> None:
         """
         import sys
 
-        from ceres.character.mechanism.store import SqliteCharacterBackend
+        from ceres.character.app import create_backend
 
-        backend = SqliteCharacterBackend(sys.argv[1])
+        backend = create_backend(sys.argv[1])
         backend.connection.execute(
             'insert into events (character_id, id, payload) values (?, ?, ?)',
             (1, 1, sys.argv[2]),
@@ -116,8 +132,13 @@ def test_get_summary_returns_none_for_nonexistent_character() -> None:
 
 
 def test_rename_character_updates_name_and_summary() -> None:
-    with SqliteCharacterBackend(':memory:') as backend:
-        row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='Test', name='Old')
+    with create_backend(':memory:') as backend:
+        row = backend.start(
+            make_start_event(HUMANITI, MOCK_WORLD, 'Test', 'Old'),
+            sophont_name=HUMANITI.name,
+            player='Test',
+            name='Old',
+        )
 
         result = backend.rename_character(row['id'], 'New')
 
@@ -149,8 +170,13 @@ def test_backfill_skips_character_with_no_events() -> None:
 
 
 def test_rollback_rolls_back_db_transaction_on_failure() -> None:
-    with SqliteCharacterBackend(':memory:') as backend:
-        row = backend.start(sophont=HUMANITI, homeworld=MOCK_WORLD, player='Test', name='Char')
+    with create_backend(':memory:') as backend:
+        row = backend.start(
+            make_start_event(HUMANITI, MOCK_WORLD, 'Test', 'Char'),
+            sophont_name=HUMANITI.name,
+            player='Test',
+            name='Char',
+        )
         backend.connection.execute('drop table characters')
         with pytest.raises(sqlite3.OperationalError):
             backend.rollback_last_event(row['id'])

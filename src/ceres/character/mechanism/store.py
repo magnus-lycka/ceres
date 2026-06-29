@@ -1,19 +1,19 @@
+from collections.abc import Callable
 import json
 from pathlib import Path
 import sqlite3
-from typing import TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from pydantic import TypeAdapter
 
 from ceres import settings
-from ceres.adapters.travellermap import TravellerMapWorld
-from ceres.character.domain.character_start import CharacterStartedHandler
-from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.event_handlers import register_event_handlers
-from ceres.character.domain.sophont import Sophont
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.projection import Summary
 from ceres.character.mechanism.replay import replay
+
+if TYPE_CHECKING:
+    from ceres.character.domain.character_state import CharacterProjection
 
 _event_adapter: TypeAdapter[Event] = TypeAdapter(Event)
 
@@ -26,7 +26,13 @@ class CharacterRow(TypedDict):
 
 
 class SqliteCharacterBackend:
-    def __init__(self, database: str | Path | None = None):
+    def __init__(
+        self,
+        database: str | Path | None = None,
+        *,
+        ensure_handlers_registered: Callable[[], None] = lambda: None,
+        summary_from_json: Callable[[str], Any] | None = None,
+    ):
         if database is None:
             database = settings.data_dir() / 'characters.sqlite'
         if database != ':memory:':
@@ -52,22 +58,21 @@ class SqliteCharacterBackend:
             'payload text not null, '
             'primary key (character_id, id))'
         )
+        self._ensure_handlers_registered = ensure_handlers_registered
+        self._summary_from_json = summary_from_json
         self._backfill_missing_summaries()
 
-    def start(self, *, sophont: Sophont, homeworld: TravellerMapWorld, player: str, name: str) -> CharacterRow:
+    def start(self, first_event: Event, *, sophont_name: str, player: str, name: str) -> CharacterRow:
         cursor = self.connection.execute(
             'insert into characters (sophont, player, name) values (?, ?, ?)',
-            (sophont.name, player, name),
+            (sophont_name, player, name),
         )
         self.connection.commit()
         character_id = cursor.lastrowid
         if character_id is None:
             raise RuntimeError('SQLite did not return a character id')
-        row: CharacterRow = {'id': character_id, 'sophont': sophont.name, 'player': player, 'name': name}
-        self.append_event(
-            character_id,
-            Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=homeworld, player=player, name=name)),
-        )
+        row: CharacterRow = {'id': character_id, 'sophont': sophont_name, 'player': player, 'name': name}
+        self.append_event(character_id, first_event)
         return row
 
     def list_characters(self) -> list[CharacterRow]:
@@ -84,13 +89,13 @@ class SqliteCharacterBackend:
             return None
         return {'id': row[0], 'sophont': row[1], 'player': row[2], 'name': row[3]}
 
-    def get_summary(self, character_id: int) -> CharacterSummary | None:
+    def get_summary(self, character_id: int) -> Any | None:
         cursor = self.connection.execute('select summary from characters where id = ?', (character_id,))
         row = cursor.fetchone()
-        if row is None or row[0] is None:
+        if row is None or row[0] is None or self._summary_from_json is None:
             return None
-        register_event_handlers()
-        return CharacterSummary.model_validate_json(row[0])
+        self._ensure_handlers_registered()
+        return self._summary_from_json(row[0])
 
     def rename_character(self, character_id: int, name: str) -> CharacterRow | None:
         character = self.get_character(character_id)
@@ -124,7 +129,7 @@ class SqliteCharacterBackend:
         self.connection.commit()
         return event, projection
 
-    def _store_summary(self, character_id: int, summary: CharacterSummary | None) -> None:
+    def _store_summary(self, character_id: int, summary: Summary | None) -> None:
         payload = summary.model_dump_json() if summary is not None else None
         self.connection.execute('update characters set summary = ? where id = ?', (payload, character_id))
 
@@ -144,7 +149,7 @@ class SqliteCharacterBackend:
             self.connection.commit()
 
     def load_typed_events(self, character_id: int) -> list[Event] | None:
-        register_event_handlers()
+        self._ensure_handlers_registered()
         cursor = self.connection.execute(
             'select payload from events where character_id = ? order by id',
             (character_id,),

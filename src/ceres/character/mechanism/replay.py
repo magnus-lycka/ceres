@@ -1,8 +1,11 @@
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
-from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
+
+if TYPE_CHECKING:
+    from ceres.character.domain.character_state import CharacterProjection
 
 
 def replay(character_id: int, events: Sequence[Event]) -> CharacterProjection:

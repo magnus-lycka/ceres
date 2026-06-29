@@ -3,7 +3,7 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from ceres.character.mechanism.store import SqliteCharacterBackend
+from ceres.character.app import create_backend
 from ceres.character.web.app import build_app
 from ceres.worlds import SectorWorldFilters
 from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
@@ -12,7 +12,7 @@ from tests.unit.worlds.test_sector_filters import _sample_worlds
 
 @pytest.fixture
 def client():
-    with SqliteCharacterBackend(':memory:') as backend:
+    with create_backend(':memory:') as backend:
         yield TestClient(build_app(backend), follow_redirects=True)
 
 
