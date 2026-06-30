@@ -15,7 +15,6 @@ from ceres.character.domain.career.advancement import (
     CommissionHandler,
     PendingAdvancement,
     PendingCommissionChoice,
-    PendingRankBonusChoice,
     advancement_pending,
 )
 from ceres.character.domain.career.career_data import (
@@ -690,14 +689,16 @@ class PendingSwitchAssignment(PendingInputBase):
         ]
 
 
-class PendingInitialTrainingChoice(PendingInputBase):
-    kind: Literal['initial_training_choice'] = 'initial_training_choice'
-    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
+class _PendingSkillOrPsiChoice(PendingInputBase):
+    """Base for pending inputs that offer a skill, advancement DM, or psionic talent choice."""
 
+    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
     model_config = {'arbitrary_types_allowed': True}
 
-    def event_from_form(self, form: Mapping[str, str]) -> Event:
+    def _skill_level(self) -> int | None:
+        raise NotImplementedError
 
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
             return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
@@ -709,8 +710,13 @@ class PendingInitialTrainingChoice(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = build_skill_select_options(projection, self.options, 0)
-        specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
+        specs: list[InputSpec] = [
+            Select(
+                name='skill',
+                label='Choose a skill',
+                options=build_skill_select_options(projection, self.options, self._skill_level()),
+            )
+        ]
         if talent_acquisition_roll_required(projection, self.options):
             specs.append(
                 NumberEntry(
@@ -721,6 +727,13 @@ class PendingInitialTrainingChoice(PendingInputBase):
                 )
             )
         return specs
+
+
+class PendingInitialTrainingChoice(_PendingSkillOrPsiChoice):
+    kind: Literal['initial_training_choice'] = 'initial_training_choice'
+
+    def _skill_level(self) -> int | None:
+        return 0
 
     def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
@@ -739,38 +752,12 @@ class PendingInitialTrainingChoice(PendingInputBase):
             projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
 
 
-class PendingSkillTableChoice(PendingInputBase):
+class PendingSkillTableChoice(_PendingSkillOrPsiChoice):
     kind: Literal['skill_table_choice'] = 'skill_table_choice'
     reenlist_queued: bool = False
-    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
 
-    model_config = {'arbitrary_types_allowed': True}
-
-    def event_from_form(self, form: Mapping[str, str]) -> Event:
-
-        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
-        if isinstance(parsed, AdvancementDmOption):
-            return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
-        if isinstance(parsed, Psi):
-            return Event(
-                fulfills=self.pending_id,
-                handler=PsionicTalentTrainingHandler(talent=parsed.talent, roll=form_int(form, 'roll', 2)),
-            )
-        return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
-
-    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = build_skill_select_options(projection, self.options, None)
-        specs: list[InputSpec] = [Select(name='skill', label='Choose a skill', options=options)]
-        if talent_acquisition_roll_required(projection, self.options):
-            specs.append(
-                NumberEntry(
-                    name='roll',
-                    label='Psionic talent acquisition roll (2D, only for an untrained talent)',
-                    min=2,
-                    max=12,
-                )
-            )
-        return specs
+    def _skill_level(self) -> int | None:
+        return None
 
     def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
@@ -782,6 +769,35 @@ class PendingSkillTableChoice(PendingInputBase):
         if projection.summary.current_career is not None and not self.reenlist_queued:
             career = projection.get_current_career()
             projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
+
+
+class PendingRankBonusChoice(_PendingSkillOrPsiChoice):
+    kind: Literal['rank_bonus_choice'] = 'rank_bonus_choice'
+    level: int
+    continue_career_progress: bool = True
+
+    def _skill_level(self) -> int | None:
+        return self.level
+
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
+        projection.grant_skill(event.skill)
+        self._continue(projection, event)
+
+    def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
+        self._continue(projection, event)
+
+    def _continue(self, projection: CharacterProjection, event: Event) -> None:
+        if not self.continue_career_progress:
+            return
+        career = projection.get_current_career()
+        tables = career.available_tables(
+            projection.summary.characteristics.get(Chars.EDU, 0),
+            projection.summary.current_assignment,
+        )
+        projection.pending_inputs.append(
+            PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables)
+        )
+        queue_reenlist_or_aging(projection, event.id, 1)
 
 
 _CAREER_PHASE_PENDING_TYPES = (

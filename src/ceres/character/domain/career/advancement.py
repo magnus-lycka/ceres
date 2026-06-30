@@ -1,19 +1,13 @@
-from collections.abc import Mapping, Sequence
-from typing import Any, Literal, cast
-
-from pydantic import Field
+from collections.abc import Mapping
+from typing import Any, Literal
 
 from ceres.character.domain.career.career_data import (
-    AdvancementDmOption,
     AssignmentData,
     CareerData,
-    CareerSkillOption,
     RankBonus,
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, characteristic_dm
-from ceres.character.domain.psionics import PsionicTalentTrainingHandler
-from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
@@ -125,77 +119,6 @@ class PendingCommissionChoice(PendingInputBase):
         ]
 
 
-class PendingRankBonusChoice(PendingInputBase):
-    kind: Literal['rank_bonus_choice'] = 'rank_bonus_choice'
-    level: int
-    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
-    continue_career_progress: bool = True
-
-    model_config = {'arbitrary_types_allowed': True}
-
-    def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.domain.career.career_events import (
-            AdvancementDmChoiceHandler,
-            SkillChoiceHandler,
-            _adv_dm_or_skill_adapter,
-        )
-
-        parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
-        if isinstance(parsed, AdvancementDmOption):
-            return Event(fulfills=self.pending_id, handler=AdvancementDmChoiceHandler())
-        if isinstance(parsed, Psi):
-            return Event(
-                fulfills=self.pending_id,
-                handler=PsionicTalentTrainingHandler(talent=parsed.talent, roll=form_int(form, 'roll', 2)),
-            )
-        return Event(fulfills=self.pending_id, handler=SkillChoiceHandler(skill=cast(AnySkill, parsed)))
-
-    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.domain.skill_events import build_skill_select_options
-
-        specs: list[InputSpec] = [
-            Select(
-                name='skill',
-                label='Choose a skill',
-                options=build_skill_select_options(projection, self.options, self.level),
-            )
-        ]
-        from ceres.character.domain.psionics import talent_acquisition_roll_required
-
-        if talent_acquisition_roll_required(projection, self.options):
-            specs.append(
-                NumberEntry(
-                    name='roll',
-                    label='Psionic talent acquisition roll (2D, only for an untrained talent)',
-                    min=2,
-                    max=12,
-                )
-            )
-        return specs
-
-    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
-        projection.grant_skill(event.skill)
-        self._continue(projection, event)
-
-    def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
-        self._continue(projection, event)
-
-    def _continue(self, projection: CharacterProjection, event: Event) -> None:
-        from ceres.character.domain.career.career_events import PendingSkillTable, queue_reenlist_or_aging
-
-        if not self.continue_career_progress:
-            return
-        career = projection.get_current_career()
-        tables = career.available_tables(
-            projection.summary.characteristics.get(Chars.EDU, 0),
-            projection.summary.current_assignment,
-        )
-        projection.pending_inputs.append(
-            PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables)
-        )
-        queue_reenlist_or_aging(projection, event.id, 1)
-
-
 def rank_bonus_skill(bonus: RankBonus) -> AnySkill:
     from ceres.character.domain.skills import Level
 
@@ -236,6 +159,8 @@ def _apply_rank_bonus(projection: CharacterProjection, career: CareerData, rank:
         return False
     bonus = entry.bonus
     if choices := bonus.resolve_choices():
+        from ceres.character.domain.career.career_events import PendingRankBonusChoice
+
         projection.pending_inputs.append(
             PendingRankBonusChoice(
                 pending_id=(event_id, 0),

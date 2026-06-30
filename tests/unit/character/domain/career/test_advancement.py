@@ -10,13 +10,16 @@ from ceres.character.domain.career.advancement import (
     CommissionHandler,
     PendingAdvancement,
     PendingCommissionChoice,
-    PendingRankBonusChoice,
     advancement_pending,
     career_progress_pending,
     rank_bonus_skill,
 )
 from ceres.character.domain.career.career_data import AdvancementDmOption, RankBonus
-from ceres.character.domain.career.career_events import AdvancementDmChoiceHandler, SkillChoiceHandler
+from ceres.character.domain.career.career_events import (
+    AdvancementDmChoiceHandler,
+    PendingRankBonusChoice,
+    SkillChoiceHandler,
+)
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Medic
 from ceres.character.domain.sophont import VILANI

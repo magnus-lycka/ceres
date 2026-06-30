@@ -16,7 +16,8 @@ from tests.approval.character.helpers import (
     roll_form,
     ucp_form,
 )
-from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
+from tests.approval.character.uc.conftest import projection_snap as _snap
+from tests.approval.snapshot import AnnotatedJSONSnapshotExtension
 from tests.unit.character.helpers import MOCK_WORLD
 
 _ext = AnnotatedJSONSnapshotExtension
@@ -29,28 +30,6 @@ def _base_session() -> CharacterSession:
     session.submit(ucp_form('778827'))
     session.submit(background_skills_form(Admin()))
     return session
-
-
-def _pending_summary(projection) -> list[dict]:
-    result = []
-    for p in projection.pending_inputs:
-        item: dict = {'type': type(p).__name__, 'kind': p.kind}
-        if hasattr(p, 'level'):
-            item['level'] = p.level
-        if hasattr(p, 'options'):
-            item['option_count'] = len(p.options)
-            item['option_types'] = sorted({type(o).__name__ for o in p.options})
-        result.append(item)
-    return result
-
-
-def _snap(projection) -> AnnotatedSnapshot:
-    return AnnotatedSnapshot(
-        {
-            'summary': projection.summary.model_dump(mode='json'),
-            'pending_inputs': _pending_summary(projection),
-        }
-    )
 
 
 # ── Army Academy ──────────────────────────────────────────────────────────────

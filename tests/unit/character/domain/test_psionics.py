@@ -2,11 +2,11 @@ from pydantic import TypeAdapter, ValidationError
 import pytest
 
 from ceres.character.domain.career import SCOUT
-from ceres.character.domain.career.advancement import PendingRankBonusChoice
 from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.career.career_events import (
     PendingCareerChoice,
     PendingInitialTrainingChoice,
+    PendingRankBonusChoice,
     PendingSkillTableChoice,
 )
 from ceres.character.domain.character_start import UcpHandler
