@@ -772,6 +772,12 @@ first career term. If corresponding career is conducted after mailitary academy,
 e.g. Marine Career after Marine Academy, the character will select a skill table
 for a skill roll before survival on the first term, as if it wasn't the first term.
 
+### RIC-010 No basic training repeated after assignment switch
+
+New assignments in the Agent, Citizen, Entertainer and Merchant careers are considered
+to be new careers, but not with regards to Basic Training. If you e.g. switch from
+Citizen Worker career to Citizen Corporate career, you don't get basic training again.
+
 ---
 
 ## Robot Interpretations
