@@ -265,7 +265,7 @@ class Scout(CareerData):
         homeworld = projection.summary.homeworld
         used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
         homeworld_idx = max(used_sub_ids, default=-1) + 1
-        if 'S' in homeworld.bases or 'W' in homeworld.bases:
+        if homeworld is not None and ('S' in homeworld.bases or 'W' in homeworld.bases):
             homeworld_pending = PendingHomeworldChangeOffered(
                 pending_id=(event_id, homeworld_idx),
                 instruction='You may relocate to a Scout base world. Select a new homeworld (optional).',

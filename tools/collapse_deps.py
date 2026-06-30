@@ -1,4 +1,6 @@
-import json, sys
+import json
+import sys
+
 from graphviz import Digraph
 
 # run uvx pydeps src/ceres --show-deps > deps.json first,

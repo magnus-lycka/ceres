@@ -110,12 +110,19 @@ class CharacterSession:
         name: str = 'Test',
         player: str = 'NPC',
     ) -> CharacterSession:
-        from ceres.character.domain.character_start import CharacterStartedHandler
+        from ceres.character.domain.character_start import (
+            CharacterCreatedHandler,
+            HomeworldSelectedHandler,
+            SophontSelectedHandler,
+        )
 
         self._log.append({'sophont': sophont.name, 'homeworld': homeworld.name, 'name': name})
-        return self._append(
-            Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=homeworld, name=name, player=player))
-        )
+        ev1 = Event(handler=CharacterCreatedHandler(name=name, player=player))
+        ev2 = Event(fulfills=(ev1.id, 0), handler=HomeworldSelectedHandler(homeworld=homeworld))
+        ev3 = Event(fulfills=(ev2.id, 0), handler=SophontSelectedHandler(sophont=sophont))
+        self._events.extend([ev1, ev2, ev3])
+        self._projection = replay(self._id, self._events)
+        return self
 
     def submit(self, form: Mapping[str, Any]) -> CharacterSession:
         """Submit form data for the first pending input."""

@@ -23,7 +23,7 @@ from ceres.character.domain.career.marines import (
     PendingMarinesEvent6SkillRoll,
     PendingMarinesMishap4SkillRoll,
 )
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.connection import (
     Ally,
     Contact,
@@ -47,18 +47,18 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, CharacterDriver
+from tests.unit.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, CharacterDriver, _creation_events
 
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — EDU DM+2."""
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Cpl'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
-    return [
-        ev1,
-        ev2,
-        Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()])),
-    ]
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Cpl')
+    ev_ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
+    ev_bg = Event(
+        fulfills=(ev_ucp.id, 0),
+        handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
+    )
+    return [*c, ev_ucp, ev_bg]
 
 
 def _enter_marines(assignment: str = 'Support', qual_roll: int = 6) -> list:

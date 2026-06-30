@@ -3,7 +3,7 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from ceres.character.app import create_backend
+from ceres.character.service import CharacterService
 from ceres.character.web.app import build_app
 from ceres.worlds import SectorWorldFilters
 from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
@@ -12,8 +12,8 @@ from tests.unit.worlds.test_sector_filters import _sample_worlds
 
 @pytest.fixture
 def client():
-    with create_backend(':memory:') as backend:
-        yield TestClient(build_app(backend), follow_redirects=True)
+    with CharacterService(':memory:') as service:
+        yield TestClient(build_app(service), follow_redirects=True)
 
 
 @pytest.mark.approval

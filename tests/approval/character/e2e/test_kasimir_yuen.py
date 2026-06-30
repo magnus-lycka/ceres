@@ -15,7 +15,6 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
-    CharacterStartedHandler,
     FinishCreationHandler,
     UcpHandler,
 )
@@ -25,14 +24,12 @@ from ceres.character.domain.spec import StatBlockSpec, spec_from_summary
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
-from tests.unit.character.helpers import MOCK_WORLD
+from tests.unit.character.helpers import MOCK_WORLD, _creation_events
 
 
 def _events() -> list:
-    started = Event(
-        handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Kasimir Yuen')
-    )
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Kasimir Yuen')
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
     background = Event(
         fulfills=(ucp.id, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
@@ -57,7 +54,7 @@ def _events() -> list:
     benefit = Event(fulfills=(muster_out.id, 0), handler=MusterOutHandler(table='benefits', roll=6))
     cash = Event(fulfills=(benefit.id, 0), handler=MusterOutHandler(table='cash', roll=1))
     return [
-        started,
+        *c,
         ucp,
         background,
         career,

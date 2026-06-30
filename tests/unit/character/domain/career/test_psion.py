@@ -36,7 +36,7 @@ from ceres.character.domain.career.psion import (
     PsionMishap4Accept,
     PsionMishap4Refuse,
 )
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import Ally, Contact, Enemy
 from ceres.character.domain.health.health_events import (
@@ -68,21 +68,21 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import Select
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
 
 
 def _setup(homeworld: TravellerMapWorld = MOCK_WORLD, psi: int = 9) -> list[Event]:
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=homeworld, player='NPC', name='Psi'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
-    ev3 = Event(
-        fulfills=(ev2.id, 0),
+    c = _creation_events(VILANI, homeworld, 'NPC', 'Psi')
+    ev_ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
+    ev_bg = Event(
+        fulfills=(ev_ucp.id, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
     return [
-        ev1,
-        ev2,
-        ev3,
-        Event(fulfills=(ev3.id, 0), handler=_SetPsiForTest(psi=psi)),
+        *c,
+        ev_ucp,
+        ev_bg,
+        Event(fulfills=(ev_bg.id, 0), handler=_SetPsiForTest(psi=psi)),
     ]
 
 

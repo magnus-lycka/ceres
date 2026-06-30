@@ -10,18 +10,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
 
-from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
-from ceres.character.app import make_start_event
 from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_state import CharacterProjection, diff_summaries
 from ceres.character.domain.precareer.loader import load_precareers
-from ceres.character.domain.sophont import SOPHONT_NAMES, available_sophont_names, get_sophont
 from ceres.character.domain.spec import spec_from_summary
 from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError
-from ceres.character.mechanism.store import SqliteCharacterBackend
 from ceres.character.report import render_stat_block_gallery_pdf
+from ceres.character.service import CharacterService
 from ceres.worlds import SectorWorldFilters, search_sectors
 
 _COMBINED_REF_RE = re.compile(r'^([A-Za-z]+)(\d{4})$')
@@ -38,31 +35,14 @@ _INT_FILTER_GROUPS = (
 )
 
 
-def _character_form_defaults(
-    *,
-    name: str = '',
-    sophont: str = SOPHONT_NAMES[0],
-    player: str = 'NPC',
-    homeworld_sector: str = '',
-    homeworld_hex: str = '',
-) -> dict[str, str]:
-    return {
-        'name': name,
-        'sophont': sophont,
-        'player': player,
-        'homeworld_sector': homeworld_sector,
-        'homeworld_hex': homeworld_hex,
-    }
+def _character_form_defaults(*, name: str = '', player: str = 'NPC') -> dict[str, str]:
+    return {'name': name, 'player': player}
 
 
 def _character_form_defaults_from_request(request: Request) -> dict[str, str]:
-    sophont = request.query_params.get('sophont', SOPHONT_NAMES[0]) or SOPHONT_NAMES[0]
     return _character_form_defaults(
         name=request.query_params.get('name', ''),
-        sophont=sophont if sophont in SOPHONT_NAMES else SOPHONT_NAMES[0],
         player=request.query_params.get('player', 'NPC') or 'NPC',
-        homeworld_sector=request.query_params.get('homeworld_sector', ''),
-        homeworld_hex=request.query_params.get('homeworld_hex', ''),
     )
 
 
@@ -130,14 +110,6 @@ def _sector_coordinates(sector_abbreviation: str) -> tuple[int, int] | None:
         if sector.abbreviation.lower() == abbreviation:
             return sector.x, sector.y
     return None
-
-
-def _selected_homeworld(form_defaults: dict[str, str]) -> TravellerMapWorld | None:
-    sector = form_defaults['homeworld_sector'].strip()
-    hex_code = form_defaults['homeworld_hex'].strip()
-    if not sector or not hex_code:
-        return None
-    return fetch_world(sector, hex_code)
 
 
 _NOTE_CATEGORY_COLOR = {
@@ -237,7 +209,7 @@ def _normalize_world_filters_for_matching(
     return normalized_strings, normalized_ints
 
 
-def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
+def build_web_router(service: CharacterService) -> APIRouter:
     from ceres.character.domain.spec import format_stat_block_skills
 
     router = APIRouter()
@@ -247,13 +219,16 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
     @router.get('/', response_class=HTMLResponse)
     def list_characters(request: Request) -> Any:
         characters: list[dict[str, Any]] = []
-        for row in backend.list_characters():
-            summary = backend.get_summary(row['id'])
+        for item in service.list_characters():
+            summary = service.get_summary(item.id)
             career = summary.latest_career if summary is not None else None
             rank = summary.rank_title if summary is not None and summary.rank is not None else None
             characters.append(
                 {
-                    **row,
+                    'id': item.id,
+                    'name': item.name,
+                    'player': item.player,
+                    'sophont': item.sophont,
                     'ucp': summary.ucp if summary is not None else None,
                     'career': career.name if career is not None else None,
                     'rank': rank,
@@ -268,30 +243,10 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
     @router.get('/characters/new', response_class=HTMLResponse)
     def new_character_form(request: Request) -> Any:
         form_defaults = _character_form_defaults_from_request(request)
-        try:
-            homeworld = _selected_homeworld(form_defaults)
-        except ValueError as exc:
-            return templates.TemplateResponse(
-                request=request,
-                name='character_new.html',
-                context={
-                    'sophonts': SOPHONT_NAMES,
-                    'error': str(exc),
-                    'form_defaults': form_defaults,
-                    'homeworld': None,
-                    'homeworld_picker_query': _character_form_query_string(form_defaults),
-                },
-                status_code=422,
-            )
         return templates.TemplateResponse(
             request=request,
             name='character_new.html',
-            context={
-                'sophonts': available_sophont_names(homeworld) if homeworld else SOPHONT_NAMES,
-                'form_defaults': form_defaults,
-                'homeworld': homeworld,
-                'homeworld_picker_query': _character_form_query_string(form_defaults),
-            },
+            context={'form_defaults': form_defaults},
         )
 
     @router.get('/worlds/sectors', response_class=HTMLResponse)
@@ -360,10 +315,9 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
             reference_hex = combined_match.group(2)
         reference_sector_coordinates: tuple[int, int] | None = None
         if not reference_hex and character_id:
-            raw_proj = backend.get_projection(int(character_id))
-            projection_for_world = raw_proj if isinstance(raw_proj, CharacterProjection) else None
-            if projection_for_world is not None:
-                hw = projection_for_world.summary.homeworld
+            proj = service.get_projection(int(character_id))
+            if proj is not None:
+                hw = proj.summary.homeworld
                 if hw is not None and hw.sector_abbreviation == sector_abbreviation:
                     reference_hex = hw.hex
         if reference_hex:
@@ -442,77 +396,28 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
     def create_character(
         request: Request,
         name: str = Form(...),
-        sophont: str = Form(...),
         player: str = Form('NPC'),
-        homeworld_sector: str = Form(''),
-        homeworld_hex: str = Form(''),
     ) -> Any:
         name = name.strip()
-        form_defaults = _character_form_defaults(
-            name=name,
-            sophont=sophont,
-            player=player.strip() or 'NPC',
-            homeworld_sector=homeworld_sector.strip(),
-            homeworld_hex=homeworld_hex.strip(),
-        )
         if not name:
             return templates.TemplateResponse(
                 request=request,
                 name='character_new.html',
                 context={
-                    'sophonts': SOPHONT_NAMES,
                     'error': 'Name is required',
-                    'form_defaults': form_defaults,
-                    'homeworld': None,
-                    'homeworld_picker_query': _character_form_query_string(form_defaults),
+                    'form_defaults': _character_form_defaults(name=name, player=player.strip() or 'NPC'),
                 },
                 status_code=422,
             )
-        sophont_obj = get_sophont(sophont) or get_sophont(SOPHONT_NAMES[0])
-        if sophont_obj is None:
-            raise RuntimeError(f'No fallback sophont available: {sophont!r}')
-        try:
-            homeworld = _selected_homeworld(form_defaults)
-        except ValueError as exc:
-            return templates.TemplateResponse(
-                request=request,
-                name='character_new.html',
-                context={
-                    'sophonts': SOPHONT_NAMES,
-                    'error': str(exc),
-                    'form_defaults': form_defaults,
-                    'homeworld': None,
-                    'homeworld_picker_query': _character_form_query_string(form_defaults),
-                },
-                status_code=422,
-            )
-        if homeworld is None:
-            return templates.TemplateResponse(
-                request=request,
-                name='character_new.html',
-                context={
-                    'sophonts': SOPHONT_NAMES,
-                    'error': 'Homeworld is required',
-                    'form_defaults': form_defaults,
-                    'homeworld': None,
-                    'homeworld_picker_query': _character_form_query_string(form_defaults),
-                },
-                status_code=422,
-            )
-        row = backend.start(
-            make_start_event(sophont_obj, homeworld, form_defaults['player'], name),
-            sophont_name=sophont_obj.name,
-            player=form_defaults['player'],
-            name=name,
-        )
+        character_id = service.create_character(name, player.strip() or 'NPC')
         return RedirectResponse(
-            url=str(request.url_for('character_wizard', character_id=str(row['id']))),
+            url=str(request.url_for('character_wizard', character_id=str(character_id))),
             status_code=303,
         )
 
     @router.get('/characters/{character_id}', response_class=HTMLResponse)
     def character_sheet(request: Request, character_id: int) -> Any:
-        projection = backend.get_projection(character_id)
+        projection = service.get_projection(character_id)
         if projection is None:
             return Response(status_code=404)
         ctx = _projection_context(projection, character_id)
@@ -520,7 +425,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.get('/characters/{character_id}/wizard', response_class=HTMLResponse)
     def character_wizard(request: Request, character_id: int) -> Any:
-        projection = backend.get_projection(character_id)
+        projection = service.get_projection(character_id)
         if projection is None:
             return Response(status_code=404)
         ctx = {**_projection_context(projection, character_id), 'is_htmx': False}
@@ -528,7 +433,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.post('/characters/{character_id}/homeworld')
     async def select_homeworld_for_character(request: Request, character_id: int) -> Any:
-        projection = backend.get_projection(character_id)
+        projection = service.get_projection(character_id)
         if projection is None:
             return HTMLResponse('<p class="text-red-400">Character not found</p>', status_code=404)
 
@@ -537,9 +442,9 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
         try:
             event = _build_event_from_form(fulfills, form, projection)
-            backend.append_event(character_id, event)
+            service._backend.append_event(character_id, event)
         except Exception as exc:
-            projection = backend.get_projection(character_id) or projection
+            projection = service.get_projection(character_id) or projection
             ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': False}
             return templates.TemplateResponse(request=request, name='wizard.html', context=ctx, status_code=422)
 
@@ -550,7 +455,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.post('/characters/{character_id}/undo')
     def undo_last_event(request: Request, character_id: int) -> Any:
-        backend.rollback_last_event(character_id)
+        service._backend.rollback_last_event(character_id)
         return RedirectResponse(
             url=str(request.url_for('character_wizard', character_id=str(character_id))),
             status_code=303,
@@ -561,20 +466,19 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         form = await request.form()
         for character_id in form.getlist('character_ids'):
             if isinstance(character_id, str):
-                backend.delete_character(int(character_id))
+                service.delete_character(int(character_id))
         return RedirectResponse(url='/ui/', status_code=303)
 
     @router.post('/characters/{character_id}/delete')
     def delete_character(character_id: int) -> Any:
-        backend.delete_character(character_id)
+        service.delete_character(character_id)
         return RedirectResponse(url='/ui/', status_code=303)
 
     @router.post('/characters/{character_id}/events', response_class=HTMLResponse)
     async def post_event(request: Request, character_id: int) -> Any:
-        raw_projection = backend.get_projection(character_id)
-        if not isinstance(raw_projection, CharacterProjection):
+        projection = service.get_projection(character_id)
+        if not isinstance(projection, CharacterProjection):
             return HTMLResponse('<p class="text-red-400">Character not found</p>', status_code=404)
-        projection = raw_projection
 
         form = await request.form()
         fulfills = str(form.get('fulfills', ''))
@@ -588,13 +492,13 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
         before_summary = projection.summary.model_copy(deep=True)
 
         try:
-            backend.append_event(character_id, event)
+            service._backend.append_event(character_id, event)
         except ReplayError as exc:
-            projection = backend.get_projection(character_id) or projection
+            projection = service.get_projection(character_id) or projection
             ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': True}
             return templates.TemplateResponse(request=request, name='partials/pending_inputs.html', context=ctx)
 
-        projection = backend.get_projection(character_id)
+        projection = service.get_projection(character_id)
         if projection is None:
             return HTMLResponse('<p class="text-red-400">Projection unavailable</p>', status_code=500)
 
@@ -608,7 +512,7 @@ def build_web_router(backend: SqliteCharacterBackend) -> APIRouter:
 
     @router.get('/characters/{character_id}/pdf')
     def character_pdf(character_id: int) -> Any:
-        projection = backend.get_projection(character_id)
+        projection = service.get_projection(character_id)
         if projection is None:
             return Response(status_code=404)
         spec = spec_from_summary(projection.summary)

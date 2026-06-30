@@ -23,7 +23,7 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.muster_out import finalize_muster_out, setup_muster_out
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.health.health_events import AgingRollHandler
@@ -32,19 +32,25 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError, replay
-from tests.unit.character.helpers import MOCK_WORLD, _scholar_setup, pending_id as _pending, scripted_event as _event
+from tests.unit.character.helpers import (
+    MOCK_WORLD,
+    _creation_events,
+    _scholar_setup,
+    pending_id as _pending,
+    scripted_event as _event,
+)
 
 
 def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
-    started = _event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
-    ucp = _event(fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss')
+    ucp = _event(fulfills=_pending(c[-1], 0), handler=UcpHandler(ucp='7869A5'))
     background = _event(
         fulfills=_pending(ucp, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    return [started, ucp, background]
+    return [*c, ucp, background]
 
 
 def _append_event(events: list, *, handler, pending_index: int = 0):

@@ -110,7 +110,7 @@ def build_prompt(summary: CharacterSummary) -> str:
         f'Scouts are members of the IISS (Imperial Interstellar Scout Service), '
         f'not called "Vilani Scouts".\n\n'
         f'Name: {summary.name or "Unknown"}\n'
-        f'Species: {summary.sophont.name}\n'
+        f'Species: {summary.sophont.name if summary.sophont else "Unknown"}\n'
         f'Career: {career_label} — Rank {summary.rank}, {terms} terms\n'
         f'Age: {summary.age}\n'
         f'Characteristics: {char_lines}\n\n'

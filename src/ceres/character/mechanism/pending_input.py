@@ -13,7 +13,6 @@ from pydantic import BaseModel
 from ceres.character.input_specs import InputSpec
 
 if TYPE_CHECKING:
-    from ceres.character.domain.character_state import CharacterProjection
     from ceres.character.mechanism.event_base import Event
 
 
@@ -23,7 +22,7 @@ class ChoiceBase(BaseModel):
     kind: str
     label: str = ''
 
-    def handle(self, projection: CharacterProjection, event: Event) -> None:
+    def handle(self, projection, event: Event) -> None:
         raise NotImplementedError(f'{type(self).__name__}.handle() not implemented')
 
 
@@ -55,10 +54,10 @@ class PendingInputBase(BaseModel):
     def event_from_form(self, form: Mapping[str, str]) -> Event:
         raise NotImplementedError(f'{type(self).__name__}.event_from_form() not implemented')
 
-    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+    def input_specs(self, projection) -> list[InputSpec]:
         raise NotImplementedError(f'{type(self).__name__}.input_specs() not implemented')
 
-    def resolve(self, projection: CharacterProjection, event: Event) -> None:
+    def resolve(self, projection, event: Event) -> None:
         pass
 
     @property

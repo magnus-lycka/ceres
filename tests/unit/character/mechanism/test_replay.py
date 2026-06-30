@@ -1,6 +1,5 @@
 import pytest
 
-from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.career import CITIZEN, DRIFTER, SCOUT
 from ceres.character.domain.career.career_events import (
     AdvancementHandler,
@@ -17,7 +16,6 @@ from ceres.character.domain.career.career_events import (
 from ceres.character.domain.character_start import (
     BACKGROUND_SKILLS,
     BackgroundSkillsHandler,
-    CharacterStartedHandler,
     PendingBackgroundSkills,
     PendingUcp,
     UcpHandler,
@@ -43,18 +41,18 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import ReplayError, replay
-from tests.unit.character.helpers import MOCK_WORLD
+from tests.unit.character.helpers import MOCK_WORLD, _creation_events, create_backend
 
 
 def _drifter_wanderer_setup() -> list:
     """Three events placing a Drifter/Wanderer character at PendingSurvive."""
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0 → no pending created
-    ev3 = Event(
+    creation = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Test')
+    ev_ucp = Event(fulfills=(creation[-1].id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0 → no pending created
+    ev_entry = Event(
         fulfills=None,
         handler=CareerEntryHandler(career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=10),
     )
-    return [ev1, ev2, ev3]
+    return [*creation, ev_ucp, ev_entry]
 
 
 def _drifter_after_survive_success() -> list:
@@ -83,17 +81,16 @@ def _drifter_at_mishap() -> list:
 
 def _scout_at_skill_table() -> list:
     """Events placing a Scout/Courier character with PendingSkillTable pending."""
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0, INT=0 → no pending created
-    ev3 = Event(
+    creation = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Test')
+    ev_ucp = Event(fulfills=(creation[-1].id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0, INT=0 → no pending
+    ev_entry = Event(
         fulfills=None,
         handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=10),
     )
-    ev4 = Event(fulfills=(ev3.id, 0), handler=SurviveHandler(roll=10))  # END=6, target=5 → success
-    ev5 = Event(fulfills=(ev4.id, 0), handler=TermEventHandler(roll=5))  # benefit_dm → PendingAdvancement
-    ev6 = Event(fulfills=(ev5.id, 0), handler=AdvancementHandler(roll=12))  # EDU 9+, DM-3 → 9≥9 success
-    # rank 1 bonus (Vacc Suit 1) auto-granted → PendingSkillTable + PendingAssignmentChangeChoice
-    return [ev1, ev2, ev3, ev4, ev5, ev6]
+    ev_survive = Event(fulfills=(ev_entry.id, 0), handler=SurviveHandler(roll=10))
+    ev_term = Event(fulfills=(ev_survive.id, 0), handler=TermEventHandler(roll=5))
+    ev_advance = Event(fulfills=(ev_term.id, 0), handler=AdvancementHandler(roll=12))
+    return [*creation, ev_ucp, ev_entry, ev_survive, ev_term, ev_advance]
 
 
 def _drifter_at_injury_table() -> list:
@@ -102,18 +99,18 @@ def _drifter_at_injury_table() -> list:
     return [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=2))]
 
 
-def _started(sophont: Sophont = VILANI) -> Event:
-    return Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+def _creation(sophont: Sophont = VILANI) -> list[Event]:
+    return _creation_events(sophont, MOCK_WORLD, 'NPC', 'Boss')
 
 
-def _ucp(started: Event | None = None, ucp: str = '7869A5') -> Event:
-    fulfills = (started.id, 0) if started is not None else None
+def _ucp(prev: Event | None = None, ucp: str = '7869A5') -> Event:
+    fulfills = (prev.id, 0) if prev is not None else None
     return Event(fulfills=fulfills, handler=UcpHandler(ucp=ucp))
 
 
-def _ucp_low_edu(started: Event | None = None) -> Event:
+def _ucp_low_edu(prev: Event | None = None) -> Event:
     """UCP with EDU=0 → 0 background skills, no pending created."""
-    fulfills = (started.id, 0) if started is not None else None
+    fulfills = (prev.id, 0) if prev is not None else None
     return Event(fulfills=fulfills, handler=UcpHandler(ucp='786000'))
 
 
@@ -124,81 +121,75 @@ def _bg_skills(ucp: Event | None = None, skills: list | None = None) -> Event:
     return Event(fulfills=fulfills, handler=BackgroundSkillsHandler(skills=skills))
 
 
-class TestCharacterStarted:
-    def test_creates_ucp_pending_input(self):
-        ev = _started()
-        projection = replay(1, [ev])
+class TestCreationFlow:
+    def test_full_creation_ends_with_ucp_pending(self):
+        creation = _creation()
+        projection = replay(1, creation)
 
         assert len(projection.pending_inputs) == 1
-        assert projection.pending_inputs[0].id == f'{ev.id}.0'
         assert isinstance(projection.pending_inputs[0], PendingUcp)
 
     def test_ucp_pending_is_blocking(self):
-        projection = replay(1, [_started()])
+        projection = replay(1, _creation())
 
         assert projection.pending_inputs[0].blocking is True
 
     def test_sets_character_id(self):
-        projection = replay(42, [_started()])
+        projection = replay(42, _creation())
 
         assert projection.character_id == 42
 
     def test_sets_name_sophont_and_homeworld_in_summary(self):
-        projection = replay(1, [_started()])
+        projection = replay(1, _creation())
 
         assert projection.summary.name == 'Boss'
         assert projection.summary.sophont == VILANI
         assert projection.summary.homeworld == MOCK_WORLD
 
-    def test_sets_birthworld_equal_to_homeworld_on_start(self):
-        projection = replay(1, [_started()])
+    def test_sets_birthworld_equal_to_homeworld(self):
+        projection = replay(1, _creation())
 
         assert projection.summary.birthworld == MOCK_WORLD
 
-    def test_birthworld_is_immutable_starting_world(self):
-        projection = replay(1, [_started()])
-
-        assert projection.summary.birthworld == projection.summary.homeworld
-
-    def test_first_pending_input_is_ucp(self):
-        projection = replay(1, [_started()])
+    def test_first_pending_after_sophont_is_ucp(self):
+        projection = replay(1, _creation())
 
         assert isinstance(projection.pending_inputs[0], PendingUcp)
 
 
 class TestUcpEvent:
     def test_ucp_pending_removed_after_ucp_event(self):
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp_low_edu(ev1)])
+        c = _creation()
+        projection = replay(1, [*c, _ucp_low_edu(c[-1])])
 
         assert not any(isinstance(p, PendingUcp) for p in projection.pending_inputs)
 
     def test_creates_background_skills_pending_when_edu_has_positive_dm(self):
         # EDU=10 → DM+1 → 4 background skills
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='7869A5')])
 
         assert len(projection.pending_inputs) == 1
         assert isinstance(projection.pending_inputs[0], PendingBackgroundSkills)
         assert projection.pending_inputs[0].blocking is True
 
     def test_background_skills_pending_id_derived_from_ucp_event_id(self):
-        ev1 = _started()
-        ev2 = _ucp(ev1, ucp='7869A5')
-        projection = replay(1, [ev1, ev2])
+        c = _creation()
+        ev_ucp = _ucp(c[-1], ucp='7869A5')
+        projection = replay(1, [*c, ev_ucp])
 
-        assert projection.pending_inputs[0].id == f'{ev2.id}.0'
+        assert projection.pending_inputs[0].id == f'{ev_ucp.id}.0'
 
     def test_background_skills_pending_count_in_instruction(self):
         # EDU=10 → DM+1 → 4 skills
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='7869A5')])
 
         assert '4' in projection.pending_inputs[0].instruction
 
     def test_background_skills_pending_has_options_list(self):
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='7869A5')])
 
         assert isinstance(projection.pending_inputs[0], PendingBackgroundSkills)
         options = projection.pending_inputs[0].options
@@ -208,38 +199,38 @@ class TestUcpEvent:
 
     def test_no_background_skills_pending_when_edu_zero(self):
         # EDU=0 → DM-3 → max(0, -3+3)=0 background skills
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='786000')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='786000')])
 
         assert projection.pending_inputs == []
 
     def test_background_skill_count_for_edu_6_to_8(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=7 SOC=0 → EDU=7, DM+0 → 3 background skills
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='786070')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='786070')])
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '3' in pending.instruction
 
     def test_background_skill_count_for_edu_9_to_11(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=9 SOC=0 → EDU=9, DM+1 → 4 background skills
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='786090')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='786090')])
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '4' in pending.instruction
 
     def test_background_skill_count_for_edu_12_to_14(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=12=C SOC=0 → EDU=12, DM+2 → 5 background skills
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='7860C0')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='7860C0')])
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingBackgroundSkills))
         assert '5' in pending.instruction
 
     def test_sets_characteristics_from_short_form(self):
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='7869A5')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='7869A5')])
 
         assert projection.summary.characteristics == {
             'STR': 7,
@@ -251,8 +242,8 @@ class TestUcpEvent:
         }
 
     def test_sets_characteristics_from_max_values(self):
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp(ev1, ucp='FFFFFF')])
+        c = _creation()
+        projection = replay(1, [*c, _ucp(c[-1], ucp='FFFFFF')])
 
         assert projection.summary.characteristics == {
             'STR': 15,
@@ -264,17 +255,17 @@ class TestUcpEvent:
         }
 
     def test_no_pending_ucp_after_ucp_provided(self):
-        ev1 = _started()
-        projection = replay(1, [ev1, _ucp_low_edu(ev1)])
+        c = _creation()
+        projection = replay(1, [*c, _ucp_low_edu(c[-1])])
 
         assert not any(isinstance(p, PendingUcp) for p in projection.pending_inputs)
 
 
 class TestBackgroundSkillsEvent:
     def test_resolves_background_skills_pending(self):
-        ev1 = _started()
-        ev2 = _ucp(ev1)
-        events = [ev1, ev2, _bg_skills(ev2)]
+        c = _creation()
+        ev_ucp = _ucp(c[-1])
+        events = [*c, ev_ucp, _bg_skills(ev_ucp)]
 
         projection = replay(1, events)
 
@@ -282,9 +273,9 @@ class TestBackgroundSkillsEvent:
         assert isinstance(projection.pending_inputs[0], PendingCareerChoice)
 
     def test_grants_skills_at_level_0_in_summary(self):
-        ev1 = _started()
-        ev2 = _ucp(ev1)
-        events = [ev1, ev2, _bg_skills(ev2, skills=[Admin(), Athletics(), Carouse(), Drive()])]
+        c = _creation()
+        ev_ucp = _ucp(c[-1])
+        events = [*c, ev_ucp, _bg_skills(ev_ucp, skills=[Admin(), Athletics(), Carouse(), Drive()])]
 
         projection = replay(1, events)
 
@@ -295,23 +286,24 @@ class TestBackgroundSkillsEvent:
         assert len(projection.summary.skills) == 4
 
     def test_rejects_wrong_number_of_skills(self):
-        ev1 = _started()
-        ev2 = _ucp(ev1)
-        too_few = Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics()]))
+        c = _creation()
+        ev_ucp = _ucp(c[-1])
+        too_few = Event(fulfills=(ev_ucp.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Athletics()]))
 
         with pytest.raises(ReplayError):
-            replay(1, [ev1, ev2, too_few])
+            replay(1, [*c, ev_ucp, too_few])
 
     def test_rejects_non_background_skill(self):
         # Advocate is not in BackgroundSkills
-        ev1 = _started()
-        ev2 = _ucp(ev1)
+        c = _creation()
+        ev_ucp = _ucp(c[-1])
         invalid = Event(
-            fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[Admin(), Advocate(), Carouse(), Drive()])
+            fulfills=(ev_ucp.id, 0),
+            handler=BackgroundSkillsHandler(skills=[Admin(), Advocate(), Carouse(), Drive()]),
         )
 
         with pytest.raises(ReplayError):
-            replay(1, [ev1, ev2, invalid])
+            replay(1, [*c, ev_ucp, invalid])
 
     def test_all_background_skills_are_known_skill_types(self):
         all_classes = set(_skill_classes(AnySkill))
@@ -320,24 +312,19 @@ class TestBackgroundSkillsEvent:
 
     def test_background_skills_blocked_by_no_pending(self):
         # Cannot submit background_skills when no such pending exists (EDU=0)
-        ev1 = _started()
-        ev2 = _ucp_low_edu(ev1)
-        event = Event(fulfills=(ev2.id, 0), handler=BackgroundSkillsHandler(skills=[]))
+        c = _creation()
+        ev_ucp = _ucp_low_edu(c[-1])
+        event = Event(fulfills=(ev_ucp.id, 0), handler=BackgroundSkillsHandler(skills=[]))
 
         with pytest.raises(ReplayError):
-            replay(1, [ev1, ev2, event])
+            replay(1, [*c, ev_ucp, event])
 
 
 class TestReplayFromPersistedEventLog:
     def test_replaying_persisted_event_log_rebuilds_identical_projection(self):
         backend = create_backend(':memory:')
         try:
-            row = backend.start(
-                make_start_event(VILANI, MOCK_WORLD, 'NPC', 'Boss'),
-                sophont_name=VILANI.name,
-                player='NPC',
-                name='Boss',
-            )
+            row = backend.start(_creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss'), player='NPC', name='Boss')
             character_id = row['id']
             projection = backend.get_projection(character_id)
             assert projection is not None
@@ -370,20 +357,20 @@ class TestReplayBlocking:
         unrelated = Event(fulfills=None, handler=UcpHandler(ucp='7869A5'))
 
         with pytest.raises(ReplayError):
-            replay(1, [_started(), unrelated])
+            replay(1, [*_creation(), unrelated])
 
     def test_rejects_event_with_unknown_fulfills(self):
         unknown_pending = (99, 0)
         wrong = Event(fulfills=unknown_pending, handler=UcpHandler(ucp='7869A5'))
 
         with pytest.raises(ReplayError):
-            replay(1, [_started(), wrong])
+            replay(1, [*_creation(), wrong])
 
 
 class TestDeterminism:
     def test_same_events_produce_same_projection(self):
-        ev1 = _started()
-        events = [ev1, _ucp_low_edu(ev1)]
+        c = _creation()
+        events = [*c, _ucp_low_edu(c[-1])]
 
         first = replay(1, events)
         second = replay(1, events)
@@ -395,33 +382,37 @@ class TestDeterminism:
             replay(1, [])
 
 
-class TestCharacterStartedEventJsonRoundTrip:
-    def test_sophont_survives_json_round_trip(self):
+class TestCreationEventJsonRoundTrip:
+    def test_sophont_selected_event_survives_json_round_trip(self):
         import json
 
         from pydantic import TypeAdapter
 
-        event = _started()
+        from ceres.character.domain.character_start import SophontSelectedHandler
+
+        ev = _creation()[-1]  # the SophontSelectedHandler event
         adapter: TypeAdapter[Event] = TypeAdapter(Event)
-        serialized = json.dumps(event.model_dump())
+        serialized = json.dumps(ev.model_dump())
         restored = adapter.validate_python(json.loads(serialized))
 
-        assert isinstance(restored.handler, CharacterStartedHandler)
-        assert restored.sophont == VILANI
+        assert isinstance(restored.handler, SophontSelectedHandler)
+        assert restored.handler.sophont == VILANI
 
-    def test_homeworld_survives_json_round_trip(self):
+    def test_homeworld_selected_event_survives_json_round_trip(self):
         import json
 
         from pydantic import TypeAdapter
 
-        event = _started()
+        from ceres.character.domain.character_start import HomeworldSelectedHandler
+
+        ev = _creation()[1]  # the HomeworldSelectedHandler event
         adapter: TypeAdapter[Event] = TypeAdapter(Event)
-        serialized = json.dumps(event.model_dump())
+        serialized = json.dumps(ev.model_dump())
         restored = adapter.validate_python(json.loads(serialized))
 
-        assert isinstance(restored.handler, CharacterStartedHandler)
-        assert restored.homeworld.name == MOCK_WORLD.name
-        assert restored.homeworld.uwp == MOCK_WORLD.uwp
+        assert isinstance(restored.handler, HomeworldSelectedHandler)
+        assert restored.handler.homeworld.name == MOCK_WORLD.name
+        assert restored.handler.homeworld.uwp == MOCK_WORLD.uwp
 
 
 class TestLifeEventValidation:
@@ -524,9 +515,9 @@ class TestSkillTableErrors:
 class TestDraftErrors:
     def _events_with_draft_choice(self) -> list:
         """Citizen qualification fails (EDU 5+, EDU=0) → PendingDraftChoice."""
-        ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Test'))
-        ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0 → no pending created
-        ev3 = Event(
+        c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Test')
+        ev_ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='786000'))  # EDU=0 → no pending created
+        ev_entry = Event(
             handler=CareerEntryHandler(
                 career=CITIZEN,
                 assignment=CITIZEN.assignment('Corporate'),
@@ -534,7 +525,7 @@ class TestDraftErrors:
             ),
         )
         # EDU 5+, DM-3: 1-3=-2 < 5 → fails → PendingDraftChoice
-        return [ev1, ev2, ev3]
+        return [*c, ev_ucp, ev_entry]
 
     def test_unknown_career_draft_raises(self):
         from pydantic import ValidationError

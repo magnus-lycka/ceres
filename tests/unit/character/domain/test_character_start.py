@@ -1,13 +1,17 @@
-"""Unit tests for character_start.py — CharacterStartedHandler, UcpHandler, etc."""
+"""Unit tests for character_start.py — creation handlers, UcpHandler, etc."""
 
 import pytest
 
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
-    CharacterStartedHandler,
+    CharacterCreatedHandler,
     FinishCreationHandler,
+    HomeworldSelectedHandler,
     PendingBackgroundSkills,
+    PendingHomeworldSelection,
+    PendingSophontSelection,
     PendingUcp,
+    SophontSelectedHandler,
     UcpHandler,
     _background_skill_count,
 )
@@ -49,35 +53,6 @@ class TestBackgroundSkillCount:
 
     def test_negative_edu_clamped_to_0(self):
         assert _background_skill_count(-5) == 0
-
-
-class TestCharacterStartedHandler:
-    def test_init_replay_creates_projection_with_correct_name(self):
-        handler = CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, name='Ada')
-        proj = handler.init_replay(character_id=1, event_id=1)
-        assert proj.summary.name == 'Ada'
-
-    def test_init_replay_adds_pending_ucp(self):
-        handler = CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, name='Ada')
-        proj = handler.init_replay(character_id=1, event_id=1)
-        assert len(proj.pending_inputs) == 1
-        assert isinstance(proj.pending_inputs[0], PendingUcp)
-
-    def test_init_replay_sets_homeworld(self):
-        handler = CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, name='Ada')
-        proj = handler.init_replay(character_id=1, event_id=1)
-        assert proj.summary.homeworld == MOCK_WORLD
-
-    def test_sophont_coerced_from_string(self):
-
-        handler = CharacterStartedHandler.model_validate({'sophont': 'Vilani', 'homeworld': MOCK_WORLD, 'name': 'X'})
-        assert handler.sophont is VILANI
-
-    def test_unknown_sophont_raises(self):
-        from pydantic import ValidationError
-
-        with pytest.raises(ValidationError):
-            CharacterStartedHandler.model_validate({'sophont': 'NotARealSophont', 'homeworld': MOCK_WORLD, 'name': 'X'})
 
 
 class TestUcpHandler:
@@ -174,6 +149,75 @@ class TestPendingBackgroundSkills:
         assert len(specs) == 1
         assert isinstance(specs[0], Select)
         assert specs[0].min_select == 2
+
+
+class TestCharacterCreatedHandler:
+    def test_creates_projection_with_correct_name(self):
+        proj = CharacterCreatedHandler(name='Ada', player='NPC').init_replay(1, 1)
+        assert proj.summary.name == 'Ada'
+
+    def test_has_no_sophont_yet(self):
+        proj = CharacterCreatedHandler(name='Ada', player='NPC').init_replay(1, 1)
+        assert proj.summary.sophont is None
+
+    def test_has_no_homeworld_yet(self):
+        proj = CharacterCreatedHandler(name='Ada', player='NPC').init_replay(1, 1)
+        assert proj.summary.homeworld is None
+
+    def test_adds_blocking_pending_homeworld_selection(self):
+        proj = CharacterCreatedHandler(name='Ada', player='NPC').init_replay(1, 1)
+        assert len(proj.pending_inputs) == 1
+        pending = proj.pending_inputs[0]
+        assert isinstance(pending, PendingHomeworldSelection)
+        assert pending.blocking
+
+
+class TestHomeworldSelectedHandler:
+    def _proj_after_homeworld(self):
+        from ceres.character.mechanism.replay import replay
+
+        ev1 = Event(handler=CharacterCreatedHandler(name='Ada', player='NPC'))
+        ev2 = Event(fulfills=(ev1.id, 0), handler=HomeworldSelectedHandler(homeworld=MOCK_WORLD))
+        return replay(1, [ev1, ev2])
+
+    def test_sets_homeworld(self):
+        assert self._proj_after_homeworld().summary.homeworld == MOCK_WORLD
+
+    def test_sets_birthworld(self):
+        assert self._proj_after_homeworld().summary.birthworld == MOCK_WORLD
+
+    def test_adds_blocking_pending_sophont_selection(self):
+        proj = self._proj_after_homeworld()
+        sophont_pending = next((p for p in proj.pending_inputs if isinstance(p, PendingSophontSelection)), None)
+        assert sophont_pending is not None
+        assert sophont_pending.blocking
+
+
+class TestSophontSelectedHandler:
+    def _proj_after_sophont(self):
+        from ceres.character.mechanism.replay import replay
+
+        ev1 = Event(handler=CharacterCreatedHandler(name='Ada', player='NPC'))
+        ev2 = Event(fulfills=(ev1.id, 0), handler=HomeworldSelectedHandler(homeworld=MOCK_WORLD))
+        ev3 = Event(fulfills=(ev2.id, 0), handler=SophontSelectedHandler(sophont=VILANI))
+        return replay(1, [ev1, ev2, ev3])
+
+    def test_sets_sophont(self):
+        assert self._proj_after_sophont().summary.sophont is VILANI
+
+    def test_adds_pending_ucp(self):
+        proj = self._proj_after_sophont()
+        assert any(isinstance(p, PendingUcp) for p in proj.pending_inputs)
+
+    def test_sophont_coerced_from_string(self):
+        handler = SophontSelectedHandler.model_validate({'sophont': 'Vilani'})
+        assert handler.sophont is VILANI
+
+    def test_unknown_sophont_raises(self):
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            SophontSelectedHandler.model_validate({'sophont': 'NotARealSophont'})
 
 
 class TestFinishCreationHandler:

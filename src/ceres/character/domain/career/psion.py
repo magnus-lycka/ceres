@@ -427,7 +427,7 @@ class Psion(CareerData):
         training_queued = queue_psionic_institute_training(projection, event_id, len(projection.pending_inputs))
         if training_queued:
             insert_at = 1
-        if projection.summary.homeworld.uwp.startswith('X'):
+        if projection.summary.homeworld is not None and projection.summary.homeworld.uwp.startswith('X'):
             return
         used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
         homeworld_idx = max(used_sub_ids, default=-1) + 1

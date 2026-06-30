@@ -4,7 +4,7 @@ from typing import Literal, cast
 
 from pydantic import Field, TypeAdapter, field_serializer, field_validator
 
-from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import UCP_STATS, Chars, characteristic_dm
 from ceres.character.domain.skills import (
@@ -12,8 +12,8 @@ from ceres.character.domain.skills import (
     BackgroundSkill,
     _skill_classes,
 )
-from ceres.character.domain.sophont import Sophont, get_sophont
-from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int
+from ceres.character.domain.sophont import SOPHONTS, Sophont, available_sophont_names, get_sophont
+from ceres.character.input_specs import InputSpec, NumberEntry, Select, SelectWorld, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import PendingInputBase
@@ -29,12 +29,47 @@ def _background_skill_count(edu: int) -> int:
     return max(0, characteristic_dm(edu) + 3)
 
 
-class CharacterStartedHandler(EventHandlerBase):
-    kind: Literal['character_started'] = 'character_started'
-    sophont: Sophont
-    homeworld: TravellerMapWorld
-    player: str = 'NPC'
+# ── New creation flow: CharacterCreated → HomeworldSelected → SophontSelected ──
+
+
+class CharacterCreatedHandler(EventHandlerBase):
+    kind: Literal['character_created'] = 'character_created'
     name: str
+    player: str = 'NPC'
+
+    def init_replay(self, character_id: int, event_id: int) -> CharacterProjection:
+        projection = CharacterProjection(
+            character_id=character_id,
+            summary=CharacterSummary(name=self.name),
+        )
+        projection.pending_inputs.append(
+            PendingHomeworldSelection(pending_id=(event_id, 0), instruction='Select homeworld')
+        )
+        return projection
+
+
+class HomeworldSelectedHandler(EventHandlerBase):
+    kind: Literal['homeworld_selected'] = 'homeworld_selected'
+    homeworld: TravellerMapWorld
+
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        projection.summary.homeworld = self.homeworld
+        projection.summary.birthworld = self.homeworld
+        sophont_names = available_sophont_names(self.homeworld)
+        projection.pending_inputs.append(
+            PendingSophontSelection(
+                pending_id=(event.id, 0),
+                instruction='Select sophont',
+                sophont_names=sophont_names,
+            )
+        )
+
+
+class SophontSelectedHandler(EventHandlerBase):
+    kind: Literal['sophont_selected'] = 'sophont_selected'
+    sophont: Sophont
 
     @field_validator('sophont', mode='before')
     @classmethod
@@ -52,23 +87,58 @@ class CharacterStartedHandler(EventHandlerBase):
     def _serialize_sophont(self, v: Sophont) -> str:
         return v.name
 
-    def init_replay(self, character_id: int, event_id: int) -> CharacterProjection:
-        projection = CharacterProjection(
-            character_id=character_id,
-            summary=CharacterSummary(
-                name=self.name,
-                sophont=self.sophont,
-                homeworld=self.homeworld,
-                birthworld=self.homeworld,
-            ),
-        )
-        stat_names = (
-            [s.value for s in self.sophont.ucp_stats] if self.sophont else ['STR', 'DEX', 'END', 'INT', 'EDU', 'SOC']
-        )
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        projection.summary.sophont = self.sophont
+        stat_names = [s.value for s in self.sophont.ucp_stats]
         projection.pending_inputs.append(
-            PendingUcp(pending_id=(event_id, 0), instruction='Provide characteristics (UCP)', stat_names=stat_names)
+            PendingUcp(pending_id=(event.id, 0), instruction='Provide characteristics (UCP)', stat_names=stat_names)
         )
-        return projection
+
+
+# ── Creation Pending Types ─────────────────────────────────────────────────────
+
+
+class PendingHomeworldSelection(PendingInputBase):
+    kind: Literal['homeworld_selection'] = 'homeworld_selection'
+    blocking: bool = True
+
+    @property
+    def template_fragment(self) -> str:
+        return 'homeworld_change'
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        sector = form_str(form, 'sector', '').strip()
+        hex_code = form_str(form, 'hex_code', '').strip()
+        if not sector or not hex_code:
+            raise ValueError('Sector and hex code are required to select a homeworld')
+        world = fetch_world(sector, hex_code)
+        return Event(fulfills=self.pending_id, handler=HomeworldSelectedHandler(homeworld=world))
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [SelectWorld(name='homeworld', label='Homeworld')]
+
+
+class PendingSophontSelection(PendingInputBase):
+    kind: Literal['sophont_selection'] = 'sophont_selection'
+    blocking: bool = True
+    sophont_names: list[str] = Field(default_factory=lambda: [s.name for s in SOPHONTS])
+
+    @property
+    def template_fragment(self) -> str:
+        return 'sophont_select'
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        name = form_str(form, 'sophont', '').strip()
+        sophont = get_sophont(name)
+        if sophont is None:
+            raise ValueError(f'Unknown sophont: {name!r}')
+        return Event(fulfills=self.pending_id, handler=SophontSelectedHandler(sophont=sophont))
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        options = [(n, n) for n in self.sophont_names]
+        return [Select(name='sophont', label='Sophont', options=options)]
 
 
 class UcpHandler(EventHandlerBase):
@@ -84,7 +154,10 @@ class UcpHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        projection.summary.characteristics = self._parse_characteristics(projection.summary.sophont)
+        sophont = projection.summary.sophont
+        if sophont is None:
+            raise ReplayError('Cannot process UCP: sophont not yet selected')
+        projection.summary.characteristics = self._parse_characteristics(sophont)
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         count = _background_skill_count(edu)
         if count > 0:

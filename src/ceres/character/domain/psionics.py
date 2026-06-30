@@ -305,8 +305,11 @@ class PendingInitialPsiStrengthRoll(PendingInputBase):
 
 
 def initial_psi_test_is_available(projection: CharacterProjection) -> bool:
+    sophont = projection.summary.sophont
     birthworld = projection.summary.birthworld or projection.summary.homeworld
-    return projection.summary.sophont.name in {'Humaniti', 'Vilani'} and not birthworld.allegiance.startswith('Im')
+    if sophont is None or birthworld is None:
+        return False
+    return sophont.name in {'Humaniti', 'Vilani'} and not birthworld.allegiance.startswith('Im')
 
 
 def queue_initial_psi_test_or_career_choice(projection: CharacterProjection, event_id: int) -> None:

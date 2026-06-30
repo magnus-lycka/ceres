@@ -40,13 +40,13 @@ def _deserialise_term(v: object) -> object:
 class CharacterSummary(BaseModel):
     name: str
     age: int = 18
-    sophont: Sophont
-    homeworld: TravellerMapWorld
+    sophont: Sophont | None = None
+    homeworld: TravellerMapWorld | None = None
     birthworld: TravellerMapWorld | None = None
 
     @model_validator(mode='after')
     def _default_birthworld(self) -> CharacterSummary:
-        if self.birthworld is None:
+        if self.birthworld is None and self.homeworld is not None:
             self.birthworld = self.homeworld
         return self
 
@@ -106,6 +106,8 @@ class CharacterSummary(BaseModel):
 
     @property
     def ucp(self) -> str | None:
+        if self.sophont is None:
+            return None
         if any(stat not in self.characteristics for stat in self.sophont.ucp_stats):
             return None
         return ''.join(int_to_ehex(self.characteristics[stat]) for stat in self.sophont.ucp_stats)

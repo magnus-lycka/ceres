@@ -17,7 +17,7 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import (
     Ally,
@@ -54,7 +54,13 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import Select
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, pending_id as _pending, scripted_event as _event
+from tests.unit.character.helpers import (
+    MOCK_WORLD,
+    CharacterDriver,
+    _creation_events,
+    pending_id as _pending,
+    scripted_event as _event,
+)
 
 _SCIENCE_CLASSES = set(_skill_classes(Sciences))
 
@@ -62,13 +68,13 @@ _SCIENCE_CLASSES = set(_skill_classes(Sciences))
 def _full_setup(character_id: int = 1) -> list:
     """Return events that get a character through setup: started → ucp → background skills."""
     # STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 → 4 background skills
-    started = _event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
-    ucp = _event(fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss')
+    ucp = _event(fulfills=_pending(c[-1], 0), handler=UcpHandler(ucp='7869A5'))
     background = _event(
         fulfills=_pending(ucp, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    return [started, ucp, background]
+    return [*c, ucp, background]
 
 
 def _enter_scout(assignment: str = 'Courier', qualification_roll: int = 7) -> list:
@@ -591,8 +597,8 @@ _WORLD_WITH_WAY_STATION = TravellerMapWorld.model_validate(
 
 
 def _scout_entry_events(homeworld: TravellerMapWorld) -> list:
-    started = _event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=homeworld, player='NPC', name='X'))
-    ucp = _event(fulfills=_pending(started, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, homeworld, 'NPC', 'X')
+    ucp = _event(fulfills=_pending(c[-1], 0), handler=UcpHandler(ucp='7869A5'))
     background = _event(
         fulfills=_pending(ucp, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
@@ -601,7 +607,7 @@ def _scout_entry_events(homeworld: TravellerMapWorld) -> list:
         fulfills=_pending(background, 0),
         handler=CareerEntryHandler(career=SCOUT, assignment=SCOUT.assignment('Courier'), qualification_roll=7),
     )
-    return [started, ucp, background, entry]
+    return [*c, ucp, background, entry]
 
 
 class TestScoutHomeworldTrigger:

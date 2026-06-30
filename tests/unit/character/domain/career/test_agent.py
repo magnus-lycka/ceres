@@ -39,7 +39,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
@@ -70,18 +70,18 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
 
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — INT DM+1, END DM+0."""
-    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Sven'))
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Sven')
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
     background = Event(
         fulfills=(ucp.id, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    return [started, ucp, background]
+    return [*c, ucp, background]
 
 
 def _enter_agent(assignment: str = 'Law Enforcement', qual_roll: int = 5) -> list:

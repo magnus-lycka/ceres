@@ -30,7 +30,7 @@ from ceres.character.domain.career.drifter import (
     PendingDrifterMishap5SkillRoll,
 )
 from ceres.character.domain.career.loader import selectable_careers
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Enemy,
@@ -41,18 +41,18 @@ from ceres.character.domain.skills import Admin, Athletics, Carouse, Deception, 
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
 
 
 def _setup() -> list:
     """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5 — END DM+0."""
-    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss')
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
     background = Event(
         fulfills=(ucp.id, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    return [started, ucp, background]
+    return [*c, ucp, background]
 
 
 def _enter_drifter(assignment: str = 'Wanderer', qual_roll: int = 1) -> list:

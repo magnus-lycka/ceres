@@ -12,7 +12,7 @@ from ceres.character.domain.career.career_events import (
     SurviveHandler,
     TermEventHandler,
 )
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.homeworld.homeworld_events import (
     HomeworldChangedHandler,
@@ -26,7 +26,7 @@ from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Life
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2
+from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2, _creation_events
 
 
 def _projection() -> CharacterProjection:
@@ -36,16 +36,16 @@ def _projection() -> CharacterProjection:
     )
 
 
-def _started() -> Event:
-    return Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
+def _creation() -> list[Event]:
+    return _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss')
 
 
-def _ucp_no_edu(started: Event) -> Event:
-    return Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='786000'))
+def _ucp_no_edu(prev: Event) -> Event:
+    return Event(fulfills=(prev.id, 0), handler=UcpHandler(ucp='786000'))
 
 
-def _ucp(started: Event) -> Event:
-    return Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+def _ucp(prev: Event) -> Event:
+    return Event(fulfills=(prev.id, 0), handler=UcpHandler(ucp='7869A5'))
 
 
 def _bg_skills(ucp: Event) -> Event:
@@ -60,12 +60,12 @@ def _bg_skills(ucp: Event) -> Event:
 
 class TestHomeworldChangeRequiredEvent:
     def _events_with_required(self) -> list:
-        started = _started()
-        ucp = _ucp_no_edu(started)
+        c = _creation()
+        ucp = _ucp_no_edu(c[-1])
         required = Event(
             handler=HomeworldChangeRequiredHandler(reason='You must leave your world.', source_kind='life_event_move')
         )
-        return [started, ucp, required]
+        return [*c, ucp, required]
 
     def test_apply_adds_blocking_pending(self):
         events = self._events_with_required()
@@ -109,10 +109,10 @@ class TestHomeworldChangeRequiredEvent:
         assert pending.id == f'{events[-1].id}.0'
 
     def test_target_constraints_can_be_set(self):
-        started = _started()
-        ucp = _ucp_no_edu(started)
+        c = _creation()
+        ucp = _ucp_no_edu(c[-1])
         events = [
-            started,
+            *c,
             ucp,
             Event(
                 handler=HomeworldChangeRequiredHandler(
@@ -134,14 +134,14 @@ class TestHomeworldChangeRequiredEvent:
 
 class TestHomeworldChangeOfferedEvent:
     def _events_with_offered(self) -> list:
-        started = _started()
-        ucp = _ucp_no_edu(started)
+        c = _creation()
+        ucp = _ucp_no_edu(c[-1])
         offered = Event(
             handler=HomeworldChangeOfferedHandler(
                 reason='You may relocate to a Merchant hub.', source_kind='career_term_end'
             ),
         )
-        return [started, ucp, offered]
+        return [*c, ucp, offered]
 
     def test_apply_adds_non_blocking_pending(self):
         projection = replay(1, self._events_with_offered())
@@ -166,13 +166,13 @@ class TestHomeworldChangeOfferedEvent:
 
 class TestHomeworldChangedEvent:
     def _events_required_then_changed(self) -> list:
-        started = _started()
-        ucp = _ucp_no_edu(started)
+        c = _creation()
+        ucp = _ucp_no_edu(c[-1])
         required = Event(
             handler=HomeworldChangeRequiredHandler(reason='You move to another world.', source_kind='life_event_move')
         )
         changed = Event(fulfills=(required.id, 0), handler=HomeworldChangedHandler(new_homeworld=MOCK_WORLD_2))
-        return [started, ucp, required, changed]
+        return [*c, ucp, required, changed]
 
     def test_apply_updates_homeworld(self):
         projection = replay(1, self._events_required_then_changed())
@@ -190,13 +190,13 @@ class TestHomeworldChangedEvent:
         assert not any(isinstance(p, PendingHomeworldChangeRequired) for p in projection.pending_inputs)
 
     def test_fulfills_offered_pending_too(self):
-        started = _started()
-        ucp = _ucp_no_edu(started)
+        c = _creation()
+        ucp = _ucp_no_edu(c[-1])
         offered = Event(
             handler=HomeworldChangeOfferedHandler(reason='You may relocate.', source_kind='career_term_end')
         )
         events = [
-            started,
+            *c,
             ucp,
             offered,
             Event(fulfills=(offered.id, 0), handler=HomeworldChangedHandler(new_homeworld=MOCK_WORLD_2)),
@@ -207,8 +207,8 @@ class TestHomeworldChangedEvent:
         assert not any(isinstance(p, PendingHomeworldChangeOffered) for p in projection.pending_inputs)
 
     def test_birthworld_unchanged_after_multiple_homeworld_changes(self):
-        started = _started()
-        ucp = _ucp_no_edu(started)
+        c = _creation()
+        ucp = _ucp_no_edu(c[-1])
         first_required = Event(
             handler=HomeworldChangeRequiredHandler(reason='First move.', source_kind='life_event_move')
         )
@@ -219,7 +219,7 @@ class TestHomeworldChangedEvent:
             handler=HomeworldChangeRequiredHandler(reason='Second move.', source_kind='life_event_move')
         )
         events = [
-            started,
+            *c,
             ucp,
             first_required,
             first_changed,
@@ -240,15 +240,15 @@ def _drifter_at_life_event_9() -> list:
 
     UCP '786000' → EDU=0, no background skill pending. Drifter qualifies (END 0).
     """
-    started = _started()
-    ucp = _ucp_no_edu(started)
+    c = _creation()
+    ucp = _ucp_no_edu(c[-1])
     career = Event(
         handler=CareerEntryHandler(career=DRIFTER, assignment=DRIFTER.assignment('Wanderer'), qualification_roll=10)
     )
     survive = Event(fulfills=(career.id, 0), handler=SurviveHandler(roll=10))
     term_event = Event(fulfills=(survive.id, 0), handler=TermEventHandler(roll=7))  # life event
     life_event = Event(fulfills=(term_event.id, 0), handler=LifeEventHandler(roll=9))  # You move to another world.
-    return [started, ucp, career, survive, term_event, life_event]
+    return [*c, ucp, career, survive, term_event, life_event]
 
 
 class TestLifeEvent9HomeworldTrigger:
@@ -303,14 +303,14 @@ def _citizen_worker_to_survive() -> list:
     (3,0) Profession choices and (3,1) Science choices. Both must be resolved
     before PendingSurvive is created (pending_id=(5,0) after SkillChoiceEvent id=5).
     """
-    started = _started()
-    ucp = _ucp_no_edu(started)
+    c = _creation()
+    ucp = _ucp_no_edu(c[-1])
     career = Event(
         handler=CareerEntryHandler(career=CITIZEN, assignment=CITIZEN.assignment('Worker'), qualification_roll=10)
     )
     profession = Event(fulfills=(career.id, 0), handler=SkillChoiceHandler(skill=WorkerProfession()))
     science = Event(fulfills=(career.id, 1), handler=SkillChoiceHandler(skill=LifeScience()))
-    return [started, ucp, career, profession, science]
+    return [*c, ucp, career, profession, science]
 
 
 def _citizen_to_mishap5_skill_roll() -> list:

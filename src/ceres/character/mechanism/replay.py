@@ -1,25 +1,23 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import Any
 
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
-
-if TYPE_CHECKING:
-    from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.mechanism.projection import Projection
 
 
-def replay(character_id: int, events: Sequence[Event]) -> CharacterProjection:
+def replay(character_id: int, events: Sequence[Event]) -> Any:
     if not events:
-        raise ReplayError('First event must be a root event (CharacterStartedHandler)')
+        raise ReplayError('First event must be a root event (CharacterCreatedHandler)')
     projection = events[0].handler.init_replay(character_id, events[0].id)
     if projection is None:
-        raise ReplayError('First event must be a root event (CharacterStartedHandler)')
+        raise ReplayError('First event must be a root event (CharacterCreatedHandler)')
     for event in events[1:]:
         _apply(projection, event)
     return projection
 
 
-def _apply(projection: CharacterProjection, event: Event) -> None:
+def _apply(projection: Projection, event: Event) -> None:
     from ceres.character.mechanism.pending_input import PendingInputBase
 
     fulfilled_pending: PendingInputBase | None = None

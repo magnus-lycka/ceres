@@ -9,7 +9,7 @@ from ceres.character.domain.career.career_events import (
     PendingInitialTrainingChoice,
     PendingSkillTableChoice,
 )
-from ceres.character.domain.character_start import CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.loader import precareer_of_type
@@ -49,7 +49,7 @@ from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD
+from tests.unit.character.helpers import MOCK_WORLD, _creation_events
 
 
 def _summary() -> CharacterSummary:
@@ -243,13 +243,13 @@ def test_institute_training_offers_each_talent_only_once_even_after_failure() ->
     assert projection.summary.psionics.talent_acquisition_checks == 1
 
 
-def _started_on(world) -> Event:
-    return Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=world, player='NPC', name='Psi'))
+def _creation_on(world) -> list[Event]:
+    return _creation_events(VILANI, world, 'NPC', 'Psi')
 
 
 def test_initial_psi_test_is_not_offered_on_an_imperial_birthworld() -> None:
-    started = _started_on(MOCK_WORLD)
-    projection = replay(1, [started, Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))])
+    c = _creation_on(MOCK_WORLD)
+    projection = replay(1, [*c, Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='777707'))])
 
     assert not any(isinstance(pending, PendingInitialPsiTest) for pending in projection.pending_inputs)
 
@@ -257,8 +257,8 @@ def test_initial_psi_test_is_not_offered_on_an_imperial_birthworld() -> None:
 def test_initial_psi_test_is_offered_on_a_non_imperial_birthworld() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
 
-    started = _started_on(non_imperial)
-    projection = replay(1, [started, Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))])
+    c = _creation_on(non_imperial)
+    projection = replay(1, [*c, Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='777707'))])
 
     assert any(isinstance(pending, PendingInitialPsiTest) for pending in projection.pending_inputs)
     assert not any(isinstance(pending, PendingCareerChoice) for pending in projection.pending_inputs)
@@ -277,10 +277,10 @@ def test_initial_psi_test_offer_only_asks_whether_to_test() -> None:
 
 def test_accepting_initial_psi_test_asks_for_roll_before_career_choice() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
-    started = _started_on(non_imperial)
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))
+    c = _creation_on(non_imperial)
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='777707'))
     events = [
-        started,
+        *c,
         ucp,
         Event(fulfills=(ucp.id, 0), handler=InitialPsiTestAcceptedHandler()),
     ]
@@ -293,10 +293,10 @@ def test_accepting_initial_psi_test_asks_for_roll_before_career_choice() -> None
 
 def test_declining_initial_psi_test_offers_career_choice_without_a_roll() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
-    started = _started_on(non_imperial)
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))
+    c = _creation_on(non_imperial)
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='777707'))
     events = [
-        started,
+        *c,
         ucp,
         Event(fulfills=(ucp.id, 0), handler=InitialPsiTestDeclinedHandler()),
     ]
@@ -309,11 +309,11 @@ def test_declining_initial_psi_test_offers_career_choice_without_a_roll() -> Non
 
 def test_initial_psi_test_establishes_psionics_then_offers_career_choice() -> None:
     non_imperial = MOCK_WORLD.model_copy(update={'allegiance': 'NaHu'})
-    started = _started_on(non_imperial)
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707'))
+    c = _creation_on(non_imperial)
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='777707'))
     accepted = Event(fulfills=(ucp.id, 0), handler=InitialPsiTestAcceptedHandler())
     events = [
-        started,
+        *c,
         ucp,
         accepted,
         Event(fulfills=(accepted.id, 0), handler=InitialPsiTestHandler(roll=9)),
@@ -327,9 +327,11 @@ def test_initial_psi_test_establishes_psionics_then_offers_career_choice() -> No
 
 
 def test_psionic_community_requires_established_psionic_strength() -> None:
+    c = _creation_on(MOCK_WORLD)
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='777707'))
     events = [
-        (started := _started_on(MOCK_WORLD)),
-        Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='777707')),
+        *c,
+        ucp,
         Event(handler=PreCareerEntryHandler(precareer=precareer_of_type(PsionicCommunityPreCareer), roll=12)),
     ]
 

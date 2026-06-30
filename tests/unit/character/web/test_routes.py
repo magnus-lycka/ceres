@@ -3,30 +3,24 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from ceres.character.app import create_backend, make_start_event
 from ceres.character.domain.career.career_events import CareerEntryHandler, ReenlistHandler
 from ceres.character.domain.character_start import UcpHandler
-from ceres.character.domain.sophont import HUMANITI
 from ceres.character.mechanism.errors import ReplayError
+from ceres.character.service import CharacterService
 from ceres.character.web.app import build_app
 from tests.unit.character.helpers import MOCK_WORLD
 
 
 class TestCharacterListDoesNotReplay:
     def test_character_list_uses_stored_summary_not_replay(self, monkeypatch):
-        with create_backend(':memory:') as backend:
-            backend.start(
-                make_start_event(HUMANITI, MOCK_WORLD, 'NPC', 'Stored'),
-                sophont_name=HUMANITI.name,
-                player='NPC',
-                name='Stored',
-            )
+        with CharacterService(':memory:') as service:
+            service.create_character('Stored', 'NPC')
             monkeypatch.setattr(
-                backend,
+                service._backend,
                 'get_projection',
                 lambda character_id: pytest.fail('Character list must not replay event logs'),
             )
-            client = TestClient(build_app(backend), follow_redirects=True)
+            client = TestClient(build_app(service), follow_redirects=True)
             r = client.get('/ui/')
         assert r.status_code == 200
         assert 'Stored' in r.text

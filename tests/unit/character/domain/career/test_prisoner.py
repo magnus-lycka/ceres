@@ -47,7 +47,7 @@ from ceres.character.domain.career.prisoner import (
     PrisonerMishap3Fight,
     PrisonerMishap3Submit,
 )
-from ceres.character.domain.character_start import BackgroundSkillsHandler, CharacterStartedHandler, UcpHandler
+from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.connection import (
     Ally,
@@ -75,17 +75,17 @@ from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
 
 
 def _setup() -> list:
-    started = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
-    ucp = Event(fulfills=(started.id, 0), handler=UcpHandler(ucp='7869A5'))
+    c = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss')
+    ucp = Event(fulfills=(c[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
     background = Event(
         fulfills=(ucp.id, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Drive()]),
     )
-    return [started, ucp, background]
+    return [*c, ucp, background]
 
 
 def test_prisoner_career_loads_but_is_not_selectable():

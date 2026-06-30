@@ -1,6 +1,7 @@
 """Shared test helpers for character tests."""
 
 import copy
+from pathlib import Path
 from typing import Any, Literal
 
 from deepdiff import DeepDiff
@@ -50,12 +51,14 @@ from ceres.character.domain.career.common_pending import (
 )
 from ceres.character.domain.character_start import (
     BackgroundSkillsHandler,
-    CharacterStartedHandler,
+    CharacterCreatedHandler,
+    HomeworldSelectedHandler,
     PendingBackgroundSkills,
     PendingUcp,
+    SophontSelectedHandler,
     UcpHandler,
 )
-from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection_events import (
     ConnectionNameHandler,
@@ -63,6 +66,7 @@ from ceres.character.domain.connection_events import (
     PendingConnectionName,
     PendingConnectionsRoll,
 )
+from ceres.character.domain.event_handlers import register_event_handlers
 from ceres.character.domain.health.health_events import (
     AgingCrisisHandler,
     AgingRollHandler,
@@ -79,6 +83,15 @@ from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.character.mechanism.pending_input import ChoiceBase
 from ceres.character.mechanism.replay import replay
+from ceres.character.mechanism.store import SqliteCharacterBackend
+
+
+def create_backend(database: str | Path | None = None) -> SqliteCharacterBackend:
+    return SqliteCharacterBackend(
+        database=database,
+        ensure_handlers_registered=register_event_handlers,
+        summary_from_json=CharacterSummary.model_validate_json,
+    )
 
 
 def scripted_event(
@@ -222,19 +235,32 @@ class AnySkillAtLevelTestMixin:
             assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
 
+def _creation_events(
+    sophont: Sophont,
+    homeworld: TravellerMapWorld,
+    player: str = 'NPC',
+    name: str = 'Test',
+) -> list[Event]:
+    """Return the three creation events: CharacterCreated → HomeworldSelected → SophontSelected."""
+    ev1 = Event(handler=CharacterCreatedHandler(name=name, player=player))
+    ev2 = Event(fulfills=(ev1.id, 0), handler=HomeworldSelectedHandler(homeworld=homeworld))
+    ev3 = Event(fulfills=(ev2.id, 0), handler=SophontSelectedHandler(sophont=sophont))
+    return [ev1, ev2, ev3]
+
+
 def _scholar_setup() -> list:
     """Return start→ucp→background events suited for Scholar tests.
 
     Uses Medic instead of Drive so Scholar service_skills row 1 (Drive/Flyer) keeps both options
     open, producing two initial-training choice pendings: Drive/Flyer (.0) and Science (.1).
     """
-    ev1 = Event(handler=CharacterStartedHandler(sophont=VILANI, homeworld=MOCK_WORLD, player='NPC', name='Boss'))
-    ev2 = Event(fulfills=(ev1.id, 0), handler=UcpHandler(ucp='7869A5'))
-    ev3 = Event(
-        fulfills=(ev2.id, 0),
+    creation = _creation_events(VILANI, MOCK_WORLD, 'NPC', 'Boss')
+    ev_ucp = Event(fulfills=(creation[-1].id, 0), handler=UcpHandler(ucp='7869A5'))
+    ev_bg = Event(
+        fulfills=(ev_ucp.id, 0),
         handler=BackgroundSkillsHandler(skills=[Admin(), Athletics(), Carouse(), Medic()]),
     )
-    return [ev1, ev2, ev3]
+    return [*creation, ev_ucp, ev_bg]
 
 
 class CharacterDriver:
@@ -277,9 +303,10 @@ class CharacterDriver:
         player: str = 'NPC',
         name: str = 'Test',
     ) -> CharacterDriver:
-        return self._add(
-            Event(handler=CharacterStartedHandler(sophont=sophont, homeworld=homeworld, player=player, name=name))
-        )
+        ev1, ev2, ev3 = _creation_events(sophont, homeworld, player, name)
+        self._events.extend([ev1, ev2, ev3])
+        self._projection = replay(self._character_id, self._events)
+        return self
 
     def ucp(self, ucp_string: str) -> CharacterDriver:
         pending = self._find(PendingUcp)

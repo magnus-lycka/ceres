@@ -2,7 +2,7 @@ from collections.abc import Callable
 import json
 from pathlib import Path
 import sqlite3
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import Any, TypedDict
 
 from pydantic import TypeAdapter
 
@@ -11,9 +11,6 @@ from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.projection import Summary
 from ceres.character.mechanism.replay import replay
-
-if TYPE_CHECKING:
-    from ceres.character.domain.character_state import CharacterProjection
 
 _event_adapter: TypeAdapter[Event] = TypeAdapter(Event)
 
@@ -41,7 +38,7 @@ class SqliteCharacterBackend:
         self.connection.execute(
             'create table if not exists characters ('
             'id integer primary key, '
-            'sophont text not null, '
+            "sophont text not null default '', "
             'player text not null, '
             'name text not null, '
             'summary text)'
@@ -62,17 +59,30 @@ class SqliteCharacterBackend:
         self._summary_from_json = summary_from_json
         self._backfill_missing_summaries()
 
-    def start(self, first_event: Event, *, sophont_name: str, player: str, name: str) -> CharacterRow:
+    def start(self, events: list[Event], *, player: str, name: str) -> CharacterRow:
         cursor = self.connection.execute(
-            'insert into characters (sophont, player, name) values (?, ?, ?)',
-            (sophont_name, player, name),
+            'insert into characters (player, name) values (?, ?)',
+            (player, name),
         )
         self.connection.commit()
         character_id = cursor.lastrowid
         if character_id is None:
             raise RuntimeError('SQLite did not return a character id')
-        row: CharacterRow = {'id': character_id, 'sophont': sophont_name, 'player': player, 'name': name}
-        self.append_event(character_id, first_event)
+        row: CharacterRow = {'id': character_id, 'sophont': '', 'player': player, 'name': name}
+        id_map: dict[int, int] = {}
+        for raw_event in events:
+            original_id = raw_event.id
+            if raw_event.fulfills is not None:
+                orig_fulfills_id, seq = raw_event.fulfills
+                remapped = id_map.get(orig_fulfills_id, orig_fulfills_id)
+                to_append = raw_event.model_copy(update={'fulfills': (remapped, seq)})
+            else:
+                to_append = raw_event
+            stored = self.append_event(character_id, to_append)
+            id_map[original_id] = stored.id
+        sophont_row = self.connection.execute('select sophont from characters where id = ?', (character_id,)).fetchone()
+        if sophont_row:
+            row['sophont'] = sophont_row[0]
         return row
 
     def list_characters(self) -> list[CharacterRow]:
@@ -114,7 +124,7 @@ class SqliteCharacterBackend:
         event, _projection = self.append_event_with_projection(character_id, event)
         return event
 
-    def append_event_with_projection(self, character_id: int, event: Event) -> tuple[Event, CharacterProjection]:
+    def append_event_with_projection(self, character_id: int, event: Event) -> tuple[Event, Any]:
         events = self.load_typed_events(character_id) or []
         event = event.model_copy(update={'id': len(events) + 1})
         candidate = [*events, event]
@@ -126,6 +136,11 @@ class SqliteCharacterBackend:
             (character_id, event.id, fulfills_event_id, fulfills_seq, json.dumps(event.model_dump())),
         )
         self._store_summary(character_id, projection.summary)
+        if projection.summary.sophont is not None:
+            self.connection.execute(
+                'update characters set sophont = ? where id = ?',
+                (projection.summary.sophont.name, character_id),
+            )
         self.connection.commit()
         return event, projection
 
@@ -159,7 +174,7 @@ class SqliteCharacterBackend:
             return None
         return [_event_adapter.validate_python(json.loads(r[0])) for r in rows]
 
-    def get_projection(self, character_id: int) -> CharacterProjection | None:
+    def get_projection(self, character_id: int) -> Any | None:
         events = self.load_typed_events(character_id)
         if events is None:
             return None
