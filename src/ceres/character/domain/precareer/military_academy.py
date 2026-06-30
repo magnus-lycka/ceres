@@ -7,7 +7,7 @@ from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PreCareerTerm
-from ceres.character.domain.psionics import Psi
+from ceres.character.domain.psionics_data import Psi
 from ceres.character.mechanism.event_base import Event
 
 

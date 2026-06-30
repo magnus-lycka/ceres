@@ -6,7 +6,7 @@ from pydantic import Field, TypeAdapter
 from ceres.character.domain.career.advancement import AdvancementDmChoiceHandler
 from ceres.character.domain.career.career_data import AdvancementDmOption, CareerSkillOption
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.psionics import Psi
+from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, Select, form_str
 from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase

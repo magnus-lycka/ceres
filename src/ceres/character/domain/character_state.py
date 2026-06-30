@@ -7,7 +7,7 @@ from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career.career_data import AssignmentData, BenefitRollDm, CareerData, CareerTerm
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import AnyConnection
-from ceres.character.domain.psionics import Psionics
+from ceres.character.domain.psionics_data import Psionics
 from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.domain.term_data import Term

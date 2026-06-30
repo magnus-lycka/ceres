@@ -8,7 +8,7 @@ from pydantic.functional_validators import ModelWrapValidatorHandler
 from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.dice import DiceRoll
-from ceres.character.domain.psionics import Psi
+from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.domain.term_data import Term, TermData
 from ceres.character.mechanism.errors import ReplayError

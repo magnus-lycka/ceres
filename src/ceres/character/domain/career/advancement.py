@@ -12,7 +12,8 @@ from ceres.character.domain.career.career_data import (
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, characteristic_dm
-from ceres.character.domain.psionics import Psi, PsionicTalentTrainingHandler
+from ceres.character.domain.psionics import PsionicTalentTrainingHandler
+from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError

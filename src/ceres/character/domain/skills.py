@@ -610,5 +610,3 @@ def active_speciality_label(skill: Skill) -> str | None:
     if field_name is None:
         return None
     return speciality_label(skill, field_name)
-
-

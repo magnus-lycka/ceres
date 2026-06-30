@@ -1,13 +1,24 @@
 """Muster-out benefit types."""
 
-from typing import TYPE_CHECKING, Annotated, Literal
-
-if TYPE_CHECKING:
-    from ceres.character.domain.character_state import CharacterProjection
+from typing import Annotated, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
 from ceres.character.domain.characteristics import Chars
+from ceres.character.mechanism.event_base import PendingInputBase
+
+
+class _BenefitSummary(Protocol):
+    characteristics: dict[Chars, int]
+
+    def add_muster_out_benefit(self, benefit: ItemBenefit) -> None: ...
+
+
+class _BenefitProjection(Protocol):
+    pending_inputs: list[PendingInputBase]
+
+    @property
+    def summary(self) -> _BenefitSummary: ...
 
 
 class CharacteristicIncrease(BaseModel):
@@ -23,7 +34,7 @@ class CharacteristicIncrease(BaseModel):
     def exceptional(self) -> bool:
         return False
 
-    def apply(self, projection: CharacterProjection, event_id: int = 0) -> None:
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
         current = projection.summary.characteristics.get(self.char, 0)
         projection.summary.characteristics[self.char] = min(15, current + self.amount)
 
@@ -38,7 +49,7 @@ class ItemBenefit(BaseModel):
     def display_label(self) -> str:
         return self.label
 
-    def apply(self, projection: CharacterProjection, event_id: int = 0) -> None:
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
         projection.summary.add_muster_out_benefit(self)
 
 
@@ -56,7 +67,7 @@ class ChoiceBenefit(BaseModel):
     def exceptional(self) -> bool:
         return any(b.exceptional for b in self.options)
 
-    def apply(self, projection: CharacterProjection, event_id: int = 0) -> None:
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
         from ceres.character.domain.career.career_events import PendingBenefitChoice
 
         projection.pending_inputs.append(
@@ -82,7 +93,7 @@ class CombinedBenefit(BaseModel):
     def exceptional(self) -> bool:
         return any(b.exceptional for b in self.benefits)
 
-    def apply(self, projection: CharacterProjection, event_id: int = 0) -> None:
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
         for sub_benefit in self.benefits:
             sub_benefit.apply(projection, event_id)
 

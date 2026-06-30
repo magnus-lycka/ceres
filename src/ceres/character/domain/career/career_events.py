@@ -66,10 +66,10 @@ from ceres.character.domain.life_events import (
 )
 from ceres.character.domain.psionics import (
     PendingLifeEventPsionicsRoll,
-    Psi,
     PsionicTalentTrainingHandler,
     talent_acquisition_roll_required,
 )
+from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skill_events import (
     PendingSkillChoice,
     SkillChoiceHandler,

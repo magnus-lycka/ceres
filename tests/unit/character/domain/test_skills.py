@@ -85,4 +85,3 @@ def test_skill_group_unions_can_be_listed_separately():
         SocialScience,
         SpaceScience,
     )
-

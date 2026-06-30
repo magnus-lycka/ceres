@@ -48,7 +48,8 @@ from ceres.character.domain.health.health_events import (
     PendingInjuryTable,
 )
 from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
-from ceres.character.domain.psionics import (
+from ceres.character.domain.psionics import queue_psionic_institute_training
+from ceres.character.domain.psionics_data import (
     Awareness,
     Clairvoyance,
     Psi,
@@ -56,7 +57,6 @@ from ceres.character.domain.psionics import (
     Telepathy,
     Teleportation,
     psionic_talent_instances,
-    queue_psionic_institute_training,
 )
 from ceres.character.domain.skills import (
     AnySkill,
