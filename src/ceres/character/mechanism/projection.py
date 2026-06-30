@@ -1,8 +1,7 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any, Protocol
 
-if TYPE_CHECKING:
-    from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.event_base import Event
 
 
 class Summary(Protocol):

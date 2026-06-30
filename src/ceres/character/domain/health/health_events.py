@@ -317,7 +317,6 @@ class PendingCharacteristicChoice(PendingInputBase):
     amount: int = 1
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -336,7 +335,6 @@ class PendingSeverelyInjured(PendingInputBase):
     kind: Literal['severely_injured'] = 'severely_injured'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -358,7 +356,6 @@ class PendingNearlyKilled(PendingInputBase):
     kind: Literal['nearly_killed'] = 'nearly_killed'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -380,7 +377,6 @@ class PendingInjuryTable(PendingInputBase):
     kind: Literal['injury_table'] = 'injury_table'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=InjuryTableHandler(roll=form_int(form, 'roll', 1)))
 
@@ -392,7 +388,6 @@ class PendingDoubleInjuryRoll(PendingInputBase):
     kind: Literal['double_injury_roll'] = 'double_injury_roll'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -410,7 +405,6 @@ class PendingAgingRoll(PendingInputBase):
     kind: Literal['aging_roll'] = 'aging_roll'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=AgingRollHandler(roll=form_int(form, 'roll', 2)))
 
@@ -423,7 +417,6 @@ class PendingAgingChoice(PendingInputBase):
     options: list[Chars] = Field(default_factory=list)
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -440,7 +433,6 @@ class PendingAgingChoiceMental(PendingInputBase):
     options: list[Chars] = Field(default_factory=list)
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -456,7 +448,6 @@ class PendingAgingCrisis(PendingInputBase):
     kind: Literal['aging_crisis'] = 'aging_crisis'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         paid = form_str(form, 'paid', 'false').lower() in ('true', '1', 'yes')
         medical_roll = form_int(form, 'medical_roll', 0)

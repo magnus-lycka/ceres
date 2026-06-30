@@ -108,7 +108,6 @@ class CareerSkillRollPendingBase(PendingInputBase):
     def event_from_form(self, form: Mapping[str, str]) -> Any:
         from ceres.character.domain.career.career_events import SkillRollHandler
         from ceres.character.input_specs import form_int, form_str
-        from ceres.character.mechanism.event_base import Event
 
         skill_str = form_str(form, 'skill')
         modified_roll = form_int(form, 'modified_roll', 8)
@@ -189,7 +188,6 @@ class CareerSkillChoicePendingBase(PendingInputBase):
         from ceres.character.domain.career.career_events import AdvancementDmChoiceHandler, SkillChoiceHandler
         from ceres.character.domain.skills import AnySkill as _AnySkill
         from ceres.character.input_specs import form_str
-        from ceres.character.mechanism.event_base import Event
 
         adv_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | _AnySkill] = TypeAdapter(
             Annotated[AdvancementDmOption | _AnySkill, _Field(union_mode='left_to_right')]

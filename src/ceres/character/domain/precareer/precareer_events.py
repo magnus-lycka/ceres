@@ -249,7 +249,6 @@ class PendingPreCareerSkillChoice(PendingInputBase):
         from pydantic import TypeAdapter
 
         from ceres.character.domain.skills import AnySkill as _AnySkill
-        from ceres.character.mechanism.event_base import Event
 
         _skill_adapter: TypeAdapter[_AnySkill] = TypeAdapter(_AnySkill)
         skill = _skill_adapter.validate_json(form_str(form, 'skill', '{}'))
@@ -266,7 +265,6 @@ class PendingPreCareerEvent(PendingInputBase):
     kind: Literal['precareer_event'] = 'precareer_event'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=PreCareerEventHandler(roll=form_int(form, 'roll', 7)))
 
@@ -278,7 +276,6 @@ class PendingPreCareerGraduation(PendingInputBase):
     kind: Literal['precareer_graduation'] = 'precareer_graduation'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=PreCareerGraduationHandler(roll=form_int(form, 'roll', 7)))
 

@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.event_base import Event, PendingInputBase
 from ceres.character.mechanism.projection import Projection
 
 
@@ -18,8 +18,6 @@ def replay(character_id: int, events: Sequence[Event]) -> Any:
 
 
 def _apply(projection: Projection, event: Event) -> None:
-    from ceres.character.mechanism.event_base import PendingInputBase
-
     fulfilled_pending: PendingInputBase | None = None
     if event.fulfills is not None:
         fulfilled_pending = next((p for p in projection.pending_inputs if p.pending_id == event.fulfills), None)

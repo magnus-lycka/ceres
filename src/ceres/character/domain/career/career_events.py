@@ -549,7 +549,6 @@ class PendingSurvive(PendingInputBase):
     kind: Literal['survive'] = 'survive'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=SurviveHandler(roll=form_int(form, 'roll', 2)))
 
@@ -582,7 +581,6 @@ class PendingTermEvent(PendingInputBase):
     kind: Literal['term_event'] = 'term_event'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(fulfills=self.pending_id, handler=TermEventHandler(roll=form_int(form, 'roll', 2)))
 
@@ -595,7 +593,6 @@ class PendingMishap(PendingInputBase):
     stay_in_career: bool = False
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -611,7 +608,6 @@ class PendingSkillTable(PendingInputBase):
     options: list[SkillTableOption] = Field(default_factory=list)
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         return Event(
             fulfills=self.pending_id,
@@ -636,7 +632,6 @@ class PendingReenlist(PendingInputBase):
         return 'reenlist'
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         reenlist = form_str(form, 'reenlist', 'false').lower() in ('true', '1', 'yes')
         return Event(fulfills=self.pending_id, handler=ReenlistHandler(reenlist=reenlist))
@@ -659,7 +654,6 @@ class PendingAssignmentChangeChoice(PendingInputBase):
         return ['same', 'switch', 'muster_out'] if self.muster_out else ['same', 'switch']
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         raw = literal(form_str(form, 'choice', 'same'), tuple(self._choices()), 'same')
         choice = cast(Literal['same', 'switch', 'muster_out'], raw)
@@ -678,7 +672,6 @@ class PendingSwitchAssignment(PendingInputBase):
     options: list[AssignmentData] = Field(default_factory=list)
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         name = form_str(form, 'assignment', self.options[0].name if self.options else '')
         assignment = next((a for a in self.options if a.name == name), None)
@@ -704,7 +697,6 @@ class PendingInitialTrainingChoice(PendingInputBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
@@ -755,7 +747,6 @@ class PendingSkillTableChoice(PendingInputBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
-        from ceres.character.mechanism.event_base import Event
 
         parsed = _adv_dm_or_skill_adapter.validate_json(form_str(form, 'skill', '{}'))
         if isinstance(parsed, AdvancementDmOption):
