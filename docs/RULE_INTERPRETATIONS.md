@@ -765,6 +765,13 @@ or PSI recovery rules.
 Psionic powers are operational gameplay mechanics that belong in a future
 play/encounter model, not in the character-creation domain.
 
+### RIC-009 No basic training repeated for matching career after military academy
+
+Military academy means that the character does the basic training before the
+first career term. If corresponding career is conducted after mailitary academy,
+e.g. Marine Career after Marine Academy, the character will select a skill table
+for a skill roll before survival on the first term, as if it wasn't the first term.
+
 ---
 
 ## Robot Interpretations
