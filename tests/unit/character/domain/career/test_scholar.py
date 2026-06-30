@@ -83,7 +83,7 @@ from ceres.character.domain.skills import (
     _skill_classes,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase
 from ceres.character.mechanism.replay import replay
 from tests.unit.character.helpers import (
     MOCK_WORLD,

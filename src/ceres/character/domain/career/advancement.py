@@ -16,8 +16,7 @@ from ceres.character.domain.psionics import Psi, PsionicTalentTrainingHandler
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 
 class AdvancementHandler(EventHandlerBase):

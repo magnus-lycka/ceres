@@ -77,8 +77,7 @@ from ceres.character.domain.skills import (
     Survival,
     skill_instances,
 )
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event
 
 # ── Career-specific choice and pending types ──────────────────────────────────
 

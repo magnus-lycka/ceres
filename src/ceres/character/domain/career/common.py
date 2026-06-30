@@ -8,7 +8,7 @@ from ceres.character.domain.career.common_pending import PendingAdvancedTraining
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.health.health_events import PendingDoubleInjuryRoll
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase
 
 
 def handle_advanced_training(

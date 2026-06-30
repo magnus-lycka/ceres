@@ -1,8 +1,8 @@
 """Tests for the event/pending handler base machinery.
 
-Covers mechanism/event_base.py and mechanism/pending_input.py:
+Covers mechanism/event_base.py:
 handler auto-registration, deserialization, Event proxying, PendingInput identity,
-and the default method implementations on the base classes.
+ChoiceBase, PendingInputBase, and the default method implementations on the base classes.
 """
 
 from typing import Literal
@@ -12,14 +12,16 @@ import pytest
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import (
+    ChoiceBase,
     Event,
     EventHandlerBase,
     PendingHandlerBase,
     PendingInput,
+    PendingInputBase,
     _deserialise_event_handler,
     _deserialise_pending_handler,
+    _deserialise_pending_input,
 )
-from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
 from tests.unit.character.helpers import MOCK_WORLD
 
 
@@ -272,7 +274,7 @@ class TestPendingInput:
         assert pi.id == '0.0'
 
 
-# ── PendingInputBase registry (pending_input.py) ────────────────────────────
+# ── PendingInputBase registry (stub subclasses) ─────────────────────────────
 
 
 class _TestPendingAlpha(PendingInputBase):
@@ -351,3 +353,73 @@ class TestCharacterProjectionPendingInputsRoundTrip:
         data = proj.model_dump()
         restored = CharacterProjection.model_validate(data)
         assert isinstance(restored.pending_inputs[1], PendingHomeworldChangeRequired)
+
+
+# ── PendingInputBase with real domain kinds ──────────────────────────────────
+
+
+class TestPendingInputBaseRegistryRealKinds:
+    def test_registered_kinds_includes_survive(self):
+        assert 'survive' in PendingInputBase._registry
+
+    def test_registry_maps_kind_to_class(self):
+        from ceres.character.domain.career.career_events import PendingSurvive
+
+        assert PendingInputBase._registry['survive'] is PendingSurvive
+
+
+class TestPendingInputBaseId:
+    def test_tuple_pending_id_formats_as_dot_separated(self):
+        from ceres.character.domain.career.career_events import PendingSurvive
+
+        p = PendingSurvive(pending_id=(3, 1), instruction='Survive')
+        assert p.id == '3.1'
+
+    def test_string_pending_id_returns_as_is(self):
+        from ceres.character.domain.characteristics import ConnectionKind
+        from ceres.character.domain.connection_events import PendingConnectionName
+
+        p = PendingConnectionName(
+            pending_id='my_string_id',
+            connection_index=0,
+            connection_kind=ConnectionKind.ALLY,
+            note_prefill='',
+            instruction='Name your ally',
+        )
+        assert p.id == 'my_string_id'
+
+
+class TestPendingInputBaseTemplateFragment:
+    def test_returns_kind_string(self):
+        from ceres.character.domain.career.career_events import PendingSurvive
+
+        p = PendingSurvive(pending_id=(1, 0), instruction='Survive')
+        assert p.template_fragment == 'survive'
+
+
+class TestDeserialisePendingInputWithRealKinds:
+    def test_passes_through_existing_instance(self):
+        from ceres.character.domain.career.career_events import PendingSurvive
+
+        p = PendingSurvive(pending_id=(1, 0), instruction='Survive')
+        assert _deserialise_pending_input(p) is p
+
+    def test_deserialises_dict_by_kind(self):
+        from ceres.character.domain.career.career_events import PendingSurvive
+
+        result = _deserialise_pending_input({'kind': 'survive', 'pending_id': [1, 0], 'instruction': 'Survive'})
+        assert isinstance(result, PendingSurvive)
+
+
+# ── ChoiceBase ───────────────────────────────────────────────────────────────
+
+
+class TestChoiceBase:
+    def test_handle_raises_not_implemented(self):
+        from ceres.character.domain.career.career_events import SurviveHandler
+
+        proj = _make_projection()
+        event = Event(handler=SurviveHandler(roll=5))
+        base = ChoiceBase(kind='test', label='Test')
+        with pytest.raises(NotImplementedError):
+            base.handle(proj, event)

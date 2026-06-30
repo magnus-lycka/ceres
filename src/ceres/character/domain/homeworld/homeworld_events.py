@@ -4,8 +4,7 @@ from typing import Literal
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.input_specs import InfoText, InputSpec, form_str
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 
 class HomeworldChangeRequiredHandler(EventHandlerBase):

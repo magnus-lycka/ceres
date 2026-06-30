@@ -8,8 +8,7 @@ from ceres.character.domain.choice_events import ChoiceHandler, PendingChoices
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import Select
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event
 from tests.unit.character.helpers import MOCK_WORLD
 
 

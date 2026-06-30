@@ -13,8 +13,7 @@ from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skill_events import PendingSkillChoice
 from ceres.character.domain.skills import AnySkill, Level, level_fields, skill_instances
 from ceres.character.input_specs import NumberEntry, Select
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, PendingInputBase
 
 
 def append_increment_existing_skill_pending(

@@ -80,8 +80,7 @@ from ceres.character.domain.health.health_events import (
 from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
 from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase
 from ceres.character.mechanism.replay import replay
 from ceres.character.mechanism.store import SqliteCharacterBackend
 

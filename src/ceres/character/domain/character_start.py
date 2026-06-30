@@ -15,8 +15,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import SOPHONTS, Sophont, available_sophont_names, get_sophont
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, SelectWorld, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 from ceres.shared import ehex_to_int
 
 BACKGROUND_SKILLS: frozenset[type] = frozenset(_skill_classes(BackgroundSkill))

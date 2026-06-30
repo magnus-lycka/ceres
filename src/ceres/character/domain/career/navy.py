@@ -66,8 +66,7 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event
 
 _MISHAP_3_SKILLS: dict[str, list] = {
     'Line/Crew': [Electronics(), Gunner()],

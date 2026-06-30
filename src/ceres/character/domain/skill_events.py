@@ -9,8 +9,7 @@ from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.psionics import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, Select, form_str
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 _skill_adapter: TypeAdapter[AnySkill] = TypeAdapter(AnySkill)
 _advancement_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = TypeAdapter(

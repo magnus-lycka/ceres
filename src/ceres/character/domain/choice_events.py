@@ -6,8 +6,7 @@ from pydantic import Field, SerializeAsAny
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.input_specs import InputSpec, Select, form_str
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
 
 class ChoiceHandler(EventHandlerBase):

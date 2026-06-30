@@ -84,8 +84,7 @@ from ceres.character.domain.skills import (
     skill_instances,
 )
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
 _TALENTS: list[Psi] = [Psi(talent) for talent in psionic_talent_instances()]
 _ALL_NON_JOT_SKILLS: list[AnySkill] = [

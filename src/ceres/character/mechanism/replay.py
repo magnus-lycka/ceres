@@ -18,7 +18,7 @@ def replay(character_id: int, events: Sequence[Event]) -> Any:
 
 
 def _apply(projection: Projection, event: Event) -> None:
-    from ceres.character.mechanism.pending_input import PendingInputBase
+    from ceres.character.mechanism.event_base import PendingInputBase
 
     fulfilled_pending: PendingInputBase | None = None
     if event.fulfills is not None:

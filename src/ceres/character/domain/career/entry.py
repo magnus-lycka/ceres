@@ -19,8 +19,7 @@ from ceres.character.input_specs import (
     form_str,
 )
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 
 class CareerEntryHandler(EventHandlerBase):

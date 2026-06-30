@@ -12,8 +12,7 @@ from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.domain.term_data import Term
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.pending_input import PendingInputBase, _deserialise_pending_input
+from ceres.character.mechanism.event_base import Event, PendingInputBase, _deserialise_pending_input
 from ceres.shared import int_to_ehex
 
 if TYPE_CHECKING:

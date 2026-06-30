@@ -10,8 +10,7 @@ from ceres.character.domain.psionics import PendingLifeEventPsionicsRoll
 from ceres.character.domain.skills import AnySkill, SpaceScience
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str, literal
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import ChoiceBase, PendingInputBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
 
 def _queue_advancement(

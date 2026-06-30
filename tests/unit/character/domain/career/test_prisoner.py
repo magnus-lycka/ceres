@@ -72,8 +72,7 @@ from ceres.character.domain.skills import (
     WorkerProfession,
 )
 from ceres.character.domain.sophont import VILANI
-from ceres.character.mechanism.event_base import Event
-from ceres.character.mechanism.pending_input import ChoiceBase
+from ceres.character.mechanism.event_base import ChoiceBase, Event
 from ceres.character.mechanism.replay import replay
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
 

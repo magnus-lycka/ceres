@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import sys
 
 from graphviz import Digraph
@@ -14,7 +15,7 @@ def trim(name, d):
     return '.'.join(parts[:d])
 
 
-with open('deps.json') as f:
+with Path('deps.json').open() as f:
     deps = json.load(f)
 
 edges = set()

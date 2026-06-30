@@ -6,8 +6,7 @@ from pydantic import Field
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.input_specs import InputSpec, Reference, Select, TextEntry, form_int, form_str, literal
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
-from ceres.character.mechanism.pending_input import PendingInputBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 
 class ConnectionsRollHandler(EventHandlerBase):
