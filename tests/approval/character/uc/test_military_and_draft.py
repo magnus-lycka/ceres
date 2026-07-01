@@ -117,8 +117,8 @@ def test_army_commission_offered_after_survive_and_event(snapshot):
     snap = AnnotatedSnapshot({})
     try:
         session.submit(career_entry_form('Army', 'Infantry', 8))
-        session.submit(roll_form(8))
         session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(8))
         session.submit(roll_form(9))
         snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
     finally:
@@ -133,8 +133,8 @@ def test_successful_commission(snapshot):
     snap = AnnotatedSnapshot({})
     try:
         session.submit(career_entry_form('Army', 'Infantry', 8))
-        session.submit(roll_form(8))
         session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(8))
         session.submit(roll_form(9))
         session.submit(commission_form(attempt=True, roll=8))
         snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))

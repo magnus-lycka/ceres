@@ -53,6 +53,7 @@ class CharacterSummary(BaseModel):
     psionics: Psionics | None = None
     last_career: CareerData | None = None
     last_career_ejected: bool = False  # True when last_career ended via mishap ejection
+    basic_training_received: list[CareerData] = Field(default_factory=list)
     last_assignment: AssignmentData | None = None
     rank: int | None = None
     terms: list[SerializeAsAny[Annotated[Term, BeforeValidator(_deserialise_term)]]] = Field(default_factory=list)

@@ -82,6 +82,11 @@
       "kind": "ARMY_CAREER"
     },
     "last_career_ejected": true,
+    "basic_training_received": [
+      {
+        "kind": "ARMY_CAREER"
+      }
+    ],
     "last_assignment": {
       "name": "Support",
       "description": "You are an engineer, cook or in some other role behind the front lines.",
@@ -811,17 +816,6 @@
       },
       [
         {
-          "name": "roll",
-          "label": "2D roll (2–12)",
-          "min": 2,
-          "max": 12
-        }
-      ],
-      {
-        "roll": "4"
-      },
-      [
-        {
           "name": "skill",
           "label": "Choose a skill",
           "options": [
@@ -845,6 +839,17 @@
       ],
       {
         "skill": "{\"display_label\":null,\"kind\":\"GUN_COMBAT\",\"archaic\":{\"display_label\":null,\"value\":0},\"energy\":{\"display_label\":null,\"value\":0},\"slug\":{\"display_label\":null,\"value\":0}}"
+      },
+      [
+        {
+          "name": "roll",
+          "label": "2D roll (2–12)",
+          "min": 2,
+          "max": 12
+        }
+      ],
+      {
+        "roll": "4"
       },
       [
         {

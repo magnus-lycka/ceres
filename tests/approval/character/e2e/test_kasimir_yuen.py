@@ -47,7 +47,7 @@ def _events() -> list:
         fulfills=(skill_table.id, 0),
         handler=SkillChoiceHandler(skill=Pilot(small_craft=Level(value=1))),
     )
-    survive_2 = Event(fulfills=(skill_choice.id, 0), handler=SurviveHandler(roll=7))
+    survive_2 = Event(fulfills=(reenlist.id, 1), handler=SurviveHandler(roll=7))
     event_2 = Event(fulfills=(survive_2.id, 0), handler=TermEventHandler(roll=5))
     advancement_2 = Event(fulfills=(event_2.id, 0), handler=AdvancementHandler(roll=5))
     muster_out = Event(fulfills=(advancement_2.id, 0), handler=AssignmentChangeChoiceHandler(choice='muster_out'))

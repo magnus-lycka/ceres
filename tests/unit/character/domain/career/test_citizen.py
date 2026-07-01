@@ -9,6 +9,7 @@ from ceres.character.domain.career.career_events import (
     PendingInitialTrainingChoice,
     PendingMusterOut,
     PendingSkillChoice,
+    PendingSkillTable,
     PendingSurvive,
     ReenlistHandler,
     SkillChoiceHandler,
@@ -17,6 +18,7 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.citizen import (
+    Citizen,
     CitizenEvent8DoSo,
     CitizenEvent8GainContact,
     CitizenEvent8GainDeception,
@@ -51,7 +53,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, _creation_events
+from tests.unit.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, CharacterDriver, _creation_events
 
 
 def _setup(skills: list[AnySkill] | None = None) -> list:
@@ -119,7 +121,6 @@ def test_citizen_subsequent_career_basic_training_chooses_one_assignment_skill()
     assert Engineer() in pending.options
     assert Mechanic() not in pending.options
     assert Steward() not in pending.options
-    assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
 
 def test_citizen_subsequent_career_basic_training_choice_unlocks_survival():
@@ -506,3 +507,42 @@ class TestCitizenEvent8RewardChoices:
         projection = replay(1, [*base, survive, term_ev, do_so])
         reward_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingChoices))
         assert not any(isinstance(c, CitizenEvent8GainStreetwise) for c in reward_pending.choices)
+
+
+# ── RIC-010: no repeated basic training on assignment re-entry ────────────────
+
+
+def _citizen_worker_mustered_out() -> CharacterDriver:
+    """Citizen Worker through one term, mustered out.
+
+    RIC-010: re-entering Citizen with a different assignment must not repeat basic training.
+    Citizen does not use the switch_assignment path; assignment changes are direct re-entries.
+    UCP 778877: EDU=7, INT=8 → qualification EDU 5+ easily met.
+    """
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('778877')
+    d.background_skills([Admin(), Athletics(), Carouse()])
+    d.career(Citizen, 'Worker', roll=7)
+    while any(isinstance(p, PendingInitialTrainingChoice) for p in d.projection.pending_inputs):
+        d.initial_training(Admin())
+    d.survive(7)
+    d.term_event(5)
+    d.advancement(3)
+    d.reenlist(False)
+    d.muster_out('cash', 1)
+    return d
+
+
+def test_citizen_reentry_different_assignment_gets_no_initial_training_choice():
+    """RIC-010: re-entering Citizen with a different assignment must not repeat basic training."""
+    d = _citizen_worker_mustered_out()
+    d.career(Citizen, 'Corporate', roll=7)
+    assert not any(isinstance(p, PendingInitialTrainingChoice) for p in d.projection.pending_inputs)
+
+
+def test_citizen_reentry_different_assignment_gets_skill_table_instead():
+    """RIC-010: re-entering Citizen with a different assignment should queue a skill table roll."""
+    d = _citizen_worker_mustered_out()
+    d.career(Citizen, 'Corporate', roll=7)
+    assert any(isinstance(p, PendingSkillTable) for p in d.projection.pending_inputs)

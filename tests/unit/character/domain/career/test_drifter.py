@@ -11,7 +11,6 @@ from ceres.character.domain.career.career_events import (
     PendingInitialTrainingChoice,
     PendingMusterOut,
     PendingSkillChoice,
-    PendingSurvive,
     SkillChoiceHandler,
     SkillRollHandler,
     SurviveHandler,
@@ -123,7 +122,6 @@ def test_drifter_basic_training_defers_survival_for_assignment_skill_choices():
     projection = replay(1, events)
 
     assert any(isinstance(p, PendingInitialTrainingChoice) for p in projection.pending_inputs)
-    assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
 
 class TestDrifterDirectOutcomeRows:

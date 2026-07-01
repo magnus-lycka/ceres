@@ -74,7 +74,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import ChoiceBase, Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events, survive_pending_id
 
 
 def _setup() -> list:
@@ -121,9 +121,8 @@ def test_prisoner_can_be_entered_when_event_log_sends_character_there():
 
 
 # ── prisoner event-handler helpers ───────────────────────────────────────────
-# Prisoner service_skills has {skill: Profession} → PendingInitialTrainingChoice at '4.0'.
-# PendingParoleRoll goes to '4.1' (added after start_new_term).
-# After resolving InitialTrainingChoice, PendingSurvive is queued at '<choice_event_id>.0'.
+# Prisoner service_skills has {skill: Profession} → PendingInitialTrainingChoice at (entry.id, 0).
+# PendingSurvive pre-queued at (entry.id, 1) by start_new_term, PendingParoleRoll at (entry.id, 2).
 # Inmate survival: END 7+, END=6, DM+0 → need roll 7.  PT after ParoleRoll(roll=3) = 5.
 
 
@@ -133,8 +132,9 @@ def _enter_prisoner() -> list:
         fulfills=(base[-1].id, 0),
         handler=CareerEntryHandler(career=PRISONER, assignment=PRISONER.assignment('Inmate'), qualification_roll=0),
     )
+    # entry creates: training (0), rank-bonus choice (1), survival (2), parole (3)
     training = Event(fulfills=(entry.id, 0), handler=SkillChoiceHandler(skill=WorkerProfession()))
-    parole = Event(fulfills=(entry.id, 1), handler=ParoleRollHandler(roll=3))  # PT = 5
+    parole = Event(fulfills=(entry.id, 3), handler=ParoleRollHandler(roll=3))  # PT = 5
     return [
         *base,
         entry,
@@ -145,8 +145,7 @@ def _enter_prisoner() -> list:
 
 def _through_survive(survive_roll: int = 8) -> list:
     base = _enter_prisoner()
-    training = next(event for event in base if isinstance(event.handler, SkillChoiceHandler))
-    return [*base, Event(fulfills=(training.id, 0), handler=SurviveHandler(roll=survive_roll))]
+    return [*base, Event(fulfills=survive_pending_id(base), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int) -> list:
@@ -156,8 +155,7 @@ def _through_term_event(event_roll: int) -> list:
 
 def _setup_to_mishap() -> list:
     base = _enter_prisoner()
-    training = next(event for event in base if isinstance(event.handler, SkillChoiceHandler))
-    return [*base, Event(fulfills=(training.id, 0), handler=SurviveHandler(roll=6))]
+    return [*base, Event(fulfills=survive_pending_id(base), handler=SurviveHandler(roll=6))]
 
 
 def _prisoner_at_advancement() -> list:

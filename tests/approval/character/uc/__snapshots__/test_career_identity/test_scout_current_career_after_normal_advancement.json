@@ -80,6 +80,11 @@
     "psionics": null,
     "last_career": null,
     "last_career_ejected": false,
+    "basic_training_received": [
+      {
+        "kind": "SCOUT_CAREER"
+      }
+    ],
     "last_assignment": null,
     "rank": 1,
     "terms": [

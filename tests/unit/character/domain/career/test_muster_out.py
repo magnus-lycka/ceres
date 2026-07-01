@@ -38,6 +38,7 @@ from tests.unit.character.helpers import (
     _scholar_setup,
     pending_id as _pending,
     scripted_event as _event,
+    survive_pending_id as _survive_pending_id,
 )
 
 
@@ -72,11 +73,11 @@ def _scout_courier_terms(advancement_rolls: list[int], *, final_reenlist: bool) 
     events = _scout_courier_entry_events()
     for term_index, advancement_roll in enumerate(advancement_rolls):
         if term_index > 0:
-            _append_event(
-                events,
-                handler=SkillTableHandler(table='service_skills', roll=5),
-            )
-        _append_event(events, handler=SurviveHandler(roll=7))
+            _append_event(events, handler=SkillTableHandler(table='service_skills', roll=5))
+            # Survival is pre-queued at (reenlist.id, 1); find it by replaying rather than guessing.
+            events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
+        else:
+            _append_event(events, handler=SurviveHandler(roll=7))
         _append_event(events, handler=TermEventHandler(roll=5))
         _append_event(events, handler=AdvancementHandler(roll=advancement_roll))
         _append_event(
@@ -113,7 +114,7 @@ def _citizen_colonist_one_term(events: list, *, muster_out_roll: int | None = 4)
     events = [*events]
     _enter_career(events, career=CITIZEN, assignment_name='Colonist', qualification_roll=12)
     _append_event(events, handler=SkillChoiceHandler(skill=JackOfAllTrades()))
-    _append_event(events, handler=SurviveHandler(roll=7))
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
     _append_event(events, handler=TermEventHandler(roll=5))
     _append_event(events, handler=AdvancementHandler(roll=3))
     _append_event(events, handler=ReenlistHandler(reenlist=False))
@@ -133,7 +134,7 @@ def _scholar_field_researcher_one_term() -> list:
     _append_event(events, pending_index=0, handler=SkillChoiceHandler(skill=Drive()))
     science = _event(fulfills=_pending(entry, 1), handler=SkillChoiceHandler(skill=SpaceScience()))
     events.append(science)
-    _append_event(events, handler=SurviveHandler(roll=7))
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
     _append_event(events, handler=TermEventHandler(roll=5))
     _append_event(events, handler=AdvancementHandler(roll=3))
     _append_event(events, handler=ReenlistHandler(reenlist=False))
@@ -162,7 +163,7 @@ def _setup_through_4_terms_advancement() -> list:
     """
     base = _setup_through_3_terms_reenlist()
     _append_event(base, handler=SkillTableHandler(table='service_skills', roll=5))
-    _append_event(base, handler=SurviveHandler(roll=7))
+    base.append(_event(fulfills=_survive_pending_id(base), handler=SurviveHandler(roll=7)))
     _append_event(base, handler=TermEventHandler(roll=5))
     _append_event(base, handler=AdvancementHandler(roll=5))
     return base
@@ -315,11 +316,12 @@ class TestMusterOut:
         ]
 
     def test_muster_out_counts_only_current_career_run_when_reentering_same_career(self):
-        # All Scout service skills already known from first run → re-entry gives survival directly (no skill table)
+        # Scout re-entry after Citizen: no repeated training, picks from skill table instead
         events = _with_muster_out(_setup_through_reenlist_false(), table='cash', roll=1)
         events = _citizen_colonist_one_term(events, muster_out_roll=4)  # intervening Citizen run
         _enter_career(events, career=SCOUT, assignment_name='Courier', qualification_roll=7)
-        _append_event(events, handler=SurviveHandler(roll=7))
+        _append_event(events, handler=SkillTableHandler(table='service_skills', roll=5))
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
         _append_event(events, handler=TermEventHandler(roll=5))
         _append_event(events, handler=AdvancementHandler(roll=3))
         _append_event(events, handler=ReenlistHandler(reenlist=False))
@@ -351,7 +353,7 @@ class TestMusterOut:
         # 2 terms: first completes normally (reenlist=True), second term mishap → lose current → 1 roll
         events = _scout_courier_terms([3], final_reenlist=True)
         _append_event(events, handler=SkillTableHandler(table='service_skills', roll=5))
-        _append_event(events, handler=SurviveHandler(roll=3))  # fail survive
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=3)))  # fail survive
         _append_event(events, handler=MishapHandler(roll=5))  # ejected, lose current term → 1 roll
         projection = replay(1, events)
 
@@ -413,7 +415,7 @@ class TestMusterOut:
         # 4th term mishap ejection with aging → 3 rolls (4-1=3 terms, rank 0)
         events = _setup_through_3_terms_reenlist()
         _append_event(events, handler=SkillTableHandler(table='service_skills', roll=5))
-        _append_event(events, handler=SurviveHandler(roll=3))  # fail
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=3)))  # fail
         _append_event(events, handler=MishapHandler(roll=5))  # ejected, age=34
         _append_event(events, handler=AgingRollHandler(roll=5))  # no effect
         projection = replay(1, events)
@@ -564,7 +566,7 @@ class TestPendingMusterOutForm:
         # Use Army term event roll=9 (AdvancementDmEntry, not a benefit DM) → no benefit roll DMs
         events = _full_setup()
         _enter_career(events, career=ARMY, assignment_name='Support', qualification_roll=7)
-        _append_event(events, handler=SurviveHandler(roll=7))
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
         _append_event(events, handler=TermEventHandler(roll=9))  # AdvancementDmEntry, no benefit DM
         _append_event(events, handler=AdvancementHandler(roll=3))
         _append_event(events, handler=ReenlistHandler(reenlist=False))
@@ -619,7 +621,7 @@ def _army_support_one_term_events() -> list:
     """
     events = _full_setup()
     _enter_career(events, career=ARMY, assignment_name='Support', qualification_roll=7)
-    _append_event(events, handler=SurviveHandler(roll=7))
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
     _append_event(events, handler=TermEventHandler(roll=5))
     _append_event(events, handler=AdvancementHandler(roll=3))
     _append_event(events, handler=ReenlistHandler(reenlist=False))
@@ -677,7 +679,7 @@ def _agent_intelligence_two_term_events() -> list:
     _append_event(events, handler=AdvancementHandler(roll=3))
     _append_event(events, handler=ReenlistHandler(reenlist=True))
     _append_event(events, handler=SkillTableHandler(table='service_skills', roll=5))  # Recon, auto-applied
-    _append_event(events, handler=SurviveHandler(roll=7))
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
     _append_event(events, handler=TermEventHandler(roll=4))
     _append_event(events, handler=AdvancementHandler(roll=3))
     _append_event(events, handler=ReenlistHandler(reenlist=False))

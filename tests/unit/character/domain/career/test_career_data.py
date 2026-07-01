@@ -652,35 +652,6 @@ def test_apply_basic_training_raises_for_unknown_table():
 # ── CareerData._apply_initial_training_entry ─────────────────────────────────
 
 
-def test_apply_initial_training_entry_skips_chars_entries():
-    p = _projection()
-    initial_skills = list(p.summary.skills)
-
-    ARMY._apply_initial_training_entry(p, Chars.STR)
-
-    assert p.summary.skills == initial_skills
-
-
-def test_apply_initial_training_entry_skips_psi_entries():
-    p = _projection()
-    psi = Psi(psionic_talent_instances()[0])
-
-    ARMY._apply_initial_training_entry(p, psi)
-
-    assert p.summary.skills == []
-
-
-def test_apply_initial_training_entry_skips_psi_inside_list():
-    p = _projection()
-    psi = Psi(psionic_talent_instances()[0])
-
-    from ceres.character.domain.skills import Recon
-
-    ARMY._apply_initial_training_entry(p, [psi, Recon()])
-
-    assert p.summary.skill_level(Recon) == 0
-
-
 # ── CareerData.available_tables ───────────────────────────────────────────────
 
 

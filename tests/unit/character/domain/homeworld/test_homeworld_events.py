@@ -26,7 +26,7 @@ from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Life
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2, _creation_events
+from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2, _creation_events, survive_pending_id
 
 
 def _projection() -> CharacterProjection:
@@ -300,8 +300,8 @@ def _citizen_worker_to_survive() -> list:
     """Events through Citizen/Worker initial training choices, ready for survival roll.
 
     Citizen/Worker creates two initial training choices after CareerEvent:
-    (3,0) Profession choices and (3,1) Science choices. Both must be resolved
-    before PendingSurvive is created (pending_id=(5,0) after SkillChoiceEvent id=5).
+    (career.id, 0) Profession choices and (career.id, 1) Science choices.
+    Survival is pre-queued at (career.id, 2).
     """
     c = _creation()
     ucp = _ucp_no_edu(c[-1])
@@ -316,7 +316,7 @@ def _citizen_worker_to_survive() -> list:
 def _citizen_to_mishap5_skill_roll() -> list:
     """Events up to PendingCitizenMishap5SkillRoll for a Citizen/Worker."""
     base = _citizen_worker_to_survive()
-    survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))  # roll=2 → mishap
+    survive = Event(fulfills=survive_pending_id(base), handler=SurviveHandler(roll=2))  # roll=2 → mishap
     mishap = Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=5))
     return [
         *base,
@@ -328,7 +328,7 @@ def _citizen_to_mishap5_skill_roll() -> list:
 class TestCitizenMishap5HomeworldTrigger:
     def _events_to_streetwise_roll(self) -> list:
         base = _citizen_worker_to_survive()
-        survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=2))  # roll=2 → mishap
+        survive = Event(fulfills=survive_pending_id(base), handler=SurviveHandler(roll=2))  # roll=2 → mishap
         mishap = Event(fulfills=(survive.id, 0), handler=MishapHandler(roll=5))
         return [
             *base,

@@ -91,6 +91,7 @@ from tests.unit.character.helpers import (
     _scholar_setup,
     pending_id as _pending,
     scripted_event as _event,
+    survive_pending_id as _survive_pending_id,
 )
 
 _SCIENCES = sorted(['Life Science', 'Physical Science', 'Robotic Science', 'Social Science', 'Space Science'])
@@ -122,7 +123,8 @@ def _enter_scholar_field_researcher() -> list:
 
 def _scholar_one_term(assignment: str = 'Field Researcher', *, reenlist: bool) -> list:
     events = _enter_scholar_assignment(assignment)
-    _append_event(events, handler=SurviveHandler(roll=7))
+    # Survival is pre-queued at (career.id, 2) after the two training choices; find it by replay.
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
     _append_event(events, handler=TermEventHandler(roll=5))
     _append_event(events, handler=AdvancementHandler(roll=3))
     _append_event(events, handler=ReenlistHandler(reenlist=reenlist))
@@ -131,14 +133,14 @@ def _scholar_one_term(assignment: str = 'Field Researcher', *, reenlist: bool) -
 
 def _scholar_term_event(roll: int, *, survive_roll: int = 7) -> list:
     events = _enter_scholar_field_researcher()
-    _append_event(events, handler=SurviveHandler(roll=survive_roll))
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=survive_roll)))
     _append_event(events, handler=TermEventHandler(roll=roll))
     return events
 
 
 def _scholar_mishap(roll: int) -> list:
     events = _enter_scholar_field_researcher()
-    _append_event(events, handler=SurviveHandler(roll=3))
+    events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=3)))
     _append_event(events, handler=MishapHandler(roll=roll))
     return events
 
@@ -198,10 +200,6 @@ class TestScholarInitialTraining:
         projection = replay(1, self._setup())
         assert projection.summary.skill_level(LifeScience) is None
 
-    def test_survive_not_pending_before_choices_resolved(self):
-        projection = replay(1, self._setup())
-        assert not any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
-
     def test_drive_choice_grants_drive_at_level_0(self):
         events = [
             *(base := self._setup()),
@@ -221,15 +219,16 @@ class TestScholarInitialTraining:
 
         assert any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
 
-    def test_survive_pending_id_from_last_choice_event(self):
-        events = [*(base := self._setup())]
+    def test_survive_pending_id_from_career_entry_event(self):
+        base = self._setup()
+        career = base[-1]  # CareerEntryHandler event (choices at .0, .1; survive at .2)
+        events = [*base]
         events.append(_event(fulfills=_pending(base[-1], 0), handler=SkillChoiceHandler(skill=Drive())))
-        science_choice = _event(fulfills=_pending(base[-1], 1), handler=SkillChoiceHandler(skill=SpaceScience()))
-        events.append(science_choice)
+        events.append(_event(fulfills=_pending(base[-1], 1), handler=SkillChoiceHandler(skill=SpaceScience())))
         projection = replay(1, events)
 
         survive = next(p for p in projection.pending_inputs if isinstance(p, PendingSurvive))
-        assert survive.pending_id == _pending(science_choice, 0)
+        assert survive.pending_id == _pending(career, 2)
 
     def test_no_initial_training_choice_for_scout(self):
         events = _scholar_setup()
@@ -352,7 +351,7 @@ class TestScholarTerm:
     def test_scholar_mishap_6_stays_even_without_explicit_flag(self):
         # MishapEntry.stay_in_career overrides player's default stay_in_career=False
         events = _enter_scholar_field_researcher()
-        _append_event(events, handler=SurviveHandler(roll=3))
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=3)))
         _append_event(events, handler=MishapHandler(roll=6, stay_in_career=False))
         projection = replay(1, events)
 
@@ -410,7 +409,7 @@ class TestScholarMishap3:
 
     def _setup(self) -> list:
         events = _enter_scholar_field_researcher()
-        _append_event(events, handler=SurviveHandler(roll=3))  # fail
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=3)))  # fail
         return events
 
     def test_creates_choice_pending_openly_or_secretly(self):
@@ -489,7 +488,7 @@ class TestScholarMishap5:
 
     def _setup(self) -> list:
         events = _enter_scholar_field_researcher()
-        _append_event(events, handler=SurviveHandler(roll=3))  # fail
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=3)))  # fail
         return events
 
     def test_creates_give_up_or_start_again_pending(self):
@@ -998,7 +997,7 @@ class TestPhysicianRankBonuses:
 
     def _setup_to_advancement(self, assignment: str) -> list:
         events = _enter_scholar_assignment(assignment)
-        _append_event(events, handler=SurviveHandler(roll=7))
+        events.append(_event(fulfills=_survive_pending_id(events), handler=SurviveHandler(roll=7)))
         _append_event(events, handler=TermEventHandler(roll=5))
         return events
 

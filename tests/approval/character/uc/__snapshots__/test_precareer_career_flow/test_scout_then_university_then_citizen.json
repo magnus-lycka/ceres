@@ -82,6 +82,14 @@
       "kind": "SCOUT_CAREER"
     },
     "last_career_ejected": false,
+    "basic_training_received": [
+      {
+        "kind": "SCOUT_CAREER"
+      },
+      {
+        "kind": "CITIZEN_CAREER"
+      }
+    ],
     "last_assignment": {
       "name": "Courier",
       "description": "You are responsible for shuttling messages and high value packages around the galaxy.",

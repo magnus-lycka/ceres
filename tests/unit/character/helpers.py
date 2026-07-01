@@ -7,6 +7,7 @@ from typing import Any, Literal
 from deepdiff import DeepDiff
 
 from ceres.adapters.travellermap import TravellerMapWorld
+from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.career.career_events import (
     AdvancementDmChoiceHandler,
     AdvancementHandler,
@@ -77,6 +78,19 @@ from ceres.character.domain.health.health_events import (
     PendingCharacteristicChoice,
     PendingDoubleInjuryRoll,
 )
+from ceres.character.domain.homeworld.homeworld_events import (
+    HomeworldChangeKeptHandler,
+    PendingHomeworldChangeOffered,
+)
+from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.precareer.precareer_events import (
+    PendingPreCareerEvent,
+    PendingPreCareerGraduation,
+    PendingPreCareerSkillChoice,
+    PreCareerEventHandler,
+    PreCareerGraduationHandler,
+    PreCareerSkillChoiceHandler,
+)
 from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
 from ceres.character.domain.sophont import VILANI, Sophont
 from ceres.character.mechanism.errors import ReplayError
@@ -108,6 +122,13 @@ def scripted_event(
 def pending_id(source: Event | int, pending_index: int) -> tuple[int, int]:
     event_id = source.id if isinstance(source, Event) else source
     return (event_id, pending_index)
+
+
+def survive_pending_id(events: list, character_id: int = 1) -> tuple[int, int]:
+    """Replay events and return the pending_id of the current PendingSurvive."""
+    projection = replay(character_id, events)
+    p = next(p for p in projection.pending_inputs if isinstance(p, PendingSurvive))
+    return p.pending_id
 
 
 class AdvancedTrainingTestMixin:
@@ -315,14 +336,19 @@ class CharacterDriver:
         pending = self._find(PendingBackgroundSkills)
         return self._add(Event(fulfills=pending.pending_id, handler=BackgroundSkillsHandler(skills=skills)))
 
-    def career(self, career_name: str, assignment: str, roll: int = 7) -> CharacterDriver:
+    def career(self, career: type[CareerData] | str, assignment: str, roll: int = 7) -> CharacterDriver:
         pending = self._find(PendingCareerChoice)
-        career_obj = next((c for c in pending.options if c.name == career_name), None)
+        if isinstance(career, type) and issubclass(career, CareerData):
+            career_obj = next((c for c in pending.options if type(c) is career), None)
+            label = career.__name__
+        else:
+            career_obj = next((c for c in pending.options if c.name == career), None)
+            label = repr(career)
         if career_obj is None:
-            raise ValueError(f'Career {career_name!r} is not available in the current pending choice')
+            raise ValueError(f'Career {label} is not available in the current pending choice')
         assignment_obj = career_obj.assignment(assignment)
         if assignment_obj is None:
-            raise ValueError(f'Unknown assignment {assignment!r} for career {career_name!r}')
+            raise ValueError(f'Unknown assignment {assignment!r} for career {label}')
         return self._add(
             Event(
                 fulfills=pending.pending_id,
@@ -427,6 +453,34 @@ class CharacterDriver:
     def double_injury_roll(self, roll1: int, roll2: int) -> CharacterDriver:
         pending = self._find(PendingDoubleInjuryRoll)
         return self._add(Event(fulfills=pending.pending_id, handler=DoubleInjuryTableHandler(roll1=roll1, roll2=roll2)))
+
+    def keep_homeworld(self) -> CharacterDriver:
+        pending = self._find(PendingHomeworldChangeOffered)
+        return self._add(Event(fulfills=pending.pending_id, handler=HomeworldChangeKeptHandler()))
+
+    def precareer(self, precareer_cls: type[PreCareerData], roll: int) -> CharacterDriver:
+        from ceres.character.domain.precareer.loader import precareer_of_type
+        from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
+
+        pending = self._find(PendingCareerChoice)
+        return self._add(
+            Event(
+                fulfills=pending.pending_id,
+                handler=PreCareerEntryHandler(precareer=precareer_of_type(precareer_cls), roll=roll),
+            )
+        )
+
+    def precareer_event(self, roll: int) -> CharacterDriver:
+        pending = self._find(PendingPreCareerEvent)
+        return self._add(Event(fulfills=pending.pending_id, handler=PreCareerEventHandler(roll=roll)))
+
+    def precareer_graduation(self, roll: int) -> CharacterDriver:
+        pending = self._find(PendingPreCareerGraduation)
+        return self._add(Event(fulfills=pending.pending_id, handler=PreCareerGraduationHandler(roll=roll)))
+
+    def precareer_skill(self, skill: AnySkill) -> CharacterDriver:
+        pending = self._find(PendingPreCareerSkillChoice)
+        return self._add(Event(fulfills=pending.pending_id, handler=PreCareerSkillChoiceHandler(skill=skill)))
 
     def muster_out(self, table: Literal['cash', 'benefits'], roll: int) -> CharacterDriver:
         pending = self._find(PendingMusterOut)

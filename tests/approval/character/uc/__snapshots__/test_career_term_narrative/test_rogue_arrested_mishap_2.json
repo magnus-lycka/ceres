@@ -82,6 +82,11 @@
       "kind": "ROGUE_CAREER"
     },
     "last_career_ejected": true,
+    "basic_training_received": [
+      {
+        "kind": "ROGUE_CAREER"
+      }
+    ],
     "last_assignment": {
       "name": "Thief",
       "description": "You steal from the rich and give to… well, yourself, actually.",

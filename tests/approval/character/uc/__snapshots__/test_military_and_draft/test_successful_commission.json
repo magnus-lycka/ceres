@@ -80,6 +80,11 @@
     "psionics": null,
     "last_career": null,
     "last_career_ejected": false,
+    "basic_training_received": [
+      {
+        "kind": "ARMY_CAREER"
+      }
+    ],
     "last_assignment": null,
     "rank": 1,
     "terms": [
@@ -795,17 +800,6 @@
       },
       [
         {
-          "name": "roll",
-          "label": "2D roll (2–12)",
-          "min": 2,
-          "max": 12
-        }
-      ],
-      {
-        "roll": "8"
-      },
-      [
-        {
           "name": "skill",
           "label": "Choose a skill",
           "options": [
@@ -829,6 +823,17 @@
       ],
       {
         "skill": "{\"display_label\":null,\"kind\":\"GUN_COMBAT\",\"archaic\":{\"display_label\":null,\"value\":0},\"energy\":{\"display_label\":null,\"value\":0},\"slug\":{\"display_label\":null,\"value\":0}}"
+      },
+      [
+        {
+          "name": "roll",
+          "label": "2D roll (2–12)",
+          "min": 2,
+          "max": 12
+        }
+      ],
+      {
+        "roll": "8"
       },
       [
         {

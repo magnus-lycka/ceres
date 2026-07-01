@@ -824,9 +824,8 @@ class CareerData(TermData):
         projection,
         assignment: AssignmentData,
         event_id: int,
-        is_continuation: bool = False,
     ) -> None:
-        training = self._basic_training_plan(projection, assignment, is_continuation)
+        training = self._basic_training_plan(projection, assignment)
         projection.summary.rank = self.current_rank(projection.summary.career_terms, assignment)
         first_term_in_run = not self.prior_terms(projection.summary.career_terms, assignment)
         self.append_term(projection, assignment)
@@ -837,6 +836,8 @@ class CareerData(TermData):
             self._queue_skill_table_before_survival(projection, assignment, event_id)
         if first_term_in_run:
             self._apply_fixed_rank_bonus(projection, 0, event_id)
+        used = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
+        projection.pending_inputs.append(self.survival_pending(assignment, event_id, max(used, default=-1) + 1))
 
     def _basic_training_table_name(self, assignment: AssignmentData) -> str:
         return 'service_skills'
@@ -879,13 +880,15 @@ class CareerData(TermData):
         self,
         projection,
         assignment: AssignmentData,
-        is_continuation: bool = False,
     ) -> BasicTrainingPlan | None:
-        if is_continuation:
+        received = projection.summary.basic_training_received
+        first_basic_training = len(received) == 0
+        if self.kind in [t.kind for t in received]:
             return None
+        projection.summary.basic_training_received.append(self)
         return BasicTrainingPlan(
             table_name=self._basic_training_table_name(assignment),
-            grant_all=not projection.summary.career_terms,
+            grant_all=first_basic_training,
         )
 
     def _apply_basic_training(
@@ -896,13 +899,12 @@ class CareerData(TermData):
         grant_all: bool,
         event_id: int,
     ) -> None:
+        from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
 
         table = self.skill_table(table_name)
         if table is None:
             raise ValueError(f'Unknown skill table: {table_name!r}')
         if grant_all:
-            from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
-
             choice_idx = 0
             for entry in table.entries:
                 choices = self._training_pending_choices(projection, entry)
@@ -918,13 +920,12 @@ class CareerData(TermData):
                         )
                     )
                     choice_idx += 1
-                else:
-                    self._apply_initial_training_entry(projection, entry)
-            if choice_idx == 0:
-                projection.pending_inputs.append(self.survival_pending(assignment, event_id))
+                elif len(choices) == 1:
+                    self._apply_initial_training_entry(projection, type(choices[0]))
+                elif not isinstance(entry, (Chars, list)):
+                    # Specific-specialty entry (e.g. Electronics(computers=1)): grant base skill at level 0.
+                    self._apply_initial_training_entry(projection, type(entry))
             return
-
-        from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
 
         raw: list[CareerSkillOption] = []
         for entry in table.entries:
@@ -941,27 +942,10 @@ class CareerData(TermData):
                     options=cast(list[CareerSkillOption | AdvancementDmOption], deduped),
                 )
             )
-        else:
-            projection.pending_inputs.append(self.survival_pending(assignment, event_id))
 
-    def _apply_initial_training_entry(self, projection, entry: SkillTableEntry) -> None:
-        if isinstance(entry, Chars):
-            return  # characteristic boosts are not granted during basic training
-        if isinstance(entry, Psi):
-            return  # basic training neither acquires nor improves psionic talents
-        if isinstance(entry, list):
-            # Choice entry: add all unknown skills at level 0
-            for skill in entry:
-                if isinstance(skill, Psi):
-                    continue
-                skill_cls = type(skill)
-                if projection.summary.skill_level(skill_cls) is None:
-                    projection.summary.skills.append(skill_cls())
-        else:
-            # Single AnySkill entry
-            skill_cls = type(entry)
-            if projection.summary.skill_level(skill_cls) is None:
-                projection.summary.skills.append(skill_cls())
+    def _apply_initial_training_entry(self, projection, skill_cls: type[AnySkill]) -> None:
+        if projection.summary.skill_level(skill_cls) is None:
+            projection.summary.skills.append(skill_cls())
 
     def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[CareerSkillOption]:
         if isinstance(entry, Chars):

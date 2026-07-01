@@ -8,7 +8,9 @@ from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     MishapHandler,
     PendingChoices,
+    PendingInitialTrainingChoice,
     PendingSkillChoice,
+    PendingSkillTable,
     PendingSkillTableChoice,
     ReenlistHandler,
     SkillChoiceHandler,
@@ -17,6 +19,8 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
+from ceres.character.domain.career.drifter import Drifter
+from ceres.character.domain.career.scout import Scout
 from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import (
@@ -720,3 +724,49 @@ class TestScoutMishap1:
         pending = next((p for p in d.projection.pending_inputs if isinstance(p, PendingChoices)), None)
         assert pending is not None
         assert {type(c) for c in pending.choices} == {CommonMishap1Severe, CommonMishap1DoubleRoll}
+
+
+# ── Career re-entry: no repeated basic training ───────────────────────────────
+
+
+def _scout_after_drifter_interlude() -> CharacterDriver:
+    """Scout → Drifter → back to Scout.
+
+    Direct Scout re-entry is blocked (same career, same assignment, voluntary departure), so one
+    Drifter term in between allows re-entry. Tests that basic training is not repeated.
+    UCP 778877: DEX=7 (Scout survival 7+), END=8 (Drifter Barbarian survival END 7+, DM+1).
+    """
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('778877')
+    d.background_skills([Admin(), Athletics(), Carouse()])
+    d.career(Scout, 'Courier', roll=7)
+    d.keep_homeworld()
+    d.survive(8)
+    d.term_event(5)
+    d.advancement(3)
+    d.reenlist(False)
+    d.muster_out('cash', 1)
+    d.career(Drifter, 'Barbarian', roll=7)
+    while any(isinstance(p, PendingInitialTrainingChoice) for p in d.projection.pending_inputs):
+        d.initial_training(Admin())
+    d.survive(7)
+    d.term_event(5)
+    d.advancement(3)
+    d.reenlist(False)
+    d.muster_out('cash', 1)
+    return d
+
+
+def test_scout_reentry_gets_no_initial_training_choice():
+    """Re-entering Scout after a prior Scout term must not repeat basic training."""
+    d = _scout_after_drifter_interlude()
+    d.career(Scout, 'Courier', roll=7)
+    assert not any(isinstance(p, PendingInitialTrainingChoice) for p in d.projection.pending_inputs)
+
+
+def test_scout_reentry_gets_skill_table_instead():
+    """Re-entering Scout after a prior Scout term should queue a normal skill table roll."""
+    d = _scout_after_drifter_interlude()
+    d.career(Scout, 'Courier', roll=7)
+    assert any(isinstance(p, PendingSkillTable) for p in d.projection.pending_inputs)

@@ -76,6 +76,7 @@
     "psionics": null,
     "last_career": null,
     "last_career_ejected": false,
+    "basic_training_received": [],
     "last_assignment": null,
     "rank": null,
     "terms": [

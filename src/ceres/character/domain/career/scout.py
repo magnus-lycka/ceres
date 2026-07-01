@@ -258,10 +258,9 @@ class Scout(CareerData):
         projection: CharacterProjection,
         assignment: AssignmentData,
         event_id: int,
-        is_continuation: bool = False,
     ) -> None:
         insert_at = len(projection.pending_inputs)
-        super().start_new_term(projection, assignment, event_id, is_continuation)
+        super().start_new_term(projection, assignment, event_id)
         homeworld = projection.summary.homeworld
         used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
         homeworld_idx = max(used_sub_ids, default=-1) + 1

@@ -45,8 +45,8 @@ def test_army_term_with_event_5(snapshot):
     snap = AnnotatedSnapshot({})
     try:
         session.submit(career_entry_form('Army', 'Support', 5))
-        session.submit(roll_form(5))
         session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(5))
         session.submit(roll_form(5))
         snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
     finally:
@@ -61,8 +61,8 @@ def test_army_term_unknown_event_roll(snapshot):
     snap = AnnotatedSnapshot({})
     try:
         session.submit(career_entry_form('Army', 'Support', 5))
-        session.submit(roll_form(5))
         session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(5))
         session.submit(roll_form(99))
         snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
     finally:
@@ -77,8 +77,8 @@ def test_army_ejection_mishap_2(snapshot):
     snap = AnnotatedSnapshot({})
     try:
         session.submit(career_entry_form('Army', 'Support', 5))
-        session.submit(roll_form(4))
         session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(4))
         session.submit(roll_form(2))
         snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))
     finally:
@@ -93,8 +93,8 @@ def test_army_stay_in_career_mishap(snapshot):
     snap = AnnotatedSnapshot({})
     try:
         session.submit(career_entry_form('Army', 'Support', 5))
-        session.submit(roll_form(5))
         session.submit(skill_form(GunCombat()))
+        session.submit(roll_form(5))
         session.submit(roll_form(2))
         session.submit(roll_form(5))
         snap = AnnotatedSnapshot(session.projection.summary.model_dump(mode='json'))

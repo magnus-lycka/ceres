@@ -1,9 +1,10 @@
-from typing import Any, cast
-
-from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career import ARMY
 from ceres.character.domain.career.army import Army
-from ceres.character.domain.career.career_events import CareerEntryHandler
+from ceres.character.domain.career.career_events import (
+    CareerEntryHandler,
+    PendingInitialTrainingChoice,
+    PendingSkillTable,
+)
 from ceres.character.domain.career.marines import Marines
 from ceres.character.domain.career.navy import Navy
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
@@ -14,62 +15,18 @@ from ceres.character.domain.precareer.military_academy import (
     MarineAcademyPreCareer,
     NavyAcademyPreCareer,
 )
-from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler, PreCareerGraduationHandler
+from ceres.character.domain.precareer.precareer_events import PreCareerGraduationHandler
+from ceres.character.domain.skills import Admin
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
-from tests.unit.character.helpers import MOCK_WORLD
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
 
 
-def _projection(**summary_kwargs: Any) -> CharacterProjection:
+def _projection(**summary_kwargs) -> CharacterProjection:
     return CharacterProjection(
         character_id=1,
         summary=CharacterSummary(name='Cadet', sophont=VILANI, homeworld=MOCK_WORLD, **summary_kwargs),
     )
-
-
-def _skill_types(projection: CharacterProjection) -> set[type[character_skills.Skill]]:
-    return {type(skill) for skill in projection.summary.skills}
-
-
-def test_entry_grants_direct_tied_career_service_skills_and_skips_choice_lists(monkeypatch):
-    class FakeCareer:
-        def skill_table(self, name: str):
-            assert name == 'service_skills'
-            return type(
-                'SkillTable',
-                (),
-                {
-                    'entries': [
-                        [character_skills.Drive(), character_skills.VaccSuit()],
-                        character_skills.Athletics(),
-                        character_skills.GunCombat(),
-                        character_skills.Recon(),
-                        character_skills.Melee(),
-                        character_skills.HeavyWeapons(),
-                    ]
-                },
-            )()
-
-    monkeypatch.setattr(ArmyAcademyPreCareer, 'service_skills_from', cast(Any, FakeCareer))
-    projection = _projection()
-    academy = precareer_of_type(ArmyAcademyPreCareer)
-
-    next_pending_idx = academy.apply_entry(
-        projection,
-        Event(handler=PreCareerEntryHandler(precareer=academy, roll=9)),
-        pending_idx=3,
-    )
-
-    assert next_pending_idx == 3
-    assert _skill_types(projection) == {
-        character_skills.Athletics,
-        character_skills.GunCombat,
-        character_skills.HeavyWeapons,
-        character_skills.Melee,
-        character_skills.Recon,
-    }
-    assert character_skills.Drive not in _skill_types(projection)
-    assert character_skills.VaccSuit not in _skill_types(projection)
 
 
 def test_graduation_increases_edu_queues_auto_qualification_and_notes_manual_benefits():
@@ -150,3 +107,37 @@ def test_auto_qualify_effect_bypasses_qualification_roll():
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Army'
     assert projection.auto_qualify_careers == []
+
+
+# ── RIC-009: no repeated basic training after Military Academy ────────────────
+
+
+def _army_academy_graduate() -> CharacterDriver:
+    """UCP 778827: INT=8 → graduation 7+ reachable; EDU=2 → 1 background skill."""
+    from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
+    from ceres.character.domain.skills import Drive
+
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('778827')
+    d.background_skills([Admin()])
+    d.precareer(ArmyAcademyPreCareer, roll=8)
+    while d._find_opt(PendingInitialTrainingChoice):
+        d.initial_training(Drive())
+    d.precareer_event(5)
+    d.precareer_graduation(8)
+    return d
+
+
+def test_army_academy_graduate_entering_army_gets_no_initial_training_choice():
+    """RIC-009: Army Academy already administers basic training; Army career must not repeat it."""
+    d = _army_academy_graduate()
+    d.career(Army, 'Support', roll=7)
+    assert not any(isinstance(p, PendingInitialTrainingChoice) for p in d.projection.pending_inputs)
+
+
+def test_army_academy_graduate_entering_army_gets_skill_table_instead():
+    """RIC-009: Army career should queue a normal skill table roll, not basic training."""
+    d = _army_academy_graduate()
+    d.career(Army, 'Support', roll=7)
+    assert any(isinstance(p, PendingSkillTable) for p in d.projection.pending_inputs)

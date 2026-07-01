@@ -82,6 +82,11 @@
       "kind": "CITIZEN_CAREER"
     },
     "last_career_ejected": false,
+    "basic_training_received": [
+      {
+        "kind": "CITIZEN_CAREER"
+      }
+    ],
     "last_assignment": {
       "name": "Corporate",
       "description": "You are an executive or manager in a large corporation.",

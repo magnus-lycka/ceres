@@ -282,7 +282,8 @@ class SkillTableHandler(EventHandlerBase):
             spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
             if spec_field is None and len(fields) > 1:
                 choices = [skill_cls()]
-        reenlist_queued = any(
+        survival_already_queued = any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
+        reenlist_queued = survival_already_queued or any(
             isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut))
             for p in projection.pending_inputs
         )
@@ -300,7 +301,13 @@ class SkillTableHandler(EventHandlerBase):
                         for i, p in enumerate(projection.pending_inputs)
                         if isinstance(
                             p,
-                            (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut),
+                            (
+                                PendingReenlist,
+                                PendingAssignmentChangeChoice,
+                                PendingAgingRoll,
+                                PendingMusterOut,
+                                PendingSurvive,
+                            ),
                         )
                     ),
                     len(projection.pending_inputs),
@@ -391,7 +398,7 @@ class SwitchAssignmentHandler(EventHandlerBase):
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
         if self.qualification_roll + dm >= target:
             purge_career_pendings(projection)
-            career.start_new_term(projection, self.assignment, event.id, is_continuation=True)
+            career.start_new_term(projection, self.assignment, event.id)
         else:
             current = projection.summary.current_assignment
             if current is None:
@@ -432,7 +439,7 @@ def _start_new_career_term(projection: CharacterProjection, career: CareerData, 
     assignment = projection.summary.current_assignment
     if assignment is None:
         raise ReplayError(f'No current assignment in career {career.name!r}')
-    career.start_new_term(projection, assignment, event_id, is_continuation=True)
+    career.start_new_term(projection, assignment, event_id)
 
 
 def _survive_pending(career: CareerData, assignment: AssignmentData | None, event_id: int) -> PendingSurvive:
@@ -737,19 +744,9 @@ class PendingInitialTrainingChoice(_PendingSkillOrPsiChoice):
 
     def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
-        remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
-        if not remaining and projection.summary.current_career is not None:
-            career = projection.get_current_career()
-            projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
 
     def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
-        self._complete_training(projection, event)
-
-    def _complete_training(self, projection: CharacterProjection, event: Event) -> None:
-        remaining = [p for p in projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
-        if not remaining and projection.summary.current_career is not None:
-            career = projection.get_current_career()
-            projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
+        pass
 
 
 class PendingSkillTableChoice(_PendingSkillOrPsiChoice):

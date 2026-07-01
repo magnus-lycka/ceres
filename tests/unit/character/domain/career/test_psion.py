@@ -309,7 +309,7 @@ class TestPsionHomeworldRule:
         assert assignment is not None
         projection = replay(1, _enter_psion())
 
-        psion.start_new_term(projection, assignment, event_id=6, is_continuation=True)
+        psion.start_new_term(projection, assignment, event_id=6)
 
         offers = [p for p in projection.pending_inputs if isinstance(p, PendingHomeworldChangeOffered)]
         assert len(offers) == 2

@@ -107,6 +107,7 @@ source_pkgs = ["ceres"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--snapshot-default-extension=tests.approval.snapshot.AnnotatedJSONSnapshotExtension"
 markers = [
     "approval: approval/snapshot tests; skipped by default, run with --with-snapshots or --all-tests",
 ]

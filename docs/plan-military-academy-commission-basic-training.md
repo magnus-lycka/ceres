@@ -1,133 +1,116 @@
-# Plan: Military Academy, Commission, and Basic Training Tracking
+# Plan: Fix Basic Training Repetition (RIC-009, RIC-010, Career Re-entry)
 
-## Overview
+## Goal
 
-This document outlines a Test-Driven Development (TDD) approach to fix the broken basic training tracking in the `ceres.character` module. The current implementation incorrectly repeats basic training in several scenarios that should be prevented.
+Three scenarios currently give basic training when they should not. The rule
+interpretations are already recorded in `RULE_INTERPRETATIONS.md`. This plan
+describes a TDD approach to drive out the fixes one scenario at a time.
 
-## Problems to Address
+## Scenarios
 
-### 1. RIC-009: Military Academy Graduates
-Military Academy graduates already receive Service Skills at level 0 for the corresponding career. Therefore, basic training should **not be repeated** when entering that career after graduation.
+1. **RIC-009** — Military academy graduate entering the tied career should not
+   receive basic training again (they already received service skills during the
+   academy precareer).
 
-### 2. Career Re-entry
-If a Traveller follows a path like Scout → Drifter → Scout, basic training should **not be repeated** for the second Scout term.
+2. **Career re-entry** — Re-entering a career that was previously served (e.g.
+   Scout → Drifter → Scout) should not repeat basic training.
 
-### 3. RIC-010: Assignment Switch
-For careers where assignments are treated as new careers (Agent, Citizen, Entertainer, Merchant), basic training should **still not be repeated** when switching assignments within the same career.
+3. **RIC-010** — Switching assignment within Agent, Citizen, Entertainer, or
+   Merchant should not trigger basic training for the new assignment.
 
-## Proposed Solution
+## Design direction (confirmed, not yet implemented)
 
-### Core Idea
-Add a **`basic_training: list[CareerData]`** field to `CharacterProjection` to track which careers have already granted basic training to the character.
+**Serialization verified.** `CareerData` instances already serialize via their
+`kind` discriminator — `Army()` round-trips as `{"kind": "ARMY_CAREER"}` — so
+`list[CareerData]` is a safe Pydantic field type.
 
-### Implementation Details
+**Tracking field.** Add `basic_training_received: list[CareerData]` to
+`CharacterSummary` (the persisted state, not the transient
+`CharacterProjection`). Membership is tested by `kind`:
+`self.kind in [t.kind for t in summary.basic_training_received]`.
 
-#### 1. CharacterProjection Model Update
-**File:** `src/ceres/character/domain/character_projection.py`
+**`_apply_basic_training` on the `TermData` hierarchy.** `TermData` is the
+common base of both `CareerData` and `PreCareerData`. Define
+`_apply_basic_training` there returning `None` — meaning "no basic training
+administered." Non-military-academy precareers inherit this no-op.
 
-Add a new field to track basic training completion:
-```python
-basic_training: list[CareerData] = Field(default_factory=list)
-```
+`MilitaryAcademyPreCareer` overrides it to administer the tied career's basic
+training: grant the service skills (what `apply_entry` currently does inline)
+and append `self.service_skills_from()` to
+`projection.summary.basic_training_received`. The knowledge "Army Academy
+provides Army's basic training" already lives in `service_skills_from` on the
+academy class — it stays there, and `CareerData` learns nothing new.
 
-#### 2. CareerData Basic Training Logic
-**File:** `src/ceres/character/domain/career_data.py`
+`CareerData` overrides it with the simplified logic: if `self.kind` is already
+in `basic_training_received`, return `None` (no training, fall through to
+`_queue_skill_table_before_survival`); otherwise grant training (full or
+limited, per current rules) and append `type(self)()` to the list.
 
-Update the `_basic_training_plan()` method:
-- Check if the career is already in `projection.basic_training`
-- If yes, return `None` (no basic training needed)
-- If no, return `BasicTrainingPlan(grant_all=True)` for first career
-- If no, return `BasicTrainingPlan(grant_all=False)` for subsequent careers
+**The bigger pattern.** Every `CareerData.start_new_term()` call currently does
+exactly one of: `_apply_basic_training()` (branching on a `grant_all` bool) or
+`_queue_skill_table_before_survival()`. This is one concept — the term-start
+skill-granting opportunity — expressed as a `bool | None` plan object plus a
+separate method rather than one explicit decision. With `basic_training_received`
+driving the check inside `_apply_basic_training`, the `_basic_training_plan`
+indirection may collapse. That refactor belongs after the tests are green.
 
-#### 3. Military Academy Handling
-**File:** `src/ceres/character/domain/precareer/military_academy.py`
+These points are direction, not upfront commitments. Tests must be red before
+any implementation begins.
 
-On graduation, add the tied career to `projection.basic_training`:
-```python
-projection.basic_training.append(tied_career)
-```
+## `is_continuation` goes away
 
-#### 4. Assignment Switch Handling (RIC-010)
-**Files:**
-- `src/ceres/character/domain/career/agent.py`
-- `src/ceres/character/domain/career/citizen.py`
-- `src/ceres/character/domain/career/entertainer.py`
-- `src/ceres/character/domain/career/merchant.py`
+`start_new_term` currently takes an `is_continuation: bool` flag that skips
+basic training when True. This flag is entirely superseded by
+`basic_training_received`: once `CareerData._apply_basic_training` checks
+`self.kind in [t.kind for t in summary.basic_training_received]` and returns
+`None` (skip) when found, all scenarios are covered. Remove the parameter from
+`start_new_term`; update `SwitchAssignmentHandler` and `_start_new_career_term`
+to stop passing it.
 
-For assignment switches within the same career, check if the parent career is in `basic_training` before granting limited basic training.
+## Process: one scenario at a time
 
-## TDD Approach
+For each scenario:
 
-### Step 1: Write Failing Tests
+1. Write a failing test using `CharacterDriver` in the appropriate test file.
+2. Confirm it is red.
+3. Make the minimal change to turn it green without breaking anything else.
+4. Run the full suite.
+5. Refactor if a cleaner pattern has emerged.
 
-Create three test files to prove the current implementation is broken:
+## Starting point: RIC-009
 
-#### Test File 1: `tests/unit/character/test_basic_training_academy.py`
-Tests that Military Academy graduates do **not** repeat basic training for the corresponding career.
+Test in `tests/unit/character/domain/precareer/test_military_academy.py`:
+drive Army Academy graduation → Army career entry and assert no
+`PendingInitialTrainingChoice` is produced; assert `PendingSkillTable` instead.
 
-#### Test File 2: `tests/unit/character/test_basic_training_reentry.py`
-Tests that re-entering a career (e.g., Scout → Drifter → Scout) does **not** repeat basic training.
+## Career re-entry
 
-#### Test File 3: `tests/unit/character/test_basic_training_assignment_switch.py`
-Tests that switching assignments within the same career (e.g., Citizen Worker → Citizen Corporate) does **not** repeat basic training.
+Test in `tests/unit/character/domain/career/test_scout.py`: drive Scout → one
+term → muster out → Drifter → one term → muster out → re-enter Scout. Assert
+no `PendingInitialTrainingChoice` on second Scout entry; assert
+`PendingSkillTable` instead.
 
-### Step 2: Run Tests (They Should Fail)
-```bash
-uv run pytest tests/unit/character/test_basic_training_*.py -v
-```
+## RIC-010
 
-### Step 3: Implement the Fix
-Update the code as described in the "Implementation Details" section above.
+Test in `tests/unit/character/domain/career/test_citizen.py`: drive Citizen
+Worker → one term → muster out → re-enter Citizen Corporate. Assert no
+`PendingInitialTrainingChoice` on re-entry; assert `PendingSkillTable` instead.
+(Citizen does not use `switch_assignment`; direct re-entry with a different
+assignment is the RIC-010 scenario. Under the new design this is fixed by the
+same `basic_training_received` check — no special case needed.)
 
-### Step 4: Run Tests Again (They Should Pass)
-Re-run the tests to verify the fix:
-```bash
-uv run pytest tests/unit/character/test_basic_training_*.py -v
-```
+## Refactor step (after all three scenarios are green)
 
-### Step 5: Add Edge Case Tests
-Create additional tests for edge cases:
-- Military Academy failure (roll 2 or less) → no basic training granted
-- Military Academy failure (roll 3-6) → basic training granted, but no commission
-- Multiple Military Academies (e.g., Army Academy → Navy Academy)
-- Switching between careers with shared Service Skills
+With `is_continuation` gone and `basic_training_received` driving all checks,
+consider whether `_basic_training_plan` / `_queue_skill_table_before_survival`
+should collapse into a single dispatch inside `_apply_basic_training`. Only do
+this once behaviour is locked in by green tests.
 
-## Files to Modify
+## Notes
 
-| File | Change |
-|------|--------|
-| `src/ceres/character/domain/character_projection.py` | Add `basic_training` field |
-| `src/ceres/character/domain/career_data.py` | Update `_basic_training_plan()` |
-| `src/ceres/character/domain/precareer/military_academy.py` | Add tied career to `basic_training` on graduation |
-| `src/ceres/character/domain/career/agent.py` | Update assignment switch logic for RIC-010 |
-| `src/ceres/character/domain/career/citizen.py` | Update assignment switch logic for RIC-010 |
-| `src/ceres/character/domain/career/entertainer.py` | Update assignment switch logic for RIC-010 |
-| `src/ceres/character/domain/career/merchant.py` | Update assignment switch logic for RIC-010 |
-
-## Next Steps
-
-1. **Review the plan** and provide feedback
-2. **Implement the failing tests** first (TDD)
-3. **Run the tests** to confirm they fail
-4. **Implement the fix** as described
-5. **Run the tests again** to confirm they pass
-6. **Add edge case tests** for comprehensive coverage
-
-## Verification Commands
-
-```bash
-# Run all basic training tests
-uv run pytest tests/unit/character/test_basic_training_*.py -v
-
-# Run with coverage
-uv run pytest tests/unit/character/test_basic_training_*.py --cov=src/ceres/character --cov-report=term-missing -v
-
-# Run the full test suite to ensure no regressions
-uv run pytest tests/ -v
-```
-
-## Success Criteria
-
-- All new tests pass
-- No existing tests are broken
-- The basic training tracking correctly prevents duplicate training in all three scenarios (RIC-009, career re-entry, RIC-010)
+- Tests use `CharacterDriver` exclusively; use `isinstance` checks on pending
+  types, not `kind` string comparisons.
+- Expected assertions come from the rules and `RULE_INTERPRETATIONS.md`, not
+  from the current implementation.
+- If a fix for one scenario accidentally covers another, confirm with a test
+  before claiming credit.

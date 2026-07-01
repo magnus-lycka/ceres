@@ -81,6 +81,11 @@
       "psionics": null,
       "last_career": null,
       "last_career_ejected": false,
+      "basic_training_received": [
+        {
+          "kind": "ARMY_CAREER"
+        }
+      ],
       "last_assignment": null,
       "rank": null,
       "terms": [

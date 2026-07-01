@@ -82,6 +82,11 @@
       "kind": "SCHOLAR_CAREER"
     },
     "last_career_ejected": false,
+    "basic_training_received": [
+      {
+        "kind": "SCHOLAR_CAREER"
+      }
+    ],
     "last_assignment": {
       "name": "Field Researcher",
       "description": "You are an explorer or field researcher, equally at home in the laboratory or wilderness.",

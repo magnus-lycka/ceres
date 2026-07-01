@@ -188,7 +188,10 @@ Rule for future work:
 Note:
 
 - R-drives are implemented, including high-burn thruster notes.
-- when we later add external carry systems such as docking clamps, tow cables, cargo nets, external cargo mounts, jump nets, jump shuttles, modular cutter handling or similar, they should not be treated like internal docking space
+- when we later add external carry systems such as docking clamps,
+  tow cables, cargo nets, external cargo mounts, jump nets, jump
+  shuttles, modular cutter handling or similar, they should not
+  be treated like internal docking space
 - external loads should affect effective displacement for drive-performance calculations
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
 
@@ -634,6 +637,8 @@ Known differences:
   listed skill gained at level 0; Ceres offers the whole skill pool.
 - **EDU and age** — the `-D3 EDU` result and starting age of `22+2D3` are only
   manual problem notes. The current tests explicitly assert those notes.
+  Note that RIC-002 decides that Colonial Upbringing Lasts Exactly 8 Years
+  (Two Standard Terms)
 
 ## Merchant Academy pre-careers: bring Ceres fully in line with Companion
 

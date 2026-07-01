@@ -34,7 +34,7 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
+from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events, survive_pending_id
 
 
 def _setup() -> list:
@@ -70,7 +70,7 @@ def _enter_entertainer(assignment: str = 'Artist', qual_roll: int = 4) -> list:
 def _through_survive(assignment: str = 'Artist', survive_roll: int = 7) -> list:
     """Artist: SOC 6+, SOC=5, DM−1 → need roll 7 (7+(−1)=6 ≥ 6)."""
     _enter = _enter_entertainer(assignment)
-    return [*_enter, Event(fulfills=(_enter[-1].id, 0), handler=SurviveHandler(roll=survive_roll))]
+    return [*_enter, Event(fulfills=survive_pending_id(_enter), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Artist') -> list:

@@ -419,10 +419,9 @@ class Psion(CareerData):
         projection: CharacterProjection,
         assignment: AssignmentData,
         event_id: int,
-        is_continuation: bool = False,
     ) -> None:
         insert_at = len(projection.pending_inputs)
-        super().start_new_term(projection, assignment, event_id, is_continuation)
+        super().start_new_term(projection, assignment, event_id)
         training_queued = queue_psionic_institute_training(projection, event_id, len(projection.pending_inputs))
         if training_queued:
             insert_at = 1
