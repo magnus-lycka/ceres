@@ -26,8 +26,8 @@ from ceres.character.domain.career.career_events import (
     TermEventHandler,
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
+from ceres.character.domain.career.common_pending import PendingAnySkillAtLevelOnSuccessRoll
 from ceres.character.domain.career.scholar import (
-    PendingScholarEvent6SkillRoll,
     PendingScholarEvent11,
     PendingScholarScienceChoice,
     PendingScholarScienceChoicePreCreated,
@@ -368,7 +368,7 @@ class TestScholarEvent6:
     def test_creates_scholar_event_6_pending(self):
         projection = replay(1, self._setup_to_event_6())
 
-        assert any(isinstance(p, PendingScholarEvent6SkillRoll) for p in projection.pending_inputs)
+        assert any(isinstance(p, PendingAnySkillAtLevelOnSuccessRoll) for p in projection.pending_inputs)
 
     def test_success_creates_skill_choice_pending(self):
         # EDU=10 (DM+1), need 8+, modified_roll=8 → success

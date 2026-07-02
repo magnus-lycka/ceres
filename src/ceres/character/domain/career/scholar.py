@@ -41,6 +41,7 @@ from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
+    PendingAnySkillAtLevelOnSuccessRoll,
 )
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
@@ -235,31 +236,17 @@ class ScholarEvent3Handler(CareerHandlerBase):
 # ── event 6: advanced training ───────────────────────────────────────────────
 
 
-class PendingScholarEvent6SkillRoll(CareerSkillRollPendingBase):
-    kind: Literal['scholar_event_6_skill_roll'] = 'scholar_event_6_skill_roll'
-
-    def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        if event.modified_roll >= 8:
-            projection.pending_inputs.append(
-                PendingSkillChoice(
-                    pending_id=(event.id, 0),
-                    instruction='Choose any skill to gain at level 1',
-                    options=[],
-                )
-            )
-        # failure: _apply_skill_roll creates advancement pending
-
-
 class ScholarEvent6Handler(CareerHandlerBase):
     kind: Literal['scholar_event_6'] = 'scholar_event_6'
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.pending_inputs.append(
-            PendingScholarEvent6SkillRoll(
+            PendingAnySkillAtLevelOnSuccessRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any skill of your choice at level 1',
                 options=[Chars.EDU],
+                success_instruction='Advanced training: gain any skill of your choice at level 1',
             )
         )
         return pending_idx + 1
@@ -280,7 +267,7 @@ class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Cheat succeeded: choose any skill to gain +1',
-                    options=[],
+                    options=skill_instances(AnySkill),
                 )
             )
         else:

@@ -39,7 +39,7 @@ Traveller is now 18 years old and ready to begin careers.
 Each career term represents four years.
 
 1. **Qualification** — fail → draft (once per lifetime unless stated otherwise) or Drifter
-2. **Basic training** — first career only: all Service Skills at level 0; subsequent careers: any one Service Skill at level 0. Citizen and Drifter use their Assignment Skills for basic training instead of Service Skills.
+2. **Training** — if the Traveller has no basic training at all, gain full basic training: all Service Skills at level 0. If the Traveller has no basic training in this career, gain limited basic training: any one Service Skill at level 0. Citizen and Drifter use their Assignment Skills instead of Service Skills. Otherwise, select a skill table and roll 1D to learn something.
 3. **Survival** — a natural 2 always fails; failure → roll Mishap and leave career (lose Benefit roll for this term)
 4. **Event** — roll on the career's Events table
 5. **Commission** (Army, Navy, Marines only) — optional; DM-1 per term after the first unless SOC 9+; if commission succeeds, no advancement roll this term; Travellers may still roll for advancement if they fail a commission roll
@@ -314,4 +314,3 @@ Chosen as a group after all Travellers have finished creation. Players take turn
 | Investigator | Admin 1, Advocate 1, Deception 1, Electronics 1, Gun Combat 1, Investigate 1, Persuade 1, Stealth 1, Streetwise 1 |
 | Starship | Astrogation 1, Electronics 1, Engineer 1, Gunner 1, Mechanic 1, Medic 1, Pilot 1, Tactics (naval) 1 |
 | Criminal | Broker 1, Deception 1, Electronics 1, Medic 1, Persuade 1, Pilot 1, Stealth 1, Streetwise 1 |
-

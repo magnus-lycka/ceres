@@ -1,5 +1,7 @@
 # Plan: Fix Basic Training Repetition (RIC-009, RIC-010, Career Re-entry)
 
+## STATUS: COMPLETE
+
 ## Goal
 
 Three scenarios currently give basic training when they should not. The rule

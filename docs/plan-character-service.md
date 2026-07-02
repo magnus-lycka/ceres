@@ -94,9 +94,9 @@ service.get_history(character_id) -> list[TermSummaryRow]
 service.submit_event(character_id, fulfills, form_data) -> SubmitResult
 # SubmitResult carries: view, changes (diff), notes (narrative from the event just processed), error
 
-# Catalogue queries
-service.available_sophonts() -> list[str]
-service.all_careers() -> list[CareerData]
+# Catalogue queries — pass None to get all, or a character_id to filter by context
+service.available_sophonts(character_id=None) -> list[str]
+service.available_careers(character_id=None) -> list[CareerData]
 
 # Output
 service.stat_block_pdf(character_id) -> bytes
@@ -149,19 +149,38 @@ No projection retrieval, no projection-walking, no career/precareer loading, no 
 computation, no `_term_detail_rows` helpers — all of that moves into `CharacterService`.
 `CharacterProjection` never appears in `routes.py`.
 
+## Implementation status (2026-07-02)
+
+Step 1 is done. `service.py` exists with `CharacterService` wrapping
+`SqliteCharacterBackend`, exposing: `create_character`, `list_characters`,
+`delete_character`, `rename_character`, `submit_event`, `get_summary`, `get_projection`.
+
+Steps 2–6 are not done. `routes.py` still imports from 7 domain/mechanism modules. The
+methods described in the Design section (`available_sophonts`, `all_careers`, `get_view`,
+`get_history`, `stat_block_pdf`, `gallery_pdf`) are absent. `SubmitResult` and
+`CharacterView` do not exist. `CharacterDriver`, `uc` approval tests, and `e2e` approval
+tests all still reach into domain/mechanism internals directly.
+
+The `e2e` test (`tests/approval/character/e2e/test_kasimir_yuen.py`) exists but was
+written against domain internals — it is not the HTTP-driven test described in the
+**Web e2e test** section below. It needs to be rewritten once the service layer is complete.
+
 ## Migration path
 
 This is a larger refactor. Do it incrementally:
 
-1. Create `src/ceres/character/service.py` with `CharacterService` wrapping
-   `SqliteCharacterBackend`. Move storage calls first — easiest to isolate.
+1. ~~Create `src/ceres/character/service.py` with `CharacterService` wrapping
+   `SqliteCharacterBackend`. Move storage calls first — easiest to isolate.~~ **Done.**
 2. Move catalogue queries (`load_careers`, `load_precareers`, sophont helpers) into the
    service.
-3. Move event submission and diff logic (`diff_summaries`, `build_event_from_form`, etc.).
+3. Move event submission and diff logic (`diff_summaries`, `build_event_from_form`, etc.),
+   introduce `SubmitResult`.
 4. Introduce `CharacterView` and the presentation adapter; migrate templates one section
    at a time.
 5. Migrate `uc` approval tests and `CharacterDriver` to use the service.
-6. Once routes.py imports only `CharacterService` and HTTP types, and no approval test
+6. Rewrite the `e2e` approval test to drive the full HTTP pipeline through an in-memory
+   service instance.
+7. Once `routes.py` imports only `CharacterService` and HTTP types, and no approval test
    touches domain internals, the migration is done.
 
 ## Files affected
