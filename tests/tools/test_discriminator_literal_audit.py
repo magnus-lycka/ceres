@@ -115,6 +115,29 @@ def not_valid_python(
     assert result.ok
 
 
+def test_collect_declarations_does_not_parse_python_files_without_literal_annotations(tmp_path: Path) -> None:
+    _write(
+        tmp_path / 'src' / 'ceres' / 'valid_model.py',
+        """
+from typing import Literal
+
+
+class MarineEvent:
+    kind: Literal['marines_event_5'] = 'marines_event_5'
+""",
+    )
+    _write(
+        tmp_path / 'src' / 'ceres' / 'invalid_but_irrelevant.py',
+        """
+def not_valid_python(
+""",
+    )
+
+    declarations = collect_discriminator_declarations([tmp_path / 'src' / 'ceres'])
+
+    assert [declaration.literal for declaration in declarations] == ['marines_event_5']
+
+
 def test_audit_can_limit_scan_paths_to_avoid_known_noise(tmp_path: Path) -> None:
     _write(
         tmp_path / 'src' / 'ceres' / 'models.py',

@@ -98,7 +98,10 @@ def _parse_python_source(path: Path, source: str) -> ast.AST:
 def collect_discriminator_declarations(paths: list[Path]) -> tuple[DiscriminatorDeclaration, ...]:
     declarations: list[DiscriminatorDeclaration] = []
     for path in _iter_files(paths, suffixes=(PYTHON_SUFFIX,)):
-        tree = _parse_python_source(path, _read_source(path))
+        source = _read_source(path)
+        if 'Literal' not in source:
+            continue
+        tree = _parse_python_source(path, source)
         for node in ast.walk(tree):
             if not isinstance(node, ast.AnnAssign):
                 continue

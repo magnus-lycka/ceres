@@ -311,9 +311,26 @@ class TestSectorPicker:
 
 
 class TestSectorSearch:
-    def test_returns_200(self, client):
+    def test_returns_200(self, client, monkeypatch):
+        from ceres.adapters.travellermap import SectorInfo
+
+        monkeypatch.setattr(
+            'ceres.character.web.routes.search_sectors',
+            lambda q: [
+                SectorInfo(
+                    x=0,
+                    y=0,
+                    milieu='M1105',
+                    abbreviation='Spin',
+                    tags='OTU',
+                    names=['Spinward Marches'],
+                )
+            ],
+        )
+
         r = client.get('/ui/worlds/sectors/search?q=spin')
         assert r.status_code == 200
+        assert 'Spinward Marches' in r.text
 
 
 class TestSectorFilters:
@@ -350,8 +367,23 @@ class TestSectorFilters:
         assert r.status_code == 200
 
     def test_combined_ref_extracts_sector_and_hex(self, client, monkeypatch):
+        from ceres.adapters.travellermap import SectorInfo
+
         mock = self._mock_sector()
         monkeypatch.setattr('ceres.character.web.routes.SectorWorldFilters.from_travellermap', lambda s: mock)
+        monkeypatch.setattr(
+            'ceres.character.web.routes.search_sectors',
+            lambda q: [
+                SectorInfo(
+                    x=-4,
+                    y=1,
+                    milieu='M1105',
+                    abbreviation='Troj',
+                    tags='OTU',
+                    names=['Trojan Reach'],
+                )
+            ],
+        )
         r = client.get('/ui/worlds/sectors/Spin?reference_hex=Troj2715')
         assert r.status_code == 200
 
@@ -369,8 +401,10 @@ class TestRouteHelpers:
         url = _select_world_url(spec, character_id=1, fulfills='1.0')
         assert 'character_id=1' in url
 
-    def test_sector_coordinates_unknown_sector(self):
+    def test_sector_coordinates_unknown_sector(self, monkeypatch):
         from ceres.character.web.routes import _sector_coordinates
+
+        monkeypatch.setattr('ceres.character.web.routes.search_sectors', lambda q: [])
 
         assert _sector_coordinates('ZZZZZ') is None
 
