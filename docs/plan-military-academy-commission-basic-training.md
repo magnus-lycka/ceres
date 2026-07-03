@@ -1,6 +1,6 @@
 # Plan: Fix Basic Training Repetition and Pending Input Ordering
 
-## STATUS: IN PROGRESS — Phase 1 complete, Phase 2 not started
+## STATUS: IN PROGRESS — Phase 1 complete, Phase 2 nearly complete
 
 ## Background
 
@@ -68,7 +68,51 @@ regenerated with `--snapshot-update`.
 
 ---
 
-## Phase 2 — Pending Input Ordering Throughout the Codebase (NOT STARTED)
+## Phase 2 — Pending Input Ordering Throughout the Codebase (IN PROGRESS)
+
+### Completed in Phase 2
+
+All of the `append` → `insert(0, ...)` fixes in `career_data.py` entry classes
+were applied: `_queue_injury()`, `CharacteristicLossChoiceEntry`,
+`RolledConnectionsEntry`, `SkillChoiceEntry`, `RollMishapEntry`,
+`LifeEventEntry`, `GainConnectionAndSkillChoiceEntry`,
+`GainConnectionsAndSkillChoiceEntry` — all now use `insert(0, ...)`.
+
+In `career_events.py`: `SkillTableHandler.apply()` no longer contains
+`reenlist_queued` detection or survival-appending logic;
+`PendingSkillTableChoice.reenlist_queued` was removed;
+`PendingRankBonusChoice._continue()` now uses `insert(0, ...)` for
+`PendingSkillTable` and calls `queue_reenlist_or_aging` with index 1.
+
+The Phase 1 regression in `MilitaryAcademyPreCareer.apply_entry` was fixed:
+it now calls `career._apply_basic_training()` and produces
+`PendingInitialTrainingChoice` with Drive/VaccSuit options. The three Army
+Academy approval tests were updated to submit `skill_form(Drive())` before the
+event and graduation forms. A unit test in `test_military_academy.py` covers
+this.
+
+`RolledConnectionsGroupEntry.apply()` still uses the `reversed()`+`insert(0,
+...)` pattern, which scrambles pending IDs. This is now tracked as a separate
+item in [plan-pending-input-queue-api.md](plan-pending-input-queue-api.md).
+
+### What remains
+
+**`InjuryAndGainConnectionEntry.apply()`** (`career_data.py:458`) duplicates
+`_queue_injury()` logic but uses `append` instead of `insert(0, ...)`. It
+should delegate to `_queue_injury()`:
+
+```python
+def apply(self, projection, event, pending_idx) -> int:
+    _queue_injury(projection, event, pending_idx, self.severity)
+    projection.add_connection(self.connection, origin=self.text)
+    return pending_idx + 1
+```
+
+Write a test first: confirm that after an `InjuryAndGainConnectionEntry`
+resolves, the injury choice appears at position 0 in the queue (before anything
+already queued). Then apply the fix.
+
+---
 
 ### The architectural principle
 
