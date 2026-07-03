@@ -1,7 +1,5 @@
 """Unit tests for precareer_data.py — PreCareerData, PrecareerSkillEntry, PreCareerTerm."""
 
-from typing import cast
-
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
 from ceres.character.domain.skills import Admin, Animals
@@ -32,12 +30,10 @@ class TestPrecareerSkillEntry:
         entry = PrecareerSkillEntry(skill=Admin())
         assert entry.skill_options == [Admin()]
 
-    def test_skill_options_list_returns_same_list(self):
-        from ceres.character.domain.skills import AnySkill as _AnySkill
-
-        skills: list[_AnySkill] = [Admin(), Animals()]
+    def test_skill_options_tuple_returns_as_list(self):
+        skills = (Admin(), Animals())
         entry = PrecareerSkillEntry(skill=skills)
-        assert entry.skill_options == skills
+        assert entry.skill_options == list(skills)
 
     def test_category_label_none_is_skill(self):
         entry = PrecareerSkillEntry(skill=None)
@@ -47,20 +43,16 @@ class TestPrecareerSkillEntry:
         entry = PrecareerSkillEntry(skill=Admin())
         assert entry.category_label == 'Admin'
 
-    def test_category_label_list_is_skill(self):
-        from ceres.character.domain.skills import AnySkill as _AnySkill
-
-        entry = PrecareerSkillEntry(skill=cast(list[_AnySkill], [Admin(), Animals()]))
+    def test_category_label_tuple_is_skill(self):
+        entry = PrecareerSkillEntry(skill=(Admin(), Animals()))
         assert entry.category_label == 'skill'
 
     def test_grant_skill_none_returns_none(self):
         entry = PrecareerSkillEntry(skill=None)
         assert entry.grant_skill() is None
 
-    def test_grant_skill_list_returns_none(self):
-        from ceres.character.domain.skills import AnySkill as _AnySkill
-
-        entry = PrecareerSkillEntry(skill=cast(list[_AnySkill], [Admin(), Animals()]))
+    def test_grant_skill_tuple_returns_none(self):
+        entry = PrecareerSkillEntry(skill=(Admin(), Animals()))
         assert entry.grant_skill() is None
 
     def test_grant_skill_level_0_returns_skill_at_0(self):
@@ -130,6 +122,52 @@ class TestPreCareerDataApplyEntry:
         assert university.prepare_entry(proj, roll=8, terms_started=0) is True
 
 
+class TestSkillAtLevel:
+    def test_specialised_skill_with_level_uses_active_fields(self):
+        from ceres.character.domain.precareer.precareer_data import _skill_at_level
+        from ceres.character.domain.skills import Drive, Level
+
+        skill = Drive(wheel=Level(value=1))
+        result = _skill_at_level(skill, level=2)
+        assert isinstance(result, Drive)
+        assert result.wheel.value == 2
+
+    def test_specialised_skill_level_zero_fields_stay_zero(self):
+        from ceres.character.domain.precareer.precareer_data import _skill_at_level
+        from ceres.character.domain.skills import Drive, Level
+
+        skill = Drive(wheel=Level(value=1))
+        result = _skill_at_level(skill, level=2)
+        assert isinstance(result, Drive)
+        assert result.hovercraft.value == 0
+
+
+class TestDeserialisePrecareer:
+    def test_passthrough_precareer_data_instance(self):
+        from ceres.character.domain.precareer.loader import load_precareers
+        from ceres.character.domain.precareer.precareer_data import _deserialise_precareer
+
+        university = next(p for p in load_precareers() if p.name == 'University')
+        result = _deserialise_precareer(university)
+        assert result is university
+
+
+class TestApplyEntryWithPickCount:
+    def _spacer_community(self):
+        from ceres.character.domain.precareer.loader import load_precareers
+
+        return next(p for p in load_precareers() if p.name == 'Spacer Community')
+
+    def test_entry_pick_count_queues_choices(self):
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
+
+        spacer = self._spacer_community()
+        proj = _projection()
+        spacer.apply_entry(proj, _any_event(), pending_idx=0)
+        choices = [p for p in proj.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
+        assert len(choices) == spacer.entry_pick_count
+
+
 class TestPreCareerTerm:
     def _university_term(self) -> PreCareerTerm:
         from ceres.character.domain.precareer.loader import load_precareers
@@ -157,7 +195,8 @@ class TestPreCareerTerm:
 
         pcs = {pc.name: pc for pc in load_precareers()}
         university = pcs['University']
-        term = PreCareerTerm.model_validate({'kind': 'university', 'precareer': 'University'})
+        original = university.make_term()
+        term = PreCareerTerm.model_validate(original.model_dump(mode='json'))
         assert term.precareer is university
 
     def test_apply_entry_delegates_to_precareer(self):

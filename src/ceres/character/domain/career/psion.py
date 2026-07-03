@@ -15,7 +15,6 @@ from ceres.character.domain.career.career_data import (
     BenefitDmEntry,
     CareerData,
     CareerHandlerBase,
-    CareerSkillOption,
     CareerSkillTables,
     CareerTableEntry,
     CareerTerm,
@@ -32,6 +31,7 @@ from ceres.character.domain.career.career_data import (
     RollMishapEntry,
     SkillChoiceEntry,
     SkillTable,
+    SkillTableItem,
     _blank_ranks,
 )
 from ceres.character.domain.career.career_events import (
@@ -86,7 +86,7 @@ from ceres.character.domain.skills import (
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int
 from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
-_TALENTS: list[Psi] = [Psi(talent) for talent in psionic_talent_instances()]
+_TALENTS: tuple[Psi, ...] = tuple(Psi(talent) for talent in psionic_talent_instances())
 _ALL_NON_JOT_SKILLS: list[AnySkill] = [
     cast(AnySkill, skill) for skill in skill_instances(AnySkill) if not isinstance(skill, JackOfAllTrades)
 ]
@@ -406,7 +406,7 @@ class Psion(CareerData):
         self,
         projection: CharacterProjection,
         table_name: str,
-        option: CareerSkillOption,
+        option: SkillTableItem,
     ) -> bool:
         if not isinstance(option, Psi):
             return True
@@ -486,7 +486,7 @@ class Psion(CareerData):
             min_edu=8,
         ),
         assignment1=SkillTable(
-            [Psi(Telepathy()), Psi(Telekinesis()), Deception(), Stealth(), Streetwise(), [Melee(), GunCombat()]]
+            [Psi(Telepathy()), Psi(Telekinesis()), Deception(), Stealth(), Streetwise(), (Melee(), GunCombat())]
         ),
         assignment2=SkillTable(
             [
@@ -525,14 +525,14 @@ class Psion(CareerData):
             3: RankEntry(
                 rank=3,
                 title='Acolyte',
-                bonus=RankBonus(choices=cast(list[CareerSkillOption], _TALENTS), level=1),
+                bonus=RankBonus(choices=_TALENTS, level=1),
             ),
             4: RankEntry(rank=4),
             5: RankEntry(rank=5),
             6: RankEntry(
                 rank=6,
                 title='Master',
-                bonus=RankBonus(choices=cast(list[CareerSkillOption], _TALENTS), level=1),
+                bonus=RankBonus(choices=_TALENTS, level=1),
             ),
         },
         3: {

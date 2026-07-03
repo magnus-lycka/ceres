@@ -1,5 +1,7 @@
 """Unit tests for prisoner_events.py — ParoleRollHandler, PendingParoleRoll, set_forced_prison_career."""
 
+import pytest
+
 from ceres.character.domain.career.prisoner_events import (
     ParoleRollHandler,
     PendingParoleRoll,
@@ -75,6 +77,72 @@ class TestPendingParoleRoll:
         assert isinstance(spec, NumberEntry)
         assert spec.min == 1
         assert spec.max == 6
+
+
+class TestApplyPrisonerAdvancement:
+    def _proj_with_prisoner(self, rank: int = 0) -> CharacterProjection:
+        from ceres.character.domain.career.career_data import CareerTerm
+        from ceres.character.domain.career.prisoner import PRISONER
+
+        proj = _proj()
+        assignment = PRISONER.assignments[0]
+        proj.summary.terms.append(CareerTerm(career=PRISONER, assignment=assignment))
+        proj.summary.rank = rank
+        proj.summary.parole_threshold = 20  # high enough to not trigger parole
+        return proj
+
+    def _event_with_roll(self, roll: int) -> Event:
+        from ceres.character.domain.career.prisoner_events import ParoleRollHandler
+
+        return Event(handler=ParoleRollHandler(roll=roll))
+
+    def test_raises_when_no_current_assignment(self):
+        from ceres.character.domain.career.prisoner import PRISONER
+        from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
+
+        proj = _proj()
+        with pytest.raises(Exception, match='No current assignment'):
+            apply_prisoner_advancement(proj, self._event_with_roll(4), PRISONER)
+
+    def test_failure_queues_assignment_change(self):
+        from ceres.character.domain.career.career_events import PendingAssignmentChangeChoice
+        from ceres.character.domain.career.prisoner import PRISONER
+        from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
+
+        proj = self._proj_with_prisoner()
+        apply_prisoner_advancement(proj, self._event_with_roll(1), PRISONER)
+        assert any(isinstance(p, PendingAssignmentChangeChoice) for p in proj.pending_inputs)
+
+    def test_success_to_rank2_queues_rank_bonus_choice(self):
+        from ceres.character.domain.career.career_events import PendingRankBonusChoice
+        from ceres.character.domain.career.prisoner import PRISONER
+        from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
+
+        # Rank 1 → 2 gives Athletics 1 (specialised → PendingRankBonusChoice)
+        proj = self._proj_with_prisoner(rank=1)
+        apply_prisoner_advancement(proj, self._event_with_roll(12), PRISONER)
+        assert any(isinstance(p, PendingRankBonusChoice) for p in proj.pending_inputs)
+
+    def test_success_to_rank4_grants_advocate_directly(self):
+        from ceres.character.domain.career.prisoner import PRISONER
+        from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
+        from ceres.character.domain.skills import Advocate
+
+        # Rank 3 → 4 gives Advocate 1 (unspecialised → direct grant)
+        proj = self._proj_with_prisoner(rank=3)
+        apply_prisoner_advancement(proj, self._event_with_roll(12), PRISONER)
+        assert proj.summary.skill_level(Advocate, 0) == 1
+
+    def test_success_at_rank6_grants_characteristic(self):
+        from ceres.character.domain.career.prisoner import PRISONER
+        from ceres.character.domain.career.prisoner_events import apply_prisoner_advancement
+        from ceres.character.domain.characteristics import Chars
+
+        # Rank 5 → 6 gives END +1
+        proj = self._proj_with_prisoner(rank=5)
+        end_before = proj.summary.characteristics.get(Chars.END, 0)
+        apply_prisoner_advancement(proj, self._event_with_roll(12), PRISONER)
+        assert proj.summary.characteristics.get(Chars.END, 0) == end_before + 1
 
 
 class TestSetForcedPrisonCareer:

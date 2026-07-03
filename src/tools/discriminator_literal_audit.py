@@ -87,14 +87,18 @@ def _iter_files(paths: list[Path], *, suffixes: tuple[str, ...]) -> list[Path]:
     return files
 
 
-def _parse_python_file(path: Path) -> ast.AST:
-    return ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
+def _read_source(path: Path) -> str:
+    return path.read_text(encoding='utf-8')
+
+
+def _parse_python_source(path: Path, source: str) -> ast.AST:
+    return ast.parse(source, filename=str(path))
 
 
 def collect_discriminator_declarations(paths: list[Path]) -> tuple[DiscriminatorDeclaration, ...]:
     declarations: list[DiscriminatorDeclaration] = []
     for path in _iter_files(paths, suffixes=(PYTHON_SUFFIX,)):
-        tree = _parse_python_file(path)
+        tree = _parse_python_source(path, _read_source(path))
         for node in ast.walk(tree):
             if not isinstance(node, ast.AnnAssign):
                 continue
@@ -136,9 +140,13 @@ def _declaration_spans_by_literal(
     return spans
 
 
-def _find_python_literal_occurrences(path: Path, literals: set[str]) -> list[LiteralOccurrence]:
+def _contains_any_literal(source: str, literals: set[str]) -> bool:
+    return any(literal in source for literal in literals)
+
+
+def _find_python_literal_occurrences(path: Path, literals: set[str], source: str) -> list[LiteralOccurrence]:
     occurrences: list[LiteralOccurrence] = []
-    tree = _parse_python_file(path)
+    tree = _parse_python_source(path, source)
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
             continue
@@ -155,9 +163,8 @@ def _find_python_literal_occurrences(path: Path, literals: set[str]) -> list[Lit
     return occurrences
 
 
-def _find_text_literal_occurrences(path: Path, literals: set[str]) -> list[LiteralOccurrence]:
+def _find_text_literal_occurrences(path: Path, literals: set[str], text: str) -> list[LiteralOccurrence]:
     occurrences: list[LiteralOccurrence] = []
-    text = path.read_text(encoding='utf-8')
     for literal in literals:
         start = text.find(literal)
         while start != -1:
@@ -179,11 +186,14 @@ def _find_text_literal_occurrences(path: Path, literals: set[str]) -> list[Liter
 def find_literal_occurrences(paths: list[Path], literals: set[str]) -> tuple[LiteralOccurrence, ...]:
     occurrences: list[LiteralOccurrence] = []
     for path in _iter_files(paths, suffixes=SCAN_SUFFIXES):
+        source = _read_source(path)
+        if not _contains_any_literal(source, literals):
+            continue
         if path.suffix == PYTHON_SUFFIX:
-            occurrences.extend(_find_python_literal_occurrences(path, literals))
+            occurrences.extend(_find_python_literal_occurrences(path, literals, source))
             continue
         if path.suffix == HTML_SUFFIX:
-            occurrences.extend(_find_text_literal_occurrences(path, literals))
+            occurrences.extend(_find_text_literal_occurrences(path, literals, source))
     return tuple(occurrences)
 
 

@@ -77,7 +77,9 @@ def _complete_citizen_term(session: CharacterSession, *, assignment: str = 'Corp
     PendingInitialTrainingChoice which is handled if present.
     """
     session.submit(career_entry_form('Citizen', assignment, roll=7))
-    if session.projection.pending_inputs[0].kind == 'initial_training_choice':
+    from ceres.character.domain.career.career_events import PendingInitialTrainingChoice
+
+    if isinstance(session.projection.pending_inputs[0], PendingInitialTrainingChoice):
         session.submit(skill_form(Admin()))
     session.submit(roll_form(7))  # survive
     session.submit(roll_form(5))  # term_event

@@ -39,7 +39,7 @@ class TestPrecareerFromUserInputName:
         assert precareer_from_user_input_name('Unknown Pre-Career') is None
 
     def test_case_sensitive(self):
-        assert precareer_from_user_input_name('university') is None
+        assert precareer_from_user_input_name('UNIVERSITY') is None
 
 
 class TestPrecareerOfType:

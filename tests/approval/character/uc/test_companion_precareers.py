@@ -287,7 +287,8 @@ def test_university_graduation(snapshot):
     session.submit(precareer_entry_form(UniversityPreCareer, roll=10))
     session.submit(skill_form(Admin()))
     session.submit(skill_form(Admin()))
-    session.submit(roll_form(7))  # precareer event
+    session.submit(roll_form(7))  # precareer event: life event
+    session.submit(roll_form(9))  # life event: travel (no choice needed)
     session.submit(roll_form(8))  # graduation
     assert _snap(session.projection) == snapshot(extension_class=_ext)
 
@@ -299,6 +300,7 @@ def test_university_honours_graduation(snapshot):
     session.submit(precareer_entry_form(UniversityPreCareer, roll=10))
     session.submit(skill_form(Admin()))
     session.submit(skill_form(Admin()))
-    session.submit(roll_form(7))  # precareer event
+    session.submit(roll_form(7))  # precareer event: life event
+    session.submit(roll_form(9))  # life event: travel (no choice needed)
     session.submit(roll_form(11))  # graduation with honours
     assert _snap(session.projection) == snapshot(extension_class=_ext)

@@ -560,8 +560,8 @@ def _skill_classes(skill_union: object) -> tuple[type[Skill], ...]:
     return get_args(skill_union)
 
 
-def skill_instances(skill_union: object) -> list[AnySkill]:
-    return [cast(AnySkill, cls()) for cls in _skill_classes(skill_union)]
+def skill_instances(skill_union: object) -> tuple[AnySkill, ...]:
+    return tuple(cast(AnySkill, cls()) for cls in _skill_classes(skill_union))
 
 
 def level_fields(skill_cls: type[Skill]) -> list[str]:

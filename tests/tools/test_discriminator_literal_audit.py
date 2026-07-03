@@ -89,6 +89,32 @@ def test_thing():
     assert violation.path == tmp_path / 'tests' / 'test_bad.py'
 
 
+def test_audit_does_not_parse_python_files_without_relevant_literals(tmp_path: Path) -> None:
+    _write(
+        tmp_path / 'src' / 'ceres' / 'models.py',
+        """
+from typing import Literal
+
+
+class MarineEvent:
+    type: Literal['marines_event_5'] = 'marines_event_5'
+""",
+    )
+    _write(
+        tmp_path / 'tests' / 'invalid_but_irrelevant.py',
+        """
+def not_valid_python(
+""",
+    )
+
+    result = audit_discriminator_literals(
+        declaration_paths=[tmp_path / 'src' / 'ceres'],
+        scan_paths=[tmp_path / 'tests'],
+    )
+
+    assert result.ok
+
+
 def test_audit_can_limit_scan_paths_to_avoid_known_noise(tmp_path: Path) -> None:
     _write(
         tmp_path / 'src' / 'ceres' / 'models.py',

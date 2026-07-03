@@ -11,7 +11,8 @@ def test_audit_discriminator_literals_repo_wide() -> None:
         ],
         scan_paths=[
             repo_root / 'src' / 'ceres' / 'character',
-            repo_root / 'tests' / 'character',
+            repo_root / 'tests' / 'unit' / 'character',
+            repo_root / 'tests' / 'approval' / 'character',
         ],
     )
 

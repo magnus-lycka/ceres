@@ -10,9 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import httpx
 
-from ceres.character.domain.career.loader import load_careers
 from ceres.character.domain.character_state import CharacterProjection, diff_summaries
-from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.spec import spec_from_summary
 from ceres.character.input_specs import SelectWorld, WorldFilterCriteria
 from ceres.character.mechanism.event_base import Event
@@ -150,8 +148,9 @@ def _term_detail_rows(summary) -> list[dict[str, Any]]:
     return rows
 
 
-def _projection_context(projection: CharacterProjection, character_id: int) -> dict[str, Any]:
-    careers = load_careers()
+def _projection_context(
+    projection: CharacterProjection, character_id: int, service: CharacterService
+) -> dict[str, Any]:
     enriched_inputs = []
     for pi in projection.pending_inputs[:1]:
         input_specs = pi.input_specs(projection)
@@ -162,8 +161,8 @@ def _projection_context(projection: CharacterProjection, character_id: int) -> d
         'summary': projection.summary,
         'character_id': character_id,
         'enriched_inputs': enriched_inputs,
-        'careers': careers,
-        'precareers': tuple(pc for pc in load_precareers() if pc.is_available(projection.summary)),
+        'careers': service.available_careers(character_id),
+        'precareers': service.available_precareers(character_id),
         'select_world_url': _select_world_url,
         'term_detail_rows': _term_detail_rows(projection.summary),
     }
@@ -420,7 +419,7 @@ def build_web_router(service: CharacterService) -> APIRouter:
         projection = service.get_projection(character_id)
         if projection is None:
             return Response(status_code=404)
-        ctx = _projection_context(projection, character_id)
+        ctx = _projection_context(projection, character_id, service)
         return templates.TemplateResponse(request=request, name='character.html', context=ctx)
 
     @router.get('/characters/{character_id}/wizard', response_class=HTMLResponse)
@@ -428,7 +427,7 @@ def build_web_router(service: CharacterService) -> APIRouter:
         projection = service.get_projection(character_id)
         if projection is None:
             return Response(status_code=404)
-        ctx = {**_projection_context(projection, character_id), 'is_htmx': False}
+        ctx = {**_projection_context(projection, character_id, service), 'is_htmx': False}
         return templates.TemplateResponse(request=request, name='wizard.html', context=ctx)
 
     @router.post('/characters/{character_id}/homeworld')
@@ -445,7 +444,8 @@ def build_web_router(service: CharacterService) -> APIRouter:
             service._backend.append_event(character_id, event)
         except Exception as exc:
             projection = service.get_projection(character_id) or projection
-            ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': False}
+            ctx = _projection_context(projection, character_id, service)
+            ctx = {**ctx, 'error': str(exc), 'changes': [], 'is_htmx': False}
             return templates.TemplateResponse(request=request, name='wizard.html', context=ctx, status_code=422)
 
         return RedirectResponse(
@@ -486,7 +486,8 @@ def build_web_router(service: CharacterService) -> APIRouter:
         try:
             event = _build_event_from_form(fulfills, form, projection)
         except Exception as exc:
-            ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': True}
+            ctx = _projection_context(projection, character_id, service)
+            ctx = {**ctx, 'error': str(exc), 'changes': [], 'is_htmx': True}
             return templates.TemplateResponse(request=request, name='partials/pending_inputs.html', context=ctx)
 
         before_summary = projection.summary.model_copy(deep=True)
@@ -495,7 +496,8 @@ def build_web_router(service: CharacterService) -> APIRouter:
             service._backend.append_event(character_id, event)
         except ReplayError as exc:
             projection = service.get_projection(character_id) or projection
-            ctx = {**_projection_context(projection, character_id), 'error': str(exc), 'changes': [], 'is_htmx': True}
+            ctx = _projection_context(projection, character_id, service)
+            ctx = {**ctx, 'error': str(exc), 'changes': [], 'is_htmx': True}
             return templates.TemplateResponse(request=request, name='partials/pending_inputs.html', context=ctx)
 
         projection = service.get_projection(character_id)
@@ -503,7 +505,7 @@ def build_web_router(service: CharacterService) -> APIRouter:
             return HTMLResponse('<p class="text-red-400">Projection unavailable</p>', status_code=500)
 
         changes = diff_summaries(before_summary, projection.summary)
-        ctx = {**_projection_context(projection, character_id), 'changes': changes, 'is_htmx': True}
+        ctx = {**_projection_context(projection, character_id, service), 'changes': changes, 'is_htmx': True}
         return templates.TemplateResponse(
             request=request,
             name='partials/pending_inputs.html',

@@ -360,12 +360,14 @@ class TestCharacterProjectionPendingInputsRoundTrip:
 
 class TestPendingInputBaseRegistryRealKinds:
     def test_registered_kinds_includes_survive(self):
-        assert 'survive' in PendingInputBase._registry
+        from ceres.character.domain.career.career_events import PendingSurvive
+
+        assert PendingSurvive in PendingInputBase._registry.values()
 
     def test_registry_maps_kind_to_class(self):
         from ceres.character.domain.career.career_events import PendingSurvive
 
-        assert PendingInputBase._registry['survive'] is PendingSurvive
+        assert PendingInputBase._registry[PendingSurvive.model_fields['kind'].default] is PendingSurvive
 
 
 class TestPendingInputBaseId:
@@ -394,7 +396,7 @@ class TestPendingInputBaseTemplateFragment:
         from ceres.character.domain.career.career_events import PendingSurvive
 
         p = PendingSurvive(pending_id=(1, 0), instruction='Survive')
-        assert p.template_fragment == 'survive'
+        assert p.template_fragment == p.kind
 
 
 class TestDeserialisePendingInputWithRealKinds:
@@ -407,7 +409,8 @@ class TestDeserialisePendingInputWithRealKinds:
     def test_deserialises_dict_by_kind(self):
         from ceres.character.domain.career.career_events import PendingSurvive
 
-        result = _deserialise_pending_input({'kind': 'survive', 'pending_id': [1, 0], 'instruction': 'Survive'})
+        p = PendingSurvive(pending_id=(1, 0), instruction='Survive')
+        result = _deserialise_pending_input(p.model_dump(mode='json'))
         assert isinstance(result, PendingSurvive)
 
 

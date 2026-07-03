@@ -88,9 +88,15 @@ def test_store_loads_career_event_in_a_fresh_process(tmp_path: Path) -> None:
         """
         import sys
 
-        from tests.unit.character.helpers import create_backend
+        from ceres.character.domain.character_state import CharacterSummary
+        from ceres.character.domain.event_handlers import register_event_handlers
+        from ceres.character.mechanism.store import SqliteCharacterBackend
 
-        backend = create_backend(sys.argv[1])
+        backend = SqliteCharacterBackend(
+            sys.argv[1],
+            ensure_handlers_registered=register_event_handlers,
+            summary_from_json=CharacterSummary.model_validate_json,
+        )
         backend.connection.execute(
             'insert into events (character_id, id, payload) values (?, ?, ?)',
             (1, 1, sys.argv[2]),

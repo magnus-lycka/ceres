@@ -267,7 +267,7 @@ class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Cheat succeeded: choose any skill to gain +1',
-                    options=skill_instances(AnySkill),
+                    options=list(skill_instances(AnySkill)),
                 )
             )
         else:
@@ -391,7 +391,7 @@ class Scholar(CareerData):
         ),
         service_skills=SkillTable(
             [
-                [Drive(), Flyer()],
+                (Drive(), Flyer()),
                 Electronics(),
                 Diplomat(),
                 Medic(),

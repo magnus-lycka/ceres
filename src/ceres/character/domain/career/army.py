@@ -289,7 +289,7 @@ class Army(CareerData):
         ),
         service_skills=SkillTable(
             [
-                [Drive(), VaccSuit()],
+                (Drive(), VaccSuit()),
                 Athletics(),
                 GunCombat(),
                 Recon(),
@@ -321,7 +321,7 @@ class Army(CareerData):
         assignment1=SkillTable(
             [  # Support
                 Mechanic(),
-                [Drive(), Flyer()],
+                (Drive(), Flyer()),
                 skill_instances(ProfessionSkill),
                 Explosives(),
                 Electronics(comms=Level(value=1)),

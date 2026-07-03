@@ -4,8 +4,9 @@ from typing import Literal, cast
 from pydantic import Field, TypeAdapter
 
 from ceres.character.domain.career.advancement import AdvancementDmChoiceHandler
-from ceres.character.domain.career.career_data import AdvancementDmOption, CareerSkillOption
+from ceres.character.domain.career.career_data import AdvancementDmOption, SkillTableItem
 from ceres.character.domain.character_state import CharacterProjection
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.input_specs import InputSpec, Select, form_str
@@ -17,9 +18,11 @@ _advancement_dm_or_skill_adapter: TypeAdapter[AdvancementDmOption | AnySkill] = 
 )
 
 
-def skill_option_label(option: CareerSkillOption | AdvancementDmOption) -> str:
+def skill_option_label(option: SkillTableItem | AdvancementDmOption) -> str:
     if isinstance(option, AdvancementDmOption):
         return option.label()
+    if isinstance(option, Chars):
+        return f'{option.value} +1'
     if isinstance(option, Psi):
         return type(option.talent).name()
     skill_cls = type(option)
@@ -35,13 +38,16 @@ def skill_option_label(option: CareerSkillOption | AdvancementDmOption) -> str:
 
 def build_skill_select_options(
     projection: CharacterProjection,
-    options: Sequence[CareerSkillOption | AdvancementDmOption],
+    options: Sequence[SkillTableItem | AdvancementDmOption],
     level: int | None,
 ) -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
     for option in options:
         if isinstance(option, AdvancementDmOption):
             results.append((option.label(), option.model_dump_json()))
+            continue
+        if isinstance(option, Chars):
+            results.append((f'{option.value} +1', option.value))
             continue
         if isinstance(option, Psi):
             results.append((type(option.talent).name(), option.model_dump_json()))

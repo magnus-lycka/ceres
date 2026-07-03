@@ -3,7 +3,8 @@
 import pytest
 
 from ceres.character.domain.character_start import PendingHomeworldSelection, PendingSophontSelection, PendingUcp
-from ceres.character.domain.sophont import HUMANITI
+from ceres.character.domain.precareer.psionic_community import PsionicCommunityPreCareer
+from ceres.character.domain.sophont import HUMANITI, SOPHONT_NAMES
 from ceres.character.service import CharacterService
 from tests.unit.character.helpers import MOCK_WORLD
 
@@ -113,6 +114,50 @@ class TestSubmitEvent:
         hw_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldSelection))
         with pytest.raises(ValueError):
             service.submit_event(cid, hw_pending.id, {'sector': '', 'hex_code': ''})
+
+
+class TestAvailableSophonts:
+    def test_returns_all_sophont_names_without_character_id(self, service):
+        assert service.available_sophonts() == SOPHONT_NAMES
+
+    def test_returns_all_when_character_has_no_homeworld_yet(self, service):
+        cid = service.create_character('Ada', 'NPC')
+        assert service.available_sophonts(cid) == SOPHONT_NAMES
+
+    def test_returns_subset_filtered_by_homeworld(self, service):
+        cid = service.create_character('Ada', 'NPC')
+        projection = service.get_projection(cid)
+        assert projection is not None
+        hw_pending = next(p for p in projection.pending_inputs if isinstance(p, PendingHomeworldSelection))
+        service.submit_event(cid, hw_pending.id, {'sector': MOCK_WORLD.sector_abbreviation, 'hex_code': MOCK_WORLD.hex})
+
+        names = service.available_sophonts(cid)
+        assert names == ['Vilani', 'Humaniti']
+
+
+class TestAvailableCareers:
+    def test_returns_all_selectable_careers_without_character_id(self, service):
+        careers = service.available_careers()
+        assert len(careers) > 0
+        assert all(c.selectable for c in careers)
+
+    def test_returns_careers_for_character(self, service):
+        cid = service.create_character('Ada', 'NPC')
+        careers = service.available_careers(cid)
+        assert len(careers) > 0
+        assert all(c.selectable for c in careers)
+
+
+class TestAvailablePrecareers:
+    def test_returns_all_precareers_without_character_id(self, service):
+        precareers = service.available_precareers()
+        assert len(precareers) > 0
+        assert any(isinstance(pc, PsionicCommunityPreCareer) for pc in precareers)
+
+    def test_excludes_psionic_community_when_character_has_no_psionics(self, service):
+        cid = service.create_character('Ada', 'NPC')
+        precareers = service.available_precareers(cid)
+        assert not any(isinstance(pc, PsionicCommunityPreCareer) for pc in precareers)
 
 
 class TestDeleteCharacter:

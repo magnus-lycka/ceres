@@ -33,7 +33,6 @@ from ceres.character.domain.career.career_events import (
     ReenlistHandler,
     SkillChoiceHandler,
     SkillRollHandler,
-    SkillTableHandler,
     SurviveHandler,
     TermEventHandler,
 )
@@ -648,14 +647,8 @@ class TestAgentMusterOut:
         """Character through one term, then reenlist=False to trigger muster-out."""
         base = _through_term_event()
         advancement = Event(fulfills=(base[-1].id, 0), handler=AdvancementHandler(roll=3))
-        skill_table = Event(fulfills=(advancement.id, 0), handler=SkillTableHandler(table='service_skills', roll=3))
-        leave = Event(fulfills=(skill_table.id, 0), handler=ReenlistHandler(reenlist=False))
-        return [
-            *base,
-            advancement,
-            skill_table,
-            leave,
-        ]
+        leave = Event(fulfills=(advancement.id, 0), handler=ReenlistHandler(reenlist=False))
+        return [*base, advancement, leave]
 
     def test_muster_out_row6_choice_benefit_creates_pending(self):
         base = self._muster_out_setup()

@@ -16,7 +16,7 @@ from ceres.character.domain.precareer.military_academy import (
     NavyAcademyPreCareer,
 )
 from ceres.character.domain.precareer.precareer_events import PreCareerGraduationHandler
-from ceres.character.domain.skills import Admin
+from ceres.character.domain.skills import Admin, Drive, VaccSuit
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
@@ -107,6 +107,21 @@ def test_auto_qualify_effect_bypasses_qualification_roll():
     assert projection.summary.current_career is not None
     assert projection.summary.current_career.name == 'Army'
     assert projection.auto_qualify_careers == []
+
+
+def test_army_academy_entry_presents_drive_or_vacc_suit_choice():
+    """Army Service Skills table has [Drive, VaccSuit] — player must choose during Academy entry."""
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('778827')
+    d.background_skills([Admin()])
+    d.precareer(ArmyAcademyPreCareer, roll=8)
+
+    training_choices = [p for p in d.projection.pending_inputs if isinstance(p, PendingInitialTrainingChoice)]
+    assert len(training_choices) == 1
+    option_types = [type(opt) for opt in training_choices[0].options]
+    assert Drive in option_types
+    assert VaccSuit in option_types
 
 
 # ── RIC-009: no repeated basic training after Military Academy ────────────────

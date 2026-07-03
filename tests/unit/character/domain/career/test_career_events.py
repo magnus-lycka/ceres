@@ -25,6 +25,7 @@ from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Admin
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import NumberEntry, Select
+from ceres.character.mechanism.event_base import Event
 from tests.unit.character.helpers import MOCK_WORLD
 
 
@@ -54,6 +55,28 @@ class TestPendingSurvive:
         assert len(specs) == 1
         assert isinstance(specs[0], NumberEntry)
         assert specs[0].min == 2 and specs[0].max == 12
+
+    def test_resolve_natural_2_queues_mishap_with_narrative(self):
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        proj = _projection()
+        proj.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Infantry')))
+        pending = PendingSurvive(pending_id=(1, 0), instruction='Roll 2D')
+        event = pending.event_from_form({'roll': '2'})
+        pending.resolve(proj, event)
+        assert any(isinstance(p, PendingMishap) for p in proj.pending_inputs)
+        assert any('natural 2' in n for n in proj.summary.narrative)
+
+    def test_resolve_raises_when_no_current_assignment(self):
+        import pytest
+
+        from ceres.character.mechanism.errors import ReplayError
+
+        proj = _projection()
+        pending = PendingSurvive(pending_id=(1, 0), instruction='Roll 2D')
+        event = pending.event_from_form({'roll': '8'})
+        with pytest.raises(ReplayError, match='No current assignment'):
+            pending.resolve(proj, event)
 
 
 class TestPendingTermEvent:
@@ -124,6 +147,58 @@ class TestPendingSkillTable:
         assert isinstance(specs[1], NumberEntry) and specs[1].name == 'roll'
 
 
+class TestSkillTableHandlerOrdering:
+    def _proj_with_army_career(self) -> CharacterProjection:
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        proj = _projection()
+        proj.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Infantry')))
+        return proj
+
+    def test_skill_choice_inserted_before_survive_pending(self):
+        """SkillTableHandler must insert PendingSkillTableChoice before any PendingSurvive in the queue."""
+        from ceres.character.domain.career.career_events import PendingSkillTableChoice
+
+        proj = self._proj_with_army_career()
+        survive = PendingSurvive(pending_id=(99, 0), instruction='Survive!')
+        proj.pending_inputs.append(survive)
+
+        event = PendingSkillTable(
+            pending_id=(1, 0),
+            instruction='Choose a table',
+            options=[SkillTableOption(label='Service Skills', key='service_skills')],
+        ).event_from_form({'table': 'service_skills', 'roll': '1'})
+        event.apply(proj)
+
+        pending_types = [type(p) for p in proj.pending_inputs]
+        choice_idx = pending_types.index(PendingSkillTableChoice)
+        survive_idx = pending_types.index(PendingSurvive)
+        assert choice_idx < survive_idx, 'Skill table choice must come before survive pending'
+
+    def test_rank_bonus_skill_table_inserted_before_survive_pending(self):
+        """Rank bonus skill table roll must come before PendingSurvive — rank is gained during the term."""
+        from ceres.character.domain.career.career_events import PendingRankBonusChoice
+
+        proj = self._proj_with_army_career()
+        survive = PendingSurvive(pending_id=(99, 0), instruction='Survive!')
+        proj.pending_inputs.append(survive)
+
+        pending = PendingRankBonusChoice(
+            pending_id=(1, 0),
+            instruction='Choose rank bonus skill',
+            options=[Admin()],
+            level=1,
+        )
+        event = pending.event_from_form({'skill': '{"kind": "ADMIN"}'})
+        event.apply(proj, fulfilled_pending=pending)
+
+        pending_types = [type(p) for p in proj.pending_inputs]
+        assert PendingSkillTable in pending_types, 'PendingSkillTable should be queued by _continue()'
+        skill_table_idx = pending_types.index(PendingSkillTable)
+        survive_idx = pending_types.index(PendingSurvive)
+        assert skill_table_idx < survive_idx, 'Rank bonus skill table must come before survive pending'
+
+
 class TestPendingReenlist:
     def test_event_from_form_reenlist_true(self):
         pending = PendingReenlist(pending_id=(1, 0))
@@ -148,6 +223,53 @@ class TestPendingReenlist:
 
     def test_input_specs_returns_empty(self):
         assert PendingReenlist(pending_id=(1, 0)).input_specs(_projection()) == []
+
+
+class TestAssignmentChangeChoiceHandler:
+    def _proj_with_army(self) -> CharacterProjection:
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        proj = _projection()
+        proj.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Infantry')))
+        return proj
+
+    def test_switch_choice_queues_pending_switch_assignment(self):
+        proj = self._proj_with_army()
+        event = Event(handler=SurviveHandler(roll=5))
+        AssignmentChangeChoiceHandler(choice='switch').apply(proj, event)
+        assert any(isinstance(p, PendingSwitchAssignment) for p in proj.pending_inputs)
+
+    def test_switch_excludes_current_assignment_from_options(self):
+        proj = self._proj_with_army()
+        event = Event(handler=SurviveHandler(roll=5))
+        AssignmentChangeChoiceHandler(choice='switch').apply(proj, event)
+        switch = next(p for p in proj.pending_inputs if isinstance(p, PendingSwitchAssignment))
+        names = [a.name for a in switch.options]
+        assert 'Infantry' not in names
+
+
+class TestSwitchAssignmentHandler:
+    def _proj_with_army(self) -> CharacterProjection:
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        proj = _projection()
+        proj.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Infantry')))
+        return proj
+
+    def test_failed_qualification_queues_reenlist(self):
+        proj = self._proj_with_army()
+        event = Event(handler=SurviveHandler(roll=5))
+        handler = SwitchAssignmentHandler(assignment=ARMY.assignment('Support'), qualification_roll=2)
+        handler.apply(proj, event)
+        assert any(isinstance(p, PendingReenlist) for p in proj.pending_inputs)
+
+    def test_successful_qualification_starts_new_term(self):
+        proj = self._proj_with_army()
+        event = Event(handler=SurviveHandler(roll=5))
+        handler = SwitchAssignmentHandler(assignment=ARMY.assignment('Support'), qualification_roll=12)
+        before_len = len(proj.summary.terms)
+        handler.apply(proj, event)
+        assert len(proj.summary.terms) > before_len
 
 
 class TestPendingAssignmentChangeChoice:
@@ -199,6 +321,17 @@ class TestPendingSwitchAssignment:
         assert isinstance(specs[0], Select) and specs[0].name == 'assignment'
         assert isinstance(specs[1], NumberEntry) and specs[1].name == 'roll'
 
+    def test_event_from_form_unknown_assignment_raises(self):
+        import pytest
+
+        from ceres.character.mechanism.errors import ReplayError
+
+        pending = PendingSwitchAssignment(
+            pending_id=(1, 0), instruction='Switch?', options=[ARMY.assignment('Support')]
+        )
+        with pytest.raises(ReplayError, match='Unknown assignment'):
+            pending.event_from_form({'assignment': 'Nonexistent', 'roll': '6'})
+
 
 class TestPurgeCareerPendings:
     def test_removes_survive_pending(self):
@@ -240,3 +373,20 @@ class TestApplySkillTableEntry:
         proj = _projection()
         _apply_skill_table_entry(proj, Admin())
         assert proj.summary.skill_level(Admin, 0) == 1
+
+    def test_increments_possessed_psi_talent(self):
+        from ceres.character.domain.psionics_data import Psi, Psionics, Telepathy
+
+        proj = _projection()
+        proj.summary.psionics = Psionics(psionic_talent_skills=[Telepathy()])
+        _apply_skill_table_entry(proj, Psi(root=Telepathy()))
+        assert proj.summary.psionics.talent_level(Telepathy) == 1
+
+    def test_no_op_for_unpossessed_psi_talent(self):
+        from ceres.character.domain.psionics_data import Clairvoyance, Psi, Psionics, Telepathy
+
+        proj = _projection()
+        proj.summary.psionics = Psionics(psionic_talent_skills=[Clairvoyance()])
+        _apply_skill_table_entry(proj, Psi(root=Telepathy()))
+        assert proj.summary.psionics.talent_level(Telepathy) is None
+        assert proj.summary.psionics.talent_level(Clairvoyance) == 0

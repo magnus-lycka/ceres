@@ -31,17 +31,13 @@ class MilitaryAcademyPreCareer(PreCareerData):
         event: Event,
         pending_idx: int,
     ) -> int:
-        from ceres.character.domain.psionics_data import Psi
-
         career = self.tied_career()
         assignment = career.assignments[0]
         training = career._basic_training_plan(projection, assignment)
         if training is not None:
-            table = career.skill_table(training.table_name)
-            if table:
-                for entry in table.entries:
-                    if not isinstance(entry, (Chars, Psi, list)):
-                        career._apply_initial_training_entry(projection, type(entry))
+            before = len(projection.pending_inputs)
+            career._apply_basic_training(projection, assignment, training.table_name, training.grant_all, event.id)
+            return pending_idx + (len(projection.pending_inputs) - before)
         return pending_idx
 
     def apply_graduation(

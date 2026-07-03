@@ -354,7 +354,7 @@ class Drifter(CareerData):
         service_skills=SkillTable(
             [
                 Athletics(),
-                [Melee()],
+                (Melee(),),
                 Recon(),
                 Streetwise(),
                 Stealth(),
@@ -365,9 +365,9 @@ class Drifter(CareerData):
             [  # Barbarian
                 Animals(),
                 Carouse(),
-                [Melee()],
+                (Melee(),),
                 Stealth(),
-                [Seafarer()],
+                (Seafarer(),),
                 Survival(),
             ]
         ),
@@ -383,7 +383,7 @@ class Drifter(CareerData):
         ),
         assignment3=SkillTable(
             [  # Scavenger
-                [Pilot()],
+                (Pilot(),),
                 Mechanic(),
                 Astrogation(),
                 VaccSuit(),

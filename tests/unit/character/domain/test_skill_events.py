@@ -1,7 +1,5 @@
 """Unit tests for skill_events.py — SkillChoiceHandler, PendingSkillChoice, helpers."""
 
-import json
-
 from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.career_events import SurviveHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
@@ -51,8 +49,7 @@ class TestBuildSkillSelectOptions:
         assert len(options) == 1
         label, json_val = options[0]
         assert label == 'Admin'
-        parsed = json.loads(json_val)
-        assert parsed['kind'] == 'ADMIN'
+        assert Admin.model_validate_json(json_val) is not None
 
     def test_advancement_dm_option(self):
         proj = _projection()
@@ -87,7 +84,7 @@ class TestSkillChoiceHandler:
 class TestPendingSkillChoice:
     def test_event_from_form_parses_skill(self):
         pending = PendingSkillChoice(pending_id=(1, 0), instruction='Choose', options=[Admin()])
-        event = pending.event_from_form({'skill': json.dumps({'kind': 'ADMIN'})})
+        event = pending.event_from_form({'skill': Admin().model_dump_json()})
         assert isinstance(event.handler, SkillChoiceHandler)
         assert isinstance(event.handler.skill, Admin)
 

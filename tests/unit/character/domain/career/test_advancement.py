@@ -1,7 +1,5 @@
 """Tests for advancement.py — cross-career advancement and commission mechanics."""
 
-import json
-
 import pytest
 
 from ceres.character.domain.career import ARMY, SCOUT
@@ -186,8 +184,7 @@ class TestPendingCommissionChoice:
 class TestPendingRankBonusChoice:
     def test_event_from_form_skill_choice(self):
         pending = PendingRankBonusChoice(pending_id=(1, 0), instruction='Rank bonus', level=1, options=[Admin()])
-        skill_json = json.dumps({'kind': 'ADMIN'})
-        event = pending.event_from_form({'skill': skill_json})
+        event = pending.event_from_form({'skill': Admin().model_dump_json()})
         assert isinstance(event.handler, SkillChoiceHandler)
 
     def test_event_from_form_advancement_dm_choice(self):

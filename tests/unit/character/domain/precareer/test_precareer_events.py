@@ -34,6 +34,25 @@ def _any_event() -> Event:
     return Event(handler=SurviveHandler(roll=5))
 
 
+class TestCurrentPrecareer:
+    def test_returns_precareer_when_active(self):
+        from ceres.character.domain.precareer.loader import load_precareers
+        from ceres.character.domain.precareer.precareer_events import _current_precareer
+
+        university = next(p for p in load_precareers() if p.name == 'University')
+        proj = _projection()
+        proj.summary.terms.append(university.make_term())
+        result = _current_precareer(proj)
+        assert result is university
+
+    def test_raises_when_no_active_precareer(self):
+        from ceres.character.domain.precareer.precareer_events import _current_precareer
+
+        proj = _projection()
+        with pytest.raises(ReplayError, match='No active pre-career term'):
+            _current_precareer(proj)
+
+
 class TestConditionalCharacteristicDms:
     def test_adds_dm_when_char_meets_threshold(self):
         summary = CharacterSummary(
@@ -87,10 +106,9 @@ class TestExpandSkillToSpecInstances:
 
 class TestPendingPreCareerSkillChoice:
     def test_event_from_form_parses_skill(self):
-        import json
 
         pending = PendingPreCareerSkillChoice(pending_id=(1, 0), instruction='Choose', level=0, options=[Admin()])
-        event = pending.event_from_form({'skill': json.dumps({'kind': 'ADMIN'})})
+        event = pending.event_from_form({'skill': Admin().model_dump_json()})
         assert isinstance(event.handler, PreCareerSkillChoiceHandler)
         assert isinstance(event.handler.skill, Admin)
 
@@ -161,6 +179,30 @@ class TestPendingPreCareerEvent:
         assert isinstance(specs[0], NumberEntry) and specs[0].name == 'roll'
 
 
+class TestPreCareerEntryHandler:
+    def _proj(self) -> CharacterProjection:
+        return _projection(characteristics={Chars.EDU: 8, Chars.SOC: 9})
+
+    def test_entry_check_fails_on_roll_2(self):
+        from ceres.character.domain.career.career_events import PendingCareerChoice
+        from ceres.character.domain.precareer.military_academy import ArmyAcademyPreCareer
+        from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
+
+        proj = self._proj()
+        handler = PreCareerEntryHandler(precareer=ArmyAcademyPreCareer(), roll=2)
+        handler.apply(proj, _any_event())
+        assert any(isinstance(p, PendingCareerChoice) for p in proj.pending_inputs)
+
+    def test_graduation_requirement_queues_graduation(self):
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerGraduation, PreCareerEntryHandler
+        from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
+
+        proj = self._proj()
+        handler = PreCareerEntryHandler(precareer=SchoolOfHardKnocksPreCareer(), roll=8)
+        handler.apply(proj, _any_event())
+        assert any(isinstance(p, PendingPreCareerGraduation) for p in proj.pending_inputs)
+
+
 class TestPreCareerEventHandler:
     def _proj_with_precareer(self):
         from ceres.character.domain.precareer.loader import load_precareers
@@ -195,6 +237,38 @@ class TestPreCareerEventHandler:
         PreCareerEventHandler(roll=12).apply(proj, _any_event())
         assert proj.summary.characteristics.get(Chars.SOC, 0) == soc_before + 1
 
+    def test_roll_11_adds_problem_and_ends_precareer(self):
+        proj = self._proj_with_precareer()
+        PreCareerEventHandler(roll=11).apply(proj, _any_event())
+        assert any('11' in p for p in proj.summary.problems)
+        assert proj.summary.current_precareer_term is None
+
+    def test_roll_2_adds_psi_problem(self):
+        proj = self._proj_with_precareer()
+        PreCareerEventHandler(roll=2).apply(proj, _any_event())
+        assert any('PSI' in p for p in proj.summary.problems)
+
+    def test_roll_4_adds_soc_problem(self):
+        proj = self._proj_with_precareer()
+        PreCareerEventHandler(roll=4).apply(proj, _any_event())
+        assert any('SOC' in p for p in proj.summary.problems)
+
+    def test_event_6_connections_roll_queued_before_graduation(self):
+        """Event 6 creates PendingConnectionsRoll; it must be resolved before PendingPreCareerGraduation."""
+        from ceres.character.domain.connection_events import PendingConnectionsRoll
+
+        proj = self._proj_with_precareer()
+        graduation = PendingPreCareerGraduation(pending_id=(1, 0), instruction='Roll 2D on graduation')
+        proj.pending_inputs.append(graduation)
+
+        PreCareerEventHandler(roll=6).apply(proj, _any_event())
+
+        pending_types = [type(p) for p in proj.pending_inputs]
+        assert PendingConnectionsRoll in pending_types
+        conn_idx = pending_types.index(PendingConnectionsRoll)
+        grad_idx = pending_types.index(PendingPreCareerGraduation)
+        assert conn_idx < grad_idx, 'PendingConnectionsRoll must be resolved before PendingPreCareerGraduation'
+
 
 class TestPendingPreCareerGraduation:
     def test_event_from_form_parses_roll(self):
@@ -220,7 +294,7 @@ class TestPreCareerGraduationHandler:
         from ceres.character.domain.precareer.loader import load_precareers
 
         university = next(p for p in load_precareers() if p.name == 'University')
-        proj = _projection(characteristics={Chars.EDU: 8})
+        proj = _projection(characteristics={Chars.EDU: 8, Chars.INT: 12})
         proj.summary.terms.append(university.make_term())
         return proj
 
@@ -238,6 +312,14 @@ class TestPreCareerGraduationHandler:
         proj = self._proj_with_university()
         PreCareerGraduationHandler(roll=2).apply(proj, _any_event())
         assert any('not graduate' in n for n in proj.summary.narrative)
+
+    def test_high_roll_achieves_honours(self):
+        from ceres.character.domain.precareer.precareer_term import PreCareerTerm
+
+        proj = self._proj_with_university()
+        PreCareerGraduationHandler(roll=12).apply(proj, _any_event())
+        completed_term = next(t for t in proj.summary.terms if isinstance(t, PreCareerTerm) and t.completed)
+        assert completed_term.honours is True
 
     def test_graduation_marks_term_completed(self):
         from ceres.character.domain.precareer.precareer_term import PreCareerTerm

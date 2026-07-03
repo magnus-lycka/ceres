@@ -21,7 +21,7 @@ from ceres.character.domain.career.career_data import (
     AdvancementDmOption,
     AssignmentData,
     CareerData,
-    CareerSkillOption,
+    SkillTableItem,
     SkillTableOption,
 )
 from ceres.character.domain.career.entry import (
@@ -246,81 +246,55 @@ class SkillTableHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        from ceres.character.domain.career.career_data import AdvancementDmOption
-        from ceres.character.domain.characteristics import Chars as _Chars
-        from ceres.character.domain.health.health_events import PendingAgingRoll
-
-        if projection.summary.current_career is not None:
-            career = projection.get_current_career()
-        elif projection.summary.career_terms and projection.summary.career_terms[-1].muster_out is not None:
-            career = projection.summary.career_terms[-1].career
-        else:
-            raise ReplayError('No active career')
+        career = projection.get_current_career()
         table = career.skill_table(self.table)
         if table is None:
             raise ReplayError(f'Unknown skill table: {self.table!r}')
-        if table.min_edu is not None:
-            edu = projection.summary.characteristics.get(Chars.EDU, 0)
-            if edu < table.min_edu:
-                raise ReplayError(f'Table {self.table!r} requires EDU {table.min_edu}+, character has {edu}')
+        edu = projection.summary.characteristics.get(Chars.EDU, 0)
+        if table.min_edu is not None and edu < table.min_edu:
+            raise ReplayError(f'Table {self.table!r} requires EDU {table.min_edu}+, character has {edu}')
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Skill table roll must be 1-6, got {self.roll}')
         entry = table.entries[self.roll - 1]
-        assignment_index = projection.summary.current_assignment
-        choices: list[CareerSkillOption] | None = None
-        if isinstance(entry, list):
-            choices = [
-                option
-                for option in list(entry)
-                if career.skill_table_option_is_available(projection, self.table, option)
-            ]
-        elif isinstance(entry, Psi):
-            choices = [entry] if career.skill_table_option_is_available(projection, self.table, entry) else []
-        elif not isinstance(entry, _Chars):
-            skill_cls = type(entry)
-            fields = level_fields(skill_cls)
-            spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
-            if spec_field is None and len(fields) > 1:
-                choices = [skill_cls()]
-        survival_already_queued = any(isinstance(p, PendingSurvive) for p in projection.pending_inputs)
-        reenlist_queued = survival_already_queued or any(
-            isinstance(p, (PendingReenlist, PendingAssignmentChangeChoice, PendingAgingRoll, PendingMusterOut))
-            for p in projection.pending_inputs
-        )
-        if choices:
-            new_pending = PendingSkillTableChoice(
-                pending_id=(event.id, 0),
-                instruction=f'Choose one skill: {", ".join(skill_option_label(s) for s in choices)}',
-                options=cast(list[CareerSkillOption | AdvancementDmOption], choices),
-                reenlist_queued=reenlist_queued,
-            )
-            if reenlist_queued:
-                idx = next(
-                    (
-                        i
-                        for i, p in enumerate(projection.pending_inputs)
-                        if isinstance(
-                            p,
-                            (
-                                PendingReenlist,
-                                PendingAssignmentChangeChoice,
-                                PendingAgingRoll,
-                                PendingMusterOut,
-                                PendingSurvive,
-                            ),
-                        )
-                    ),
-                    len(projection.pending_inputs),
-                )
-                projection.pending_inputs.insert(idx, new_pending)
+        if isinstance(entry, tuple):
+            choices = [item for item in entry if career.skill_table_option_is_available(projection, self.table, item)]
+            if choices:
+                _queue_skill_table_choice(projection, event, choices)
+        else:
+            choices = _skill_table_item_choices(career, projection, self.table, entry)
+            if choices:
+                _queue_skill_table_choice(projection, event, choices)
             else:
-                projection.pending_inputs.append(new_pending)
-        elif not isinstance(entry, (list, Psi)):
-            _apply_skill_table_entry(projection, entry)
-            if not reenlist_queued:
-                projection.pending_inputs.append(_survive_pending(career, assignment_index, event.id))
-        elif not reenlist_queued:
-            projection.pending_inputs.append(_survive_pending(career, assignment_index, event.id))
+                _apply_skill_table_entry(projection, entry)
+
+
+def _skill_table_item_choices(
+    career: CareerData,
+    projection: CharacterProjection,
+    table_name: str,
+    entry: SkillTableItem,
+) -> list[SkillTableItem]:
+    if isinstance(entry, Chars):
+        return []
+    if isinstance(entry, Psi):
+        return [entry] if career.skill_table_option_is_available(projection, table_name, entry) else []
+    skill_cls = type(entry)
+    fields = level_fields(skill_cls)
+    spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
+    if spec_field is None and len(fields) > 1:
+        return [skill_cls()]
+    return []
+
+
+def _queue_skill_table_choice(projection: CharacterProjection, event: Event, choices: list[SkillTableItem]) -> None:
+    projection.pending_inputs.insert(
+        0,
+        PendingSkillTableChoice(
+            pending_id=(event.id, 0),
+            instruction=f'Choose one skill: {", ".join(skill_option_label(s) for s in choices)}',
+            options=cast(list[SkillTableItem | AdvancementDmOption], choices),
+        ),
+    )
 
 
 # ── Skill Roll ─────────────────────────────────────────────────────────────────
@@ -448,13 +422,13 @@ def _survive_pending(career: CareerData, assignment: AssignmentData | None, even
     return career.survival_pending(assignment, event_id)
 
 
-def _apply_skill_table_entry(projection: CharacterProjection, entry: CareerSkillOption | Chars) -> None:
-    from ceres.character.domain.characteristics import Chars as _Chars
-
-    if isinstance(entry, _Chars):
+def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableItem) -> None:
+    if isinstance(entry, Chars):
         projection.summary.characteristics[entry] = projection.summary.characteristics.get(entry, 0) + 1
     elif isinstance(entry, Psi):
-        raise ReplayError('Psionic talent table entries require a training check')
+        psionics = projection.summary.psionics
+        if psionics is not None and psionics.talent_level(type(entry.talent)) is not None:
+            psionics.increment_talent(type(entry.talent))
     else:
         projection.increment_skill(entry)
 
@@ -699,7 +673,7 @@ class PendingSwitchAssignment(PendingInputBase):
 class _PendingSkillOrPsiChoice(PendingInputBase):
     """Base for pending inputs that offer a skill, advancement DM, or psionic talent choice."""
 
-    options: Sequence[CareerSkillOption | AdvancementDmOption] = Field(default_factory=list)
+    options: Sequence[SkillTableItem | AdvancementDmOption] = Field(default_factory=list)
     model_config = {'arbitrary_types_allowed': True}
 
     def _skill_level(self) -> int | None:
@@ -751,21 +725,15 @@ class PendingInitialTrainingChoice(_PendingSkillOrPsiChoice):
 
 class PendingSkillTableChoice(_PendingSkillOrPsiChoice):
     kind: Literal['skill_table_choice'] = 'skill_table_choice'
-    reenlist_queued: bool = False
 
     def _skill_level(self) -> int | None:
         return None
 
     def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
         projection.grant_skill(event.skill)
-        if projection.summary.current_career is not None and not self.reenlist_queued:
-            career = projection.get_current_career()
-            projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
 
     def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
-        if projection.summary.current_career is not None and not self.reenlist_queued:
-            career = projection.get_current_career()
-            projection.pending_inputs.append(_survive_pending(career, projection.summary.current_assignment, event.id))
+        pass
 
 
 class PendingRankBonusChoice(_PendingSkillOrPsiChoice):
@@ -791,8 +759,9 @@ class PendingRankBonusChoice(_PendingSkillOrPsiChoice):
             projection.summary.characteristics.get(Chars.EDU, 0),
             projection.summary.current_assignment,
         )
-        projection.pending_inputs.append(
-            PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables)
+        projection.pending_inputs.insert(
+            0,
+            PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables),
         )
         queue_reenlist_or_aging(projection, event.id, 1)
 

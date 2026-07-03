@@ -3,6 +3,28 @@
 Update todo items in this document as progress is made.
 When todo items are done, please move them to docs/archive/done_todos.md
 
+## Psion skill table: incomplete Psi talent handling
+
+Two related bugs in the Psion career's skill table Psi handling:
+
+1. **`PendingSkillTableChoice.on_psi_chosen` does nothing** (`pass` in
+   `career_events.py`). When a player selects a Psi talent option, the talent
+   level should be incremented (for possessed talents) — the same logic as
+   `_apply_skill_table_entry` for the Psi case.
+
+2. **`Psion.skill_table_option_is_available` for `service_skills` is wrong**.
+   Per the rules (p86): when rolling service skills and gaining a talent the
+   Psion does not yet possess, they may *attempt* a talent training test
+   (`PsionicTalentTrainingHandler`) to learn it. The current code returns
+   `True` (allows selection as a choice), but `on_psi_chosen` then does
+   nothing. The correct behaviour is: the choice should trigger a talent
+   training test, not a simple selection. Unimplemented talents should not be
+   offered as a selectable choice — they should trigger the training roll path.
+
+These are interlinked: fix `on_psi_chosen` to increment the talent when
+possessed, and redesign the service-skills Psi path to use
+`PsionicTalentTrainingHandler` for unlearned talents.
+
 ## Test suite: unit coverage gaps
 
 Run `tools/check_unit_coverage.sh` to find modules with no corresponding unit
@@ -412,9 +434,19 @@ Current status:
   - roll 7 depends on the generic Life Events table, which already has its own
     correctness todo above
   - all `_PRECAREER_EVENTS` text is shortened rather than matching Core
+  - **roll 6 ordering regression** — event 6 ("involved in a tightly knit
+    clique or group") currently appends `PendingConnectionsRoll` after
+    `PendingPreCareerGraduation` in the queue, so connections are rolled
+    after graduation instead of before. This is an instance of the systemic
+    pending-input ordering bug described in Phase 2 of
+    [plan-military-academy-commission-basic-training.md](plan-military-academy-commission-basic-training.md).
+    Fix the ordering (`insert(0, ...)` in the connections handler) before or
+    alongside fixing event 6 text and behaviour.
   The current tests explicitly assert manual notes for rolls 2 and 4 and
   unconditional termination for roll 11. Replace those with tests of the Core
   outcomes, and make every Pre-Career Event entry match Core word for word.
+  When implementing any pre-career event that queues a pending input, use
+  `insert(0, ...)` so it resolves before graduation.
 - **Medical debt** — unpaid injury costs should accumulate as debt when cash
   benefits are insufficient.
 - **Pension** — Travellers leaving a qualifying career after 5+ terms earn an
@@ -590,9 +622,16 @@ References:
 Known differences:
 
 - **Army Academy service skills** — the Army Service Skills table contains a
-  Drive-or-Vacc-Suit choice. Ceres deliberately skips list entries when
-  granting academy service skills, so the Traveller receives neither. The
-  current test explicitly asserts that choice lists are skipped.
+  Drive-or-Vacc-Suit choice. The player should be prompted to choose. This was
+  working correctly before Phase 1 of
+  [plan-military-academy-commission-basic-training.md](plan-military-academy-commission-basic-training.md),
+  but Phase 1 introduced a regression: `apply_entry` was changed to skip list
+  entries so that the Army Academy approval tests would not fail. The approval
+  tests were not updated; they should be updated to submit `skill_form(Drive())`
+  (or VaccSuit) before the event and graduation rolls. Write a unit test
+  asserting the choice IS produced — confirm it is red — restore
+  `_apply_basic_training()` in `apply_entry` — then update the approval tests
+  and regenerate snapshots. See the Phase 1 regression note in the plan.
 - **Three level-1 Service Skills** — successful graduation should allow the
   Traveller to select any three Service Skills and increase them to level 1
   when entering the tied military career. Ceres leaves this as a manual problem
@@ -713,6 +752,17 @@ Known differences:
   career is attempted next, and records the rest as a manual problem note.
 - Graduation choices should enforce "other" skills where Companion requires
   them, rather than allowing repeated selections from the same pool.
+
+## Career tables: pending input ordering requirement
+
+**Before implementing any item in the career-table sections below**, read the
+Phase 2 section of
+[plan-military-academy-commission-basic-training.md](plan-military-academy-commission-basic-training.md).
+Any new pending input added inside a career event or mishap handler must use
+`insert(0, ...)` — not `append` — so it resolves before survival,
+reenlist, and muster-out. This applies to skill choices, mishap rolls, life
+events, connection rolls, injury rolls, and characteristic-loss choices. Do not
+add a pending input with `append` and defer the ordering fix as a separate step.
 
 ## Agent career tables: remaining blocked items
 

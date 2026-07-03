@@ -166,6 +166,14 @@ class TestConnectionKindChoiceHandler:
         handler.apply(proj, _any_event(), fulfilled_pending=pending)
         assert any('rival' in n for n in proj.summary.narrative)
 
+    def test_source_unknown_when_fulfilled_pending_is_not_life_event_choice(self):
+        proj = _projection()
+        handler = ConnectionKindChoiceHandler(connection_kind=ConnectionKind.RIVAL)
+        handler.apply(proj, _any_event(), fulfilled_pending=None)
+        from ceres.character.domain.connection import Rival
+
+        assert any(isinstance(c, Rival) for c in proj.summary.connections)
+
 
 class TestBetrayalConvertHandler:
     def test_converts_contact_to_rival(self):
@@ -214,6 +222,85 @@ class TestLifeEventCrimeChoices:
         choice = LifeEventCrimeTakePrisoner()
         choice.handle(proj, _any_event())
         assert proj.summary.career_terms[-1].prison is not None
+
+    def test_crime_lose_benefit_roll_no_career_terms_is_no_op(self):
+        proj = _projection()
+        choice = LifeEventCrimeLoseBenefitRoll()
+        choice.handle(proj, _any_event())  # must not raise
+
+    def test_crime_take_prisoner_no_career_terms_still_sets_forced_career(self):
+        from ceres.character.domain.career.prisoner import PRISONER
+
+        proj = _projection()
+        choice = LifeEventCrimeTakePrisoner()
+        choice.handle(proj, _any_event())
+        assert proj.forced_next_career is PRISONER
+
+
+class TestLifeEventHandlerWithCareer:
+    """Career-active variants — covers the `_queue_advancement` branches inside each match case."""
+
+    def _proj_with_career(self) -> CharacterProjection:
+        from ceres.character.domain.career import ARMY
+        from ceres.character.domain.career.career_data import CareerTerm, MusterOut
+
+        proj = _projection()
+        proj.summary.terms.append(
+            CareerTerm(career=ARMY, assignment=ARMY.assignment('Infantry'), muster_out=MusterOut())
+        )
+        return proj
+
+    def _has_advancement(self, proj: CharacterProjection) -> bool:
+        from ceres.character.domain.career.career_events import PendingAdvancement
+
+        return any(isinstance(p, PendingAdvancement) for p in proj.pending_inputs)
+
+    def test_roll_2_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=2).apply(proj, _any_event())
+        assert self._has_advancement(proj)
+
+    def test_roll_3_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=3).apply(proj, _any_event())
+        assert self._has_advancement(proj)
+
+    def test_roll_4_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=4).apply(proj, _any_event())
+        assert self._has_advancement(proj)
+
+    def test_roll_5_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=5).apply(proj, _any_event())
+        assert self._has_advancement(proj)
+
+    def test_roll_7_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=7).apply(proj, _any_event())
+        assert self._has_advancement(proj)
+
+    def test_roll_8_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=8).apply(proj, _any_event())
+        assert self._has_advancement(proj)
+
+    def test_roll_10_with_career_terms_adds_benefit_dm(self):
+        from ceres.character.domain.career.career_data import BenefitRollDm
+
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=10).apply(proj, _any_event())
+        dms = proj.summary.career_terms[-1].require_muster_out().benefit_roll_dms
+        assert any(isinstance(d, BenefitRollDm) for d in dms)
+
+    def test_roll_10_no_career_terms_is_no_op(self):
+        proj = _projection()
+        LifeEventHandler(roll=10).apply(proj, _any_event())
+
+    def test_roll_11_with_career_queues_advancement(self):
+        proj = self._proj_with_career()
+        LifeEventHandler(roll=11).apply(proj, _any_event())
+        assert self._has_advancement(proj)
 
 
 class TestPendingLifeEvent:
@@ -287,6 +374,14 @@ class TestPendingLifeEventBetrayalConvert:
 
 
 class TestPendingLifeEventAlienScience:
+    def test_event_from_form_creates_skill_choice_handler(self):
+        from ceres.character.domain.career.career_events import SkillChoiceHandler
+        from ceres.character.domain.skills import SpaceScience
+
+        pending = PendingLifeEventAlienScience(pending_id=(1, 0), instruction='Choose')
+        event = pending.event_from_form({'skill': SpaceScience().model_dump_json()})
+        assert isinstance(event.handler, SkillChoiceHandler)
+
     def test_on_skill_chosen_grants_skill(self):
         from ceres.character.domain.career.career_events import SkillChoiceHandler
         from ceres.character.domain.skills import SpaceScience

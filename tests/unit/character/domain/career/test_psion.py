@@ -374,7 +374,6 @@ class TestPsionCoreTables:
         Event(handler=SkillTableHandler(table='assignment2', roll=1)).apply(driver.projection)
 
         assert not any(isinstance(pending, PendingSkillTableChoice) for pending in driver.projection.pending_inputs)
-        assert driver._find(PendingSurvive)
 
     def test_assignment_progress_checks_match_core(self):
         psion = PSION

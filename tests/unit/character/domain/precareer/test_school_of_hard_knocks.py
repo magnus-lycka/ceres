@@ -90,4 +90,4 @@ class TestSchoolOfHardKnocksGraduation:
     def test_adds_commission_dm_problem(self):
         proj = _proj()
         _SOHK.make_term().apply_graduation(proj, _event(), honours=False)
-        assert any('commission' in p.lower() for p in proj.summary.problems)
+        assert any('promotion' in p.lower() for p in proj.summary.problems)

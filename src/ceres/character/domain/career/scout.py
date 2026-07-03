@@ -328,10 +328,10 @@ class Scout(CareerData):
         ),
         service_skills=SkillTable(
             [
-                [
+                (
                     Pilot(small_craft=Level(value=1)),
                     Pilot(spacecraft=Level(value=1)),
-                ],
+                ),
                 Survival(),
                 Mechanic(),
                 Astrogation(),

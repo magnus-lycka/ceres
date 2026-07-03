@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
 
 
-type CareerSkillOption = AnySkill | Psi
-type SkillTableEntry = CareerSkillOption | Chars | list[AnySkill] | list[Psi]
+type SkillTableItem = AnySkill | Psi | Chars
+type SkillTableEntry = SkillTableItem | tuple[SkillTableItem, ...]
 
 
 @dataclass
@@ -54,11 +54,11 @@ class RankBonus(BaseModel):
     skill: AnySkill | None = None
     characteristic: Chars | None = None
     level: int = 1
-    choices: Sequence[CareerSkillOption] | None = None
+    choices: Sequence[SkillTableItem] | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def resolve_choices(self) -> Sequence[CareerSkillOption] | None:
+    def resolve_choices(self) -> Sequence[SkillTableItem] | None:
         if self.choices:
             return self.choices
         if self.skill:
@@ -114,29 +114,32 @@ def _queue_injury(
     from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
 
     if severity == 'normal':
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingCharacteristicChoice(
                 pending_id=(event.id, pending_idx),
                 instruction='Injured: choose STR, DEX, or END to reduce by 1',
                 options=[Chars.STR, Chars.DEX, Chars.END],
                 amount=1,
-            )
+            ),
         )
     elif severity == 'severe':
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingCharacteristicChoice(
                 pending_id=(event.id, pending_idx),
                 instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
                 options=[Chars.STR, Chars.DEX, Chars.END],
                 amount=2,
-            )
+            ),
         )
     elif severity == 'from_table':
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingInjuryTable(
                 pending_id=(event.id, pending_idx),
                 instruction='Roll 1D on Injury table',
-            )
+            ),
         )
 
 
@@ -183,13 +186,14 @@ class CharacteristicLossChoiceEntry(CareerTableEntry):
         from ceres.character.domain.health.health_events import PendingCharacteristicChoice
 
         characteristic = ', '.join(c.value for c in self.options)
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingCharacteristicChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose characteristic to decrease by {self.amount}: {characteristic}',
                 options=self.options,
                 amount=self.amount,
-            )
+            ),
         )
         return pending_idx + 1
 
@@ -218,14 +222,15 @@ class RolledConnectionsEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingConnectionsRoll(
                 pending_id=(event.id, pending_idx),
                 connection_type=self.connection,
                 instruction=f'Roll {self.dice} for number of {self.connection}s',
                 options=self.dice.roll_options(),
                 origin=self.text,
-            )
+            ),
         )
         return pending_idx + 1
 
@@ -241,17 +246,19 @@ class RolledConnectionsGroupEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
-        for offset, roll in enumerate(self.rolls):
-            projection.pending_inputs.append(
+        for roll in reversed(self.rolls):
+            projection.pending_inputs.insert(
+                0,
                 PendingConnectionsRoll(
-                    pending_id=(event.id, pending_idx + offset),
+                    pending_id=(event.id, pending_idx),
                     connection_type=roll.connection,
                     instruction=f'Roll {roll.dice} for number of {roll.connection}s',
                     options=roll.dice.roll_options(),
                     origin=self.text,
-                )
+                ),
             )
-        return pending_idx + len(self.rolls)
+            pending_idx += 1
+        return pending_idx
 
 
 class SkillChoiceEntry(CareerTableEntry):
@@ -271,13 +278,14 @@ class SkillChoiceEntry(CareerTableEntry):
                 key=lambda skill: type(skill).name(),
             )
 
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
                 options=cast(Any, options),
                 level=self.level,
-            )
+            ),
         )
         return pending_idx + 1
 
@@ -304,12 +312,13 @@ class RollMishapEntry(CareerTableEntry):
             if not self.leave
             else 'Roll 1D on Mishap table'
         )
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingMishap(
                 pending_id=(event.id, pending_idx),
                 instruction=instruction,
                 stay_in_career=not self.leave,
-            )
+            ),
         )
         return pending_idx + 1
 
@@ -321,8 +330,9 @@ class LifeEventEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.life_events import PendingLifeEvent
 
-        projection.pending_inputs.append(
-            PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table')
+        projection.pending_inputs.insert(
+            0,
+            PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table'),
         )
         return pending_idx + 1
 
@@ -399,13 +409,14 @@ class GainConnectionAndSkillChoiceEntry(CareerTableEntry):
         from ceres.character.domain.skill_events import PendingSkillChoice
 
         projection.add_connection(self.connection, origin=self.text)
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
                 options=cast(Any, self.options),
                 level=self.level,
-            )
+            ),
         )
         return pending_idx + 1
 
@@ -425,13 +436,14 @@ class GainConnectionsAndSkillChoiceEntry(CareerTableEntry):
 
         for connection in self.connections:
             projection.add_connection(connection, origin=self.text)
-        projection.pending_inputs.append(
+        projection.pending_inputs.insert(
+            0,
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
                 options=cast(Any, self.options),
                 level=self.level,
-            )
+            ),
         )
         return pending_idx + 1
 
@@ -863,7 +875,7 @@ class CareerData(TermData):
                         pending_id=(event_id, max(used_sub_ids, default=-1) + 1),
                         level=bonus.level,
                         instruction=f'Rank {rank} bonus: choose skill at level {bonus.level}',
-                        options=cast(list[CareerSkillOption | AdvancementDmOption], valid_choices),
+                        options=cast(list[SkillTableItem | AdvancementDmOption], valid_choices),
                         continue_career_progress=False,
                     )
                 )
@@ -916,7 +928,7 @@ class CareerData(TermData):
                         PendingInitialTrainingChoice(
                             pending_id=(event_id, choice_idx),
                             instruction=f'Initial training: choose one of {skills}',
-                            options=cast(list[CareerSkillOption | AdvancementDmOption], choices),
+                            options=cast(list[SkillTableItem | AdvancementDmOption], choices),
                         )
                     )
                     choice_idx += 1
@@ -927,19 +939,19 @@ class CareerData(TermData):
                     self._apply_initial_training_entry(projection, type(entry))
             return
 
-        raw: list[CareerSkillOption] = []
+        raw: list[SkillTableItem] = []
         for entry in table.entries:
             raw.extend(self._training_selectable_skills(projection, entry))
-        by_name: dict[str, CareerSkillOption] = {}
+        by_name: dict[str, SkillTableItem] = {}
         for s in raw:
             by_name.setdefault(self._training_option_name(s), s)
-        deduped: list[CareerSkillOption] = sorted(by_name.values(), key=self._training_option_name)
+        deduped: list[SkillTableItem] = sorted(by_name.values(), key=self._training_option_name)
         if deduped:
             projection.pending_inputs.append(
                 PendingInitialTrainingChoice(
                     pending_id=(event_id, 0),
                     instruction=f'Basic training: choose one skill at level 0 from {table_name}',
-                    options=cast(list[CareerSkillOption | AdvancementDmOption], deduped),
+                    options=cast(list[SkillTableItem | AdvancementDmOption], deduped),
                 )
             )
 
@@ -947,12 +959,12 @@ class CareerData(TermData):
         if projection.summary.skill_level(skill_cls) is None:
             projection.summary.skills.append(skill_cls())
 
-    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[CareerSkillOption]:
+    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[SkillTableItem]:
         if isinstance(entry, Chars):
             return []
         if isinstance(entry, Psi):
             return []
-        if isinstance(entry, list):
+        if isinstance(entry, tuple):
             return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
         fields = level_fields(skill_cls)
@@ -963,12 +975,12 @@ class CareerData(TermData):
             return [skill_cls()]
         return []
 
-    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[CareerSkillOption]:
+    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[SkillTableItem]:
         if isinstance(entry, Chars):
             return []
         if isinstance(entry, Psi):
             return []
-        if isinstance(entry, list):
+        if isinstance(entry, tuple):
             return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
         if projection.summary.skill_level(skill_cls) is None:
@@ -976,16 +988,20 @@ class CareerData(TermData):
         return []
 
     @staticmethod
-    def _training_option_name(option: CareerSkillOption) -> str:
-        return type(option.talent).name() if isinstance(option, Psi) else type(option).name()
+    def _training_option_name(option: SkillTableItem) -> str:
+        if isinstance(option, Psi):
+            return type(option.talent).name()
+        if isinstance(option, Chars):
+            return option.value
+        return type(option).name()
 
-    def _training_option_is_unknown(self, projection, option: CareerSkillOption) -> bool:
+    def _training_option_is_unknown(self, projection, option: SkillTableItem) -> bool:
         if isinstance(option, Psi):
             return False
         return projection.summary.skill_level(type(option)) is None
 
-    def _unknown_training_skills(self, projection, options: list[AnySkill] | list[Psi]) -> list[CareerSkillOption]:
-        by_type: dict[type[Any], CareerSkillOption] = {}
+    def _unknown_training_skills(self, projection, options: tuple[SkillTableItem, ...]) -> list[SkillTableItem]:
+        by_type: dict[type[Any], SkillTableItem] = {}
         for option in options:
             if isinstance(option, Psi) or not self._training_option_is_unknown(projection, option):
                 continue
@@ -1028,7 +1044,7 @@ class CareerData(TermData):
         self,
         projection: CharacterProjection,
         table_name: str,
-        option: CareerSkillOption,
+        option: SkillTableItem,
     ) -> bool:
         return True
 

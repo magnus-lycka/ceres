@@ -41,7 +41,7 @@ class TestAppendIncrementExistingSkillPending:
 class TestPendingAdvancedTrainingSkillRoll:
     def test_event_from_form_parses_skill_and_roll(self):
         pending = PendingAdvancedTrainingSkillRoll(pending_id=(1, 0), instruction='Roll EDU 8+', options=[Admin()])
-        event = pending.event_from_form({'skill': 'ADMIN', 'modified_roll': '9'})
+        event = pending.event_from_form({'skill': Admin().kind, 'modified_roll': '9'})
         assert isinstance(event.handler, SkillRollHandler)
         assert event.handler.modified_roll == 9
 
@@ -116,10 +116,8 @@ class TestPendingAnySkillAtLevelOnSuccessRoll:
 class TestCareerSkillChoicePendingBase:
     def test_event_from_form_returns_skill_choice_event(self):
         pending = PendingArmyEvent11SkillChoice(pending_id=(1, 0), instruction='Choose a skill', options=[Admin()])
-        import json
 
-        skill_json = json.dumps({'kind': 'ADMIN'})
-        event = pending.event_from_form({'skill': skill_json})
+        event = pending.event_from_form({'skill': Admin().model_dump_json()})
         assert isinstance(event.handler, SkillChoiceHandler)
         assert isinstance(event.handler.skill, Admin)
 

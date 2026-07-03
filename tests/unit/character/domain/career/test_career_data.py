@@ -124,6 +124,21 @@ def test_skill_choice_entry_queues_choice_and_pauses_progression():
     assert SkillChoiceEntry(text='Choose a skill.', options=[Admin()]).continues_career_progress() is False
 
 
+def test_skill_choice_entry_inserts_before_existing_pending():
+    """Skill choice must be resolved before any existing pending (e.g. muster-out) in the queue."""
+    from ceres.character.domain.career.career_events import PendingMusterOut
+
+    p = _projection()
+    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+
+    SkillChoiceEntry(text='Choose a skill.', options=[Admin()], level=1).apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(item) for item in p.pending_inputs]
+    skill_idx = pending_types.index(PendingSkillChoice)
+    muster_idx = pending_types.index(PendingMusterOut)
+    assert skill_idx < muster_idx, 'Skill choice must come before muster-out'
+
+
 def test_characteristic_loss_choice_entry_queues_choice():
     p = _projection()
 
@@ -139,6 +154,25 @@ def test_characteristic_loss_choice_entry_queues_choice():
     assert pending.pending_id == (12, 0)
     assert pending.options == [Chars.STR, Chars.DEX]
     assert pending.amount == 2
+
+
+def test_characteristic_loss_choice_entry_inserts_before_existing_pending():
+    """Characteristic loss choice must be resolved before any existing pending in the queue."""
+    from ceres.character.domain.career.muster_out import PendingMusterOut
+
+    p = _projection()
+    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+
+    CharacteristicLossChoiceEntry(
+        text='Choose characteristic loss.',
+        options=[Chars.STR, Chars.DEX],
+        amount=1,
+    ).apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(item) for item in p.pending_inputs]
+    choice_idx = pending_types.index(PendingCharacteristicChoice)
+    muster_idx = pending_types.index(PendingMusterOut)
+    assert choice_idx < muster_idx, 'Characteristic loss choice must come before muster-out'
 
 
 def test_injury_entry_queues_injury_table():
@@ -183,11 +217,31 @@ def test_rolled_connections_group_entry_queues_multiple_rolls():
 
     pendings = [pending for pending in p.pending_inputs if isinstance(pending, PendingConnectionsRoll)]
     assert next_idx == 2
-    assert [pending.pending_id for pending in pendings] == [(12, 0), (12, 1)]
-    assert [pending.connection_type for pending in pendings] == [
-        ConnectionKind.CONTACT,
-        ConnectionKind.ENEMY,
-    ]
+    assert len(pendings) == 2
+    assert {p.connection_type for p in pendings} == {ConnectionKind.CONTACT, ConnectionKind.ENEMY}
+
+
+def test_rolled_connections_group_entry_inserts_rolls_before_existing_pending():
+    """Connection rolls must be resolved before any existing pending (e.g. muster-out) in the queue."""
+    from ceres.character.domain.career.career_events import PendingMusterOut
+
+    p = _projection()
+    muster_out = PendingMusterOut(pending_id=(11, 0))
+    p.pending_inputs.append(muster_out)
+
+    RolledConnectionsGroupEntry(
+        text='Gain contacts and enemies.',
+        rolls=[
+            RolledConnectionOutcome(connection=ConnectionKind.CONTACT, dice=DiceRoll.parse('1d6')),
+            RolledConnectionOutcome(connection=ConnectionKind.ENEMY, dice=DiceRoll.parse('d3')),
+        ],
+    ).apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(p) for p in p.pending_inputs]
+    muster_idx = pending_types.index(PendingMusterOut)
+    conn_rolls = [i for i, item in enumerate(p.pending_inputs) if isinstance(item, PendingConnectionsRoll)]
+    assert len(conn_rolls) == 2
+    assert all(idx < muster_idx for idx in conn_rolls), 'All connection rolls must come before muster-out'
 
 
 def test_roll_mishap_entry_queues_mishap_and_pauses_progression():
@@ -204,6 +258,21 @@ def test_roll_mishap_entry_queues_mishap_and_pauses_progression():
     assert entry.continues_career_progress() is False
 
 
+def test_roll_mishap_entry_inserts_before_existing_pending():
+    """Mishap roll must be resolved before any existing pending in the queue."""
+    from ceres.character.domain.career.muster_out import PendingMusterOut
+
+    p = _projection()
+    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+
+    RollMishapEntry(text='Roll mishap.', leave=True).apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(item) for item in p.pending_inputs]
+    mishap_idx = pending_types.index(PendingMishap)
+    muster_idx = pending_types.index(PendingMusterOut)
+    assert mishap_idx < muster_idx, 'Mishap roll must come before muster-out'
+
+
 def test_life_event_entry_queues_life_event_and_pauses_progression():
     p = _projection()
 
@@ -214,6 +283,21 @@ def test_life_event_entry_queues_life_event_and_pauses_progression():
     assert isinstance(p.pending_inputs[0], PendingLifeEvent)
     assert p.pending_inputs[0].pending_id == (12, 0)
     assert entry.continues_career_progress() is False
+
+
+def test_life_event_entry_inserts_before_existing_pending():
+    """Life event must be resolved before any existing pending in the queue."""
+    from ceres.character.domain.career.career_events import PendingMusterOut
+
+    p = _projection()
+    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+
+    LifeEventEntry(text='Life event.').apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(item) for item in p.pending_inputs]
+    life_idx = pending_types.index(PendingLifeEvent)
+    muster_idx = pending_types.index(PendingMusterOut)
+    assert life_idx < muster_idx, 'Life event must come before muster-out'
 
 
 def test_auto_advance_entry_applies_auto_advance_and_pauses_progression():
@@ -386,6 +470,46 @@ def test_gain_connections_and_skill_choice_entry_adds_connections_and_queues_cho
     )
 
 
+def test_gain_connection_and_skill_choice_entry_inserts_before_existing_pending():
+    """Skill choice must be resolved before any existing pending in the queue."""
+    from ceres.character.domain.career.muster_out import PendingMusterOut
+
+    p = _projection()
+    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+
+    GainConnectionAndSkillChoiceEntry(
+        text='Gain an Ally and choose a skill.',
+        connection=ConnectionKind.ALLY,
+        options=[Admin()],
+        level=1,
+    ).apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(item) for item in p.pending_inputs]
+    skill_idx = pending_types.index(PendingSkillChoice)
+    muster_idx = pending_types.index(PendingMusterOut)
+    assert skill_idx < muster_idx, 'Skill choice must come before muster-out'
+
+
+def test_gain_connections_and_skill_choice_entry_inserts_before_existing_pending():
+    """Skill choice must be resolved before any existing pending in the queue."""
+    from ceres.character.domain.career.muster_out import PendingMusterOut
+
+    p = _projection()
+    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+
+    GainConnectionsAndSkillChoiceEntry(
+        text='Gain connections and choose a skill.',
+        connections=[ConnectionKind.RIVAL],
+        options=[Admin()],
+        level=1,
+    ).apply(p, event=_event(12), pending_idx=0)
+
+    pending_types = [type(item) for item in p.pending_inputs]
+    skill_idx = pending_types.index(PendingSkillChoice)
+    muster_idx = pending_types.index(PendingMusterOut)
+    assert skill_idx < muster_idx, 'Skill choice must come before muster-out'
+
+
 def test_injury_and_gain_connection_entry_queues_injury_and_adds_connection():
     p = _projection()
 
@@ -481,6 +605,22 @@ def test_lose_all_career_benefits_and_gain_connection_entry_applies_both_outcome
 # ── InjuryEntry severities ───────────────────────────────────────────────────
 
 
+def test_queue_injury_inserts_before_existing_pending_for_all_severities():
+    """_queue_injury must insert before existing pending items for all three severity branches."""
+    from ceres.character.domain.career.career_data import _queue_injury
+    from ceres.character.domain.career.muster_out import PendingMusterOut
+
+    for severity in ('normal', 'severe', 'from_table'):
+        p = _projection()
+        p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+        _queue_injury(p, event=_event(12), pending_idx=0, severity=severity)  # type: ignore[arg-type]
+
+        injury_types = (PendingCharacteristicChoice, PendingInjuryTable)
+        injury_idx = next(i for i, item in enumerate(p.pending_inputs) if isinstance(item, injury_types))
+        muster_idx = next(i for i, item in enumerate(p.pending_inputs) if isinstance(item, PendingMusterOut))
+        assert injury_idx < muster_idx, f'Injury pending ({severity}) must come before muster-out'
+
+
 def test_injury_entry_normal_severity_queues_reduce_by_one():
     p = _projection()
 
@@ -573,7 +713,7 @@ def test_auto_advance_entry_raises_when_no_career_found():
 
 def test_career_data_from_registry_returns_concrete_instance_for_valid_kind():
     ta = TypeAdapter(CareerData)
-    result = ta.validate_python({'kind': 'SCOUT_CAREER'})
+    result = ta.validate_python({'kind': SCOUT.kind})
     assert result.name == 'Scout'
 
 

@@ -15,7 +15,7 @@ def _skill_instances_from_table(table) -> list[AnySkill]:
     """Return skill instances for all non-characteristic, non-list entries in a SkillTable."""
     from typing import cast as _cast
 
-    return [_cast(AnySkill, e) for e in table.entries if not isinstance(e, (Chars, Psi, list))]
+    return [_cast(AnySkill, e) for e in table.entries if not isinstance(e, (Chars, Psi, tuple))]
 
 
 class MerchantAcademyPreCareer(PreCareerData):
@@ -45,7 +45,7 @@ class MerchantAcademyPreCareer(PreCareerData):
             table = merchant.skill_table(self.curriculum_table)
             if table:
                 for entry in table.entries:
-                    if not isinstance(entry, (Chars, Psi, list)):
+                    if not isinstance(entry, (Chars, Psi, tuple)):
                         projection.grant_skill(entry)
             service_table = merchant.skill_table('service_skills')
             if service_table:

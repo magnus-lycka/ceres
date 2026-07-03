@@ -200,6 +200,30 @@
         },
         {
           "display_label": null,
+          "kind": "DRIVE",
+          "hovercraft": {
+            "display_label": null,
+            "value": 0
+          },
+          "mole": {
+            "display_label": null,
+            "value": 0
+          },
+          "track": {
+            "display_label": null,
+            "value": 0
+          },
+          "walker": {
+            "display_label": null,
+            "value": 0
+          },
+          "wheel": {
+            "display_label": null,
+            "value": 0
+          }
+        },
+        {
+          "display_label": null,
           "kind": "CAROUSE",
           "level": {
             "display_label": null,

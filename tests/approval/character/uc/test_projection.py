@@ -39,7 +39,7 @@ def _proj_with_term() -> CharacterProjection:
 
 def _choices_snap(proj: CharacterProjection, skill_types, level) -> AnnotatedSnapshot:
     choices = proj.skill_choices(skill_types, level)
-    return AnnotatedSnapshot({'choices': [s.model_dump(mode='json') for s in choices]})
+    return AnnotatedSnapshot({'skill_choices': [s.model_dump(mode='json') for s in choices]})
 
 
 # ── skill_choices: non-specialised ───────────────────────────────────────────

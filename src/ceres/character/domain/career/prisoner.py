@@ -630,7 +630,7 @@ class Prisoner(CareerData):
         personal_development=SkillTable(
             [
                 Chars.STR,
-                [Melee()],
+                (Melee(),),
                 Chars.END,
                 JackOfAllTrades(),
                 Chars.EDU,
@@ -643,28 +643,28 @@ class Prisoner(CareerData):
                 Deception(),
                 skill_instances(ProfessionSkill),
                 Streetwise(),
-                [Melee()],
+                (Melee(),),
                 Persuade(),
             ]
         ),
         assignment1=SkillTable(
             [  # Inmate
                 Stealth(),
-                [Melee()],
+                (Melee(),),
                 Streetwise(),
                 Survival(),
-                [Athletics()],
+                (Athletics(),),
                 Mechanic(),
             ]
         ),
         assignment2=SkillTable(
             [  # Thug
                 Persuade(),
-                [Melee()],
-                [Melee()],
-                [Melee()],
-                [Athletics()],
-                [Athletics()],
+                (Melee(),),
+                (Melee(),),
+                (Melee(),),
+                (Athletics(),),
+                (Athletics(),),
             ]
         ),
         assignment3=SkillTable(

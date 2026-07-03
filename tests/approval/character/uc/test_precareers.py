@@ -7,13 +7,14 @@ from ceres.character.domain.precareer.military_academy import (
     MarineAcademyPreCareer,
     NavyAcademyPreCareer,
 )
-from ceres.character.domain.skills import Admin
+from ceres.character.domain.skills import Admin, Drive
 from ceres.character.domain.sophont import HUMANITI
 from tests.approval.character.helpers import (
     CharacterSession,
     background_skills_form,
     precareer_entry_form,
     roll_form,
+    skill_form,
     ucp_form,
 )
 from tests.approval.character.uc.conftest import projection_snap as _snap
@@ -40,6 +41,7 @@ def test_army_academy_graduation(snapshot):
     """Successful graduation: age 22, EDU+1, Army service skills granted at entry, auto-qualifies Army."""
     session = _base_session()
     session.submit(precareer_entry_form(ArmyAcademyPreCareer, roll=8))
+    session.submit(skill_form(Drive()))  # service skills: choose Drive or VaccSuit
     session.submit(roll_form(5))  # precareer event
     session.submit(roll_form(8))  # graduation
     assert _snap(session.projection) == snapshot(extension_class=_ext)
@@ -50,6 +52,7 @@ def test_army_academy_honours_graduation(snapshot):
     """Honours graduation (roll >= 11): adds SOC+1 on top of normal benefits."""
     session = _base_session()
     session.submit(precareer_entry_form(ArmyAcademyPreCareer, roll=8))
+    session.submit(skill_form(Drive()))  # service skills: choose Drive or VaccSuit
     session.submit(roll_form(5))  # precareer event
     session.submit(roll_form(11))  # graduation with honours
     assert _snap(session.projection) == snapshot(extension_class=_ext)
@@ -60,6 +63,7 @@ def test_army_academy_failed_graduation(snapshot):
     """Roll > 2 but below target: no EDU+1, character still auto-qualifies Army."""
     session = _base_session()
     session.submit(precareer_entry_form(ArmyAcademyPreCareer, roll=8))
+    session.submit(skill_form(Drive()))  # service skills: choose Drive or VaccSuit
     session.submit(roll_form(5))  # precareer event
     session.submit(roll_form(3))  # graduation fails
     assert _snap(session.projection) == snapshot(extension_class=_ext)

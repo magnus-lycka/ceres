@@ -114,6 +114,7 @@
       ],
       "narrative": [
         "Pre-career event (University): Life Event.",
+        "Life event: travel (qualification DM ahead)",
         "Graduated from University with honours!"
       ],
       "cash": 0,
@@ -122,8 +123,8 @@
     },
     "pending_inputs": [
       {
-        "type": "PendingLifeEvent",
-        "kind": "life_event"
+        "type": "PendingHomeworldChangeRequired",
+        "kind": "homeworld_change_required"
       },
       {
         "type": "PendingCareerChoice",

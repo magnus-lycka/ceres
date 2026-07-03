@@ -17,5 +17,7 @@ def test_register_event_handlers_idempotent():
 
 
 def test_survive_handler_registered():
+    from ceres.character.domain.career.career_events import SurviveHandler
+
     register_event_handlers()
-    assert 'survive' in EventHandlerBase._registry
+    assert SurviveHandler in EventHandlerBase._registry.values()

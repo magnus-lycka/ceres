@@ -4,9 +4,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from ceres.character.domain.career.career_data import CareerData
+from ceres.character.domain.career.loader import selectable_careers
 from ceres.character.domain.character_start import CharacterCreatedHandler
 from ceres.character.domain.character_state import CharacterSummary
 from ceres.character.domain.event_handlers import register_event_handlers
+from ceres.character.domain.precareer.loader import load_precareers
+from ceres.character.domain.precareer.precareer_data import PreCareerData
+from ceres.character.domain.sophont import SOPHONT_NAMES, available_sophont_names
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.store import SqliteCharacterBackend
 
@@ -58,6 +63,27 @@ class CharacterService:
             raise ValueError(f'No pending input with id={fulfills!r}')
         event = pending.event_from_form(form_data)
         self._backend.append_event(character_id, event)
+
+    def available_sophonts(self, character_id: int | None = None) -> list[str]:
+        if character_id is not None:
+            summary = self._backend.get_summary(character_id)
+            if summary is not None and summary.homeworld is not None:
+                return available_sophont_names(summary.homeworld)
+        return list(SOPHONT_NAMES)
+
+    def available_careers(self, character_id: int | None = None) -> tuple[CareerData, ...]:
+        if character_id is not None:
+            projection = self._backend.get_projection(character_id)
+            return selectable_careers(projection)
+        return selectable_careers()
+
+    def available_precareers(self, character_id: int | None = None) -> tuple[PreCareerData, ...]:
+        all_pcs = load_precareers()
+        if character_id is not None:
+            summary = self._backend.get_summary(character_id)
+            if summary is not None:
+                return tuple(pc for pc in all_pcs if pc.is_available(summary))
+        return all_pcs
 
     def delete_character(self, character_id: int) -> None:
         self._backend.delete_character(character_id)

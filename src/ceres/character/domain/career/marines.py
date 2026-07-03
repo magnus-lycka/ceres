@@ -317,7 +317,7 @@ class Marines(CareerData):
             [  # Support
                 Electronics(),
                 Mechanic(),
-                [Drive(), Flyer()],
+                (Drive(), Flyer()),
                 Medic(),
                 HeavyWeapons(),
                 GunCombat(),

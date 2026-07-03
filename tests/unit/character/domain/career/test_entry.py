@@ -135,6 +135,65 @@ class TestPendingDraftAssignmentChoice:
         assert any(isinstance(s, Select) and s.name == 'assignment' for s in specs)
 
 
+class TestDraftAssignmentHandlerApply:
+    def test_apply_starts_career(self):
+        proj = _projection()
+        assignment = ARMY.assignments[0]
+        handler = DraftAssignmentHandler(career=ARMY, assignment=assignment)
+        handler.apply(proj, Event(handler=handler))
+        assert proj.summary.current_career == ARMY
+
+
+class TestPendingCareerChoiceFinishCreation:
+    def test_event_from_form_finish_creation_returns_finish_handler(self):
+        from ceres.character.domain.character_start import FinishCreationHandler
+
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose', options=[ARMY])
+        event = pending.event_from_form({'kind': 'finish_creation'})
+        assert isinstance(event.handler, FinishCreationHandler)
+
+
+class TestPendingCareerChoicePrecareerEntry:
+    def test_event_from_form_precareer_entry_returns_precareer_handler(self):
+        from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
+
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose', options=[ARMY])
+        event = pending.event_from_form({'kind': 'precareer_entry', 'precareer': 'University', 'roll': '8'})
+        assert isinstance(event.handler, PreCareerEntryHandler)
+        assert event.handler.roll == 8
+
+    def test_unknown_precareer_raises(self):
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose', options=[ARMY])
+        with pytest.raises(ReplayError, match='Unknown pre-career'):
+            pending.event_from_form({'kind': 'precareer_entry', 'precareer': 'NotReal'})
+
+
+class TestPendingDraftChoiceAlternative:
+    def test_event_from_form_alternative_returns_career_entry_handler(self):
+        from ceres.character.domain.career.entry import CareerEntryHandler
+
+        pending = PendingDraftChoice(pending_id=(1, 0), instruction='Draft?', can_draft=True)
+        # Drifter is the draft alternative; use its first assignment
+        from ceres.character.domain.career.draft import get_draft_alternative
+        from ceres.character.domain.career.loader import load_careers
+
+        careers = load_careers()
+        drifter = get_draft_alternative(None, careers)
+        assert drifter is not None
+        assignment_name = drifter.assignments[0].name
+        event = pending.event_from_form({'choice': 'alternative', 'assignment': assignment_name})
+        assert isinstance(event.handler, CareerEntryHandler)
+        assert event.handler.career is drifter
+
+    def test_input_specs_with_draft_includes_alternative_option(self):
+        pending = PendingDraftChoice(pending_id=(1, 0), instruction='Draft?', can_draft=True)
+        specs = pending.input_specs(_projection())
+        from ceres.character.input_specs import Select
+
+        selects = [s for s in specs if isinstance(s, Select)]
+        assert selects
+
+
 class TestQueueCareerChoice:
     def test_adds_pending_career_choice(self):
         proj = _projection()

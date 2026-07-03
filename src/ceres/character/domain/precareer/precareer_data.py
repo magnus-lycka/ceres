@@ -28,7 +28,7 @@ class PrecareerSkillEntry(BaseModel):
     category choice, matching the career skill table pattern.
     """
 
-    skill: AnySkill | list[AnySkill] | None = None
+    skill: AnySkill | tuple[AnySkill, ...] | None = None
     level: int = 0
     spec: str | None = None
 
@@ -38,20 +38,20 @@ class PrecareerSkillEntry(BaseModel):
     def skill_options(self) -> list[AnySkill]:
         if self.skill is None:
             return []
-        if isinstance(self.skill, list):
-            return self.skill
+        if isinstance(self.skill, tuple):
+            return list(self.skill)
         return [self.skill]
 
     @property
     def category_label(self) -> str:
         if self.skill is None:
             return 'skill'
-        if isinstance(self.skill, list):
+        if isinstance(self.skill, tuple):
             return 'skill'
         return type(self.skill).name()
 
     def grant_skill(self) -> AnySkill | None:
-        if self.skill is None or isinstance(self.skill, list):
+        if self.skill is None or isinstance(self.skill, tuple):
             return None
         return _skill_at_level(self.skill, self.level)
 
@@ -148,7 +148,7 @@ class PreCareerData(TermData):
             for entry in self.skill_choices:
                 if not entry.skill:
                     continue
-                if isinstance(entry.skill, list):
+                if isinstance(entry.skill, tuple):
                     options = entry.skill_options
                     instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                     projection.pending_inputs.append(
@@ -168,7 +168,7 @@ class PreCareerData(TermData):
                 if not entry.skill:
                     continue
                 if entry.level >= 1:
-                    if isinstance(entry.skill, list):
+                    if isinstance(entry.skill, tuple):
                         options = entry.skill_options
                         instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
                         projection.pending_inputs.append(

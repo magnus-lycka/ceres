@@ -161,7 +161,7 @@ class PendingAnySkillAtLevelOnSuccessRoll(CareerSkillRollPendingBase):
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction=self.success_instruction,
-                    options=skill_instances(AnySkill),
+                    options=list(skill_instances(AnySkill)),
                     level=1,
                 )
             )
