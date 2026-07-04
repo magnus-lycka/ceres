@@ -808,6 +808,22 @@ def test_apply_basic_training_raises_for_unknown_table():
         ARMY._apply_basic_training(p, support, 'nonexistent_table', True, 1)
 
 
+def test_apply_basic_training_grant_all_skips_tuple_entry_when_all_skills_known():
+    """Tuple alternatives already known to the character must not corrupt summary.skills."""
+    from ceres.character.domain.skills import Drive, VaccSuit
+
+    p = _projection()
+    p.grant_skill(Drive())
+    p.grant_skill(VaccSuit())
+    support = ARMY.assignment('Support')
+
+    ARMY._apply_basic_training(p, support, 'service_skills', True, 1)
+
+    assert all(not isinstance(s, tuple) for s in p.summary.skills), (
+        'tuple was appended to summary.skills — list→tuple isinstance check is wrong'
+    )
+
+
 # ── CareerData._apply_initial_training_entry ─────────────────────────────────
 
 
@@ -866,18 +882,18 @@ def test_career_data_from_registry_falls_back_to_handler_for_unknown_kind():
 
 def test_training_pending_choices_returns_empty_for_chars_entry():
     p = _projection()
-    assert ARMY._training_pending_choices(p, Chars.STR) == []
+    assert ARMY._training_pending_choices(p, Chars.STR) == ()
 
 
 def test_training_selectable_skills_returns_empty_for_chars_entry():
     p = _projection()
-    assert ARMY._training_selectable_skills(p, Chars.STR) == []
+    assert ARMY._training_selectable_skills(p, Chars.STR) == ()
 
 
 def test_training_selectable_skills_returns_empty_for_psi_entry():
     p = _projection()
     psi = Psi(psionic_talent_instances()[0])
-    assert ARMY._training_selectable_skills(p, psi) == []
+    assert ARMY._training_selectable_skills(p, psi) == ()
 
 
 def test_training_option_is_unknown_returns_false_for_psi():

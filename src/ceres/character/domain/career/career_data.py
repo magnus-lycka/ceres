@@ -133,7 +133,7 @@ def _queue_injury(
                 amount=2,
             ),
         )
-    elif severity == 'from_table':
+    else:
         projection.pending_inputs.insert(
             0,
             PendingInjuryTable(
@@ -908,7 +908,7 @@ class CareerData(TermData):
                     choice_idx += 1
                 elif len(choices) == 1:
                     self._apply_initial_training_entry(projection, type(choices[0]))
-                elif not isinstance(entry, (Chars, list)):
+                elif not isinstance(entry, (Chars, tuple)):
                     # Specific-specialty entry (e.g. Electronics(computers=1)): grant base skill at level 0.
                     self._apply_initial_training_entry(projection, type(entry))
             return
@@ -933,33 +933,33 @@ class CareerData(TermData):
         if projection.summary.skill_level(skill_cls) is None:
             projection.summary.skills.append(skill_cls())
 
-    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> list[SkillTableItem]:
+    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> tuple[SkillTableItem, ...]:
         if isinstance(entry, Chars):
-            return []
+            return ()
         if isinstance(entry, Psi):
-            return []
+            return ()
         if isinstance(entry, tuple):
             return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
         fields = level_fields(skill_cls)
         spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
         if spec_field is not None:
-            return []
+            return ()
         if projection.summary.skill_level(skill_cls) is None:
-            return [skill_cls()]
-        return []
+            return (skill_cls(),)
+        return ()
 
-    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> list[SkillTableItem]:
+    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> tuple[SkillTableItem, ...]:
         if isinstance(entry, Chars):
-            return []
+            return ()
         if isinstance(entry, Psi):
-            return []
+            return ()
         if isinstance(entry, tuple):
             return self._unknown_training_skills(projection, entry)
         skill_cls = type(entry)
         if projection.summary.skill_level(skill_cls) is None:
-            return [skill_cls()]
-        return []
+            return (skill_cls(),)
+        return ()
 
     @staticmethod
     def _training_option_name(option: SkillTableItem) -> str:
@@ -974,14 +974,14 @@ class CareerData(TermData):
             return False
         return projection.summary.skill_level(type(option)) is None
 
-    def _unknown_training_skills(self, projection, options: tuple[SkillTableItem, ...]) -> list[SkillTableItem]:
+    def _unknown_training_skills(self, projection, options: tuple[SkillTableItem, ...]) -> tuple[SkillTableItem, ...]:
         by_type: dict[type[Any], SkillTableItem] = {}
         for option in options:
             if isinstance(option, Psi) or not self._training_option_is_unknown(projection, option):
                 continue
             skill_cls = type(option)
             by_type.setdefault(skill_cls, skill_cls())
-        return list(by_type.values())
+        return tuple(by_type.values())
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTable

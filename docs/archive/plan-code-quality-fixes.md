@@ -1,6 +1,6 @@
 # Plan: Code Quality Fixes
 
-## STATUS: NOT STARTED
+## STATUS: COMPLETE
 
 Small, self-contained fixes that can be implemented directly without structural
 rethink. Each is covered by a specific test. Order of implementation does not

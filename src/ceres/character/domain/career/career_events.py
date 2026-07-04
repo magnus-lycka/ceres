@@ -4,6 +4,8 @@ All handlers here correspond to EventBase subclasses from events.py and implemen
 the EventHandlerBase interface.
 """
 
+# ruff: noqa: F401
+
 from collections.abc import Mapping, Sequence
 from typing import Annotated, ClassVar, Literal, cast
 
@@ -89,47 +91,6 @@ from ceres.character.input_specs import (
 )
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
-
-__all__ = [
-    'AdvancementDmChoiceHandler',
-    'AdvancementHandler',
-    'BenefitChoiceHandler',
-    'BetrayalConvertHandler',
-    'CareerChoiceHandler',
-    'CareerEntryHandler',
-    'CharacteristicChoiceHandler',
-    'CommissionHandler',
-    'ConnectionKindChoiceHandler',
-    'ConnectionsRollHandler',
-    'DraftAssignmentHandler',
-    'DraftHandler',
-    'LifeEventCrimeLoseBenefitRoll',
-    'LifeEventCrimeTakePrisoner',
-    'LifeEventHandler',
-    'LifeEventUnusualHandler',
-    'MusterOutHandler',
-    'ParoleRollHandler',
-    'PendingAdvancement',
-    'PendingBenefitChoice',
-    'PendingCareerChoice',
-    'PendingChoices',
-    'PendingCommissionChoice',
-    'PendingConnectionsRoll',
-    'PendingDraftAssignmentChoice',
-    'PendingDraftChoice',
-    'PendingLifeEvent',
-    'PendingLifeEventAlienScience',
-    'PendingLifeEventBetrayalConvert',
-    'PendingLifeEventChoice',
-    'PendingLifeEventPsionicsRoll',
-    'PendingLifeEventUnusual',
-    'PendingMusterOut',
-    'PendingParoleRoll',
-    'PendingRankBonusChoice',
-    'PendingSkillChoice',
-    'queue_career_choice',
-    'queue_career_choice_indexed',
-]
 
 # ── Shared helpers ─────────────────────────────────────────────────────────────
 
@@ -265,7 +226,7 @@ class SkillTableHandler(EventHandlerBase):
             if choices:
                 _queue_skill_table_choice(projection, event, choices)
             else:
-                _apply_skill_table_entry(projection, entry)
+                _apply_skill_table_entry(projection, entry, event)
 
 
 def _skill_table_item_choices(
@@ -273,20 +234,20 @@ def _skill_table_item_choices(
     projection: CharacterProjection,
     table_name: str,
     entry: SkillTableItem,
-) -> list[SkillTableItem]:
+) -> tuple[SkillTableItem, ...]:
     if isinstance(entry, Chars):
-        return []
+        return ()
     if isinstance(entry, Psi):
-        return [entry] if career.skill_table_option_is_available(projection, table_name, entry) else []
+        return (entry,) if career.skill_table_option_is_available(projection, table_name, entry) else ()
     skill_cls = type(entry)
     fields = level_fields(skill_cls)
     spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
     if spec_field is None and len(fields) > 1:
-        return [skill_cls()]
-    return []
+        return (skill_cls(),)
+    return ()
 
 
-def _queue_skill_table_choice(projection: CharacterProjection, event: Event, choices: list[SkillTableItem]) -> None:
+def _queue_skill_table_choice(projection: CharacterProjection, event: Event, choices: Sequence[SkillTableItem]) -> None:
     projection.pending_inputs.insert(
         0,
         PendingSkillTableChoice(
@@ -422,13 +383,29 @@ def _survive_pending(career: CareerData, assignment: AssignmentData | None, even
     return career.survival_pending(assignment, event_id)
 
 
-def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableItem) -> None:
+def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableItem, event: Event) -> None:
     if isinstance(entry, Chars):
         projection.summary.characteristics[entry] = projection.summary.characteristics.get(entry, 0) + 1
     elif isinstance(entry, Psi):
         psionics = projection.summary.psionics
-        if psionics is not None and psionics.talent_level(type(entry.talent)) is not None:
+        if psionics is None:
+            # Character has no PSI; talent skill cannot be applied.
+            projection.not_gained(entry.talent)
+        elif psionics.talent_level(type(entry.talent)) is not None:
             psionics.increment_talent(type(entry.talent))
+        else:
+            # Character has PSI but not this talent. Per core rules p.86, they may
+            # attempt another roll to learn it.
+            from ceres.character.domain.psionics import PendingPsionicInstituteTraining
+
+            projection.pending_inputs.insert(
+                0,
+                PendingPsionicInstituteTraining(
+                    pending_id=(event.id, 0),
+                    instruction='You rolled a psionic talent skill. Attempt to learn this talent?',
+                    remaining_talents=[entry.talent],
+                ),
+            )
     else:
         projection.increment_skill(entry)
 
@@ -733,6 +710,8 @@ class PendingSkillTableChoice(_PendingSkillOrPsiChoice):
         projection.grant_skill(event.skill)
 
     def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
+        # _apply_skill_table_entry() already queued PendingPsionicInstituteTraining before
+        # this choice fires, so no continuation is needed here.
         pass
 
 

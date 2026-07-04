@@ -289,3 +289,30 @@ class TestDeserialiseTerms:
         data['terms'] = [{'kind': 'nonexistent_kind'}]
         with pytest.raises(ValidationError):
             CharacterSummary.model_validate(data)
+
+
+class TestNotGained:
+    def test_not_gained_entries_empty_by_default(self):
+        p = _projection()
+        assert p.not_gained_entries == ()
+
+    def test_not_gained_records_skill(self):
+        p = _projection()
+        p.not_gained(Admin())
+        assert Admin() in p.not_gained_entries
+
+    def test_not_gained_records_characteristic(self):
+        p = _projection()
+        p.not_gained(Chars.STR)
+        assert Chars.STR in p.not_gained_entries
+
+    def test_not_gained_accumulates_multiple_entries(self):
+        p = _projection()
+        p.not_gained(Admin())
+        p.not_gained(Drive())
+        assert len(p.not_gained_entries) == 2
+
+    def test_not_gained_entries_is_read_only(self):
+        p = _projection()
+        entries = p.not_gained_entries
+        assert isinstance(entries, tuple)

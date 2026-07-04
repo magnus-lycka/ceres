@@ -149,3 +149,29 @@ Options:
 Evaluate how many distinct removal patterns exist before committing to a name.
 The key constraint is that the caller should not need direct list access to
 remove something it previously queued.
+
+---
+
+## Step 6: Update Documentation and Follow-Up Notes
+
+Once the queue API is implemented and production call sites have migrated,
+update docs that currently describe raw list mutation as the architectural rule.
+
+Required updates:
+
+- `docs/concepts/character-creation-architecture.md` — replace the current
+  `append(item)` / `insert(0, item)` guidance with
+  `projection.queue_deferred(...)` / `projection.queue_immediate(...)`. It may
+  mention the underlying list implementation briefly, but the documented API
+  should be the projection methods.
+- `docs/todo_maybe.md` — remove or update the transitional note that says
+  `insert(0, ...)` is the current implementation. Future todo items should tell
+  implementers to use `queue_immediate(...)` for mid-flow pending inputs and
+  `queue_deferred(...)` for tail-of-flow pending inputs.
+- Any active plan that still instructs new work to call
+  `projection.pending_inputs.insert(0, ...)` or `.append(...)` directly should
+  be updated to use the queue API.
+
+This step is part of completing the queue API. Do not archive this plan while
+architecture or todo docs still teach direct `pending_inputs` mutation as the
+normal pattern.

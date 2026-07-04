@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING, Annotated, Any, cast, overload
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SerializeAsAny, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PrivateAttr, SerializeAsAny, model_validator
 
 from ceres.adapters.travellermap import TravellerMapWorld
 from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career.career_data import AssignmentData, BenefitRollDm, CareerData, CareerTerm
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import AnyConnection
-from ceres.character.domain.psionics_data import Psionics
+from ceres.character.domain.psionics_data import Psionics, PsionicTalentSkillModels
 from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.domain.term_data import Term
@@ -279,6 +279,15 @@ class CharacterProjection(BaseModel):
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
+
+    _not_gained: list[AnySkill | PsionicTalentSkillModels | Chars] = PrivateAttr(default_factory=list)
+
+    def not_gained(self, entry: AnySkill | PsionicTalentSkillModels | Chars) -> None:
+        self._not_gained.append(entry)
+
+    @property
+    def not_gained_entries(self) -> tuple[AnySkill | PsionicTalentSkillModels | Chars, ...]:
+        return tuple(self._not_gained)
 
     def add_connection(self, kind: ConnectionKind, *, origin: str = '') -> None:
         from ceres.character.domain.connection import make_connection

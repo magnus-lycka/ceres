@@ -68,7 +68,7 @@ regenerated with `--snapshot-update`.
 
 ---
 
-## Phase 2 — Pending Input Ordering Throughout the Codebase (IN PROGRESS)
+## Phase 2 — Pending Input Ordering Throughout the Codebase (COMPLETE)
 
 ### Completed in Phase 2
 
@@ -91,26 +91,14 @@ Academy approval tests were updated to submit `skill_form(Drive())` before the
 event and graduation forms. A unit test in `test_military_academy.py` covers
 this.
 
+`InjuryAndGainConnectionEntry.apply()` was refactored to delegate to
+`_queue_injury()`, eliminating duplicated logic and ensuring `insert(0, ...)`
+ordering. Covered by a unit test confirming the injury choice appears before
+existing pending inputs.
+
 `RolledConnectionsGroupEntry.apply()` still uses the `reversed()`+`insert(0,
 ...)` pattern, which scrambles pending IDs. This is now tracked as a separate
 item in [plan-pending-input-queue-api.md](plan-pending-input-queue-api.md).
-
-### What remains
-
-**`InjuryAndGainConnectionEntry.apply()`** (`career_data.py:458`) duplicates
-`_queue_injury()` logic but uses `append` instead of `insert(0, ...)`. It
-should delegate to `_queue_injury()`:
-
-```python
-def apply(self, projection, event, pending_idx) -> int:
-    _queue_injury(projection, event, pending_idx, self.severity)
-    projection.add_connection(self.connection, origin=self.text)
-    return pending_idx + 1
-```
-
-Write a test first: confirm that after an `InjuryAndGainConnectionEntry`
-resolves, the injury choice appears at position 0 in the queue (before anything
-already queued). Then apply the fix.
 
 ---
 

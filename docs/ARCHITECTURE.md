@@ -83,10 +83,11 @@ use `kind`.
 or compares `.kind` at runtime — use `isinstance()` for type dispatch, never
 string comparison against a discriminator value. Tests assert on concrete type
 (`isinstance`) or observable behaviour, not on `.kind` values. A discriminator
-literal audit (`tools/discriminator_literal_audit.py`, run by
-`tests/tools/test_discriminator_literal_audit.py`) enforces that bare
+literal audit (`src/tools/discriminator_literal_audit.py`) enforces that bare
 discriminator strings do not appear outside their canonical `Literal[...]`
-declaration.
+declaration. `tests/tools/test_discriminator_literal_audit.py` covers the audit
+tool itself; `tests/scan/test_audit_discriminator_literals.py` runs the
+repo-wide scan.
 
 ### Derived data in model JSON
 

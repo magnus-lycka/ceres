@@ -4,9 +4,13 @@ These notes collect observations from the recent career/pre-career and pending-i
 
 ## Review Findings From Recent Changes
 
-### High: Basic Training Still Checks `list` After Tuple Refactor
+### Resolved: Basic Training Still Checks `list` After Tuple Refactor
 
 `src/ceres/character/domain/career/career_data.py:937`
+
+Resolved in `career_data.py` by changing the stale `list` check to `tuple`,
+with a regression test covering a full-basic-training tuple alternative whose
+skills are already known.
 
 `CareerData._apply_basic_training()` was updated to use tuples for skill-table alternatives, but one branch still checks for `list`:
 
@@ -88,9 +92,12 @@ There is no `Psi.TELEPATHY` domain value; `Telepathy()` is a skill.
 
 But the surrounding TODO/history makes this ambiguous. The code should either document why no continuation is needed, or the flow should be adjusted so choosing a psionic option visibly completes the skill-table choice.
 
-### Medium: Injury Severity Has No Impossible-State Guard
+### Resolved: Injury Severity Has No Impossible-State Guard
 
 `src/ceres/character/domain/career/career_data.py:108`
+
+Resolved in `_queue_injury()` by raising `ReplayError` for unknown severities,
+with a regression test for an invalid severity string.
 
 `_queue_injury()` handles `normal`, `severe`, and `from_table`, but has no final `else`.
 

@@ -7,20 +7,6 @@ from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardK
 from ceres.character.domain.precareer.spacer_community import SpacerCommunityTerm
 from ceres.character.domain.precareer.university import UniversityTerm
 
-__all__ = [
-    'ArmyAcademyTerm',
-    'ColonialUprbringingTerm',
-    'MarineAcademyTerm',
-    'MerchantAcademyBusinessTerm',
-    'MerchantAcademyShipboardTerm',
-    'NavyAcademyTerm',
-    'PreCareerTerm',
-    'PsionicCommunityTerm',
-    'SchoolOfHardKnocksTerm',
-    'SpacerCommunityTerm',
-    'UniversityTerm',
-]
-
 _all_precareer_term_classes: list[type[PreCareerTerm]] = [
     UniversityTerm,
     ArmyAcademyTerm,

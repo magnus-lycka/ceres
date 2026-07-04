@@ -5,25 +5,36 @@ When todo items are done, please move them to docs/archive/done_todos.md
 
 ## Psion skill table: incomplete Psi talent handling
 
-Two related bugs in the Psion career's skill table Psi handling:
+`PendingSkillTableChoice.on_psi_chosen` doing `pass` is intentional for
+continuation — reenlist/aging is already queued by `_apply_promotion()` before
+the skill table choice fires. See `plan-psionic-skill-table.md` for the analysis.
 
-1. **`PendingSkillTableChoice.on_psi_chosen` does nothing** (`pass` in
-   `career_events.py`). When a player selects a Psi talent option, the talent
-   level should be incremented (for possessed talents) — the same logic as
-   `_apply_skill_table_entry` for the Psi case.
+The remaining bug is in `Psion.skill_table_option_is_available`: for service
+skills, it returns `True` for unlearned Psi talents. This routes them through
+`PendingSkillTableChoice` → `on_psi_chosen` (= `pass`) → nothing happens.
 
-2. **`Psion.skill_table_option_is_available` for `service_skills` is wrong**.
-   Per the rules (p86): when rolling service skills and gaining a talent the
-   Psion does not yet possess, they may *attempt* a talent training test
-   (`PsionicTalentTrainingHandler`) to learn it. The current code returns
-   `True` (allows selection as a choice), but `on_psi_chosen` then does
-   nothing. The correct behaviour is: the choice should trigger a talent
-   training test, not a simple selection. Unimplemented talents should not be
-   offered as a selectable choice — they should trigger the training roll path.
+Per Core p.86, rolling a service-skills Psi entry for an unlearned talent should
+trigger a talent training attempt (`PsionicTalentTrainingHandler`), not a silent
+no-op. The fix: `skill_table_option_is_available` should return `False` for
+unlearned Psi talents on service_skills, so the entry falls through to
+`_apply_skill_table_entry`, which now correctly queues
+`PendingPsionicInstituteTraining` with that single talent.
 
-These are interlinked: fix `on_psi_chosen` to increment the talent when
-possessed, and redesign the service-skills Psi path to use
-`PsionicTalentTrainingHandler` for unlearned talents.
+For *possessed* talents on service_skills, `skill_table_option_is_available`
+correctly returns `True` — these go through `PendingSkillTableChoice` →
+`on_psi_chosen`. But `on_psi_chosen` is `pass`, so the talent is never
+incremented. Fix: possessed-talent Psi entries on service_skills should also
+go directly to `_apply_skill_table_entry` (return `False` from
+`skill_table_option_is_available`), or `on_psi_chosen` should call
+`psionics.increment_talent()` for possessed talents. The former is simpler and
+consistent.
+
+Superseded by [plan-skill-table-entry-types.md](plan-skill-table-entry-types.md):
+the quick fix (make `skill_table_option_is_available` return `False` for Psi
+entries on service_skills) is abandoned in favour of entry types that carry
+their own `apply()` behaviour, with `Psi(talent, allow_acquisition=True)`
+encoding the service-skills acquisition rule directly. The driver tests for
+the Psion service-skills behaviour are written red-first in that plan's Step 4.
 
 ## Test suite: unit coverage gaps
 
@@ -118,6 +129,28 @@ Defer this until after the current pre-career effect migration. When picked up:
 - consider a later scan test preventing new `projection: Any` / `form: Any`
   annotations in character-domain code, with temporary allowlists while the
   existing code is cleaned up
+
+## Import character-domain names from their owning modules
+
+`career_events.py` and `psionics.py` still act as compatibility import hubs:
+many tests and production modules import names from them that are actually
+defined in more specific modules such as `career.entry`, `career.advancement`,
+`career.muster_out`, `choice_events`, `connection_events`, `life_events`,
+`skill_events`, or `psionics_data`.
+
+This is why those modules currently need `# ruff: noqa: F401` after removing
+their `__all__` declarations. The imports are not used by the module itself;
+they are kept only so existing callers keep working.
+
+Clean this up gradually:
+
+- replace imports from `ceres.character.domain.career.career_events` with
+  imports from the module that owns the name;
+- replace re-export-style imports from `ceres.character.domain.psionics` with
+  imports from `psionics_data` when the name is data/model-only;
+- keep event/pending classes imported from their actual implementation module;
+- remove the `# ruff: noqa: F401` compatibility comments once no callers depend
+  on these hub imports.
 
 ## Google Sheet fuel mismatch
 
@@ -406,9 +439,45 @@ Current status:
 
 ## Character creation: known implementation gaps (rules not yet enforced)
 
-- **Injury table 1D damage** — rows 1 and 2 reduce a physical characteristic by
-  1D. The form and auto-fill paths should be verified to record the actual die
-  result rather than always using 1.
+- **Injury table and `InjuryEntry.severity` redesign** — The injury table
+  (Core p.49, rolled with 1D) has six rows:
+
+  | 1D | Effect |
+  | -- | ------ |
+  | 1 | Nearly killed — reduce one physical char by 1D, two others by 2 |
+  | 2 | Severely injured — reduce one physical char by 1D |
+  | 3 | Missing Eye or Limb — reduce STR or DEX by 2 |
+  | 4 | Scarred — reduce any physical char by 2 |
+  | 5 | Injured — reduce any physical char by 1 |
+  | 6 | Lightly Injured — no effect |
+
+  Career mishap and event entries reference the injury table in three ways,
+  all of which produce a row number (1–6):
+
+  - **Roll 1D** — e.g. mishap 6 ("Roll on the Injury table")
+  - **Fixed row** — e.g. mishap 1 ("same as result of 2 on the Injury table"),
+    Marines event 6 fail ("lose 1 point from any physical characteristic" = row 5)
+  - **Roll twice, take min** — e.g. mishap 1 alternative ("roll twice on the
+    Injury table and take the lower result"); min(1D, 1D) still yields a row number
+
+  `InjuryEntry.severity: Literal['normal', 'severe', 'from_table']` is the
+  wrong abstraction. It invents names for things that are already named by row
+  number. Replace it with a direct row-number reference:
+
+  - `severity='from_table'` → roll 1D to get row → correct, keep as `PendingInjuryTable`
+  - `severity='severe'` → fixed row 2 → **currently wrong**: code reduces by 2
+    (like row 4), but row 2 reduces by **1D**
+  - `severity='normal'` → fixed row 5 → correctly reduces by 1, but the name
+    obscures the mapping
+
+  Proposed replacement: `InjuryEntry` takes `table_row: int | None` where `None`
+  means "roll 1D" and an integer (1–6) means "apply that row directly." Mishap 1's
+  "roll twice, take lower" alternative requires a separate pending choice before
+  the injury table is applied. The severity field and its three string values
+  should be deleted (Alpha: no migration).
+
+  Also: rows 1 and 2 reduce a physical characteristic by 1D — the die result
+  must be rolled and recorded, not hardcoded.
 - **Skill level cap** — skills may not exceed level 4 during creation; total
   skill levels may not exceed 3 × (INT + EDU).
 - **Benefit roll bonus at rank 5–6 and "any one Benefit roll" events** — neither
@@ -763,6 +832,12 @@ Any new pending input added inside a career event or mishap handler must use
 reenlist, and muster-out. This applies to skill choices, mishap rolls, life
 events, connection rolls, injury rolls, and characteristic-loss choices. Do not
 add a pending input with `append` and defer the ordering fix as a separate step.
+
+This describes the current implementation. Once
+[plan-pending-input-queue-api.md](plan-pending-input-queue-api.md) lands, use
+`projection.queue_immediate(...)` for this immediate-before-tail behaviour
+instead of mutating `projection.pending_inputs` directly. Tail-of-flow pending
+inputs should use `projection.queue_deferred(...)`.
 
 ## Agent career tables: remaining blocked items
 

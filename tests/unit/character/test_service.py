@@ -124,6 +124,10 @@ class TestAvailableSophonts:
         cid = service.create_character('Ada', 'NPC')
         assert service.available_sophonts(cid) == SOPHONT_NAMES
 
+    def test_raises_for_missing_character_id(self, service):
+        with pytest.raises(ValueError, match='9999'):
+            service.available_sophonts(9999)
+
     def test_returns_subset_filtered_by_homeworld(self, service):
         cid = service.create_character('Ada', 'NPC')
         projection = service.get_projection(cid)
@@ -147,6 +151,10 @@ class TestAvailableCareers:
         assert len(careers) > 0
         assert all(c.selectable for c in careers)
 
+    def test_raises_for_missing_character_id(self, service):
+        with pytest.raises(ValueError, match='9999'):
+            service.available_careers(9999)
+
 
 class TestAvailablePrecareers:
     def test_returns_all_precareers_without_character_id(self, service):
@@ -158,6 +166,10 @@ class TestAvailablePrecareers:
         cid = service.create_character('Ada', 'NPC')
         precareers = service.available_precareers(cid)
         assert not any(isinstance(pc, PsionicCommunityPreCareer) for pc in precareers)
+
+    def test_raises_for_missing_character_id(self, service):
+        with pytest.raises(ValueError, match='9999'):
+            service.available_precareers(9999)
 
 
 class TestDeleteCharacter:

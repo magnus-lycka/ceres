@@ -64,8 +64,13 @@ class CharacterService:
         event = pending.event_from_form(form_data)
         self._backend.append_event(character_id, event)
 
+    def _require_character(self, character_id: int) -> None:
+        if self._backend.get_character(character_id) is None:
+            raise ValueError(f'Character not found: {character_id}')
+
     def available_sophonts(self, character_id: int | None = None) -> list[str]:
         if character_id is not None:
+            self._require_character(character_id)
             summary = self._backend.get_summary(character_id)
             if summary is not None and summary.homeworld is not None:
                 return available_sophont_names(summary.homeworld)
@@ -73,6 +78,7 @@ class CharacterService:
 
     def available_careers(self, character_id: int | None = None) -> tuple[CareerData, ...]:
         if character_id is not None:
+            self._require_character(character_id)
             projection = self._backend.get_projection(character_id)
             return selectable_careers(projection)
         return selectable_careers()
@@ -80,6 +86,7 @@ class CharacterService:
     def available_precareers(self, character_id: int | None = None) -> tuple[PreCareerData, ...]:
         all_pcs = load_precareers()
         if character_id is not None:
+            self._require_character(character_id)
             summary = self._backend.get_summary(character_id)
             if summary is not None:
                 return tuple(pc for pc in all_pcs if pc.is_available(summary))

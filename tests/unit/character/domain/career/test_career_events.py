@@ -36,6 +36,10 @@ def _projection(**kwargs) -> CharacterProjection:
     )
 
 
+def _event(roll: int = 5) -> Event:
+    return Event(handler=SurviveHandler(roll=roll))
+
+
 class TestPendingSurvive:
     def test_event_from_form_parses_roll(self):
         pending = PendingSurvive(pending_id=(1, 0), instruction='Roll 2D')
@@ -361,17 +365,17 @@ class TestPurgeCareerPendings:
 class TestApplySkillTableEntry:
     def test_increments_characteristic(self):
         proj = _projection(characteristics={Chars.STR: 7})
-        _apply_skill_table_entry(proj, Chars.STR)
+        _apply_skill_table_entry(proj, Chars.STR, _event())
         assert proj.summary.characteristics[Chars.STR] == 8
 
     def test_increments_missing_characteristic_from_zero(self):
         proj = _projection()
-        _apply_skill_table_entry(proj, Chars.EDU)
+        _apply_skill_table_entry(proj, Chars.EDU, _event())
         assert proj.summary.characteristics[Chars.EDU] == 1
 
     def test_increments_skill(self):
         proj = _projection()
-        _apply_skill_table_entry(proj, Admin())
+        _apply_skill_table_entry(proj, Admin(), _event())
         assert proj.summary.skill_level(Admin, 0) == 1
 
     def test_increments_possessed_psi_talent(self):
@@ -379,14 +383,27 @@ class TestApplySkillTableEntry:
 
         proj = _projection()
         proj.summary.psionics = Psionics(psionic_talent_skills=[Telepathy()])
-        _apply_skill_table_entry(proj, Psi(root=Telepathy()))
+        _apply_skill_table_entry(proj, Psi(root=Telepathy()), _event())
         assert proj.summary.psionics.talent_level(Telepathy) == 1
 
-    def test_no_op_for_unpossessed_psi_talent(self):
+    def test_queues_talent_acquisition_for_unpossessed_psi_talent(self):
+        from ceres.character.domain.psionics import PendingPsionicInstituteTraining
         from ceres.character.domain.psionics_data import Clairvoyance, Psi, Psionics, Telepathy
 
         proj = _projection()
         proj.summary.psionics = Psionics(psionic_talent_skills=[Clairvoyance()])
-        _apply_skill_table_entry(proj, Psi(root=Telepathy()))
+        _apply_skill_table_entry(proj, Psi(root=Telepathy()), _event())
+
+        acquisition = next((p for p in proj.pending_inputs if isinstance(p, PendingPsionicInstituteTraining)), None)
+        assert acquisition is not None, 'Expected PendingPsionicInstituteTraining to be queued'
+        assert any(isinstance(t, Telepathy) for t in acquisition.remaining_talents)
         assert proj.summary.psionics.talent_level(Telepathy) is None
-        assert proj.summary.psionics.talent_level(Clairvoyance) == 0
+
+    def test_no_psi_records_not_gained(self):
+        from ceres.character.domain.psionics_data import Psi, Telepathy
+
+        proj = _projection()
+        assert proj.summary.psionics is None
+        _apply_skill_table_entry(proj, Psi(root=Telepathy()), _event())
+
+        assert any(isinstance(e, Telepathy) for e in proj.not_gained_entries)

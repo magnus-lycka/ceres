@@ -1,6 +1,19 @@
 # Plan: Psionic Skill Table Entries
 
-## STATUS: NOT STARTED
+## STATUS: PARTIALLY COMPLETE — Steps 1 and 4 done; Step 2 partially done; Step 3 pending
+
+### What was completed
+
+- **Step 1**: `on_psi_chosen` comment added.
+- **Step 2 (partial)**: `_apply_skill_table_entry()` fixed for all three Psi
+  cases (no PSI → `not_gained`, possessed → increment, has PSI but not talent →
+  queue `PendingPsionicInstituteTraining`). However, `Psion.skill_table_option_is_available`
+  returns `True` for Psi entries on service_skills (possessed and unlearned alike),
+  which routes them through `PendingSkillTableChoice.on_psi_chosen` = `pass` —
+  bypassing `_apply_skill_table_entry` entirely. The remaining fix: return `False`
+  from `skill_table_option_is_available` for all Psi entries on service_skills.
+  Tracked in `docs/todo_maybe.md`.
+- **Step 4**: `todo_maybe.md` updated with correct current interpretation.
 
 ## Background
 
@@ -139,6 +152,29 @@ fix.
 during basic training the next pending input in the queue (either another
 training choice or the survive pending) is already present, making the no-op
 correct. Add a comment if confirmed. If not correct, fix accordingly.
+
+---
+
+## Step 4: Reconcile `todo_maybe.md`
+
+`docs/todo_maybe.md` currently describes
+`PendingSkillTableChoice.on_psi_chosen()` as a bug because it is `pass` and says
+it should increment the talent. This plan's analysis says the opposite: the
+`pass` is intentional for continuation ordering, and the real bug is the
+unowned-talent service-skill-table path.
+
+When this plan is implemented:
+
+- update the "Psion skill table: incomplete Psi talent handling" item in
+  `docs/todo_maybe.md`;
+- remove or rewrite the claim that `PendingSkillTableChoice.on_psi_chosen()`
+  should increment the talent directly;
+- point the todo at the implemented service-skill-table talent-acquisition
+  behaviour, or move the todo to `docs/archive/done_todos.md` if fully
+  resolved.
+
+Do not archive this plan while `todo_maybe.md` still teaches the old
+interpretation.
 
 ---
 

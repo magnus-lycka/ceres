@@ -1,6 +1,18 @@
 # Plan: Visible No-Ops and Silent-Drop Policy
 
-## STATUS: NOT STARTED
+## STATUS: IN PROGRESS — Step 1 complete; Steps 2–4 expected to be absorbed by plan-skill-table-entry-types
+
+Steps 2–4 are not started and should not be started independently:
+
+- Step 2 (parseable-Chars form gap): resolved by design — `Char` never
+  becomes a choice option in the new entry types.
+- Step 3 (drop-without-recording sites): relevant sites move into
+  `Skill.apply()` and `Psi.apply()` and will be TDD'd there.
+- Step 4 (ReplayError for unknown entries): disappears with polymorphic
+  dispatch — no isinstance chain left to fall off the end of.
+
+After `plan-skill-table-entry-types` is complete, revisit and close this
+plan with a note on what was absorbed.
 
 ## Background
 
