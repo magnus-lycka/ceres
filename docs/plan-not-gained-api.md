@@ -54,11 +54,19 @@ def not_gained_entries(self) -> tuple[AnySkill | PsionicTalentSkillModels | Char
     return tuple(self._not_gained)
 ```
 
-The type parameter of `not_gained()` should cover all the concrete things that
-can be considered but not applied:
-- `AnySkill` — a concrete skill instance
-- `Psi` entries (psionic talent skills)
+The type parameter of `not_gained()` should cover all the **concrete,
+player-facing** things that can be considered but not applied:
+
+- `AnySkill` — a concrete skill instance, including psionic talent skills like
+  `Telepathy()`
 - `Chars` — a characteristic modifier
+
+`not_gained()` records what the player would see, not the table encoding.
+When a skill table entry is `Psi(talent=Telepathy())` and the character cannot
+gain it, record `Telepathy()` — the concrete skill — not the `Psi(...)` wrapper.
+The `Psi` wrapper is a table-layer encoding detail; `Telepathy()` is what the
+player lost. `PsionicTalentSkillModels` already covers the talent skill types
+that can appear in `AnySkill`; no separate `Psi` case is needed in the union.
 
 **Test first:** Write a unit test confirming that `not_gained(Admin())` appends
 the entry to `not_gained_entries` and that the property is read-only.

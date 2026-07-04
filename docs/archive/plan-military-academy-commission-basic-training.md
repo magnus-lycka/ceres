@@ -1,6 +1,6 @@
 # Plan: Fix Basic Training Repetition and Pending Input Ordering
 
-## STATUS: IN PROGRESS — Phase 1 complete, Phase 2 nearly complete
+## STATUS: COMPLETE
 
 ## Background
 

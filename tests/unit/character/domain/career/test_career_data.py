@@ -672,6 +672,25 @@ def test_injury_and_gain_connection_entry_severe_severity_queues_reduce_by_two()
     assert any(c.kind == ConnectionKind.RIVAL for c in p.summary.connections)
 
 
+def test_injury_and_gain_connection_inserts_before_existing_pending():
+    """InjuryAndGainConnectionEntry must queue injury before items already in the queue."""
+    from ceres.character.domain.career.muster_out import PendingMusterOut
+
+    for severity in ('normal', 'severe', 'from_table'):
+        p = _projection()
+        p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+        InjuryAndGainConnectionEntry(
+            text='Injured and gain a Rival.',
+            severity=severity,  # type: ignore[arg-type]
+            connection=ConnectionKind.RIVAL,
+        ).apply(p, event=_event(12), pending_idx=0)
+
+        injury_types = (PendingCharacteristicChoice, PendingInjuryTable)
+        injury_idx = next(i for i, item in enumerate(p.pending_inputs) if isinstance(item, injury_types))
+        muster_idx = next(i for i, item in enumerate(p.pending_inputs) if isinstance(item, PendingMusterOut))
+        assert injury_idx < muster_idx, f'Injury pending ({severity}) must come before muster-out'
+
+
 # ── GainConnectionsEntry ─────────────────────────────────────────────────────
 
 

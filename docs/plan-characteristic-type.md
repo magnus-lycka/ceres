@@ -1,6 +1,6 @@
 # Plan: Characteristic Type
 
-## STATUS: NOT STARTED
+## STATUS: NOT STARTED — low priority, do not block other plans on this
 
 ## Background
 
@@ -33,7 +33,7 @@ Characteristic class which we subclass instead of the simple enum?"
 
 Replace `Chars` with a class hierarchy:
 
-```
+```text
 Characteristic (base class)
 ├── PhysicalCharacteristic
 │   ├── Strength
@@ -49,6 +49,7 @@ Characteristic (base class)
 ```
 
 Each class:
+
 - Is a singleton or small-value type (like `Skill` subclasses).
 - Knows its own abbreviation (e.g., `Strength.abbreviation = "STR"`).
 - Knows its display name (e.g., `Strength.name = "Strength"`).
@@ -98,6 +99,7 @@ Start by answering the two questions above and recording the decision here befor
 writing any code.
 
 **Suggested pre-work:**
+
 1. Read `src/ceres/character/domain/character_state.py` and list all the places
    `Chars` is used as a key, a type annotation, a dict key, and a rendered label.
 2. Read `src/ceres/character/domain/career/career_data.py` for characteristic

@@ -456,33 +456,7 @@ class InjuryAndGainConnectionEntry(CareerTableEntry):
     connection: ConnectionKind
 
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
-        from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
-
-        if self.severity == 'normal':
-            projection.pending_inputs.append(
-                PendingCharacteristicChoice(
-                    pending_id=(event.id, pending_idx),
-                    instruction='Injured: choose STR, DEX, or END to reduce by 1',
-                    options=[Chars.STR, Chars.DEX, Chars.END],
-                    amount=1,
-                )
-            )
-        elif self.severity == 'severe':
-            projection.pending_inputs.append(
-                PendingCharacteristicChoice(
-                    pending_id=(event.id, pending_idx),
-                    instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
-                    options=[Chars.STR, Chars.DEX, Chars.END],
-                    amount=2,
-                )
-            )
-        elif self.severity == 'from_table':
-            projection.pending_inputs.append(
-                PendingInjuryTable(
-                    pending_id=(event.id, pending_idx),
-                    instruction='Roll 1D on Injury table',
-                )
-            )
+        _queue_injury(projection, event, pending_idx, self.severity)
         projection.add_connection(self.connection, origin=self.text)
         return pending_idx + 1
 
