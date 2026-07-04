@@ -1,6 +1,17 @@
 # Plan: Pending Input Queue API
 
-## STATUS: NOT STARTED
+## STATUS: IN PROGRESS — Steps 1 and 3 complete; Steps 2, 4, 5, 6 not started
+
+Three special-position insert sites remain untouched (they use a variable
+index, not 0):
+
+- `health_events.py` — inserts an aging-injury pending before advancement/reenlist
+- `scout.py` — inserts homeworld pending before term-start pendings
+- `psion.py` — inserts homeworld pending before term-start pendings
+
+These will need a dedicated method (e.g. `insert_before_type(...)`) when
+`pending_inputs` is made private in Step 2. They do not fit
+`queue_immediate`/`queue_deferred`.
 
 ## Background
 
@@ -58,6 +69,7 @@ preserved and that immediate inputs resolve before deferred inputs.
 direct mutation of the list is an antipattern that bypasses the convention.
 
 **Changes:**
+
 1. Rename `pending_inputs: list[PendingInput]` to `_pending_inputs: list[PendingInput]`
    (Pydantic private field or excluded field).
 2. Add a read-only property `pending_inputs` that returns a view or copy so that
@@ -91,10 +103,10 @@ and `uvx ty check` as signals that migration is complete.
 Patterns to replace:
 
 | Old | New |
-|-----|-----|
+| --- | --- |
 | `projection.pending_inputs.insert(0, p)` | `projection.queue_immediate(p)` |
 | `projection.pending_inputs.append(p)` | `projection.queue_deferred(p)` |
-| `projection.pending_inputs.insert(0, a); projection.pending_inputs.insert(0, b)` | `projection.queue_immediate(b, a)` (reverse order kept, or…) |
+| Reverse-insert loop for `[a, b]` | `projection.queue_immediate(a, b)` |
 | `projection.pending_inputs[:0] = [a, b]` | `projection.queue_immediate(a, b)` |
 
 The multi-input reverse-insert pattern above is a known source of bugs. The
@@ -143,6 +155,7 @@ Sites that currently mutate `pending_inputs` to remove items (like the
 `remaining_grad` pattern) need a replacement once the list is private.
 
 Options:
+
 - `projection.cancel_pending(predicate)` — drops all items matching a predicate
 - `projection.cancel_pending_of_type(SomeType)` — type-specific convenience
 
@@ -161,13 +174,9 @@ Required updates:
 
 - `docs/concepts/character-creation-architecture.md` — replace the current
   `append(item)` / `insert(0, item)` guidance with
-  `projection.queue_deferred(...)` / `projection.queue_immediate(...)`. It may
-  mention the underlying list implementation briefly, but the documented API
-  should be the projection methods.
-- `docs/todo_maybe.md` — remove or update the transitional note that says
-  `insert(0, ...)` is the current implementation. Future todo items should tell
-  implementers to use `queue_immediate(...)` for mid-flow pending inputs and
-  `queue_deferred(...)` for tail-of-flow pending inputs.
+  `projection.queue_deferred(...)` / `projection.queue_immediate(...)`.
+- `docs/todo_maybe.md` — remove or update any note that says `insert(0, ...)`
+  is the current implementation.
 - Any active plan that still instructs new work to call
   `projection.pending_inputs.insert(0, ...)` or `.append(...)` directly should
   be updated to use the queue API.

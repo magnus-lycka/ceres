@@ -130,7 +130,7 @@ class RogueMishap3Handler(CareerHandlerBase):
         else:
             projection.add_connection(ConnectionKind.RIVAL, origin='An unknown betrayer')
 
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll 2D: on a result of exactly 2, you must take the Prisoner career next term',
@@ -165,7 +165,7 @@ class RogueEvent3Defend(ChoiceBase):
     label: str = 'Defend yourself (roll Advocate 8+)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             RogueEvent3SkillRoll(
                 pending_id=(event.id, 0),
                 instruction=(
@@ -184,7 +184,7 @@ class RogueEvent3Lawyer(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class RogueEvent3Handler(CareerHandlerBase):
@@ -192,7 +192,7 @@ class RogueEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -217,7 +217,7 @@ class RogueEvent6Backstab(ChoiceBase):
         career = projection.get_current_career()
         projection.add_connection(ConnectionKind.ENEMY, origin='A fellow rogue you betrayed')
         projection.pending_advancement_dm += 2
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class RogueEvent6Refuse(ChoiceBase):
@@ -227,7 +227,7 @@ class RogueEvent6Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.add_connection(ConnectionKind.CONTACT, origin='A fellow rogue you worked alongside')
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class RogueEvent6Handler(CareerHandlerBase):
@@ -235,7 +235,7 @@ class RogueEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Backstab the fellow rogue (DM+2 to next advancement, gain Enemy) '
@@ -267,7 +267,7 @@ class RogueEvent9Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingRogueEvent9SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Stealth or Gun Combat 8+: success = extra Benefit roll; fail = injured',

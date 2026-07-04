@@ -100,7 +100,7 @@ class PsionIncreasePsiHandler(CareerHandlerBase):
         psi = projection.summary.characteristics.get(Chars.PSI, 0)
         projection.summary.characteristics[Chars.PSI] = psi + 1
         career = projection.get_current_career()
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx)
         )
         return pending_idx + 1
@@ -111,7 +111,7 @@ class PendingPsionAdvancedTraining(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Choose any skill except Jack-of-All-Trades to gain at level 1',
@@ -125,7 +125,7 @@ class PsionAdvancedTrainingHandler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPsionAdvancedTraining(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any skill except Jack-of-All-Trades',
@@ -142,7 +142,7 @@ class PsionMishap4Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.add_connection(ConnectionKind.ENEMY, origin='Unethical psionic work')
         career = projection.get_current_career()
-        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionMishap4Refuse(ChoiceBase):
@@ -158,7 +158,7 @@ class PsionMishap4Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Use your psionic powers unethically?',
@@ -177,7 +177,7 @@ class PsionMishap3RollHandler(EventHandlerBase):
     ) -> None:
         pending_idx = 0
         if self.roll <= 2:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingInjuryTable(pending_id=(event.id, pending_idx), instruction='Roll 1D on Injury table')
             )
             pending_idx += 1
@@ -203,7 +203,7 @@ class PsionMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPsionMishap3Roll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll 1D for the result of the anti-psi attack',
@@ -233,9 +233,7 @@ class PsionConnectionConvertedHandler(EventHandlerBase):
             projection.add_connection(self.new_kind, origin='Psion career')
         if self.continue_term and projection.summary.current_career is not None:
             career = projection.get_current_career()
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PendingPsionConnectionConversion(PendingInputBase):
@@ -269,7 +267,7 @@ class PsionMishap6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPsionConnectionConversion(
                 pending_id=(event_id, pending_idx),
                 instruction='Choose the former friend who becomes an Enemy',
@@ -284,7 +282,7 @@ class PsionEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPsionConnectionConversion(
                 pending_id=(event_id, pending_idx),
                 instruction='Choose the Contact or Ally who becomes a Rival',
@@ -302,7 +300,7 @@ class PsionEvent5Benefit(ChoiceBase):
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
         career = projection.get_current_career()
-        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionEvent5Soc(ChoiceBase):
@@ -314,7 +312,7 @@ class PsionEvent5Soc(ChoiceBase):
             15, projection.summary.characteristics.get(Chars.SOC, 0) + 1
         )
         career = projection.get_current_career()
-        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PendingPsionEvent5Roll(CareerSkillRollPendingBase):
@@ -322,7 +320,7 @@ class PendingPsionEvent5Roll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingChoices(
                     pending_id=(event.id, 0),
                     instruction='Choose the reward for successfully using your powers',
@@ -340,7 +338,7 @@ class PsionEvent5Accept(ChoiceBase):
     label: str = 'Accept (roll PSI 8+)'
 
     def handle(self, projection: CharacterProjection, event: Event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPsionEvent5Roll(
                 pending_id=(event.id, 0),
                 instruction='Roll PSI 8+ to improve your standing',
@@ -355,7 +353,7 @@ class PsionEvent5Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PsionEvent5Handler(CareerHandlerBase):
@@ -363,7 +361,7 @@ class PsionEvent5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Use your powers unethically to better your standing?',

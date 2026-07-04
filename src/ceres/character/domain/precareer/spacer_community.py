@@ -56,7 +56,7 @@ class SpacerCommunityPreCareer(PreCareerData):
             if entry.skill and entry.level == 0:
                 choice_pool.extend(entry.skill_options)
         for i in range(2):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=0,
@@ -65,7 +65,7 @@ class SpacerCommunityPreCareer(PreCareerData):
                 )
             )
             pending_idx += 1
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPreCareerSkillChoice(
                 pending_id=(event.id, pending_idx),
                 level=1,

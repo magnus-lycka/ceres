@@ -94,7 +94,7 @@ class MerchantEvent3Accept(ChoiceBase):
     label: str = 'Accept (roll Deception or Persuade 8+)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             MerchantEvent3SkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
@@ -110,7 +110,7 @@ class MerchantEvent3Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.add_connection(ConnectionKind.RIVAL, origin='A merchant contact who wanted you to run contraband')
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class MerchantEvent3Handler(CareerHandlerBase):
@@ -118,7 +118,7 @@ class MerchantEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -147,7 +147,7 @@ class MerchantEvent5Handler(CareerHandlerBase):
             'Success: gain half the wagered rolls (round up). '
             'Fail: lose all the wagered rolls. Apply the result manually.'
         )
-        projection.pending_inputs.append(career_progress_pending(projection, career, event_id))
+        projection.queue_deferred(career_progress_pending(projection, career, event_id))
         return pending_idx
 
 
@@ -168,7 +168,7 @@ class MerchantEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingSkillChoice(
                 pending_id=(event_id, pending_idx),
                 instruction='Legal trouble: gain one of Advocate, Admin, Diplomat or Investigate at level 1',
@@ -176,7 +176,7 @@ class MerchantEvent8Handler(CareerHandlerBase):
             )
         )
         pending_idx += 1
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingMerchantEvent8Roll(
                 pending_id=(event_id, pending_idx),
                 instruction='Legal trouble: roll 2D — on a natural 2 you must take the Prisoner career next term',

@@ -86,12 +86,12 @@ def apply_prisoner_advancement(projection: CharacterProjection, event: Event, ca
             f'Parole granted! (rolled {effective}, Parole Threshold was {parole_threshold})'
         )
     if rank_bonus_pending:
-        projection.pending_inputs.append(rank_bonus_pending)
+        projection.queue_deferred(rank_bonus_pending)
         return
     if success:
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = career.available_tables(edu, projection.summary.current_assignment)
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables)
         )
         queue_reenlist_or_aging(projection, event.id, 1)

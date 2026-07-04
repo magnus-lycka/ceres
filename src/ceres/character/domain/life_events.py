@@ -18,9 +18,7 @@ def _queue_advancement(
 ) -> None:
     from ceres.character.domain.career.advancement import advancement_pending
 
-    projection.pending_inputs.append(
-        advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx)
-    )
+    projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event_id, pending_idx))
 
 
 class ConnectionKindChoiceHandler(EventHandlerBase):
@@ -84,7 +82,7 @@ class LifeEventHandler(EventHandlerBase):
             projection.summary.narrative.append(narrative)
         match self.roll:
             case 2:
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingInjuryTable(
                         pending_id=(event.id, 0),
                         instruction='Roll 1D on Injury table (sickness/injury)',
@@ -96,7 +94,7 @@ class LifeEventHandler(EventHandlerBase):
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 4:
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingLifeEventChoice(
                         pending_id=(event.id, 0),
                         roll=4,
@@ -122,14 +120,14 @@ class LifeEventHandler(EventHandlerBase):
                     if isinstance(connection, (Contact, Ally))
                 ]
                 if convertible:
-                    projection.pending_inputs.append(
+                    projection.queue_deferred(
                         PendingLifeEventBetrayalConvert(
                             pending_id=(event.id, 0),
                             instruction='Betrayal: choose a Contact or Ally to convert to a Rival or Enemy',
                         )
                     )
                 else:
-                    projection.pending_inputs.append(
+                    projection.queue_deferred(
                         PendingLifeEventChoice(
                             pending_id=(event.id, 0),
                             roll=8,
@@ -141,7 +139,7 @@ class LifeEventHandler(EventHandlerBase):
                     _queue_advancement(projection, career, event.id, 1)
             case 9:
                 projection.pending_qualification_dm += 2
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingHomeworldChangeRequired(
                         pending_id=(event.id, 0),
                         instruction='You move to another world. Select your new homeworld.',
@@ -159,7 +157,7 @@ class LifeEventHandler(EventHandlerBase):
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 11:
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingChoices(
                         pending_id=(event.id, 0),
                         instruction='Crime: choose a consequence',
@@ -169,7 +167,7 @@ class LifeEventHandler(EventHandlerBase):
                 if career is not None:
                     _queue_advancement(projection, career, event.id, 1)
             case 12:
-                projection.pending_inputs.append(PendingLifeEventUnusual(pending_id=(event.id, 0)))
+                projection.queue_deferred(PendingLifeEventUnusual(pending_id=(event.id, 0)))
 
 
 class LifeEventUnusualHandler(EventHandlerBase):
@@ -185,7 +183,7 @@ class LifeEventUnusualHandler(EventHandlerBase):
         career = projection.get_current_career() if projection.summary.current_career is not None else None
         if self.roll == 1:
             projection.summary.narrative.append('Unusual event: psionic experience — may test Psionic Strength')
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingLifeEventPsionicsRoll(pending_id=(event.id, 0), instruction='Roll 2D for Psionic Strength test')
             )
             if career is not None:
@@ -193,7 +191,7 @@ class LifeEventUnusualHandler(EventHandlerBase):
         elif self.roll == 2:
             projection.add_connection(ConnectionKind.CONTACT, origin='Unusual event: alien contact')
             projection.summary.narrative.append('Unusual event: alien encounter — gained contact and a science skill')
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingLifeEventAlienScience(
                     pending_id=(event.id, 0),
                     instruction='Choose a science skill gained from alien encounter',

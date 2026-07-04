@@ -104,7 +104,7 @@ class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Ground war success: gain one level in Gun Combat or Leadership',
@@ -116,15 +116,13 @@ class PendingArmyEvent6SkillRoll(CareerSkillRollPendingBase):
             from ceres.character.domain.health.health_events import PendingInjuryTable
 
             career = projection.get_current_career()
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Brutal ground war: roll on the Injury table',
                 )
             )
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id, 1))
 
 
 class PendingArmyEvent11SkillChoice(CareerSkillChoicePendingBase):
@@ -160,7 +158,7 @@ class ArmyMishap4Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -181,7 +179,7 @@ class ArmyEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingArmyEvent6SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to avoid injury in the brutal ground war',
@@ -210,7 +208,7 @@ class ArmyEvent11Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingArmyEvent11SkillChoice(
                 pending_id=(event_id, pending_idx),
                 instruction='Commanding officer interest: gain Tactics (military) 1 or DM+4 to next advancement roll',
@@ -230,7 +228,7 @@ class ArmyEvent12Handler(CareerHandlerBase):
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         career = projection.get_current_career()
         if career.can_attempt_commission(projection):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingChoices(
                     pending_id=(event_id, pending_idx),
                     instruction='Heroism in battle: take a commission (O1) or an automatic promotion?',

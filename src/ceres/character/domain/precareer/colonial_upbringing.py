@@ -51,7 +51,7 @@ class ColonialUprbringingPreCareer(PreCareerData):
             if entry.skill:
                 skill_pool.extend(entry.skill_options)
         for i in range(3):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=1,
@@ -63,7 +63,7 @@ class ColonialUprbringingPreCareer(PreCareerData):
         projection.grant_skill(JackOfAllTrades(level=Level(value=1)))
         if honours:
             projection.grant_skill(Leadership(level=Level(value=1)))
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=1,

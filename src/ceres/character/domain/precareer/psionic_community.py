@@ -62,7 +62,7 @@ class PsionicCommunityPreCareer(PreCareerData):
         else:
             target_level = 1
         if any(talent.level.value < target_level for talent in psionics.psionic_talent_skills):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPsionicTalentLevelChoice(
                     pending_id=(event.id, pending_idx),
                     level=target_level,

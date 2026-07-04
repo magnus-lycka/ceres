@@ -87,7 +87,7 @@ class PreCareerEntryHandler(EventHandlerBase):
         projection.summary.age += 4
         pending_idx = 0
         pending_idx = term.apply_entry(projection, event, pending_idx)
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPreCareerEvent(
                 pending_id=(event.id, pending_idx),
                 instruction='Roll 2D on Pre-career Events table',
@@ -101,14 +101,14 @@ class PreCareerEntryHandler(EventHandlerBase):
             instruction = f'Graduation: {char} {target}+'
             if dms_desc:
                 instruction += f' (DMs: {dms_desc})'
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerGraduation(
                     pending_id=(event.id, pending_idx),
                     instruction=instruction,
                 )
             )
         elif precareer.graduation_requirement is not None:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerGraduation(
                     pending_id=(event.id, pending_idx),
                     instruction=f'Graduation: {precareer.graduation_requirement}',

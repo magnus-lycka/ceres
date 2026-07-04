@@ -18,7 +18,7 @@ class HomeworldChangeRequiredHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingHomeworldChangeRequired(
                 pending_id=(event.id, 0),
                 instruction=self.reason,
@@ -42,7 +42,7 @@ class HomeworldChangeOfferedHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingHomeworldChangeOffered(
                 pending_id=(event.id, 0),
                 instruction=self.reason,

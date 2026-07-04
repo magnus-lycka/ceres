@@ -54,7 +54,7 @@ class AgingRollHandler(EventHandlerBase):
         if effective >= 1:
             complete_aging(projection, event.id)
         elif effective == 0:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingAgingChoice(
                     pending_id=(event.id, pending_idx),
                     instruction='Aging: choose STR, DEX, or END to reduce by 1',
@@ -63,7 +63,7 @@ class AgingRollHandler(EventHandlerBase):
             )
         elif effective == -1:
             for _ in range(2):
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingAgingChoice(
                         pending_id=(event.id, pending_idx),
                         instruction='Aging: choose STR, DEX, or END to reduce by 1',
@@ -77,7 +77,7 @@ class AgingRollHandler(EventHandlerBase):
             if not check_aging_crisis(projection, event.id):
                 complete_aging(projection, event.id)
         elif effective == -3:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingAgingChoice(
                     pending_id=(event.id, pending_idx),
                     instruction='Aging: choose STR, DEX, or END to reduce by 2',
@@ -86,7 +86,7 @@ class AgingRollHandler(EventHandlerBase):
             )
             pending_idx += 1
             for _ in range(2):
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingAgingChoice(
                         pending_id=(event.id, pending_idx),
                         instruction='Aging: choose STR, DEX, or END to reduce by 1',
@@ -96,7 +96,7 @@ class AgingRollHandler(EventHandlerBase):
                 pending_idx += 1
         elif effective == -4:
             for _ in range(2):
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingAgingChoice(
                         pending_id=(event.id, pending_idx),
                         instruction='Aging: choose STR, DEX, or END to reduce by 2',
@@ -104,7 +104,7 @@ class AgingRollHandler(EventHandlerBase):
                     )
                 )
                 pending_idx += 1
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingAgingChoice(
                     pending_id=(event.id, pending_idx),
                     instruction='Aging: choose STR, DEX, or END to reduce by 1',
@@ -120,7 +120,7 @@ class AgingRollHandler(EventHandlerBase):
             for char in (Chars.STR, Chars.DEX, Chars.END):
                 projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
             if not check_aging_crisis(projection, event.id):
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingAgingChoiceMental(
                         pending_id=(event.id, 0),
                         instruction='Aging: choose INT or SOC to reduce by 1',
@@ -273,7 +273,7 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
             can_muster_out_ac = not forced_stay
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingAssignmentChangeChoice(
                     pending_id=(source_event_id, 0),
                     muster_out=can_muster_out_ac,
@@ -284,7 +284,7 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
             )
         else:
             can_muster_out = not forced_stay
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingReenlist(
                     pending_id=(source_event_id, 0),
                     can_muster_out=can_muster_out,
@@ -298,7 +298,7 @@ def check_aging_crisis(projection: CharacterProjection, source_event_id: int) ->
         projection.pending_inputs = [
             p for p in projection.pending_inputs if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
         ]
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAgingCrisis(
                 pending_id=(source_event_id, 0),
                 instruction='Aging crisis: pay for medical care or die?',

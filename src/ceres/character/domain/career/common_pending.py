@@ -21,7 +21,7 @@ def append_increment_existing_skill_pending(
     pending_id: tuple[int, int],
     instruction: str,
 ) -> None:
-    projection.pending_inputs.append(
+    projection.queue_deferred(
         PendingSkillChoice(
             pending_id=pending_id,
             instruction=instruction,
@@ -157,7 +157,7 @@ class PendingAnySkillAtLevelOnSuccessRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= self.threshold:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction=self.success_instruction,
@@ -208,4 +208,4 @@ class CareerSkillChoicePendingBase(PendingInputBase):
             from ceres.character.domain.career.career_events import career_progress_pending
 
             career = projection.get_current_career()
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+            projection.queue_deferred(career_progress_pending(projection, career, event.id))

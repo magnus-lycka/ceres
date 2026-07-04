@@ -104,14 +104,14 @@ class AgentMishap2Refuse(ChoiceBase):
             ConnectionKind.ENEMY,
             origin="The criminal figure who offered you a deal and didn't take kindly to your refusal",
         )
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingDoubleInjuryRoll(
                 pending_id=(event.id, pending_idx),
                 instruction='Refused: roll twice on the Injury table and provide both results — lower applies',
             )
         )
         pending_idx += 1
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction='Refused criminal deal: choose any skill to gain at level 1',
@@ -188,7 +188,7 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction=(
@@ -199,7 +199,7 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
                 )
             )
         else:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingMishap(
                     pending_id=(event.id, 0),
                     instruction='Investigation went wrong: roll 1D on Mishap table '
@@ -238,7 +238,7 @@ class AgentMishap2Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -259,7 +259,7 @@ class AgentMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAgentMishap3SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Advocate 8+ to keep the Benefit roll from this term',
@@ -277,7 +277,7 @@ class AgentMishap5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Choose who was hurt: a Contact, an Ally, or a family member?',
@@ -295,7 +295,7 @@ class AgentEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAgentEvent3SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Investigate 8+ or Streetwise 8+',
@@ -324,7 +324,7 @@ class AgentEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAgentEvent8SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Deception 8+ for the undercover mission',
@@ -342,7 +342,7 @@ class AgentEvent11Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAgentEvent11SkillChoice(
                 pending_id=(event_id, pending_idx),
                 instruction='Senior agent mentor: increase Investigate by one '

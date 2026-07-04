@@ -93,7 +93,7 @@ class MarinesMishap4Accept(ChoiceBase):
     label: str = 'Accept (roll Deception or Persuade 8+: success = stay, fail = ejected, lose Benefit)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingMarinesMishap4SkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Deception or Persuade 8+: success = stay in career; fail = ejected, lose Benefit',
@@ -119,7 +119,7 @@ class PendingMarinesEvent6SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Fortress assault success: gain one level in Tactics or Leadership',
@@ -142,7 +142,7 @@ class MarinesEvent9Report(ChoiceBase):
             ConnectionKind.ENEMY, origin='Your commanding officer, whom you reported for the mission failure'
         )
         projection.pending_advancement_dm += 2
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class MarinesEvent9Protect(ChoiceBase):
@@ -155,7 +155,7 @@ class MarinesEvent9Protect(ChoiceBase):
             ConnectionKind.ALLY, origin='Your commanding officer, whom you protected from the fallout'
         )
         projection.pending_advancement_dm += 1
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 # ── mishap 4: black ops mission ───────────────────────────────────────────────
@@ -166,7 +166,7 @@ class MarinesMishap4Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -187,7 +187,7 @@ class MarinesEvent5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAnySkillAtLevelOnSuccessRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any one skill of your choice at level 1',
@@ -206,7 +206,7 @@ class MarinesEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingMarinesEvent6SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Melee or Gun Combat 8+: success = gain Tactics or Leadership; fail = injured',
@@ -224,7 +224,7 @@ class MarinesEvent9Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(

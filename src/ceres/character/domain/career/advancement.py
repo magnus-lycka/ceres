@@ -56,18 +56,14 @@ class CommissionHandler(EventHandlerBase):
     ) -> None:
         career = projection.get_current_career()
         if not self.attempt:
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
             return
         if career.commission is None:
             raise ReplayError(f'{career.name} does not support commission')
         dm = career.commission_dm(projection) + projection.pending_advancement_dm
         projection.pending_advancement_dm = 0
         if self.roll + dm < career.commission.target:
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
             return
         apply_forced_commission(projection, career, event.id)
 
@@ -81,9 +77,7 @@ class AdvancementDmChoiceHandler(EventHandlerBase):
         projection.pending_advancement_dm += 4
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PendingAdvancement(PendingInputBase):
@@ -147,7 +141,7 @@ def _apply_promotion(projection: CharacterProjection, career: CareerData, event_
         projection.summary.characteristics.get(Chars.EDU, 0),
         projection.summary.current_assignment,
     )
-    projection.pending_inputs.append(
+    projection.queue_deferred(
         PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
     )
     queue_reenlist_or_aging(projection, event_id, 1)
@@ -161,7 +155,7 @@ def _apply_rank_bonus(projection: CharacterProjection, career: CareerData, rank:
     if choices := bonus.resolve_choices():
         from ceres.character.domain.career.career_events import PendingRankBonusChoice
 
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingRankBonusChoice(
                 pending_id=(event_id, 0),
                 level=bonus.level,
@@ -200,7 +194,7 @@ def _apply_promotion_after_existing_rank(projection: CharacterProjection, career
         projection.summary.characteristics.get(Chars.EDU, 0),
         projection.summary.current_assignment,
     )
-    projection.pending_inputs.append(
+    projection.queue_deferred(
         PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
     )
     queue_reenlist_or_aging(projection, event_id, 1)

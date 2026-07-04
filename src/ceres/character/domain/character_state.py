@@ -289,6 +289,12 @@ class CharacterProjection(BaseModel):
     def not_gained_entries(self) -> tuple[AnySkill | PsionicTalentSkillModels | Chars, ...]:
         return tuple(self._not_gained)
 
+    def queue_immediate(self, *pending_inputs: PendingInputBase) -> None:
+        self.pending_inputs[:0] = list(pending_inputs)
+
+    def queue_deferred(self, *pending_inputs: PendingInputBase) -> None:
+        self.pending_inputs.extend(pending_inputs)
+
     def add_connection(self, kind: ConnectionKind, *, origin: str = '') -> None:
         from ceres.character.domain.connection import make_connection
         from ceres.character.domain.connection_events import PendingConnectionName
@@ -298,8 +304,7 @@ class CharacterProjection(BaseModel):
         )
         conn_idx = len(self.summary.connections) - 1
         kind_label = kind.value.replace('connection_', '').title()
-        self.pending_inputs.insert(
-            0,
+        self.queue_immediate(
             PendingConnectionName(
                 pending_id=f'connection_name_{conn_idx}',
                 connection_index=conn_idx,
@@ -352,7 +357,7 @@ class CharacterProjection(BaseModel):
 
         self.summary.age += 4
         if self.summary.age >= 34:
-            self.pending_inputs.append(
+            self.queue_deferred(
                 PendingAgingRoll(pending_id=(event_id, pending_idx), instruction='Roll 2D on Aging table')
             )
             return True

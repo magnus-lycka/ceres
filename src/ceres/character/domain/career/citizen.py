@@ -123,7 +123,7 @@ class PendingCitizenMishap5SkillRoll(CareerSkillRollPendingBase):
             next_idx = _apply_mishap_ejection(projection, event.id, 1, lose_current_term=True)
         else:
             next_idx = _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingHomeworldChangeRequired(
                 pending_id=(event.id, next_idx),
                 instruction='Forced to leave the planet. Select your new homeworld.',
@@ -170,7 +170,7 @@ class CitizenEvent8DoSo(ChoiceBase):
         if (projection.summary.skill_level(Deception) or 0) < 1:
             choices.append(CitizenEvent8GainDeception())
         choices.append(CitizenEvent8GainContact())
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event.id, 0),
                 instruction='Choose your reward',
@@ -178,7 +178,7 @@ class CitizenEvent8DoSo(ChoiceBase):
             )
         )
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id, 1))
 
 
 class CitizenEvent8Refuse(ChoiceBase):
@@ -188,7 +188,7 @@ class CitizenEvent8Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.pending_advancement_dm += 2
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 # ── mishap 4: investigation by authorities ────────────────────────────────────
@@ -199,7 +199,7 @@ class CitizenMishap4Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -220,7 +220,7 @@ class CitizenMishap5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingCitizenMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Streetwise 8+: success = increase any '
@@ -239,7 +239,7 @@ class CitizenEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAnySkillAtLevelOnSuccessRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 10+ to gain any one skill of your choice at level 1',
@@ -259,7 +259,7 @@ class CitizenEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(

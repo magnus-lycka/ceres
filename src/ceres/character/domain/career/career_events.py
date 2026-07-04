@@ -131,7 +131,7 @@ class MishapHandler(EventHandlerBase):
         if defer:
             pass
         elif self.stay_in_career or (mishap is not None and getattr(mishap, 'stay_in_career', False)):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 advancement_pending(career, projection.summary.current_assignment, event.id, pending_idx)
             )
         else:
@@ -170,7 +170,7 @@ class TermEventHandler(EventHandlerBase):
             pending_idx = term_event.apply(projection, event, pending_idx)
             career_handler_invoked = not term_event.continues_career_progress()
         if not career_handler_invoked:
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, pending_idx))
+            projection.queue_deferred(career_progress_pending(projection, career, event.id, pending_idx))
 
 
 # Compatibility name retained while consumers migrate to ChoiceHandler.
@@ -248,8 +248,7 @@ def _skill_table_item_choices(
 
 
 def _queue_skill_table_choice(projection: CharacterProjection, event: Event, choices: Sequence[SkillTableItem]) -> None:
-    projection.pending_inputs.insert(
-        0,
+    projection.queue_immediate(
         PendingSkillTableChoice(
             pending_id=(event.id, 0),
             instruction=f'Choose one skill: {", ".join(skill_option_label(s) for s in choices)}',
@@ -281,9 +280,7 @@ class SkillRollHandler(EventHandlerBase):
             and projection.summary.current_career is not None
             and not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
         ):
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 # ── Assignment Change Choice ───────────────────────────────────────────────────
@@ -306,7 +303,7 @@ class AssignmentChangeChoiceHandler(EventHandlerBase):
         else:
             current_assignment = projection.summary.current_assignment
             others = [a for a in career.assignments if a != current_assignment]
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSwitchAssignment(
                     pending_id=(event.id, 0),
                     instruction=f'Switch assignment in {career.name}',
@@ -338,7 +335,7 @@ class SwitchAssignmentHandler(EventHandlerBase):
             current = projection.summary.current_assignment
             if current is None:
                 raise ReplayError('SwitchAssignmentHandler: no current assignment')
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingReenlist(
                     pending_id=(event.id, 0),
                     instruction=(
@@ -398,8 +395,7 @@ def _apply_skill_table_entry(projection: CharacterProjection, entry: SkillTableI
             # attempt another roll to learn it.
             from ceres.character.domain.psionics import PendingPsionicInstituteTraining
 
-            projection.pending_inputs.insert(
-                0,
+            projection.queue_immediate(
                 PendingPsionicInstituteTraining(
                     pending_id=(event.id, 0),
                     instruction='You rolled a psionic talent skill. Attempt to learn this talent?',
@@ -462,7 +458,7 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
         career = projection.get_current_career() if projection.summary.current_career else None
         if career and career.allows_assignment_change and len(career.assignments) > 1:
             can_muster_out = not career.advancement_is_special() and not forced_stay
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingAssignmentChangeChoice(
                     pending_id=(event_id, idx),
                     muster_out=can_muster_out,
@@ -473,7 +469,7 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
             )
         else:
             can_muster_out = not forced_stay
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingReenlist(
                     pending_id=(event_id, idx),
                     can_muster_out=can_muster_out,
@@ -521,17 +517,13 @@ class PendingSurvive(PendingInputBase):
         dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
         success = event.roll != 2 and (event.roll + dm) >= target
         if success:
-            projection.pending_inputs.append(
-                PendingTermEvent(pending_id=(event.id, 0), instruction='Roll 2D on Events table')
-            )
+            projection.queue_deferred(PendingTermEvent(pending_id=(event.id, 0), instruction='Roll 2D on Events table'))
         else:
             if event.roll == 2:
                 projection.summary.narrative.append(
                     f'Automatic mishap (rolled natural 2) in term {projection.summary.terms_started_in_current_career}'
                 )
-            projection.pending_inputs.append(
-                PendingMishap(pending_id=(event.id, 0), instruction='Roll 1D on Mishap table')
-            )
+            projection.queue_deferred(PendingMishap(pending_id=(event.id, 0), instruction='Roll 1D on Mishap table'))
 
 
 class PendingTermEvent(PendingInputBase):
@@ -738,8 +730,7 @@ class PendingRankBonusChoice(_PendingSkillOrPsiChoice):
             projection.summary.characteristics.get(Chars.EDU, 0),
             projection.summary.current_assignment,
         )
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingSkillTable(pending_id=(event.id, 0), instruction='Choose a skill table and roll 1D', options=tables),
         )
         queue_reenlist_or_aging(projection, event.id, 1)

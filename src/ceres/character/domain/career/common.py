@@ -18,7 +18,7 @@ def handle_advanced_training(
     threshold: int = 8,
 ) -> int:
     instruction = f'Roll EDU {threshold}+ to increase any one skill you already have by one level'
-    projection.pending_inputs.append(
+    projection.queue_deferred(
         PendingAdvancedTrainingSkillRoll(
             pending_id=(event_id, pending_idx),
             instruction=instruction,
@@ -38,7 +38,7 @@ class CommonMishap1Severe(ChoiceBase):
         from ceres.character.domain.health.health_events import PendingSeverelyInjured
 
         projection.get_current_career()
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingSeverelyInjured(
                 pending_id=(event.id, 0),
                 instruction='Severely injured: roll 1D — choose STR, DEX, or END to reduce by that amount',
@@ -55,7 +55,7 @@ class CommonMishap1DoubleRoll(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.get_current_career()
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingDoubleInjuryRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll twice on the Injury table and apply the lower result',
@@ -70,7 +70,7 @@ class CommonMishap1Handler(CareerHandlerBase):
     stay_in_career: bool = False
 
     def handle(self, projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(

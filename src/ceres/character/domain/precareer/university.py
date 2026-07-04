@@ -70,7 +70,7 @@ class UniversityTerm(PreCareerTerm):
 
         projection.summary.characteristics[Chars.EDU] = projection.summary.characteristics.get(Chars.EDU, 0) + 1
         skill_opts = _precareer_skill_options(self.precareer)
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPreCareerSkillChoice(
                 pending_id=(event.id, pending_idx),
                 level=0,
@@ -79,7 +79,7 @@ class UniversityTerm(PreCareerTerm):
             )
         )
         pending_idx += 1
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPreCareerSkillChoice(
                 pending_id=(event.id, pending_idx),
                 level=1,

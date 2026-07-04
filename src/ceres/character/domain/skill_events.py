@@ -89,9 +89,7 @@ class SkillChoiceHandler(EventHandlerBase):
         if projection.summary.current_career is not None:
             from ceres.character.domain.career.career_events import career_progress_pending
 
-            projection.pending_inputs.append(
-                career_progress_pending(projection, projection.get_current_career(), event.id)
-            )
+            projection.queue_deferred(career_progress_pending(projection, projection.get_current_career(), event.id))
 
 
 class PendingSkillChoice(PendingInputBase):

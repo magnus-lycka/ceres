@@ -114,8 +114,7 @@ def _queue_injury(
     from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
 
     if severity == 'normal':
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingCharacteristicChoice(
                 pending_id=(event.id, pending_idx),
                 instruction='Injured: choose STR, DEX, or END to reduce by 1',
@@ -124,8 +123,7 @@ def _queue_injury(
             ),
         )
     elif severity == 'severe':
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingCharacteristicChoice(
                 pending_id=(event.id, pending_idx),
                 instruction='Severely injured: choose STR, DEX, or END to reduce by 2',
@@ -134,8 +132,7 @@ def _queue_injury(
             ),
         )
     else:
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingInjuryTable(
                 pending_id=(event.id, pending_idx),
                 instruction='Roll 1D on Injury table',
@@ -186,8 +183,7 @@ class CharacteristicLossChoiceEntry(CareerTableEntry):
         from ceres.character.domain.health.health_events import PendingCharacteristicChoice
 
         characteristic = ', '.join(c.value for c in self.options)
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingCharacteristicChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose characteristic to decrease by {self.amount}: {characteristic}',
@@ -222,8 +218,7 @@ class RolledConnectionsEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingConnectionsRoll(
                 pending_id=(event.id, pending_idx),
                 connection_type=self.connection,
@@ -247,8 +242,7 @@ class RolledConnectionsGroupEntry(CareerTableEntry):
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
         for roll in reversed(self.rolls):
-            projection.pending_inputs.insert(
-                0,
+            projection.queue_immediate(
                 PendingConnectionsRoll(
                     pending_id=(event.id, pending_idx),
                     connection_type=roll.connection,
@@ -278,8 +272,7 @@ class SkillChoiceEntry(CareerTableEntry):
                 key=lambda skill: type(skill).name(),
             )
 
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
@@ -312,8 +305,7 @@ class RollMishapEntry(CareerTableEntry):
             if not self.leave
             else 'Roll 1D on Mishap table'
         )
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingMishap(
                 pending_id=(event.id, pending_idx),
                 instruction=instruction,
@@ -330,8 +322,7 @@ class LifeEventEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.life_events import PendingLifeEvent
 
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table'),
         )
         return pending_idx + 1
@@ -409,8 +400,7 @@ class GainConnectionAndSkillChoiceEntry(CareerTableEntry):
         from ceres.character.domain.skill_events import PendingSkillChoice
 
         projection.add_connection(self.connection, origin=self.text)
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
@@ -436,8 +426,7 @@ class GainConnectionsAndSkillChoiceEntry(CareerTableEntry):
 
         for connection in self.connections:
             projection.add_connection(connection, origin=self.text)
-        projection.pending_inputs.insert(
-            0,
+        projection.queue_immediate(
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
@@ -688,7 +677,7 @@ class CareerData(TermData):
         from ceres.character.domain.career.career_events import PendingDraftAssignmentChoice
 
         if assignment is None and len(self.draft_assignments) > 1:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingDraftAssignmentChoice(
                     pending_id=(event_id, 0),
                     career=self,
@@ -797,7 +786,7 @@ class CareerData(TermData):
         from ceres.character.domain.career.career_events import PendingDraftChoice
 
         projection.summary.problems.append(f'Failed to qualify for {self.name}.')
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingDraftChoice(
                 pending_id=(event_id, 0),
                 instruction='Qualification failed — submit to the draft or become a Drifter',
@@ -823,7 +812,7 @@ class CareerData(TermData):
         if first_term_in_run:
             self._apply_fixed_rank_bonus(projection, 0, event_id)
         used = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
-        projection.pending_inputs.append(self.survival_pending(assignment, event_id, max(used, default=-1) + 1))
+        projection.queue_deferred(self.survival_pending(assignment, event_id, max(used, default=-1) + 1))
 
     def _basic_training_table_name(self, assignment: AssignmentData) -> str:
         return 'service_skills'
@@ -844,7 +833,7 @@ class CareerData(TermData):
             ]
             if valid_choices:
                 used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingRankBonusChoice(
                         pending_id=(event_id, max(used_sub_ids, default=-1) + 1),
                         level=bonus.level,
@@ -898,7 +887,7 @@ class CareerData(TermData):
                     continue
                 if len(choices) > 1 or isinstance(entry, Psi):
                     skills = ', '.join(self._training_option_name(s) for s in choices)
-                    projection.pending_inputs.append(
+                    projection.queue_deferred(
                         PendingInitialTrainingChoice(
                             pending_id=(event_id, choice_idx),
                             instruction=f'Initial training: choose one of {skills}',
@@ -921,7 +910,7 @@ class CareerData(TermData):
             by_name.setdefault(self._training_option_name(s), s)
         deduped: list[SkillTableItem] = sorted(by_name.values(), key=self._training_option_name)
         if deduped:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingInitialTrainingChoice(
                     pending_id=(event_id, 0),
                     instruction=f'Basic training: choose one skill at level 0 from {table_name}',
@@ -988,7 +977,7 @@ class CareerData(TermData):
 
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         tables = self.available_tables(edu, assignment)
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
         )
 

@@ -17,6 +17,8 @@ class _BenefitSummary(Protocol):
 class _BenefitProjection(Protocol):
     pending_inputs: list[PendingInputBase]
 
+    def queue_deferred(self, *pending_inputs: PendingInputBase) -> None: ...
+
     @property
     def summary(self) -> _BenefitSummary: ...
 
@@ -70,7 +72,7 @@ class ChoiceBenefit(BaseModel):
     def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
         from ceres.character.domain.career.career_events import PendingBenefitChoice
 
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingBenefitChoice(
                 pending_id=(event_id, 0),
                 instruction=f'Choose one benefit: {self.display_label}',

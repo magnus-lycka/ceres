@@ -146,8 +146,7 @@ class PendingPsionicInstituteTraining(PendingInputBase):
         attempted_cls = type(event.talent)
         remaining = [talent for talent in self.remaining_talents if type(talent) is not attempted_cls]
         if remaining:
-            projection.pending_inputs.insert(
-                0,
+            projection.queue_immediate(
                 PendingPsionicInstituteTraining(
                     pending_id=(event.id, 0),
                     instruction='Choose a psionic talent to attempt, or finish institute training',
@@ -202,7 +201,7 @@ class InitialPsiTestAcceptedHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingInitialPsiStrengthRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll 2D for Psionic Strength',
@@ -267,7 +266,7 @@ def queue_initial_psi_test_or_career_choice(projection: CharacterProjection, eve
 def queue_initial_psi_test_if_available(projection: CharacterProjection, event_id: int) -> bool:
     if not initial_psi_test_is_available(projection):
         return False
-    projection.pending_inputs.append(PendingInitialPsiTest(pending_id=(event_id, 0)))
+    projection.queue_deferred(PendingInitialPsiTest(pending_id=(event_id, 0)))
     return True
 
 
@@ -281,8 +280,7 @@ def queue_psionic_institute_training(
         return False
     if all(psionics.talent_level(talent_cls) is not None for talent_cls in psionic_talent_classes()):
         return False
-    projection.pending_inputs.insert(
-        0,
+    projection.queue_immediate(
         PendingPsionicInstituteTraining(
             pending_id=(event_id, pending_idx),
             instruction='Choose a psionic talent to attempt, or finish institute training',

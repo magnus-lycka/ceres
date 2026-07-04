@@ -151,7 +151,7 @@ class PreCareerData(TermData):
                 if isinstance(entry.skill, tuple):
                     options = entry.skill_options
                     instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
-                    projection.pending_inputs.append(
+                    projection.queue_deferred(
                         PendingPreCareerSkillChoice(
                             pending_id=(event.id, pending_idx),
                             level=entry.level,
@@ -171,7 +171,7 @@ class PreCareerData(TermData):
                     if isinstance(entry.skill, tuple):
                         options = entry.skill_options
                         instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
-                        projection.pending_inputs.append(
+                        projection.queue_deferred(
                             PendingPreCareerSkillChoice(
                                 pending_id=(event.id, pending_idx),
                                 level=entry.level,
@@ -186,7 +186,7 @@ class PreCareerData(TermData):
                     choice_pool.extend(entry.skill_options)
             for i in range(self.entry_pick_count):
                 instr = f'{self.name}: choose skill {i + 1} of {self.entry_pick_count} at level 0'
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingPreCareerSkillChoice(
                         pending_id=(event.id, pending_idx),
                         level=0,

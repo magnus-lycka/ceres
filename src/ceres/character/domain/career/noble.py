@@ -93,7 +93,7 @@ class NobleMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingNobleMishap3SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Stealth or Deception 8+: success = escape unhurt '
@@ -125,7 +125,7 @@ class NobleMishap5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingNobleMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll END 8+: success = escape unhurt (ejected); fail = roll on Injury table (ejected)',
@@ -157,7 +157,7 @@ class NobleEvent8Accept(ChoiceBase):
     label: str = 'Join (roll Deception or Persuade 8+)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             NobleEvent8SkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Deception or Persuade 8+: success = extra Benefit roll; fail = ejected, gain Enemy',
@@ -173,7 +173,7 @@ class NobleEvent8Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.add_connection(ConnectionKind.RIVAL, origin='A noble conspirator you declined to join')
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class NobleEvent8Handler(CareerHandlerBase):
@@ -181,7 +181,7 @@ class NobleEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(

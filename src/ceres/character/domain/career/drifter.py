@@ -93,7 +93,7 @@ class DrifterEvent3Accept(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.pending_qualification_dm += 4
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class DrifterEvent3Decline(ChoiceBase):
@@ -102,7 +102,7 @@ class DrifterEvent3Decline(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PendingDrifterEvent8SkillRoll(CareerSkillRollPendingBase):
@@ -110,7 +110,7 @@ class PendingDrifterEvent8SkillRoll(CareerSkillRollPendingBase):
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Attack survived: increase Melee or Gun Combat by one level',
@@ -128,7 +128,7 @@ class DrifterEvent9Injury(ChoiceBase):
     label: str = 'Roll on Injury table'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingInjuryTable(
                 pending_id=(event.id, 0),
                 instruction='Risky adventure outcome: roll 1D on Injury table',
@@ -153,22 +153,22 @@ class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
         career = projection.get_current_career()
         roll = event.modified_roll
         if roll <= 2:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingChoices(
                     pending_id=(event.id, 0),
                     instruction='Risky adventure (1-2): choose — roll on Injury table, or be sent to Prisoner career?',
                     choices=[DrifterEvent9Injury(), DrifterEvent9Prison()],
                 )
             )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
+            projection.queue_deferred(career_progress_pending(projection, career, event.id, 1))
         elif roll == 3:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Risky adventure (3): roll 1D on Injury table',
                 )
             )
-            projection.pending_inputs.append(career_progress_pending(projection, career, event.id, 1))
+            projection.queue_deferred(career_progress_pending(projection, career, event.id, 1))
         else:  # 4-6
             projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
             # _apply_skill_roll auto-queues advancement
@@ -179,7 +179,7 @@ class DrifterEvent9Accept(ChoiceBase):
     label: str = 'Accept the adventure'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingDrifterEvent9RollSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Risky adventure: roll 1D (1-2: injured or arrested, 3: injured, 4-6: bonus Benefit roll)',
@@ -194,7 +194,7 @@ class DrifterEvent9Decline(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 # ── mishap 5: betrayed by a friend ───────────────────────────────────────────
@@ -205,7 +205,7 @@ class DrifterMishap5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingDrifterMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Betrayed by a friend: gain a Rival. '
@@ -224,7 +224,7 @@ class DrifterEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction="Accept the patron's job offer (DM+4 to next Qualification roll) or decline?",
@@ -243,7 +243,7 @@ class DrifterEvent8Handler(CareerHandlerBase):
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
         projection.add_connection(ConnectionKind.ENEMY, origin='Someone who attacked you on your travels')
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingDrifterEvent8SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Melee or Gun Combat 8+: success = increase that skill; fail = injured',
@@ -261,7 +261,7 @@ class DrifterEvent9Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Accept the risky adventure (roll 1D for outcome) or decline?',
@@ -300,7 +300,7 @@ class DrifterEvent11Handler(CareerHandlerBase):
             'Drifter event 11: forcibly drafted — roll 1D: 1-2 Army, 3-4 Marines, 5-6 Navy. '
             'Leave this career and enter the rolled career next term (no qualification roll needed). Apply manually.'
         )
-        projection.pending_inputs.append(career_progress_pending(projection, career, event_id))
+        projection.queue_deferred(career_progress_pending(projection, career, event_id))
         return pending_idx
 
 

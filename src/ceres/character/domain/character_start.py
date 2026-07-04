@@ -41,9 +41,7 @@ class CharacterCreatedHandler(EventHandlerBase):
             character_id=character_id,
             summary=CharacterSummary(name=self.name),
         )
-        projection.pending_inputs.append(
-            PendingHomeworldSelection(pending_id=(event_id, 0), instruction='Select homeworld')
-        )
+        projection.queue_deferred(PendingHomeworldSelection(pending_id=(event_id, 0), instruction='Select homeworld'))
         return projection
 
 
@@ -57,7 +55,7 @@ class HomeworldSelectedHandler(EventHandlerBase):
         projection.summary.homeworld = self.homeworld
         projection.summary.birthworld = self.homeworld
         sophont_names = available_sophont_names(self.homeworld)
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingSophontSelection(
                 pending_id=(event.id, 0),
                 instruction='Select sophont',
@@ -91,7 +89,7 @@ class SophontSelectedHandler(EventHandlerBase):
     ) -> None:
         projection.summary.sophont = self.sophont
         stat_names = [s.value for s in self.sophont.ucp_stats]
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingUcp(pending_id=(event.id, 0), instruction='Provide characteristics (UCP)', stat_names=stat_names)
         )
 
@@ -160,7 +158,7 @@ class UcpHandler(EventHandlerBase):
         edu = projection.summary.characteristics.get(Chars.EDU, 0)
         count = _background_skill_count(edu)
         if count > 0:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingBackgroundSkills(
                     pending_id=(event.id, 0),
                     instruction=f'Choose {count} background skill(s)',

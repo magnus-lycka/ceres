@@ -224,7 +224,7 @@ def queue_career_choice_indexed(
         instruction = f'Next career: {forced.name} (mandatory)'
     else:
         options = sorted(selectable_careers(projection), key=lambda career: career.name)
-    projection.pending_inputs.append(
+    projection.queue_deferred(
         PendingCareerChoice(
             pending_id=(event_id, idx),
             instruction=instruction,

@@ -59,7 +59,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
             skill for entry in self.skill_choices if entry.skill and entry.level == 0 for skill in entry.skill_options
         ]
         for i in range(3):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=0,
@@ -71,7 +71,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
         projection.grant_skill(GunCombat())
         if honours:
             projection.grant_skill(Carouse(level=Level(value=1)))
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=1,

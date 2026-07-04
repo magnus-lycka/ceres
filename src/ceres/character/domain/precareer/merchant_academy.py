@@ -50,7 +50,7 @@ class MerchantAcademyPreCareer(PreCareerData):
             service_table = merchant.skill_table('service_skills')
             if service_table:
                 service_skills = _skill_instances_from_table(service_table)
-                projection.pending_inputs.append(
+                projection.queue_deferred(
                     PendingPreCareerSkillChoice(
                         pending_id=(event.id, pending_idx),
                         level=1,
@@ -75,7 +75,7 @@ class MerchantAcademyPreCareer(PreCareerData):
             if table:
                 skill_pool = _skill_instances_from_table(table)
         if skill_pool:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=1,

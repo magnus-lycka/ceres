@@ -120,7 +120,7 @@ class NavyEvent10Profit(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class NavyEvent10Refuse(ChoiceBase):
@@ -130,7 +130,7 @@ class NavyEvent10Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.pending_advancement_dm += 2
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 # ── mishap 3: battle skill check ─────────────────────────────────────────────
@@ -144,7 +144,7 @@ class NavyMishap3Handler(CareerHandlerBase):
         assignment_obj = projection.summary.current_assignment
         assignment = assignment_obj.name if assignment_obj else 'Line/Crew'
         options = _MISHAP_3_SKILLS.get(assignment, [Electronics(), Gunner()])
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingNavyMishap3SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -166,7 +166,7 @@ class NavyMishap4Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -199,7 +199,7 @@ class NavyEvent10Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Abuse your position for profit (gain extra Benefit roll) '

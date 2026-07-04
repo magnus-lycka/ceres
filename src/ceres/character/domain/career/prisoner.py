@@ -86,7 +86,7 @@ class PrisonerMishap3Submit(ChoiceBase):
         projection.summary.problems.append(
             'Prison gang (Prisoner mishap 3): submitted — lose your Benefit roll for this term.'
         )
-        projection.pending_inputs.append(advancement_pending(career, projection.summary.current_assignment, event.id))
+        projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class PrisonerMishap3Fight(ChoiceBase):
@@ -94,7 +94,7 @@ class PrisonerMishap3Fight(ChoiceBase):
     label: str = 'Fight back (roll Melee 8+: success = Enemy + PT+1; fail = double injury)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerMishap3FightSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Melee 8+: success = gain Enemy + PT+1; fail = roll twice on Injury table',
@@ -113,19 +113,15 @@ class PendingPrisonerMishap3FightSkillRoll(CareerSkillRollPendingBase):
         if event.modified_roll >= 8:
             projection.add_connection(ConnectionKind.ENEMY, origin='The prison gang leader you stood up to')
             projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
         else:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingDoubleInjuryRoll(
                     pending_id=(event.id, 0),
                     instruction='Gang fight: roll twice on the Injury table, apply lower result',
                 )
             )
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id, 1))
 
 
 class PrisonerMishap3Handler(CareerHandlerBase):
@@ -133,7 +129,7 @@ class PrisonerMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Prison gang attack: fight back (roll Melee 8+) or submit (lose Benefit roll)?',
@@ -152,7 +148,7 @@ class PrisonerEvent3Stay(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PrisonerEvent3Attempt(ChoiceBase):
@@ -160,7 +156,7 @@ class PrisonerEvent3Attempt(ChoiceBase):
     label: str = 'Attempt escape (Stealth or Deception 10+)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent3EscapeSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Stealth or Deception 10+: success = escape (freed); fail = PT+2',
@@ -187,7 +183,7 @@ class PrisonerEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Attempt to escape the prison (Stealth or Deception 10+) or stay?',
@@ -206,7 +202,7 @@ class PendingPrisonerEvent4SkillRoll(CareerSkillRollPendingBase):
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= 8:
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Hard labour endured: choose Athletics, Mechanic, or Melee (unarmed)',
@@ -224,7 +220,7 @@ class PrisonerEvent4Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent4SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll END 8+: success = PT-1 + skill choice; fail = PT+1',
@@ -246,7 +242,7 @@ class PendingPrisonerEvent5SkillRoll(CareerSkillRollPendingBase):
             projection.summary.problems.append(
                 'Prisoner event 5: joined a gang — gain DM+1 to survival rolls while in this career.'
             )
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Joined gang: choose Persuade, Melee, or Stealth',
@@ -264,7 +260,7 @@ class PrisonerEvent5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent5SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Persuade or Melee 8+ to join the gang: success = PT+1 + skill; fail = gain Enemy',
@@ -291,7 +287,7 @@ class PendingPrisonerEvent6SkillRoll(CareerSkillRollPendingBase):
                     key=lambda s: type(s).name(),
                 ),
             )
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Vocational training: choose any skill at level 1',
@@ -306,7 +302,7 @@ class PrisonerEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent6SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any skill at level 1',
@@ -324,7 +320,7 @@ class PrisonerEvent7Riot(ChoiceBase):
     label: str = '1 — Prison Riot'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent7RiotSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Riot: roll END 8+: success = survive unhurt; fail = roll on Injury table',
@@ -341,7 +337,7 @@ class PrisonerEvent7Gang(ChoiceBase):
         career = projection.get_current_career()
         projection.summary.parole_threshold = min(12, (projection.summary.parole_threshold or 0) + 1)
         projection.add_connection(ConnectionKind.ENEMY, origin='A prison gang that forced itself on you')
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PrisonerEvent7Transfer(ChoiceBase):
@@ -353,7 +349,7 @@ class PrisonerEvent7Transfer(ChoiceBase):
         projection.summary.problems.append(
             'Prisoner event 7: transferred to another prison — no mechanical effect. Apply manually if needed.'
         )
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PrisonerEvent7Visitation(ChoiceBase):
@@ -365,7 +361,7 @@ class PrisonerEvent7Visitation(ChoiceBase):
         projection.add_connection(
             ConnectionKind.ALLY, origin='A visitor who became a loyal friend during your imprisonment'
         )
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PrisonerEvent7ParoleHearing(ChoiceBase):
@@ -375,7 +371,7 @@ class PrisonerEvent7ParoleHearing(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PrisonerEvent7GoodBehaviour(ChoiceBase):
@@ -385,7 +381,7 @@ class PrisonerEvent7GoodBehaviour(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
         projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 1)
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
@@ -396,15 +392,13 @@ class PendingPrisonerEvent7RiotSkillRoll(CareerSkillRollPendingBase):
 
         career = projection.get_current_career()
         if event.modified_roll < 8:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Riot injury: roll 1D on Injury table',
                 )
             )
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id, 1))
         # Success: _apply_skill_roll auto-queues advancement
 
 
@@ -413,7 +407,7 @@ class PrisonerEvent7Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Prison Event: roll 1D and select the matching result',
@@ -441,7 +435,7 @@ class PrisonerEvent9Level1(ChoiceBase):
         projection.summary.problems.append(
             'Prisoner event 9: lawyer level 1 hired — deduct Cr1000 from cash. Apply manually.'
         )
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent9LawyerSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll 2D + 1 vs 8+: success = PT-1',
@@ -459,7 +453,7 @@ class PrisonerEvent9Level2(ChoiceBase):
         projection.summary.problems.append(
             'Prisoner event 9: lawyer level 2 hired — deduct Cr2000 from cash. Apply manually.'
         )
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent9LawyerSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll 2D + 2 vs 8+: success = PT-1',
@@ -477,7 +471,7 @@ class PrisonerEvent9Level3(ChoiceBase):
         projection.summary.problems.append(
             'Prisoner event 9: lawyer level 3 hired — deduct Cr3000 from cash. Apply manually.'
         )
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent9LawyerSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll 2D + 3 vs 8+: success = PT-1',
@@ -493,7 +487,7 @@ class PrisonerEvent9Decline(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PendingPrisonerEvent9LawyerSkillRoll(CareerSkillRollPendingBase):
@@ -511,7 +505,7 @@ class PrisonerEvent9Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
@@ -537,7 +531,7 @@ class PrisonerEvent12TakeRisk(ChoiceBase):
     label: str = 'Take the risk (roll 2D — 7-: injury; 8+: Ally + PT-2)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingPrisonerEvent12HeroismSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll 2D: 8+ = Ally + PT-2; 7 or less = roll on Injury table',
@@ -552,7 +546,7 @@ class PrisonerEvent12Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
@@ -567,15 +561,13 @@ class PendingPrisonerEvent12HeroismSkillRoll(CareerSkillRollPendingBase):
             projection.summary.parole_threshold = max(0, (projection.summary.parole_threshold or 0) - 2)
             # _apply_skill_roll auto-queues advancement (no pending added)
         else:
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingInjuryTable(
                     pending_id=(event.id, 0),
                     instruction='Heroism failed: roll 1D on Injury table',
                 )
             )
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id, 1)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id, 1))
 
 
 class PrisonerEvent12Handler(CareerHandlerBase):
@@ -583,7 +575,7 @@ class PrisonerEvent12Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='An act of heroism: take the risk (roll 2D — 7-: injury; 8+: Ally + PT-2) or refuse?',
@@ -797,7 +789,7 @@ class Prisoner(CareerData):
         count_before = len(projection.pending_inputs)
         self.start_new_term(projection, assignment, event_id)
         pending_added = len(projection.pending_inputs) - count_before
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingParoleRoll(
                 pending_id=(event_id, pending_added),
                 instruction='Roll 1D to determine your Parole Threshold (result + 2)',

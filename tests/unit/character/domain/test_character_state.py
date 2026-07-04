@@ -4,7 +4,7 @@ import pytest
 
 from ceres.character.domain.career import ARMY
 from ceres.character.domain.career.career_data import CareerTerm
-from ceres.character.domain.career.career_events import SurviveHandler
+from ceres.character.domain.career.career_events import PendingReenlist, SurviveHandler
 from ceres.character.domain.character_state import (
     CharacterProjection,
     CharacterSummary,
@@ -289,6 +289,62 @@ class TestDeserialiseTerms:
         data['terms'] = [{'kind': 'nonexistent_kind'}]
         with pytest.raises(ValidationError):
             CharacterSummary.model_validate(data)
+
+
+class TestQueueImmediate:
+    def _pending(self, n: int) -> PendingReenlist:
+        return PendingReenlist(pending_id=(n, 0))
+
+    def test_single_goes_to_front(self):
+        proj = _projection()
+        existing = self._pending(0)
+        proj.queue_deferred(existing)
+        new = self._pending(1)
+        proj.queue_immediate(new)
+        assert proj.pending_inputs[0] is new
+
+    def test_caller_order_preserved_at_front(self):
+        proj = _projection()
+        a, b = self._pending(0), self._pending(1)
+        proj.queue_immediate(a, b)
+        assert proj.pending_inputs[0] is a
+        assert proj.pending_inputs[1] is b
+
+    def test_immediate_resolves_before_existing(self):
+        proj = _projection()
+        existing = self._pending(0)
+        proj.queue_deferred(existing)
+        new = self._pending(1)
+        proj.queue_immediate(new)
+        assert proj.pending_inputs.index(new) < proj.pending_inputs.index(existing)
+
+
+class TestQueueDeferred:
+    def _pending(self, n: int) -> PendingReenlist:
+        return PendingReenlist(pending_id=(n, 0))
+
+    def test_single_goes_to_back(self):
+        proj = _projection()
+        existing = self._pending(0)
+        proj.queue_deferred(existing)
+        new = self._pending(1)
+        proj.queue_deferred(new)
+        assert proj.pending_inputs[-1] is new
+
+    def test_caller_order_preserved_at_back(self):
+        proj = _projection()
+        a, b = self._pending(0), self._pending(1)
+        proj.queue_deferred(a, b)
+        assert proj.pending_inputs[-2] is a
+        assert proj.pending_inputs[-1] is b
+
+    def test_deferred_resolves_after_existing(self):
+        proj = _projection()
+        existing = self._pending(0)
+        proj.queue_deferred(existing)
+        new = self._pending(1)
+        proj.queue_deferred(new)
+        assert proj.pending_inputs.index(existing) < proj.pending_inputs.index(new)
 
 
 class TestNotGained:

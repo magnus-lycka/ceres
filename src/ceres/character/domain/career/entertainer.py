@@ -92,7 +92,7 @@ class EntertainerEvent8Accept(ChoiceBase):
     label: str = 'Criticise (roll Art or Investigate 8+: success = DM+2 advancement; fail = powerful Enemy)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingEntertainerEvent8SkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Art or Investigate 8+: success = DM+2 '
@@ -108,7 +108,7 @@ class EntertainerEvent8Refuse(ChoiceBase):
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.pending_inputs.append(career_progress_pending(projection, career, event.id))
+        projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
 class PendingEntertainerEvent8SkillRoll(CareerSkillRollPendingBase):
@@ -132,7 +132,7 @@ class EntertainerEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingEntertainerEvent3SkillRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll Art or Investigate 8+: success = SOC +1; fail = SOC -1',
@@ -150,7 +150,7 @@ class EntertainerEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(

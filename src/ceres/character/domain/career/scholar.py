@@ -80,7 +80,7 @@ class PendingScholarScienceChoice(CareerSkillChoicePendingBase):
 
 
 def _append_scholar_science_choice(projection: CharacterProjection, event_id: int, idx: int = 0) -> None:
-    projection.pending_inputs.append(
+    projection.queue_deferred(
         PendingScholarScienceChoice(
             pending_id=(event_id, idx),
             instruction='Increase Science by one level: choose which broad science',
@@ -114,7 +114,7 @@ class ScholarMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Continue openly (Science +1, Enemy) or secretly (Science +1, SOC -2)?',
@@ -155,7 +155,7 @@ class ScholarMishap5Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Give up (leave career) or start again (stay, lose benefit rolls)?',
@@ -177,7 +177,7 @@ class ScholarEvent3Accept(ChoiceBase):
     label: str = 'Accept (2 Science specialties + D3 Enemies + extra Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingConnectionsRoll(
                 pending_id=(event.id, 0),
                 connection_type=ConnectionKind.ENEMY,
@@ -187,7 +187,7 @@ class ScholarEvent3Accept(ChoiceBase):
             )
         )
         for i, label in enumerate(['first', 'second'], start=1):
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingScholarScienceChoicePreCreated(
                     pending_id=(event.id, i),
                     instruction=f'Choose {label} Science specialty to increase by one level',
@@ -201,9 +201,7 @@ class ScholarEvent3Accept(ChoiceBase):
         )
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id, 3)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id, 3))
 
 
 class ScholarEvent3Decline(ChoiceBase):
@@ -213,9 +211,7 @@ class ScholarEvent3Decline(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class ScholarEvent3Handler(CareerHandlerBase):
@@ -223,7 +219,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
@@ -241,7 +237,7 @@ class ScholarEvent6Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingAnySkillAtLevelOnSuccessRoll(
                 pending_id=(event_id, pending_idx),
                 instruction='Roll EDU 8+ to gain any skill of your choice at level 1',
@@ -263,7 +259,7 @@ class ScholarEvent8SkillRoll(CareerSkillRollPendingBase):
             projection.add_connection(
                 ConnectionKind.ENEMY, origin='A colleague who knows you cheated your way to results'
             )
-            projection.pending_inputs.append(
+            projection.queue_deferred(
                 PendingSkillChoice(
                     pending_id=(event.id, 0),
                     instruction='Cheat succeeded: choose any skill to gain +1',
@@ -280,7 +276,7 @@ class ScholarEvent8Accept(ChoiceBase):
     label: str = 'Accept (roll Deception/Admin 8+)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             ScholarEvent8SkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Roll Deception 8+ or Admin 8+ to cheat successfully',
@@ -296,9 +292,7 @@ class ScholarEvent8Refuse(ChoiceBase):
     def handle(self, projection: CharacterProjection, event) -> None:
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
-            projection.pending_inputs.append(
-                advancement_pending(career, projection.summary.current_assignment, event.id)
-            )
+            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
 
 
 class ScholarEvent8Handler(CareerHandlerBase):
@@ -306,7 +300,7 @@ class ScholarEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction='Refuse (nothing) or Accept (roll Deception/Admin 8+)?',
@@ -332,7 +326,7 @@ class ScholarEvent11Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.pending_inputs.append(
+        projection.queue_deferred(
             PendingScholarEvent11(
                 pending_id=(event_id, pending_idx),
                 instruction='Increase Science by one level (choose which), or DM+4 to your next advancement roll',

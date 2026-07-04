@@ -50,7 +50,7 @@ class MusterOutHandler(EventHandlerBase):
                 update={'is_muster_out': True, 'muster_out_remaining': muster_out.rolls_remaining}
             )
         else:
-            projection.pending_inputs.append(PendingMusterOut(pending_id=(event.id, 0)))
+            projection.queue_deferred(PendingMusterOut(pending_id=(event.id, 0)))
 
 
 class BenefitChoiceHandler(EventHandlerBase):
@@ -68,7 +68,7 @@ class BenefitChoiceHandler(EventHandlerBase):
         options[self.choice_index].apply(projection, event.id)
         if fulfilled_pending.is_muster_out:
             if fulfilled_pending.muster_out_remaining > 0:
-                projection.pending_inputs.append(PendingMusterOut(pending_id=(event.id, 0)))
+                projection.queue_deferred(PendingMusterOut(pending_id=(event.id, 0)))
             else:
                 finalize_muster_out(projection, event.id)
 
@@ -148,7 +148,7 @@ def setup_muster_out(
     if muster_out is not None:
         muster_out.setup(projection.summary.rank or 0)
     if muster_out is not None and muster_out.rolls_remaining > 0:
-        projection.pending_inputs.append(PendingMusterOut(pending_id=(source_event_id, pending_idx)))
+        projection.queue_deferred(PendingMusterOut(pending_id=(source_event_id, pending_idx)))
     else:
         queue_career_choice_indexed(projection, source_event_id, pending_idx)
     return pending_idx + 1
