@@ -202,24 +202,6 @@ def _apply_injury_table_result(projection: CharacterProjection, roll: int, event
         PendingReenlist,
     )
 
-    insert_at = next(
-        (
-            i
-            for i, p in enumerate(projection.pending_inputs)
-            if isinstance(
-                p,
-                (
-                    PendingAdvancement,
-                    PendingCareerChoice,
-                    PendingCommissionChoice,
-                    PendingMusterOut,
-                    PendingReenlist,
-                    PendingAssignmentChangeChoice,
-                ),
-            )
-        ),
-        len(projection.pending_inputs),
-    )
     if roll == 5:
         pending: PendingCharacteristicChoice = PendingCharacteristicChoice(
             pending_id=(event_id, 0),
@@ -254,7 +236,15 @@ def _apply_injury_table_result(projection: CharacterProjection, roll: int, event
                 'the other two physical characteristics are each reduced by 2'
             ),
         )
-    projection.pending_inputs.insert(insert_at, pending)
+    projection.insert_before_type(
+        pending,
+        PendingAdvancement,
+        PendingCareerChoice,
+        PendingCommissionChoice,
+        PendingMusterOut,
+        PendingReenlist,
+        PendingAssignmentChangeChoice,
+    )
 
 
 def complete_aging(projection: CharacterProjection, source_event_id: int) -> None:
@@ -295,9 +285,7 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
 
 def check_aging_crisis(projection: CharacterProjection, source_event_id: int) -> bool:
     if any(v == 0 for v in projection.summary.characteristics.values()):
-        projection.pending_inputs = [
-            p for p in projection.pending_inputs if not isinstance(p, (PendingAgingChoice, PendingAgingChoiceMental))
-        ]
+        projection.cancel_pending(PendingAgingChoice, PendingAgingChoiceMental)
         projection.queue_deferred(
             PendingAgingCrisis(
                 pending_id=(source_event_id, 0),

@@ -569,7 +569,7 @@ class TestScholarMishap5:
                 terms=[CareerTerm(career=scholar, assignment=field_researcher, rank=1)],
             ),
         )
-        proj.pending_inputs.append(PendingAdvancement(pending_id=(99, 0), instruction='Advance'))
+        proj.queue_deferred(PendingAdvancement(pending_id=(99, 0), instruction='Advance'))
 
         ScholarMishap5GiveUp().handle(proj, SimpleNamespace(id=9))
 

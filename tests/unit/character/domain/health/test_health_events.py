@@ -79,7 +79,6 @@ class TestCharacteristicChoiceHandler:
         proj = _projection(characteristics={Chars.STR: 7})
         pending = PendingAgingChoice(pending_id=(1, 0), instruction='Choose', options=[Chars.STR, Chars.DEX, Chars.END])
         # replay.py calls fulfill_pending() before apply(), so pending is already removed
-        proj.pending_inputs = []
         handler = CharacteristicChoiceHandler(characteristic=Chars.STR)
         handler.apply(proj, _any_event(), fulfilled_pending=pending)
         from ceres.character.domain.career.career_events import PendingReenlist
@@ -95,7 +94,7 @@ class TestCharacteristicChoiceHandler:
             pending_id=(1, 1), instruction='Choose', options=[Chars.STR, Chars.DEX, Chars.END]
         )
         # pending1 already removed (fulfilled), pending2 still outstanding
-        proj.pending_inputs = [pending2]
+        proj.queue_deferred(pending2)
         handler = CharacteristicChoiceHandler(characteristic=Chars.STR)
         handler.apply(proj, _any_event(), fulfilled_pending=pending1)
         from ceres.character.domain.career.career_events import PendingReenlist
@@ -107,7 +106,7 @@ class TestInjuryTableHandler:
     def test_roll_6_causes_no_pending(self):
         proj = _projection()
         InjuryTableHandler(roll=6).apply(proj, _any_event())
-        assert proj.pending_inputs == []
+        assert proj.pending_inputs == ()
 
     def test_roll_5_queues_char_choice(self):
         proj = _projection()
@@ -259,9 +258,9 @@ class TestCheckAgingCrisis:
 
     def test_clears_existing_aging_choices_on_crisis(self):
         proj = _projection(characteristics={Chars.STR: 0})
-        proj.pending_inputs = [
+        proj.queue_deferred(
             PendingAgingChoice(pending_id=(1, 0), instruction='Choose', options=[Chars.STR, Chars.DEX, Chars.END])
-        ]
+        )
         check_aging_crisis(proj, source_event_id=2)
         assert not any(isinstance(p, PendingAgingChoice) for p in proj.pending_inputs)
 

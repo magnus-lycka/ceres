@@ -12,7 +12,7 @@ from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
 from ceres.character.domain.term_data import Term
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event, PendingInputBase, _deserialise_pending_input
+from ceres.character.mechanism.event_base import Event, PendingInputBase
 from ceres.shared import int_to_ehex
 
 if TYPE_CHECKING:
@@ -270,9 +270,6 @@ class CharacterProjection(BaseModel):
 
     character_id: int
     summary: CharacterSummary
-    pending_inputs: list[SerializeAsAny[Annotated[PendingInputBase, BeforeValidator(_deserialise_pending_input)]]] = (
-        Field(default_factory=list)
-    )
     pending_advancement_dm: int = 0
     pending_qualification_dm: int = 0
     auto_qualify_careers: list[type[CareerData]] = Field(default_factory=list)
@@ -280,7 +277,12 @@ class CharacterProjection(BaseModel):
     forced_next_career: CareerData | None = None  # set by prison-sending events; consumed by next career choice
     prisoner_freed: bool = False  # set by _apply_prisoner_advancement when parole granted
 
+    _pending_inputs: list[PendingInputBase] = PrivateAttr(default_factory=list)
     _not_gained: list[AnySkill | PsionicTalentSkillModels | Chars] = PrivateAttr(default_factory=list)
+
+    @property
+    def pending_inputs(self) -> tuple[PendingInputBase, ...]:
+        return tuple(self._pending_inputs)
 
     def not_gained(self, entry: AnySkill | PsionicTalentSkillModels | Chars) -> None:
         self._not_gained.append(entry)
@@ -290,10 +292,10 @@ class CharacterProjection(BaseModel):
         return tuple(self._not_gained)
 
     def queue_immediate(self, *pending_inputs: PendingInputBase) -> None:
-        self.pending_inputs[:0] = list(pending_inputs)
+        self._pending_inputs[:0] = list(pending_inputs)
 
     def queue_deferred(self, *pending_inputs: PendingInputBase) -> None:
-        self.pending_inputs.extend(pending_inputs)
+        self._pending_inputs.extend(pending_inputs)
 
     def add_connection(self, kind: ConnectionKind, *, origin: str = '') -> None:
         from ceres.character.domain.connection import make_connection
@@ -349,7 +351,7 @@ class CharacterProjection(BaseModel):
                 term.muster_out.forfeit_all_rolls()
 
     def has_blocking_pending(self) -> bool:
-        return any(p.blocking for p in self.pending_inputs)
+        return any(p.blocking for p in self._pending_inputs)
 
     def advance_age(self, event_id: int, pending_idx: int) -> bool:
         """Increment age by 4 and queue PendingAgingRoll if now >= 34. Return True if triggered."""
@@ -375,12 +377,22 @@ class CharacterProjection(BaseModel):
             raise ReplayError('No active career')
         return current
 
+    def cancel_pending(self, *types: type[PendingInputBase]) -> None:
+        self._pending_inputs[:] = [p for p in self._pending_inputs if not isinstance(p, types)]
+
+    def insert_before_type(self, pending: PendingInputBase, *types: type[PendingInputBase]) -> None:
+        idx = next((i for i, p in enumerate(self._pending_inputs) if isinstance(p, types)), len(self._pending_inputs))
+        self._pending_inputs.insert(idx, pending)
+
+    def update_last_pending(self, **update: Any) -> None:
+        self._pending_inputs[-1] = self._pending_inputs[-1].model_copy(update=update)
+
     def fulfill_pending(self, event: Event) -> None:
         fulfills = event.fulfills
-        matched = next((p for p in self.pending_inputs if p.pending_id == fulfills), None)
+        matched = next((p for p in self._pending_inputs if p.pending_id == fulfills), None)
         if matched is None:
             raise ReplayError(f'Event {event.id} ({event.kind!r}) references unknown pending input {fulfills!r}')
-        self.pending_inputs.remove(matched)
+        self._pending_inputs.remove(matched)
 
     def skill_choices(
         self,

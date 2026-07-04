@@ -422,9 +422,7 @@ def _apply_mishap_ejection(
 
 
 def purge_career_pendings(projection: CharacterProjection) -> None:
-    projection.pending_inputs[:] = [
-        p for p in projection.pending_inputs if not isinstance(p, _CAREER_PHASE_PENDING_TYPES)
-    ]
+    projection.cancel_pending(*_CAREER_PHASE_PENDING_TYPES)
 
 
 def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:

@@ -231,7 +231,7 @@ def test_institute_training_offers_each_talent_only_once_even_after_failure() ->
         instruction='Train',
         remaining_talents=[Telekinesis(), Clairvoyance()],
     )
-    projection.pending_inputs.append(pending)
+    projection.queue_deferred(pending)
     event = Event(fulfills=pending.pending_id, handler=PsionicTalentTrainingHandler(talent=Telekinesis(), roll=2))
 
     projection.fulfill_pending(event)
@@ -555,7 +555,7 @@ class TestInstituteTraining:
             instruction='Train',
             remaining_talents=[Telepathy(), Telekinesis(), Awareness()],
         )
-        projection.pending_inputs.append(pending)
+        projection.queue_deferred(pending)
         event = Event(
             id=2,
             fulfills=pending.pending_id,
@@ -576,7 +576,7 @@ class TestInstituteTraining:
             remaining_talents=[Telepathy(), Telekinesis()],
         )
         career_choice = PendingCareerChoice(pending_id=(1, 1), instruction='Choose a career')
-        projection.pending_inputs.extend([pending, career_choice])
+        projection.queue_deferred(pending, career_choice)
         event = Event(
             id=2,
             fulfills=pending.pending_id,
@@ -598,12 +598,12 @@ class TestInstituteTraining:
         projection.fulfill_pending(final_event)
         final_event.apply(projection, next_training)
 
-        assert projection.pending_inputs == [career_choice]
+        assert projection.pending_inputs == (career_choice,)
 
     def test_queued_training_precedes_work_already_pending(self) -> None:
         projection = _psionic_projection()
         career_choice = PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career')
-        projection.pending_inputs.append(career_choice)
+        projection.queue_deferred(career_choice)
 
         assert queue_psionic_institute_training(projection, event_id=1, pending_idx=1)
 
@@ -617,7 +617,7 @@ class TestInstituteTraining:
             instruction='Train',
             remaining_talents=[Teleportation()],
         )
-        projection.pending_inputs.append(pending)
+        projection.queue_deferred(pending)
         event = Event(
             id=2,
             fulfills=pending.pending_id,
@@ -636,7 +636,7 @@ class TestInstituteTraining:
             instruction='Train',
             remaining_talents=psionic_talent_instances(),
         )
-        projection.pending_inputs.append(pending)
+        projection.queue_deferred(pending)
         handler = FinishPsionicInstituteTrainingHandler()
         event = Event(fulfills=pending.pending_id, handler=handler)
 

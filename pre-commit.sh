@@ -17,6 +17,6 @@ run "ruff check"                    uvx ruff check --no-fix src tests
 run "ruff format --check"           uvx ruff format --check src tests
 run "ty check"                      uvx ty check
 run "deptry"                        uv run deptry .
-run "bandit"                        uvx bandit -r src
+run "bandit"                        uvx bandit -q -r src
 
 exit $failures

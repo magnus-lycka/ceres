@@ -59,7 +59,6 @@ class TestUcpHandler:
     def _proj_with_ucp(self, ucp: str) -> CharacterProjection:
         proj = _projection()
         handler = UcpHandler(ucp=ucp)
-        proj.pending_inputs = []
         handler.apply(proj, _any_event())
         return proj
 
@@ -94,7 +93,6 @@ class TestBackgroundSkillsHandler:
     def test_grants_all_background_skills(self):
         proj = self._proj_with_edu(7)  # count=3
         handler = BackgroundSkillsHandler(skills=[Animals(), Carouse(), Drive()])
-        proj.pending_inputs = []
         handler.apply(proj, _any_event())
         assert proj.summary.skill_level(Animals, 0) == 0
         assert proj.summary.skill_level(Carouse, 0) == 0
@@ -226,10 +224,10 @@ class TestFinishCreationHandler:
         from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
 
         proj = _projection()
-        proj.pending_inputs = [
+        proj.queue_deferred(
             PendingHomeworldChangeOffered(pending_id=(2, 0), instruction='Change homeworld?', reason='Test'),
             PendingSurvive(pending_id=(3, 0), instruction='Survive'),
-        ]
+        )
         FinishCreationHandler().apply(proj, _any_event())
         assert not any(isinstance(p, PendingHomeworldChangeOffered) for p in proj.pending_inputs)
         assert any(isinstance(p, PendingSurvive) for p in proj.pending_inputs)

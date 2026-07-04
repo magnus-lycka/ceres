@@ -204,9 +204,7 @@ class FinishCreationHandler(EventHandlerBase):
     ) -> None:
         from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
 
-        projection.pending_inputs = [
-            p for p in projection.pending_inputs if not isinstance(p, PendingHomeworldChangeOffered)
-        ]
+        projection.cancel_pending(PendingHomeworldChangeOffered)
 
 
 # ── Character-start Pending Input Types ───────────────────────────────────────

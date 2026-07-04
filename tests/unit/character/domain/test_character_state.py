@@ -5,6 +5,7 @@ import pytest
 from ceres.character.domain.career import ARMY
 from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.career.career_events import PendingReenlist, SurviveHandler
+from ceres.character.domain.career.muster_out import PendingMusterOut
 from ceres.character.domain.character_state import (
     CharacterProjection,
     CharacterSummary,
@@ -347,6 +348,18 @@ class TestQueueDeferred:
         assert proj.pending_inputs.index(existing) < proj.pending_inputs.index(new)
 
 
+class TestPendingInputsIsImmutableView:
+    def test_returns_tuple(self):
+        proj = _projection()
+        proj.queue_deferred(PendingReenlist(pending_id=(1, 0)))
+        assert isinstance(proj.pending_inputs, tuple)
+
+    def test_cannot_be_replaced_by_assignment(self):
+        proj = _projection()
+        with pytest.raises(AttributeError):
+            proj.pending_inputs = []  # ty: ignore[invalid-assignment]
+
+
 class TestNotGained:
     def test_not_gained_entries_empty_by_default(self):
         p = _projection()
@@ -372,3 +385,101 @@ class TestNotGained:
         p = _projection()
         entries = p.not_gained_entries
         assert isinstance(entries, tuple)
+
+
+class TestCancelPending:
+    def _reenlist(self, n: int) -> PendingReenlist:
+        return PendingReenlist(pending_id=(n, 0))
+
+    def _muster(self, n: int) -> PendingMusterOut:
+        return PendingMusterOut(pending_id=(n, 0))
+
+    def test_removes_matching_type(self):
+        proj = _projection()
+        proj.queue_deferred(self._reenlist(0))
+        proj.cancel_pending(PendingReenlist)
+        assert proj.pending_inputs == ()
+
+    def test_leaves_non_matching_type(self):
+        proj = _projection()
+        muster = self._muster(0)
+        proj.queue_deferred(self._reenlist(0))
+        proj.queue_deferred(muster)
+        proj.cancel_pending(PendingReenlist)
+        assert proj.pending_inputs == (muster,)
+
+    def test_removes_multiple_types(self):
+        proj = _projection()
+        proj.queue_deferred(self._reenlist(0))
+        proj.queue_deferred(self._muster(0))
+        proj.cancel_pending(PendingReenlist, PendingMusterOut)
+        assert proj.pending_inputs == ()
+
+    def test_no_matching_pending_is_noop(self):
+        proj = _projection()
+        proj.cancel_pending(PendingReenlist)
+        assert proj.pending_inputs == ()
+
+
+class TestInsertBeforeType:
+    def _reenlist(self, n: int) -> PendingReenlist:
+        return PendingReenlist(pending_id=(n, 0))
+
+    def _muster(self, n: int) -> PendingMusterOut:
+        return PendingMusterOut(pending_id=(n, 0))
+
+    def test_inserts_before_first_match(self):
+        proj = _projection()
+        existing = self._reenlist(0)
+        proj.queue_deferred(existing)
+        new = self._muster(1)
+        proj.insert_before_type(new, PendingReenlist)
+        assert proj.pending_inputs == (new, existing)
+
+    def test_appends_when_no_match(self):
+        proj = _projection()
+        existing = self._muster(0)
+        proj.queue_deferred(existing)
+        new = self._reenlist(1)
+        proj.insert_before_type(new, PendingReenlist)
+        assert proj.pending_inputs == (existing, new)
+
+    def test_appends_to_empty_queue(self):
+        proj = _projection()
+        new = self._reenlist(0)
+        proj.insert_before_type(new, PendingMusterOut)
+        assert proj.pending_inputs == (new,)
+
+    def test_inserts_before_first_of_multiple_types(self):
+        proj = _projection()
+        reenlist = self._reenlist(0)
+        muster = self._muster(1)
+        proj.queue_deferred(reenlist)
+        proj.queue_deferred(muster)
+        new = self._reenlist(2)
+        proj.insert_before_type(new, PendingMusterOut, PendingReenlist)
+        assert proj.pending_inputs[0] is new
+        assert proj.pending_inputs[1] is reenlist
+
+
+class TestUpdateLastPending:
+    def _reenlist(self, n: int) -> PendingReenlist:
+        return PendingReenlist(pending_id=(n, 0))
+
+    def test_updates_field_on_last_pending(self):
+        proj = _projection()
+        proj.queue_deferred(self._reenlist(0))
+        proj.queue_deferred(self._reenlist(1))
+        proj.update_last_pending(can_muster_out=False)
+        last = proj.pending_inputs[-1]
+        assert isinstance(last, PendingReenlist)
+        assert last.can_muster_out is False
+
+    def test_does_not_affect_earlier_pendings(self):
+        proj = _projection()
+        first = self._reenlist(0)
+        proj.queue_deferred(first)
+        proj.queue_deferred(self._reenlist(1))
+        proj.update_last_pending(can_muster_out=False)
+        assert proj.pending_inputs[0] is first
+        assert first.can_muster_out is True

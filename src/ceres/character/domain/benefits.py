@@ -15,8 +15,6 @@ class _BenefitSummary(Protocol):
 
 
 class _BenefitProjection(Protocol):
-    pending_inputs: list[PendingInputBase]
-
     def queue_deferred(self, *pending_inputs: PendingInputBase) -> None: ...
 
     @property

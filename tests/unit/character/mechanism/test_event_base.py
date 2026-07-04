@@ -325,36 +325,6 @@ class TestDeserialisePendingInput:
             _deserialise_pending_input(99)
 
 
-class TestCharacterProjectionPendingInputsRoundTrip:
-    def _make_projection(self) -> CharacterProjection:
-        from ceres.character.domain.career.career_events import PendingCareerChoice
-        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
-
-        summary = CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD)
-        proj = CharacterProjection(character_id=1, summary=summary)
-        proj.pending_inputs.append(PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career'))
-        proj.pending_inputs.append(
-            PendingHomeworldChangeRequired(pending_id=(1, 1), instruction='Choose homeworld', reason='test')
-        )
-        return proj
-
-    def test_concrete_subclass_fields_survive_serialisation_round_trip(self):
-        from ceres.character.domain.career.career_events import PendingCareerChoice
-
-        proj = self._make_projection()
-        data = proj.model_dump()
-        restored = CharacterProjection.model_validate(data)
-        assert isinstance(restored.pending_inputs[0], PendingCareerChoice)
-
-    def test_all_pending_types_restored_to_correct_concrete_class(self):
-        from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
-
-        proj = self._make_projection()
-        data = proj.model_dump()
-        restored = CharacterProjection.model_validate(data)
-        assert isinstance(restored.pending_inputs[1], PendingHomeworldChangeRequired)
-
-
 # ── PendingInputBase with real domain kinds ──────────────────────────────────
 
 

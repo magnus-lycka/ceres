@@ -37,6 +37,7 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingSkillChoice,
+    PendingSurvive,
     _apply_mishap_ejection,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
@@ -418,17 +419,13 @@ class Psion(CareerData):
         assignment: AssignmentData,
         event_id: int,
     ) -> None:
-        insert_at = len(projection.pending_inputs)
         super().start_new_term(projection, assignment, event_id)
-        training_queued = queue_psionic_institute_training(projection, event_id, len(projection.pending_inputs))
-        if training_queued:
-            insert_at = 1
+        queue_psionic_institute_training(projection, event_id, len(projection.pending_inputs))
         if projection.summary.homeworld is not None and projection.summary.homeworld.uwp.startswith('X'):
             return
         used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
         homeworld_idx = max(used_sub_ids, default=-1) + 1
-        projection.pending_inputs.insert(
-            insert_at,
+        projection.insert_before_type(
             PendingHomeworldChangeOffered(
                 pending_id=(event_id, homeworld_idx),
                 instruction='You may relocate to another world. Select a new homeworld (optional).',
@@ -437,6 +434,7 @@ class Psion(CareerData):
                 source_kind='career_entry',
                 source_career='Psion',
             ),
+            PendingSurvive,
         )
 
     assignments: ClassVar[list[AssignmentData]] = [

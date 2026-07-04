@@ -788,7 +788,7 @@ class TestFinalizeMusterOut:
         term = CareerTerm(career=SCOUT, assignment=SCOUT.assignment('Courier'))
         projection = _bare_projection(career_terms=[term], dead=True)
         finalize_muster_out(projection, event_id=1)
-        assert projection.pending_inputs == []
+        assert projection.pending_inputs == ()
 
 
 class TestSetupMusterOut:

@@ -106,7 +106,7 @@ def test_no_effect_entry_leaves_pending_index_unchanged():
     next_idx = NoEffectEntry(text='Nothing happens.').apply(p, event=_event(12), pending_idx=3)
 
     assert next_idx == 3
-    assert p.pending_inputs == []
+    assert p.pending_inputs == ()
 
 
 def test_skill_choice_entry_queues_choice_and_pauses_progression():
@@ -129,7 +129,7 @@ def test_skill_choice_entry_inserts_before_existing_pending():
     from ceres.character.domain.career.career_events import PendingMusterOut
 
     p = _projection()
-    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+    p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
 
     SkillChoiceEntry(text='Choose a skill.', options=[Admin()], level=1).apply(p, event=_event(12), pending_idx=0)
 
@@ -161,7 +161,7 @@ def test_characteristic_loss_choice_entry_inserts_before_existing_pending():
     from ceres.character.domain.career.muster_out import PendingMusterOut
 
     p = _projection()
-    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+    p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
 
     CharacteristicLossChoiceEntry(
         text='Choose characteristic loss.',
@@ -204,7 +204,8 @@ def test_rolled_connections_entry_queues_roll_and_allows_progression():
     assert entry.continues_career_progress() is True
 
 
-def test_rolled_connections_group_entry_queues_multiple_rolls():
+def test_rolled_connections_group_entry_queues_in_caller_order():
+    """Pending IDs and queue order must both match the order of rolls as declared."""
     p = _projection()
 
     next_idx = RolledConnectionsGroupEntry(
@@ -215,10 +216,13 @@ def test_rolled_connections_group_entry_queues_multiple_rolls():
         ],
     ).apply(p, event=_event(12), pending_idx=0)
 
-    pendings = [pending for pending in p.pending_inputs if isinstance(pending, PendingConnectionsRoll)]
+    pendings = [p for p in p.pending_inputs if isinstance(p, PendingConnectionsRoll)]
     assert next_idx == 2
     assert len(pendings) == 2
-    assert {p.connection_type for p in pendings} == {ConnectionKind.CONTACT, ConnectionKind.ENEMY}
+    assert pendings[0].connection_type == ConnectionKind.CONTACT
+    assert pendings[0].pending_id == (12, 0)
+    assert pendings[1].connection_type == ConnectionKind.ENEMY
+    assert pendings[1].pending_id == (12, 1)
 
 
 def test_rolled_connections_group_entry_inserts_rolls_before_existing_pending():
@@ -227,7 +231,7 @@ def test_rolled_connections_group_entry_inserts_rolls_before_existing_pending():
 
     p = _projection()
     muster_out = PendingMusterOut(pending_id=(11, 0))
-    p.pending_inputs.append(muster_out)
+    p.queue_deferred(muster_out)
 
     RolledConnectionsGroupEntry(
         text='Gain contacts and enemies.',
@@ -237,11 +241,10 @@ def test_rolled_connections_group_entry_inserts_rolls_before_existing_pending():
         ],
     ).apply(p, event=_event(12), pending_idx=0)
 
-    pending_types = [type(p) for p in p.pending_inputs]
-    muster_idx = pending_types.index(PendingMusterOut)
+    muster_idx = next(i for i, p in enumerate(p.pending_inputs) if isinstance(p, PendingMusterOut))
     conn_rolls = [i for i, item in enumerate(p.pending_inputs) if isinstance(item, PendingConnectionsRoll)]
     assert len(conn_rolls) == 2
-    assert all(idx < muster_idx for idx in conn_rolls), 'All connection rolls must come before muster-out'
+    assert all(idx < muster_idx for idx in conn_rolls)
 
 
 def test_roll_mishap_entry_queues_mishap_and_pauses_progression():
@@ -263,7 +266,7 @@ def test_roll_mishap_entry_inserts_before_existing_pending():
     from ceres.character.domain.career.muster_out import PendingMusterOut
 
     p = _projection()
-    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+    p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
 
     RollMishapEntry(text='Roll mishap.', leave=True).apply(p, event=_event(12), pending_idx=0)
 
@@ -290,7 +293,7 @@ def test_life_event_entry_inserts_before_existing_pending():
     from ceres.character.domain.career.career_events import PendingMusterOut
 
     p = _projection()
-    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+    p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
 
     LifeEventEntry(text='Life event.').apply(p, event=_event(12), pending_idx=0)
 
@@ -475,7 +478,7 @@ def test_gain_connection_and_skill_choice_entry_inserts_before_existing_pending(
     from ceres.character.domain.career.muster_out import PendingMusterOut
 
     p = _projection()
-    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+    p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
 
     GainConnectionAndSkillChoiceEntry(
         text='Gain an Ally and choose a skill.',
@@ -495,7 +498,7 @@ def test_gain_connections_and_skill_choice_entry_inserts_before_existing_pending
     from ceres.character.domain.career.muster_out import PendingMusterOut
 
     p = _projection()
-    p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+    p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
 
     GainConnectionsAndSkillChoiceEntry(
         text='Gain connections and choose a skill.',
@@ -612,7 +615,7 @@ def test_queue_injury_inserts_before_existing_pending_for_all_severities():
 
     for severity in ('normal', 'severe', 'from_table'):
         p = _projection()
-        p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+        p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
         _queue_injury(p, event=_event(12), pending_idx=0, severity=severity)  # type: ignore[arg-type]
 
         injury_types = (PendingCharacteristicChoice, PendingInjuryTable)
@@ -678,7 +681,7 @@ def test_injury_and_gain_connection_inserts_before_existing_pending():
 
     for severity in ('normal', 'severe', 'from_table'):
         p = _projection()
-        p.pending_inputs.append(PendingMusterOut(pending_id=(11, 0)))
+        p.queue_deferred(PendingMusterOut(pending_id=(11, 0)))
         InjuryAndGainConnectionEntry(
             text='Injured and gain a Rival.',
             severity=severity,  # type: ignore[arg-type]
@@ -755,7 +758,7 @@ def test_apply_fixed_rank_bonus_skill_grants_skill_directly():
     from ceres.character.domain.skills import Recon
 
     assert p.summary.skill_level(Recon) == 1
-    assert p.pending_inputs == []
+    assert p.pending_inputs == ()
 
 
 def test_apply_fixed_rank_bonus_characteristic_increases_stat():
@@ -765,7 +768,7 @@ def test_apply_fixed_rank_bonus_characteristic_increases_stat():
     NAVY._apply_fixed_rank_bonus(p, rank=4, event_id=1)
 
     assert p.summary.characteristics[Chars.END] == 7
-    assert p.pending_inputs == []
+    assert p.pending_inputs == ()
 
 
 # ── CareerData.update_current_term_rank ──────────────────────────────────────

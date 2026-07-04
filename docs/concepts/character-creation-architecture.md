@@ -69,23 +69,33 @@ contract.
 
 ## Pending Input Ordering
 
-`pending_inputs` is an ordered list. The front of the list is what the UI
-presents next. Order is controlled entirely by two insertion modes:
+`pending_inputs` is an ordered sequence (exposed as a read-only tuple). The
+front is what the UI presents next. Order is controlled through queue methods
+on `CharacterProjection`:
 
-- **`append(item)`** — schedule something for *later*, after all currently
-  pending items. Use this for future phases: survival after training, term event
-  after survival, advancement after term event, reenlistment after the skill
-  roll.
+- **`queue_deferred(item, ...)`** — schedule something for *later*, after all
+  currently pending items. Use this for future phases: survival after training,
+  term event after survival, advancement after term event, reenlistment after
+  the skill roll.
 
-- **`insert(0, item)`** — schedule something *immediately*, before all currently
-  pending items. Use this for sub-steps of the current operation that must
-  complete before anything already in the queue: a specialisation choice that
-  arises when a skill-table roll lands on an unspecialised skill, or additional
-  choices generated during an event resolution.
+- **`queue_immediate(item, ...)`** — schedule something *immediately*, before
+  all currently pending items. Use this for sub-steps of the current operation
+  that must complete before anything already in the queue: a specialisation
+  choice that arises when a skill-table roll lands on an unspecialised skill,
+  or additional choices generated during an event resolution.
 
-No other positioning logic is needed. In particular, there is no need to scan
-the queue for a specific pending type and insert before it. `insert(0)` is
-always correct for immediate work; `append` is always correct for deferred work.
+- **`cancel_pending(*types)`** — remove all pending inputs that are instances
+  of the given types (e.g. purging career-phase pendings when a mishap ejects
+  the character mid-term).
+
+- **`insert_before_type(item, *types)`** — insert one pending input immediately
+  before the first pending of the given types, or at the end if none found. Use
+  this for items that must precede a specific phase but cannot use
+  `queue_immediate` because other items already sit in front (e.g. a homeworld
+  change offered before survival, after a scout term starts).
+
+Both `queue_immediate` and `queue_deferred` accept multiple arguments and
+preserve caller order. No other positioning logic is needed.
 
 `pending_id = (event.id, ix)` is a lookup key only. `ix` distinguishes multiple
 pending inputs created by the same event; it has no relationship to list

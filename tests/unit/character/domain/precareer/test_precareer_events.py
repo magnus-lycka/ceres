@@ -259,7 +259,7 @@ class TestPreCareerEventHandler:
 
         proj = self._proj_with_precareer()
         graduation = PendingPreCareerGraduation(pending_id=(1, 0), instruction='Roll 2D on graduation')
-        proj.pending_inputs.append(graduation)
+        proj.queue_deferred(graduation)
 
         PreCareerEventHandler(roll=6).apply(proj, _any_event())
 

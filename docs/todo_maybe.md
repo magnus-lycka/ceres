@@ -152,6 +152,65 @@ Clean this up gradually:
 - remove the `# ruff: noqa: F401` compatibility comments once no callers depend
   on these hub imports.
 
+## Character code: accidental-complexity cleanup candidates
+
+These are follow-up findings from a broader scan of character code outside the
+currently active career-entry / pending-input refactors. Treat them as
+architectural cleanup candidates, not immediate blockers.
+
+1. Keep web routes behind `CharacterService`.
+
+   `src/ceres/character/web/routes.py` still reaches into `service._backend` for
+   event submission and rollback, and duplicates pending-id parsing that also
+   exists in `CharacterService.submit_event()`. Move those operations behind
+   service methods so the web layer does not own replay/storage semantics.
+
+2. Revisit event/pending registry mechanics.
+
+   `src/ceres/character/mechanism/event_base.py` uses global subclass registries
+   built from `Literal["kind"]` annotations, and `Event.__getattr__` proxies
+   missing attributes to the handler. This keeps event wrappers compact, but
+   makes import order, ownership, and type flow harder to reason about. Explore a
+   clearer registration / dispatch boundary without making every handler verbose.
+
+3. Quarantine generic `Any` in the mechanism layer.
+
+   `store.py` and `replay.py` can stay generic and should not depend on
+   `CharacterProjection` or `CharacterSummary`, but `CharacterService` should
+   expose typed character-domain methods (`CharacterProjection | None`,
+   `CharacterSummary | None`) so `Any` does not leak into web/application code.
+   Also reconsider silent missing-summary backfill skips: corrupted event streams
+   should be visible somewhere.
+
+4. Tighten `input_specs` parsing and fallback semantics.
+
+   `input_specs.py` currently contains both boundary schema and form parsing
+   helpers, and `literal()` silently defaults invalid values. Keep strings at the
+   form boundary, but make invalid form submissions fail loudly where the domain
+   cannot safely infer intent.
+
+5. Reduce skill-system dependence on Pydantic field introspection.
+
+   `skills.py` derives names, specialities, active fields, and skill instances
+   from `kind` annotations and `Level` fields. This is compact, but means model
+   field conventions are the skill rules. Look for a small explicit API on skill
+   classes before adding more introspection-based behaviour.
+
+6. Move shared pre-career/career concepts out of `career_data.py`.
+
+   `precareer_data.py` still imports event-entry concepts from
+   `career.career_data`. Shared term/event/outcome concepts should live in a
+   neutral module, matching the `term_data.py` direction, so pre-career code is
+   not conceptually downstream of regular career code.
+
+7. Convert replay-invalid ordinary errors to `ReplayError`.
+
+   Some handlers still rely on ordinary Python failures for invalid replay
+   states, such as indexing a missing connection. Audit handlers for invalid
+   non-empty inputs or impossible state combinations and raise `ReplayError`
+   with domain context instead of letting `IndexError`, `KeyError`, or silent
+   fallbacks escape.
+
 ## Google Sheet fuel mismatch
 
 We should keep an eye out for any remaining Google Sheet / export-based fuel
@@ -509,13 +568,13 @@ Current status:
     after graduation instead of before. This is an instance of the systemic
     pending-input ordering bug described in Phase 2 of
     [plan-military-academy-commission-basic-training.md](plan-military-academy-commission-basic-training.md).
-    Fix the ordering (`insert(0, ...)` in the connections handler) before or
+    Fix the ordering (`queue_immediate(...)` in the connections handler) before or
     alongside fixing event 6 text and behaviour.
   The current tests explicitly assert manual notes for rolls 2 and 4 and
   unconditional termination for roll 11. Replace those with tests of the Core
   outcomes, and make every Pre-Career Event entry match Core word for word.
   When implementing any pre-career event that queues a pending input, use
-  `insert(0, ...)` so it resolves before graduation.
+  `queue_immediate(...)` so it resolves before graduation.
 - **Medical debt** — unpaid injury costs should accumulate as debt when cash
   benefits are insufficient.
 - **Pension** — Travellers leaving a qualifying career after 5+ terms earn an
@@ -828,16 +887,12 @@ Known differences:
 Phase 2 section of
 [plan-military-academy-commission-basic-training.md](plan-military-academy-commission-basic-training.md).
 Any new pending input added inside a career event or mishap handler must use
-`insert(0, ...)` — not `append` — so it resolves before survival,
-reenlist, and muster-out. This applies to skill choices, mishap rolls, life
-events, connection rolls, injury rolls, and characteristic-loss choices. Do not
-add a pending input with `append` and defer the ordering fix as a separate step.
-
-This describes the current implementation. Once
-[plan-pending-input-queue-api.md](plan-pending-input-queue-api.md) lands, use
-`projection.queue_immediate(...)` for this immediate-before-tail behaviour
-instead of mutating `projection.pending_inputs` directly. Tail-of-flow pending
-inputs should use `projection.queue_deferred(...)`.
+`projection.queue_immediate(...)` — not `projection.queue_deferred(...)` — so it
+resolves before survival, reenlist, and muster-out. This applies to skill
+choices, mishap rolls, life events, connection rolls, injury rolls, and
+characteristic-loss choices. Do not add a pending input with `queue_deferred`
+and defer the ordering fix as a separate step. Tail-of-flow pending inputs
+(survival, reenlist, muster-out) use `projection.queue_deferred(...)`.
 
 ## Agent career tables: remaining blocked items
 

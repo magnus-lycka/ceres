@@ -40,15 +40,11 @@ class MusterOutHandler(EventHandlerBase):
         muster_out.rolls_remaining -= 1
         if muster_out.rolls_remaining == 0:
             if benefit_choice_added:
-                projection.pending_inputs[-1] = projection.pending_inputs[-1].model_copy(
-                    update={'is_muster_out': True, 'muster_out_remaining': 0}
-                )
+                projection.update_last_pending(is_muster_out=True, muster_out_remaining=0)
             else:
                 finalize_muster_out(projection, event.id)
         elif benefit_choice_added:
-            projection.pending_inputs[-1] = projection.pending_inputs[-1].model_copy(
-                update={'is_muster_out': True, 'muster_out_remaining': muster_out.rolls_remaining}
-            )
+            projection.update_last_pending(is_muster_out=True, muster_out_remaining=muster_out.rolls_remaining)
         else:
             projection.queue_deferred(PendingMusterOut(pending_id=(event.id, 0)))
 

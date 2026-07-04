@@ -132,7 +132,7 @@ class ScholarMishap5GiveUp(ChoiceBase):
     label: str = 'Give up (leave career)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.pending_inputs = [p for p in projection.pending_inputs if not isinstance(p, PendingAdvancement)]
+        projection.cancel_pending(PendingAdvancement)
         if projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
         if projection.advance_age(event.id, 0):

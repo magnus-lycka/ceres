@@ -241,18 +241,19 @@ class RolledConnectionsGroupEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.connection_events import PendingConnectionsRoll
 
-        for roll in reversed(self.rolls):
-            projection.queue_immediate(
+        projection.queue_immediate(
+            *[
                 PendingConnectionsRoll(
-                    pending_id=(event.id, pending_idx),
+                    pending_id=(event.id, pending_idx + i),
                     connection_type=roll.connection,
                     instruction=f'Roll {roll.dice} for number of {roll.connection}s',
                     options=roll.dice.roll_options(),
                     origin=self.text,
-                ),
-            )
-            pending_idx += 1
-        return pending_idx
+                )
+                for i, roll in enumerate(self.rolls)
+            ]
+        )
+        return pending_idx + len(self.rolls)
 
 
 class SkillChoiceEntry(CareerTableEntry):

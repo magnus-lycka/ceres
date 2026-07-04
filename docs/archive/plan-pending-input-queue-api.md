@@ -1,17 +1,6 @@
 # Plan: Pending Input Queue API
 
-## STATUS: IN PROGRESS — Steps 1 and 3 complete; Steps 2, 4, 5, 6 not started
-
-Three special-position insert sites remain untouched (they use a variable
-index, not 0):
-
-- `health_events.py` — inserts an aging-injury pending before advancement/reenlist
-- `scout.py` — inserts homeworld pending before term-start pendings
-- `psion.py` — inserts homeworld pending before term-start pendings
-
-These will need a dedicated method (e.g. `insert_before_type(...)`) when
-`pending_inputs` is made private in Step 2. They do not fit
-`queue_immediate`/`queue_deferred`.
+## STATUS: COMPLETE
 
 ## Background
 

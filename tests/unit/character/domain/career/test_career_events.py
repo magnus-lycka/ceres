@@ -165,7 +165,7 @@ class TestSkillTableHandlerOrdering:
 
         proj = self._proj_with_army_career()
         survive = PendingSurvive(pending_id=(99, 0), instruction='Survive!')
-        proj.pending_inputs.append(survive)
+        proj.queue_deferred(survive)
 
         event = PendingSkillTable(
             pending_id=(1, 0),
@@ -185,7 +185,7 @@ class TestSkillTableHandlerOrdering:
 
         proj = self._proj_with_army_career()
         survive = PendingSurvive(pending_id=(99, 0), instruction='Survive!')
-        proj.pending_inputs.append(survive)
+        proj.queue_deferred(survive)
 
         pending = PendingRankBonusChoice(
             pending_id=(1, 0),
@@ -340,7 +340,7 @@ class TestPendingSwitchAssignment:
 class TestPurgeCareerPendings:
     def test_removes_survive_pending(self):
         proj = _projection()
-        proj.pending_inputs.append(PendingSurvive(pending_id=(1, 0), instruction='Roll'))
+        proj.queue_deferred(PendingSurvive(pending_id=(1, 0), instruction='Roll'))
         purge_career_pendings(proj)
         assert not any(isinstance(p, PendingSurvive) for p in proj.pending_inputs)
 
@@ -356,8 +356,8 @@ class TestPurgeCareerPendings:
             note_prefill='',
             instruction='Name ally',
         )
-        proj.pending_inputs.append(PendingSurvive(pending_id=(1, 0), instruction='Roll'))
-        proj.pending_inputs.append(conn)
+        proj.queue_deferred(PendingSurvive(pending_id=(1, 0), instruction='Roll'))
+        proj.queue_deferred(conn)
         purge_career_pendings(proj)
         assert conn in proj.pending_inputs
 

@@ -66,7 +66,7 @@ from ceres.character.domain.skills import (
 )
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import Select
-from ceres.character.mechanism.event_base import Event, EventHandlerBase
+from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 from ceres.character.mechanism.replay import replay
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
 
@@ -352,7 +352,7 @@ class TestPsionCoreTables:
             for talent in driver.projection.summary.psionics.psionic_talent_skills
             if not isinstance(talent, Telepathy)
         ]
-        driver.projection.pending_inputs.clear()
+        driver.projection.cancel_pending(PendingInputBase)
 
         Event(handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
 
@@ -369,7 +369,7 @@ class TestPsionCoreTables:
             for talent in driver.projection.summary.psionics.psionic_talent_skills
             if not isinstance(talent, Telepathy)
         ]
-        driver.projection.pending_inputs.clear()
+        driver.projection.cancel_pending(PendingInputBase)
 
         Event(handler=SkillTableHandler(table='assignment2', roll=1)).apply(driver.projection)
 

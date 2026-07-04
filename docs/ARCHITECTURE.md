@@ -482,11 +482,11 @@ correctly typed event with the right `fulfills` value.
 
 #### Lifecycle of a pending input
 
-1. **Creation** — an event handler's `apply()` appends a pending to the
+1. **Creation** — an event handler's `apply()` queues a pending on the
    projection:
 
    ```python
-   projection.pending_inputs.append(
+   projection.queue_deferred(
        PendingInput(
            pending_id=(event.id, 0),
            handler=SurvivePendingHandler(instruction='Roll 2D survival'),
@@ -519,12 +519,12 @@ correctly typed event with the right `fulfills` value.
    fulfilled_pending.handler.resolve(projection, event)
    ```
 
-   `resolve()` runs the domain logic and typically appends the next pending
+   `resolve()` runs the domain logic and typically queues the next pending
    input to start the cycle again.
 
 #### Main flow vs. diversions: an identified tension
 
-The `pending_inputs` list mixes two kinds of work:
+The `pending_inputs` queue mixes two kinds of work:
 
 - **Main flow** — the expected linear sequence of a term: survive, term event,
   advancement, re-enlistment, muster-out.
@@ -535,21 +535,21 @@ The `pending_inputs` list mixes two kinds of work:
 
 Concrete examples where this distinction matters today:
 
-- A stay-in-career mishap with a "roll on injury table" effect appends both
+- A stay-in-career mishap with a "roll on injury table" effect queues both
   `PendingInjuryTable` and `PendingAdvancement`. When the injury table resolves
   and creates a `PendingCharacteristicChoice`, that choice must appear *before*
-  advancement, not after.
+  advancement, not after — handled by `insert_before_type`.
 - Scout career entry inserts a homeworld relocation pending *before* survival,
   even though the homeworld pending is created after `super().start_new_term()`
-  has already pushed the survival pending.
+  has already queued the survival pending — handled by `insert_before_type`.
 
-**Current approach — ordered flat list with strategic inserts.**
-Diversions are inserted at an explicit position rather than appended. The
-insertion point is found by scanning for the first "career-progress" pending
-already in the list. Code that creates diversion pendings is responsible for
-placing them correctly.
+**Current approach — ordered flat queue with typed-position inserts.**
+`CharacterProjection` exposes `pending_inputs` as a read-only tuple. Mutation
+goes through `queue_immediate`, `queue_deferred`, `cancel_pending`, and
+`insert_before_type`. Diversions use `insert_before_type` to find the first
+career-progress pending and insert before it.
 
-*Pros:* simple data structure; no change to the replay or serialisation model;
+*Pros:* clear intent at each call site; multi-input ordering is unambiguous;
 works well for single-level diversions.
 
 *Cons:* every diversion site must enumerate "career-progress" types to find
@@ -559,7 +559,7 @@ by the data structure itself.
 
 **Alternative — explicit stack of pending lists.**
 `CharacterProjection` would hold `pending_stack: list[list[PendingInputBase]]`
-instead of a flat list. The UI always works from the top frame; a diversion
+instead of a flat queue. The UI always works from the top frame; a diversion
 pushes a new frame; when a frame empties it is popped.
 
 *Pros:* nesting is natural and self-enforcing; no enumeration of "main-flow"

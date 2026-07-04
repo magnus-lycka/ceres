@@ -35,6 +35,7 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.career.career_events import (
     PendingMishap,
     PendingSkillChoice,
+    PendingSurvive,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
@@ -259,7 +260,6 @@ class Scout(CareerData):
         assignment: AssignmentData,
         event_id: int,
     ) -> None:
-        insert_at = len(projection.pending_inputs)
         super().start_new_term(projection, assignment, event_id)
         homeworld = projection.summary.homeworld
         used_sub_ids = {int(p.pending_id[1]) for p in projection.pending_inputs if p.pending_id[0] == event_id}
@@ -283,7 +283,7 @@ class Scout(CareerData):
                 source_career='Scout',
                 target_constraints='world_with_scout_base',
             )
-        projection.pending_inputs.insert(insert_at, homeworld_pending)
+        projection.insert_before_type(homeworld_pending, PendingSurvive)
 
     name: ClassVar[str] = 'Scout'
     description: ClassVar[str] = (

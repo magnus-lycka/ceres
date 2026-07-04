@@ -163,9 +163,7 @@ class PreCareerEventHandler(EventHandlerBase):
                     'Consult rules: flee to Drifter or be drafted (1D: 1-3 Army, 4-5 Marine, 6 Navy). '
                     'You do not graduate this term. SOC 9+ may allow avoiding the draft.'
                 )
-            projection.pending_inputs[:] = [
-                p for p in projection.pending_inputs if not isinstance(p, PendingPreCareerGraduation)
-            ]
+            projection.cancel_pending(PendingPreCareerGraduation)
             term.completed = True
             queue_career_choice(projection, event.id, 'Pre-career ended (no graduation) — choose a career')
             return

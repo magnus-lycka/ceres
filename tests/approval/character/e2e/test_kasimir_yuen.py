@@ -83,7 +83,7 @@ def build_kasimir_yuen() -> StatBlockSpec:
 
 
 def test_no_pending_inputs_after_finish_creation():
-    assert replay(1, _events()).pending_inputs == []
+    assert replay(1, _events()).pending_inputs == ()
 
 
 @pytest.mark.approval

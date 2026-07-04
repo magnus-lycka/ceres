@@ -33,7 +33,7 @@ def test_connections_roll_handler_inserts_name_pending_before_existing_pendings(
         connection_type=ConnectionKind.CONTACT,
         options=[1],
     )
-    projection.pending_inputs.append(sentinel)
+    projection.queue_deferred(sentinel)
 
     Event(handler=ConnectionsRollHandler(connection_type=ConnectionKind.CONTACT, count=2)).apply(projection)
 

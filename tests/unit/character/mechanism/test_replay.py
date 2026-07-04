@@ -202,7 +202,7 @@ class TestUcpEvent:
         c = _creation()
         projection = replay(1, [*c, _ucp(c[-1], ucp='786000')])
 
-        assert projection.pending_inputs == []
+        assert projection.pending_inputs == ()
 
     def test_background_skill_count_for_edu_6_to_8(self):
         # UCP: STR=7 DEX=8 END=6 INT=0 EDU=7 SOC=0 → EDU=7, DM+0 → 3 background skills

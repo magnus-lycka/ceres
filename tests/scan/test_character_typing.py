@@ -21,6 +21,7 @@ _ALLOWED_PATTERNS: frozenset[str] = frozenset(
         'kwargs: Any',
         'cls: Any = ',
         'data: Any, hand',
+        '**update: Any',  # forwarded directly to Pydantic model_copy(update=...)
     }
 )
 
