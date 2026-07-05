@@ -7,9 +7,8 @@ from ceres.character.domain.skill_events import (
     PendingSkillChoice,
     SkillChoiceHandler,
     build_skill_select_options,
-    skill_option_label,
 )
-from ceres.character.domain.skills import Admin, Drive, Level
+from ceres.character.domain.skills import Admin, Level
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import Select
 from ceres.character.mechanism.event_base import Event
@@ -27,19 +26,58 @@ def _any_event() -> Event:
     return Event(handler=SurviveHandler(roll=5))
 
 
-class TestSkillOptionLabel:
-    def test_non_specialised_returns_class_name(self):
-        assert skill_option_label(Admin()) == 'Admin'
+class TestOptionSelectOptions:
+    """Each option type builds its own (label, form_value) pairs; the builder just flattens."""
 
-    def test_advancement_dm_returns_label(self):
-        label = skill_option_label(AdvancementDmOption())
-        assert 'advancement' in label.lower() or 'dm' in label.lower()
+    def test_skill_expands_via_projection(self):
+        proj = _projection()
+        options = Admin().select_options(proj, None)
+        assert len(options) == 1
+        label, json_val = options[0]
+        assert label == 'Admin'
+        assert Admin.model_validate_json(json_val).level.value == 1
 
-    def test_specialised_active_field_included(self):
-        skill = Drive(wheel=Level(value=1))
-        label = skill_option_label(skill)
-        assert 'Drive' in label
-        assert 'wheel' in label.lower() or 'Wheel' in label
+    def test_advancement_dm_offers_itself(self):
+        opt = AdvancementDmOption()
+        assert opt.select_options(_projection(), None) == [(opt.label(), opt.model_dump_json())]
+
+    def test_entry_offers_itself(self):
+        from ceres.character.domain.career.skill_table_entries import Skill as SkillEntry
+
+        entry = SkillEntry(Admin)
+        assert entry.select_options(_projection(), None) == [(entry.label(), entry.model_dump_json())]
+
+    def test_entry_chosen_handler_wraps_itself(self):
+        from ceres.character.domain.career.career_events import SkillTableEntryChosenHandler
+        from ceres.character.domain.career.skill_table_entries import Skill as SkillEntry
+
+        entry = SkillEntry(Admin)
+        handler = entry.chosen_handler()
+        assert isinstance(handler, SkillTableEntryChosenHandler)
+        assert handler.entry is entry
+
+    def test_advancement_dm_chosen_handler(self):
+        from ceres.character.domain.career.advancement import AdvancementDmChoiceHandler
+
+        assert isinstance(AdvancementDmOption().chosen_handler(), AdvancementDmChoiceHandler)
+
+
+class TestOptionIsAvailable:
+    """A rank-bonus choice knows whether it can still benefit this character."""
+
+    def test_unknown_skill_is_available_at_level_one(self):
+        assert Admin().is_available(_projection(), 1) is True
+
+    def test_skill_already_at_level_is_not_available(self):
+        proj = _projection()
+        proj.summary.skills.append(Admin(level=Level(value=1)))
+        assert Admin().is_available(proj, 1) is False
+
+    def test_psi_entry_is_always_available(self):
+        from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
+        from ceres.character.domain.psionics_data import Telepathy
+
+        assert PsiEntry(Telepathy, allow_acquisition=True).is_available(_projection(), 1) is True
 
 
 class TestBuildSkillSelectOptions:

@@ -1,3 +1,5 @@
+import pytest
+
 from ceres.character.domain.skills import (
     Admin,
     AnySkill,
@@ -14,6 +16,7 @@ from ceres.character.domain.skills import (
     ScienceSkill,
     SocialScience,
     SpaceScience,
+    SpecRef,
     WorkerProfession,
     _skill_classes,
 )
@@ -73,6 +76,45 @@ def test_melee_companion_specialities_are_independent_levels():
     assert skill.striking.value == 1
     assert skill.fencing.value == 0
     assert skill.unarmed.value == 0
+
+
+def test_class_level_specialization_access_returns_typed_ref():
+    ref = Electronics.computers
+
+    assert isinstance(ref, SpecRef)
+    assert ref.skill_cls is Electronics
+    assert ref.field == 'computers'
+
+
+def test_spec_refs_from_different_skills_are_distinguishable():
+    assert Melee.blade.skill_cls is Melee  # ty: ignore[unresolved-attribute]
+    assert Electronics.sensors.skill_cls is Electronics  # ty: ignore[unresolved-attribute]
+
+
+def test_class_level_access_to_unknown_specialization_raises():
+    with pytest.raises(AttributeError):
+        _ = Electronics.submarine
+
+
+def test_class_level_spec_access_does_not_break_instance_field_access():
+    skill = Electronics()
+    skill.computers.set(2)
+
+    assert skill.computers.value == 2
+    assert Electronics.model_validate_json(skill.model_dump_json()).computers.value == 2
+
+
+class TestSkillLabel:
+    def test_non_specialised_label_is_class_name(self):
+        assert Admin().label() == 'Admin'
+
+    def test_specialised_bare_instance_label_is_class_name(self):
+        assert Electronics().label() == 'Electronics'
+
+    def test_specialised_active_field_appears_in_label(self):
+        skill = Electronics()
+        skill.computers.set(1)
+        assert skill.label() == 'Electronics (Computers)'
 
 
 def test_skill_group_unions_can_be_listed_separately():

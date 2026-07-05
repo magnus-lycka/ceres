@@ -34,6 +34,9 @@ class TestExplicitTonsSystemPart:
         dump = part.model_dump()
         assert dump['tons'] == 7.0
 
+    def test_tons_defaults_to_zero(self):
+        assert _ExplicitTonsConcrete().tons == 0.0
+
     def test_stale_tons_not_used_on_revalidate(self):
         part = _ExplicitTonsConcrete.model_validate({'tons': 3.0})
         dumped = part.model_dump()

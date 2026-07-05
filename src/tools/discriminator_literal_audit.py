@@ -150,8 +150,12 @@ def _contains_any_literal(source: str, literals: set[str]) -> bool:
 def _find_python_literal_occurrences(path: Path, literals: set[str], source: str) -> list[LiteralOccurrence]:
     occurrences: list[LiteralOccurrence] = []
     tree = _parse_python_source(path, source)
+    # Keyword argument values are field-name strings, never discriminator literals.
+    keyword_value_ids = {id(node.value) for node in ast.walk(tree) if isinstance(node, ast.keyword)}
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if id(node) in keyword_value_ids:
             continue
         if node.value not in literals:
             continue

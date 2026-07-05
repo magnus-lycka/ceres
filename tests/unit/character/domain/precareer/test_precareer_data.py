@@ -1,7 +1,12 @@
-"""Unit tests for precareer_data.py — PreCareerData, PrecareerSkillEntry, PreCareerTerm."""
+"""Unit tests for precareer_data.py — PreCareerData, entry types, PreCareerTerm."""
 
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
+from ceres.character.domain.precareer.precareer_data import (
+    PreCareerData,
+    PrecareerSkill,
+    PrecareerSkillChoice,
+    PreCareerTerm,
+)
 from ceres.character.domain.skills import Admin, Animals
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
@@ -21,51 +26,39 @@ def _any_event() -> Event:
     return Event(handler=SurviveHandler(roll=5))
 
 
-class TestPrecareerSkillEntry:
-    def test_skill_options_none_returns_empty(self):
-        entry = PrecareerSkillEntry(skill=None)
-        assert entry.skill_options == []
-
-    def test_skill_options_single_skill_returns_list_of_one(self):
-        entry = PrecareerSkillEntry(skill=Admin())
+class TestPrecareerSkill:
+    def test_skill_options_returns_list_of_one(self):
+        entry = PrecareerSkill(skill=Admin())
         assert entry.skill_options == [Admin()]
 
-    def test_skill_options_tuple_returns_as_list(self):
-        skills = (Admin(), Animals())
-        entry = PrecareerSkillEntry(skill=skills)
-        assert entry.skill_options == list(skills)
+    def test_apply_level_0_grants_skill_at_0(self):
+        proj = _projection()
+        idx = PrecareerSkill(skill=Admin(), level=0).apply('Test School', proj, event_id=1, pending_idx=0)
+        assert proj.summary.skill_level(Admin) == 0
+        assert idx == 0
+        assert proj.pending_inputs == ()
 
-    def test_category_label_none_is_skill(self):
-        entry = PrecareerSkillEntry(skill=None)
-        assert entry.category_label == 'skill'
+    def test_apply_level_1_grants_skill_at_1(self):
+        proj = _projection()
+        PrecareerSkill(skill=Admin(), level=1).apply('Test School', proj, event_id=1, pending_idx=0)
+        assert proj.summary.skill_level(Admin) == 1
 
-    def test_category_label_single_uses_class_name(self):
-        entry = PrecareerSkillEntry(skill=Admin())
-        assert entry.category_label == 'Admin'
 
-    def test_category_label_tuple_is_skill(self):
-        entry = PrecareerSkillEntry(skill=(Admin(), Animals()))
-        assert entry.category_label == 'skill'
+class TestPrecareerSkillChoice:
+    def test_skill_options_returns_all(self):
+        entry = PrecareerSkillChoice(skills=(Admin(), Animals()))
+        assert entry.skill_options == [Admin(), Animals()]
 
-    def test_grant_skill_none_returns_none(self):
-        entry = PrecareerSkillEntry(skill=None)
-        assert entry.grant_skill() is None
+    def test_apply_queues_choice_and_advances_pending_idx(self):
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 
-    def test_grant_skill_tuple_returns_none(self):
-        entry = PrecareerSkillEntry(skill=(Admin(), Animals()))
-        assert entry.grant_skill() is None
-
-    def test_grant_skill_level_0_returns_skill_at_0(self):
-        entry = PrecareerSkillEntry(skill=Admin(), level=0)
-        granted = entry.grant_skill()
-        assert isinstance(granted, Admin)
-        assert granted.level.value == 0
-
-    def test_grant_skill_level_1_returns_skill_at_1(self):
-        entry = PrecareerSkillEntry(skill=Admin(), level=1)
-        granted = entry.grant_skill()
-        assert isinstance(granted, Admin)
-        assert granted.level.value == 1
+        proj = _projection()
+        entry = PrecareerSkillChoice(skills=(Admin(), Animals()), level=1)
+        idx = entry.apply('Test School', proj, event_id=1, pending_idx=0)
+        assert idx == 1
+        pending = next(p for p in proj.pending_inputs if isinstance(p, PendingPreCareerSkillChoice))
+        assert pending.level == 1
+        assert pending.options == [Admin(), Animals()]
 
 
 class TestPreCareerDataApplyEntry:

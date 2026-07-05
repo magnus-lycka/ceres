@@ -3,7 +3,12 @@ from typing import ClassVar, Literal
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
+from ceres.character.domain.precareer.precareer_data import (
+    PreCareerData,
+    PrecareerEntryBase,
+    PrecareerSkill,
+    PreCareerTerm,
+)
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import (
     AnySkill,
@@ -26,15 +31,15 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
     name: ClassVar[str] = 'School of Hard Knocks'
     source: ClassVar[str] = 'Companion'
     entry_requirement: ClassVar[str] = 'Automatic if SOC 6-'
-    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
-        PrecareerSkillEntry(skill=Streetwise(), level=1),
-        PrecareerSkillEntry(skill=Athletics(), level=0),
-        PrecareerSkillEntry(skill=Deception(), level=0),
-        PrecareerSkillEntry(skill=Drive(), level=0),
-        PrecareerSkillEntry(skill=Gambler(), level=0),
-        PrecareerSkillEntry(skill=Melee(), level=0),
-        PrecareerSkillEntry(skill=Persuade(), level=0),
-        PrecareerSkillEntry(skill=Stealth(), level=0),
+    skill_choices: ClassVar[list[PrecareerEntryBase]] = [
+        PrecareerSkill(skill=Streetwise(), level=1),
+        PrecareerSkill(skill=Athletics(), level=0),
+        PrecareerSkill(skill=Deception(), level=0),
+        PrecareerSkill(skill=Drive(), level=0),
+        PrecareerSkill(skill=Gambler(), level=0),
+        PrecareerSkill(skill=Melee(), level=0),
+        PrecareerSkill(skill=Persuade(), level=0),
+        PrecareerSkill(skill=Stealth(), level=0),
     ]
     entry_pick_count: ClassVar[int] = 2
     graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=7)
@@ -56,7 +61,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
     ) -> int:
         pending_idx = 0
         choice_pool: list[AnySkill] = [
-            skill for entry in self.skill_choices if entry.skill and entry.level == 0 for skill in entry.skill_options
+            skill for entry in self.skill_choices if entry.level == 0 for skill in entry.skill_options
         ]
         for i in range(3):
             projection.queue_deferred(

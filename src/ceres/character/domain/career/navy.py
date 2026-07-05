@@ -41,6 +41,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Skill
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -56,7 +57,6 @@ from ceres.character.domain.skills import (
     GunCombat,
     Gunner,
     Leadership,
-    Level,
     Mechanic,
     Medic,
     Melee,
@@ -247,73 +247,73 @@ class Navy(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.DEX,
-                Chars.END,
-                Chars.INT,
-                Chars.EDU,
-                Chars.SOC,
+                Char(Chars.STR),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Char(Chars.INT),
+                Char(Chars.EDU),
+                Char(Chars.SOC),
             ]
         ),
         service_skills=SkillTable(
             [
-                Pilot(),
-                VaccSuit(),
-                Athletics(),
-                Gunner(),
-                Mechanic(),
-                GunCombat(),
+                Skill(Pilot),
+                Skill(VaccSuit),
+                Skill(Athletics),
+                Skill(Gunner),
+                Skill(Mechanic),
+                Skill(GunCombat),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Electronics(),
-                Astrogation(),
-                Engineer(),
-                Flyer(),
-                Medic(),
-                Admin(),
+                Skill(Electronics),
+                Skill(Astrogation),
+                Skill(Engineer),
+                Skill(Flyer),
+                Skill(Medic),
+                Skill(Admin),
             ],
             min_edu=8,
         ),
         officer=SkillTable(
             [
-                Leadership(),
-                Electronics(),
-                Pilot(),
-                Melee(blade=Level(value=1)),
-                Admin(),
-                Tactics(naval=Level(value=1)),
+                Skill(Leadership),
+                Skill(Electronics),
+                Skill(Pilot),
+                Skill(Melee, specs=(Melee.blade,)),
+                Skill(Admin),
+                Skill(Tactics, specs=(Tactics.naval,)),
             ]
         ),
         assignment1=SkillTable(
             [  # Line/Crew
-                Electronics(),
-                Mechanic(),
-                GunCombat(),
-                Flyer(),
-                Melee(),
-                VaccSuit(),
+                Skill(Electronics),
+                Skill(Mechanic),
+                Skill(GunCombat),
+                Skill(Flyer),
+                Skill(Melee),
+                Skill(VaccSuit),
             ]
         ),
         assignment2=SkillTable(
             [  # Engineer/Gunner
-                Engineer(),
-                Mechanic(),
-                Electronics(),
-                Engineer(),
-                Gunner(),
-                Flyer(),
+                Skill(Engineer),
+                Skill(Mechanic),
+                Skill(Electronics),
+                Skill(Engineer),
+                Skill(Gunner),
+                Skill(Flyer),
             ]
         ),
         assignment3=SkillTable(
             [  # Flight
-                Pilot(),
-                Flyer(),
-                Gunner(),
-                Pilot(small_craft=Level(value=1)),
-                Astrogation(),
-                Electronics(),
+                Skill(Pilot),
+                Skill(Flyer),
+                Skill(Gunner),
+                Skill(Pilot, specs=(Pilot.small_craft,)),
+                Skill(Astrogation),
+                Skill(Electronics),
             ]
         ),
     )

@@ -38,6 +38,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase, PendingAnySkillAtLevelOnSuccessRoll
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -55,7 +56,6 @@ from ceres.character.domain.skills import (
     GunCombat,
     HeavyWeapons,
     Leadership,
-    Level,
     Mechanic,
     Medic,
     Melee,
@@ -274,79 +274,83 @@ class Marines(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.DEX,
-                Chars.END,
-                Gambler(),
-                Melee(unarmed=Level(value=1)),
-                Melee(blade=Level(value=1)),
+                Char(Chars.STR),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Skill(Gambler),
+                Skill(Melee, specs=(Melee.unarmed,)),
+                Skill(Melee, specs=(Melee.blade,)),
             ]
         ),
         service_skills=SkillTable(
             [
-                Athletics(),
-                VaccSuit(),
-                Tactics(),
-                HeavyWeapons(),
-                GunCombat(),
-                Stealth(),
+                Skill(Athletics),
+                Skill(VaccSuit),
+                Skill(Tactics),
+                Skill(HeavyWeapons),
+                Skill(GunCombat),
+                Skill(Stealth),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Medic(),
-                Survival(),
-                Explosives(),
-                Engineer(),
-                Pilot(),
-                Navigation(),
+                Skill(Medic),
+                Skill(Survival),
+                Skill(Explosives),
+                Skill(Engineer),
+                Skill(Pilot),
+                Skill(Navigation),
             ],
             min_edu=8,
         ),
         officer=SkillTable(
             [
-                Electronics(),
-                Tactics(),
-                Admin(),
-                Advocate(),
-                Diplomat(),
-                Leadership(),
+                Skill(Electronics),
+                Skill(Tactics),
+                Skill(Admin),
+                Skill(Advocate),
+                Skill(Diplomat),
+                Skill(Leadership),
             ]
         ),
         assignment1=SkillTable(
             [  # Support
-                Electronics(),
-                Mechanic(),
-                (Drive(), Flyer()),
-                Medic(),
-                HeavyWeapons(),
-                GunCombat(),
+                Skill(Electronics),
+                Skill(Mechanic),
+                SkillChoice(Drive | Flyer),
+                Skill(Medic),
+                Skill(HeavyWeapons),
+                Skill(GunCombat),
             ]
         ),
         assignment2=SkillTable(
             [  # Star Marine
-                VaccSuit(),
-                Athletics(),
-                Recon(),
-                Melee(blade=Level(value=1)),
-                Electronics(),
-                GunCombat(),
+                Skill(VaccSuit),
+                Skill(Athletics),
+                Skill(Recon),
+                Skill(Melee, specs=(Melee.blade,)),
+                Skill(Electronics),
+                Skill(GunCombat),
             ]
         ),
         assignment3=SkillTable(
             [  # Ground Assault
-                VaccSuit(),
-                HeavyWeapons(),
-                Recon(),
-                Melee(blade=Level(value=1)),
-                Tactics(military=Level(value=1)),
-                GunCombat(),
+                Skill(VaccSuit),
+                Skill(HeavyWeapons),
+                Skill(Recon),
+                Skill(Melee, specs=(Melee.blade,)),
+                Skill(Tactics, specs=(Tactics.military,)),
+                Skill(GunCombat),
             ]
         ),
     )
 
     ranks: ClassVar[dict[int, RankEntry]] = {
-        0: RankEntry(rank=0, title='Marine'),
+        0: RankEntry(
+            rank=0,
+            title='Marine',
+            bonus=RankBonus(choice=SkillChoice(GunCombat | Melee, specs=(Melee.blade,)), level=1),
+        ),
         1: RankEntry(rank=1, title='Lance Corporal', bonus=RankBonus(skill=GunCombat(), level=1)),
         2: RankEntry(rank=2, title='Corporal'),
         3: RankEntry(rank=3, title='Lance Sergeant', bonus=RankBonus(skill=Leadership(), level=1)),

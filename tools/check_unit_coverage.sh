@@ -1,7 +1,5 @@
 #!/bin/bash
-uv run pytest --cov --cov-branch tests/unit/test___init__.py | grep src/ceres/__init__.py
 uv run pytest --cov --cov-branch tests/unit/adapters/test_travellermap.py | grep src/ceres/adapters/travellermap.py
-uv run pytest --cov --cov-branch tests/unit/character/test___init__.py | grep src/ceres/character/__init__.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/test_benefits.py | grep src/ceres/character/domain/benefits.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/career/test___init__.py | grep src/ceres/character/domain/career/__init__.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/career/test_advancement.py | grep src/ceres/character/domain/career/advancement.py
@@ -28,6 +26,7 @@ uv run pytest --cov --cov-branch tests/unit/character/domain/career/test_psion.p
 uv run pytest --cov --cov-branch tests/unit/character/domain/career/test_rogue.py | grep src/ceres/character/domain/career/rogue.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/career/test_scholar.py | grep src/ceres/character/domain/career/scholar.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/career/test_scout.py | grep src/ceres/character/domain/career/scout.py
+uv run pytest --cov --cov-branch tests/unit/character/domain/career/test_skill_table_entries.py | grep src/ceres/character/domain/career/skill_table_entries.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/test_character_start.py | grep src/ceres/character/domain/character_start.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/test_character_state.py | grep src/ceres/character/domain/character_state.py
 uv run pytest --cov --cov-branch tests/unit/character/domain/test_characteristics.py | grep src/ceres/character/domain/characteristics.py
@@ -59,11 +58,11 @@ uv run pytest --cov --cov-branch tests/unit/character/domain/test_term_data.py |
 uv run pytest --cov --cov-branch tests/unit/character/test_input_specs.py | grep src/ceres/character/input_specs.py
 uv run pytest --cov --cov-branch tests/unit/character/mechanism/test_errors.py | grep src/ceres/character/mechanism/errors.py
 uv run pytest --cov --cov-branch tests/unit/character/mechanism/test_event_base.py | grep src/ceres/character/mechanism/event_base.py
-uv run pytest --cov --cov-branch tests/unit/character/mechanism/test_pending_input.py | grep src/ceres/character/mechanism/pending_input.py
 uv run pytest --cov --cov-branch tests/unit/character/mechanism/test_replay.py | grep src/ceres/character/mechanism/replay.py
 uv run pytest --cov --cov-branch tests/unit/character/mechanism/test_store.py | grep src/ceres/character/mechanism/store.py
 uv run pytest --cov --cov-branch tests/unit/character/test_notes.py | grep src/ceres/character/notes.py
 uv run pytest --cov --cov-branch tests/unit/character/test_report.py | grep src/ceres/character/report.py
+uv run pytest --cov --cov-branch tests/unit/character/test_service.py | grep src/ceres/character/service.py
 uv run pytest --cov --cov-branch tests/unit/character/web/test_app.py | grep src/ceres/character/web/app.py
 uv run pytest --cov --cov-branch tests/unit/character/web/test_routes.py | grep src/ceres/character/web/routes.py
 uv run pytest --cov --cov-branch tests/unit/gear/test_catalog.py | grep src/ceres/gear/catalog.py
@@ -71,7 +70,6 @@ uv run pytest --cov --cov-branch tests/unit/gear/test_comm.py | grep src/ceres/g
 uv run pytest --cov --cov-branch tests/unit/gear/test_computer.py | grep src/ceres/gear/computer.py
 uv run pytest --cov --cov-branch tests/unit/gear/test_skill_keys.py | grep src/ceres/gear/skill_keys.py
 uv run pytest --cov --cov-branch tests/unit/gear/test_software.py | grep src/ceres/gear/software.py
-uv run pytest --cov --cov-branch tests/unit/make/test___init__.py | grep src/ceres/make/__init__.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test___init__.py | grep src/ceres/make/robot/__init__.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test__facades.py | grep src/ceres/make/robot/_facades.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test__robot_skill_base.py | grep src/ceres/make/robot/_robot_skill_base.py
@@ -82,12 +80,15 @@ uv run pytest --cov --cov-branch tests/unit/make/robot/test_locomotion.py | grep
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_manipulators.py | grep src/ceres/make/robot/manipulators.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_options.py | grep src/ceres/make/robot/options.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_parts.py | grep src/ceres/make/robot/parts.py
-uv run pytest --cov --cov-branch tests/unit/make/robot/test_report.py | grep src/ceres/make/robot/report.py
+uv run pytest --cov --cov-branch --all-tests tests/unit/make/robot/test_report.py | grep src/ceres/make/robot/report.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_robot.py | grep src/ceres/make/robot/robot.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_skills.py | grep src/ceres/make/robot/skills.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_spec.py | grep src/ceres/make/robot/spec.py
 uv run pytest --cov --cov-branch tests/unit/make/robot/test_text.py | grep src/ceres/make/robot/text.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/test___init__.py | grep src/ceres/make/ship/__init__.py
+uv run pytest --cov --cov-branch tests/unit/make/ship/drives/test_spinext.py | grep src/ceres/make/ship/drives/spinext.py
+uv run pytest --cov --cov-branch tests/unit/make/ship/drives/test_standard.py | grep src/ceres/make/ship/drives/standard.py
+uv run pytest --cov --cov-branch tests/unit/make/ship/hull/test_spinext.py | grep src/ceres/make/ship/hull/spinext.py
+uv run pytest --cov --cov-branch tests/unit/make/ship/hull/test_standard.py | grep src/ceres/make/ship/hull/standard.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_armour.py | grep src/ceres/make/ship/armour.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_automation.py | grep src/ceres/make/ship/automation.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_base.py | grep src/ceres/make/ship/base.py
@@ -96,14 +97,8 @@ uv run pytest --cov --cov-branch tests/unit/make/ship/test_catalog.py | grep src
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_computer.py | grep src/ceres/make/ship/computer.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_crafts.py | grep src/ceres/make/ship/crafts.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_crew.py | grep src/ceres/make/ship/crew.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/drives/test___init__.py | grep src/ceres/make/ship/drives/__init__.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/drives/test_spinext.py | grep src/ceres/make/ship/drives/spinext.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/drives/test_standard.py | grep src/ceres/make/ship/drives/standard.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_expense.py | grep src/ceres/make/ship/expense.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_habitation.py | grep src/ceres/make/ship/habitation.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/hull/test___init__.py | grep src/ceres/make/ship/hull/__init__.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/hull/test_spinext.py | grep src/ceres/make/ship/hull/spinext.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/hull/test_standard.py | grep src/ceres/make/ship/hull/standard.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_occupants.py | grep src/ceres/make/ship/occupants.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_parts.py | grep src/ceres/make/ship/parts.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_power.py | grep src/ceres/make/ship/power.py
@@ -114,7 +109,6 @@ uv run pytest --cov --cov-branch tests/unit/make/ship/test_ship.py | grep src/ce
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_software.py | grep src/ceres/make/ship/software.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_spec.py | grep src/ceres/make/ship/spec.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_storage.py | grep src/ceres/make/ship/storage.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/systems/test___init__.py | grep src/ceres/make/ship/systems/__init__.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/systems/test_acceleration.py | grep src/ceres/make/ship/systems/acceleration.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/systems/test_access.py | grep src/ceres/make/ship/systems/access.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/systems/test_advanced.py | grep src/ceres/make/ship/systems/advanced.py
@@ -131,7 +125,6 @@ uv run pytest --cov --cov-branch tests/unit/make/ship/systems/test_section.py | 
 uv run pytest --cov --cov-branch tests/unit/make/ship/systems/test_security.py | grep src/ceres/make/ship/systems/security.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_text.py | grep src/ceres/make/ship/text.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/test_view.py | grep src/ceres/make/ship/view.py
-uv run pytest --cov --cov-branch tests/unit/make/ship/weapons/test___init__.py | grep src/ceres/make/ship/weapons/__init__.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/weapons/test_barbettes.py | grep src/ceres/make/ship/weapons/barbettes.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/weapons/test_bays.py | grep src/ceres/make/ship/weapons/bays.py
 uv run pytest --cov --cov-branch tests/unit/make/ship/weapons/test_common.py | grep src/ceres/make/ship/weapons/common.py

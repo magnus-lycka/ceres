@@ -60,6 +60,13 @@ def test_ship_spec_row_raises_helpful_key_error_for_missing_sectioned_row():
         spec.row('Jump 2', section=SpecSection.POWER)
 
 
+def test_ship_spec_row_raises_helpful_key_error_for_missing_unsectioned_row():
+    spec = build_spec()
+
+    with pytest.raises(KeyError, match="item='Fuel Processor'"):
+        spec.row('Fuel Processor')
+
+
 def test_ship_spec_rows_matching_returns_all_rows_with_item():
     spec = build_spec()
 

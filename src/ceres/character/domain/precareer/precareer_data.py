@@ -21,39 +21,57 @@ from ceres.character.domain.term_data import Term, TermData
 from ceres.character.mechanism.event_base import Event
 
 
-class PrecareerSkillEntry(BaseModel):
-    """Skill entry used in pre-career skill lists.
+class PrecareerEntryBase(BaseModel):
+    """A skill entry in a pre-career skill list. Knows how to grant or offer itself."""
 
-    A single skill is a fixed grant/choice. A list of skills represents a broad
-    category choice, matching the career skill table pattern.
-    """
-
-    skill: AnySkill | tuple[AnySkill, ...] | None = None
     level: int = 0
-    spec: str | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def skill_options(self) -> list[AnySkill]:
-        if self.skill is None:
-            return []
-        if isinstance(self.skill, tuple):
-            return list(self.skill)
-        return [self.skill]
+        raise NotImplementedError
+
+    def apply(self, precareer_name: str, projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        """Grant this entry directly or queue a choice; return the next pending index."""
+        raise NotImplementedError
+
+
+class PrecareerSkill(PrecareerEntryBase):
+    """A single fixed skill granted at the entry's level."""
+
+    skill: AnySkill
 
     @property
-    def category_label(self) -> str:
-        if self.skill is None:
-            return 'skill'
-        if isinstance(self.skill, tuple):
-            return 'skill'
-        return type(self.skill).name()
+    def skill_options(self) -> list[AnySkill]:
+        return [self.skill]
 
-    def grant_skill(self) -> AnySkill | None:
-        if self.skill is None or isinstance(self.skill, tuple):
-            return None
-        return _skill_at_level(self.skill, self.level)
+    def apply(self, precareer_name: str, projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        projection.grant_skill(_skill_at_level(self.skill, self.level))
+        return pending_idx
+
+
+class PrecareerSkillChoice(PrecareerEntryBase):
+    """A choice among several skills, gained at the entry's level."""
+
+    skills: tuple[AnySkill, ...]
+
+    @property
+    def skill_options(self) -> list[AnySkill]:
+        return list(self.skills)
+
+    def apply(self, precareer_name: str, projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
+
+        projection.queue_deferred(
+            PendingPreCareerSkillChoice(
+                pending_id=(event_id, pending_idx),
+                level=self.level,
+                instruction=f'{precareer_name}: choose one skill specialisation at level {self.level}',
+                options=self.skill_options,
+            )
+        )
+        return pending_idx + 1
 
 
 def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
@@ -110,7 +128,7 @@ class PreCareerData(TermData):
     entry_soc_bonus_min: ClassVar[int | None] = None
     entry_soc_bonus: ClassVar[int] = 0
     curriculum_table: ClassVar[str | None] = None
-    skill_choices: ClassVar[list[PrecareerSkillEntry]] = []
+    skill_choices: ClassVar[list[PrecareerEntryBase]] = []
     # entry_pick_count > 0: level>=1 skills in skill_choices are auto-granted; player
     # picks entry_pick_count from the level==0 skills. If 0, all skill_choices are auto-granted.
     # University and military academies handle their own entry logic separately.
@@ -146,42 +164,12 @@ class PreCareerData(TermData):
 
         if self.entry_pick_count == 0:
             for entry in self.skill_choices:
-                if not entry.skill:
-                    continue
-                if isinstance(entry.skill, tuple):
-                    options = entry.skill_options
-                    instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
-                    projection.queue_deferred(
-                        PendingPreCareerSkillChoice(
-                            pending_id=(event.id, pending_idx),
-                            level=entry.level,
-                            instruction=instr,
-                            options=options,
-                        )
-                    )
-                    pending_idx += 1
-                elif grant := entry.grant_skill():
-                    projection.grant_skill(grant)
+                pending_idx = entry.apply(self.name, projection, event.id, pending_idx)
         else:
             choice_pool: list[AnySkill] = []
             for entry in self.skill_choices:
-                if not entry.skill:
-                    continue
                 if entry.level >= 1:
-                    if isinstance(entry.skill, tuple):
-                        options = entry.skill_options
-                        instr = f'{self.name}: choose one {entry.category_label} specialisation at level {entry.level}'
-                        projection.queue_deferred(
-                            PendingPreCareerSkillChoice(
-                                pending_id=(event.id, pending_idx),
-                                level=entry.level,
-                                instruction=instr,
-                                options=options,
-                            )
-                        )
-                        pending_idx += 1
-                    elif grant := entry.grant_skill():
-                        projection.grant_skill(grant)
+                    pending_idx = entry.apply(self.name, projection, event.id, pending_idx)
                 else:
                     choice_pool.extend(entry.skill_options)
             for i in range(self.entry_pick_count):

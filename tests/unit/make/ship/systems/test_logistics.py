@@ -12,6 +12,12 @@ class _Ship(ShipBase):
 
 
 class TestUNREPSystem:
+    def test_item_description_includes_transfer_rate(self):
+        assert UNREPSystem(tons=2.5).item_description() == 'UNREP System (50 tons/hour)'
+
+    def test_transfer_rate_is_twenty_times_tonnage(self):
+        assert UNREPSystem(tons=2.5).transfer_rate == pytest.approx(50.0)
+
     def test_power_equals_tonnage(self):
         system = UNREPSystem(tons=25.0)
         system.bind(_Ship())

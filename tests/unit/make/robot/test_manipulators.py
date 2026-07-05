@@ -102,6 +102,9 @@ class TestManipulatorSlots:
         m.bind(robot)
         return m
 
+    def test_unbound_manipulator_uses_no_slots(self):
+        assert Manipulator().slots == 0
+
     def test_same_size_slots_size5(self):
         # Size 5 base_slots=16; delta=0 → ceil(0.10 × 16) = 2
         m = self._bound_manip(RobotSize.SIZE_5, RobotSize.SIZE_5)

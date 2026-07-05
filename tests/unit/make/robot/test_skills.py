@@ -11,13 +11,14 @@ import pytest
 
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import level_fields, speciality_label
+from ceres.character.domain.skills import Level, level_fields, speciality_label
 from ceres.make.robot.skills import (
     Animals,
     AnyRobotSkill,
     BrainSoftware,
     Engineer,
     primitive_package_skills,
+    skill_name,
 )
 
 # Standard Skill Packages table — refs/robot/35_skill_packages.md
@@ -109,6 +110,12 @@ _DM0: dict[Chars, int] = {}  # all DMs zero — used where no characteristic bon
 
 
 class TestStandardSkills:
+    def test_skill_name_without_active_speciality_uses_base_name(self):
+        assert skill_name(character_skills.Admin(level=Level(value=1))) == 'Admin'
+
+    def test_skill_name_with_active_speciality_includes_speciality(self):
+        assert skill_name(character_skills.Drive(wheel=Level(value=1))) == 'Drive (Wheel)'
+
     def test_skills_no_specialisation_0(self):
         for skill_cls in _SIMPLE_SKILLS:
             tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]

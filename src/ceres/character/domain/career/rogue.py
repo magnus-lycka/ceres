@@ -36,12 +36,9 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Skill
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.connection import (
-    Ally,
-    Contact,
-)
 from ceres.character.domain.skills import (
     Advocate,
     Astrogation,
@@ -120,7 +117,7 @@ class RogueMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        friends = [c for c in projection.summary.connections if isinstance(c, (Contact, Ally))]
+        friends = [c for c in projection.summary.connections if c.is_friendly]
         if friends:
             betrayer = friends[-1]
             projection.summary.connections.remove(betrayer)
@@ -311,63 +308,63 @@ class Rogue(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Carouse(),
-                Chars.DEX,
-                Chars.END,
-                Gambler(),
-                Melee(),
-                GunCombat(),
+                Skill(Carouse),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Skill(Gambler),
+                Skill(Melee),
+                Skill(GunCombat),
             ]
         ),
         service_skills=SkillTable(
             [
-                Deception(),
-                Recon(),
-                Athletics(),
-                GunCombat(),
-                Stealth(),
-                Streetwise(),
+                Skill(Deception),
+                Skill(Recon),
+                Skill(Athletics),
+                Skill(GunCombat),
+                Skill(Stealth),
+                Skill(Streetwise),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Electronics(),
-                Navigation(),
-                Medic(),
-                Investigate(),
-                Broker(),
-                Advocate(),
+                Skill(Electronics),
+                Skill(Navigation),
+                Skill(Medic),
+                Skill(Investigate),
+                Skill(Broker),
+                Skill(Advocate),
             ],
             min_edu=10,
         ),
         assignment1=SkillTable(
             [  # Thief
-                Stealth(),
-                Electronics(),
-                Recon(),
-                Streetwise(),
-                Deception(),
-                Athletics(),
+                Skill(Stealth),
+                Skill(Electronics),
+                Skill(Recon),
+                Skill(Streetwise),
+                Skill(Deception),
+                Skill(Athletics),
             ]
         ),
         assignment2=SkillTable(
             [  # Enforcer
-                GunCombat(),
-                Melee(),
-                Streetwise(),
-                Persuade(),
-                Athletics(),
-                Drive(),
+                Skill(GunCombat),
+                Skill(Melee),
+                Skill(Streetwise),
+                Skill(Persuade),
+                Skill(Athletics),
+                Skill(Drive),
             ]
         ),
         assignment3=SkillTable(
             [  # Pirate
-                Pilot(),
-                Astrogation(),
-                Gunner(),
-                Engineer(),
-                VaccSuit(),
-                Melee(),
+                Skill(Pilot),
+                Skill(Astrogation),
+                Skill(Gunner),
+                Skill(Engineer),
+                Skill(VaccSuit),
+                Skill(Melee),
             ]
         ),
     )

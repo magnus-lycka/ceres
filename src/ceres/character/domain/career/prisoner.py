@@ -43,6 +43,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import (
@@ -63,12 +64,11 @@ from ceres.character.domain.skills import (
     Mechanic,
     Melee,
     Persuade,
-    ProfessionSkill,
+    Professions,
     Stealth,
     Steward,
     Streetwise,
     Survival,
-    skill_instances,
 )
 from ceres.character.mechanism.event_base import ChoiceBase, Event
 
@@ -621,52 +621,52 @@ class Prisoner(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                (Melee(),),
-                Chars.END,
-                JackOfAllTrades(),
-                Chars.EDU,
-                Gambler(),
+                Char(Chars.STR),
+                Skill(Melee),
+                Char(Chars.END),
+                Skill(JackOfAllTrades),
+                Char(Chars.EDU),
+                Skill(Gambler),
             ]
         ),
         service_skills=SkillTable(
             [
-                Athletics(),
-                Deception(),
-                skill_instances(ProfessionSkill),
-                Streetwise(),
-                (Melee(),),
-                Persuade(),
+                Skill(Athletics),
+                Skill(Deception),
+                SkillChoice(Professions),
+                Skill(Streetwise),
+                Skill(Melee),
+                Skill(Persuade),
             ]
         ),
         assignment1=SkillTable(
             [  # Inmate
-                Stealth(),
-                (Melee(),),
-                Streetwise(),
-                Survival(),
-                (Athletics(),),
-                Mechanic(),
+                Skill(Stealth),
+                Skill(Melee),
+                Skill(Streetwise),
+                Skill(Survival),
+                Skill(Athletics),
+                Skill(Mechanic),
             ]
         ),
         assignment2=SkillTable(
             [  # Thug
-                Persuade(),
-                (Melee(),),
-                (Melee(),),
-                (Melee(),),
-                (Athletics(),),
-                (Athletics(),),
+                Skill(Persuade),
+                Skill(Melee),
+                Skill(Melee),
+                Skill(Melee),
+                Skill(Athletics),
+                Skill(Athletics),
             ]
         ),
         assignment3=SkillTable(
             [  # Fixer
-                Investigate(),
-                Broker(),
-                Deception(),
-                Streetwise(),
-                Stealth(),
-                Admin(),
+                Skill(Investigate),
+                Skill(Broker),
+                Skill(Deception),
+                Skill(Streetwise),
+                Skill(Stealth),
+                Skill(Admin),
             ]
         ),
     )

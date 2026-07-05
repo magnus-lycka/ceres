@@ -1,4 +1,4 @@
-from typing import ClassVar
+from typing import ClassVar, cast
 
 import pytest
 
@@ -6,6 +6,7 @@ from ceres.make.ship import parts
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.drives import OrbitalRange
 from ceres.make.ship.hull import ArmouredBulkhead
+from ceres.shared import Assembly
 
 
 class DummyShip(ShipBase):
@@ -15,6 +16,11 @@ class DummyShip(ShipBase):
 
 class FixedPart(parts.ShipPart):
     tl: int = 9
+
+
+class LabelledPart(parts.ShipPart):
+    def item_description(self) -> str:
+        return 'Labelled Part'
 
 
 class HighTlPart(parts.ShipPart):
@@ -46,6 +52,45 @@ def test_base_part():
     assert part.tons == 4.44
 
 
+def test_modification_description_and_notes():
+    modification = parts.Modification(name='Quiet Running', info_notes=('Runs quietly', 'Needs tuning'))
+    assert modification.item_description() == 'Quiet Running'
+    assert modification.notes.infos == ['Runs quietly', 'Needs tuning']
+
+
+def test_invalid_customisation_reports_required_advantages_and_disadvantages():
+    customisation = parts.Advanced(modifications=[])
+    assert customisation.notes.errors == [
+        'Advanced requires 1 advantage point(s) and 0 disadvantage point(s), got 0 and 0'
+    ]
+
+
+def test_customisation_multipliers_accumulate_modifications():
+    high_output = parts.Modification(name='High Output', advantage=1, output_multiplier=1.5)
+    efficient_fuel = parts.Modification(name='Efficient Fuel', advantage=1, fuel_delta_percent=-0.25)
+    customisation = parts.HighTechnology(
+        modifications=[
+            parts.EnergyEfficient,
+            high_output,
+            efficient_fuel,
+        ]
+    )
+    assert customisation.cost_multiplier == 1.5
+    assert customisation.tons_multiplier == 1.0
+    assert customisation.power_multiplier == 0.75
+    assert customisation.output_multiplier == 1.5
+    assert customisation.fuel_multiplier == 0.75
+    assert customisation.tl_delta == 3
+
+
+def test_customisation_model_validate_json_uses_grade_discriminator():
+    customisation = parts.Customisation.model_validate_json(
+        '{"grade": "ADVANCED", "modifications": [{"name": "Size Reduction", "advantage": 1}]}'
+    )
+    assert isinstance(customisation, parts.Advanced)
+    assert customisation.modifications[0].name == 'Size Reduction'
+
+
 def test_part_rejects_ship_below_tl():
     part = HighTlPart.model_validate({'cost': 1, 'power': 0, 'tons': 0})
     part.bind(DummyShip(tl=14))
@@ -62,6 +107,24 @@ def test_part_assembly_raises_before_bind():
         raise AssertionError('Expected RuntimeError')
 
 
+def test_part_assembly_rejects_non_ship_assembly():
+    part = FixedPart()
+    with pytest.raises(TypeError, match='FixedPart bound to unexpected assembly type Assembly'):
+        part.bind(cast(ShipBase, Assembly(tl=14)))
+
+
+def test_part_build_item_adds_item_note_on_bind():
+    part = LabelledPart()
+    part.bind(DummyShip())
+    assert part.notes.item_message == 'Labelled Part'
+
+
+def test_part_without_armoured_bulkhead_clears_bulkhead_part():
+    part = FixedPart.model_validate({'armoured_bulkhead': False})
+    part.bind(DummyShip())
+    assert part.armoured_bulkhead_part is None
+
+
 def test_part_can_generate_armoured_bulkhead_from_own_values():
     part = FixedPart.model_validate({'tons': 30.0, 'armoured_bulkhead': True})
     part.bind(DummyShip())
@@ -70,6 +133,16 @@ def test_part_can_generate_armoured_bulkhead_from_own_values():
     assert bulkhead.tons == 3.0
     assert bulkhead.cost == 600_000
     assert bulkhead.protected_item == 'FixedPart'
+
+
+def test_armoured_bulkhead_note_is_reported():
+    part = FixedPart(armoured_bulkhead=True)
+    assert 'Armoured bulkhead, see Hull section.' in part.notes.infos
+
+
+def test_hardened_part_group_key_includes_hardened_marker():
+    part = FixedPart(hardened=True)
+    assert part.group_key == 'FixedPart|hardened'
 
 
 def test_customisable_part_build_notes_appends_customisation_note():
@@ -99,6 +172,17 @@ def test_customisable_part_without_customisation_behaves_like_ship_part():
     assert part.cost == 1
     assert part.power == 2
     assert part.tons == 3
+    assert part.group_key == 'CustomPart'
+    assert part.tons_multiplier == 1.0
+    assert part.cost_multiplier == 1.0
+    assert part.power_multiplier == 1.0
+
+
+def test_customisable_part_with_customisation_exposes_multipliers():
+    part = CustomPart(customisation=parts.Advanced(modifications=[parts.SizeReduction]))
+    assert part.tons_multiplier == 0.9
+    assert part.cost_multiplier == 1.1
+    assert part.power_multiplier == 1.0
 
 
 def test_customisable_part_without_customisation_uses_part_tl():

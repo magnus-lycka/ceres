@@ -36,6 +36,7 @@ from ceres.character.domain.career.psion import (
     PsionMishap4Accept,
     PsionMishap4Refuse,
 )
+from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
 from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import Ally, Contact, Enemy
@@ -45,7 +46,6 @@ from ceres.character.domain.health.health_events import (
 from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeOffered
 from ceres.character.domain.psionics import (
     PendingPsionicInstituteTraining,
-    Psi,
     Psionics,
     Telepathy,
     psionic_talent_instances,
@@ -118,7 +118,7 @@ class PsionDriver(CharacterDriver):
         assert assignment_data is not None
         self._add(Event(handler=CareerEntryHandler(career=career, assignment=assignment_data, qualification_roll=7)))
         while pending := self._find_opt(PendingInitialTrainingChoice):
-            option = next((option for option in pending.options if not isinstance(option, Psi)), None)
+            option = next((option for option in pending.options if not isinstance(option, PsiEntry)), None)
             assert option is not None, (
                 'Trained Psion should not be offered another psionic talent during basic training'
             )
@@ -195,7 +195,7 @@ class TestPsionCareer:
                 for pending in projection.pending_inputs
                 if isinstance(pending, PendingInitialTrainingChoice)
                 for option in pending.options
-                if isinstance(option, Psi)
+                if isinstance(option, PsiEntry)
             ]
             assert talent_choices == []
 
@@ -344,6 +344,36 @@ class TestPsionValidLifecycle:
 
 
 class TestPsionCoreTables:
+    def test_service_skills_possessed_talent_increments_level_directly(self):
+        # Rolling a possessed talent on service_skills should increment its level immediately,
+        # without queueing a choice pending that requires user interaction.
+        driver = _psion_driver('Adept')
+        assert driver.projection.summary.psionics is not None
+        assert driver.projection.summary.psionics.talent_level(Telepathy) == 0
+        driver.projection.cancel_pending(PendingInputBase)
+
+        Event(handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
+
+        assert driver.projection.summary.psionics.talent_level(Telepathy) == 1
+        assert not any(p.blocking for p in driver.projection.pending_inputs)
+
+    def test_service_skills_unpossessed_talent_queues_institute_training(self):
+        # Rolling an unlearned talent on service_skills should queue PendingPsionicInstituteTraining
+        # (acquisition attempt), not a skill table choice.
+        driver = _psion_driver('Adept')
+        assert driver.projection.summary.psionics is not None
+        driver.projection.summary.psionics.psionic_talent_skills = [
+            talent
+            for talent in driver.projection.summary.psionics.psionic_talent_skills
+            if not isinstance(talent, Telepathy)
+        ]
+        driver.projection.cancel_pending(PendingInputBase)
+
+        Event(handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
+
+        assert any(isinstance(p, PendingPsionicInstituteTraining) for p in driver.projection.pending_inputs)
+        assert not any(isinstance(p, PendingSkillTableChoice) for p in driver.projection.pending_inputs)
+
     def test_service_skills_may_offer_acquisition_of_an_unpossessed_talent(self):
         driver = _psion_driver('Adept')
         assert driver.projection.summary.psionics is not None
@@ -356,10 +386,9 @@ class TestPsionCoreTables:
 
         Event(handler=SkillTableHandler(table='service_skills', roll=1)).apply(driver.projection)
 
-        pending = driver._find(PendingSkillTableChoice)
-        assert len(pending.options) == 1
-        assert isinstance(pending.options[0], Psi)
-        assert isinstance(pending.options[0].talent, Telepathy)
+        pending = driver._find(PendingPsionicInstituteTraining)
+        assert len(pending.remaining_talents) == 1
+        assert isinstance(pending.remaining_talents[0], Telepathy)
 
     def test_assignment_table_cannot_offer_acquisition_of_an_unpossessed_talent(self):
         driver = _psion_driver('Adept')

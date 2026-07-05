@@ -13,7 +13,9 @@ from typing import Literal
 import pytest
 
 from ceres.make.robot import PrimitiveBrain, Robot, RobotSize, WheelsLocomotion
-from ceres.make.robot.parts import RobotPart
+from ceres.make.robot.base import RobotBase
+from ceres.make.robot.parts import RobotPart, RobotPartMixin
+from ceres.shared import NoteList
 
 
 class _SamplePart(RobotPart):
@@ -31,6 +33,29 @@ class _LabelledPart(RobotPart):
 
     def item_description(self) -> str:
         return 'Sample Option'
+
+
+class _MixinPart(RobotPartMixin):
+    cost = 0.0
+    tl = 5
+    _assembly: RobotBase | None = None
+
+    def __init__(self) -> None:
+        self.notes = NoteList()
+
+    @property
+    def slots(self) -> int:
+        return 0
+
+    @property
+    def assembly(self) -> RobotBase:
+        return self._robot_assembly()
+
+    def item(self, message: str) -> None:
+        pass
+
+    def error(self, message: str) -> None:
+        pass
 
 
 def _robot(tl: int = 8) -> Robot:
@@ -86,6 +111,10 @@ class TestBoundPart:
         robot = _robot()
         part.bind(robot)
         assert part.notes.item_message == 'Sample Option'
+
+    def test_default_build_item_returns_no_message(self):
+        part = _MixinPart()
+        assert part.build_item() is None
 
 
 class TestDefaultProperties:

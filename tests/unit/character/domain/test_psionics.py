@@ -5,10 +5,10 @@ from ceres.character.domain.career import SCOUT
 from ceres.character.domain.career.career_data import CareerTerm
 from ceres.character.domain.career.career_events import (
     PendingCareerChoice,
-    PendingInitialTrainingChoice,
     PendingRankBonusChoice,
     PendingSkillTableChoice,
 )
+from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
 from ceres.character.domain.character_start import UcpHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
@@ -28,7 +28,6 @@ from ceres.character.domain.psionics import (
     PendingLifeEventPsionicsRoll,
     PendingPsionicInstituteTraining,
     PendingPsionicTalentLevelChoice,
-    Psi,
     Psionics,
     PsionicTalentLevelHandler,
     PsionicTalentSkills,
@@ -67,12 +66,6 @@ def test_psionic_talents_are_not_ordinary_skills() -> None:
     assert Telepathy not in _skill_classes(AnySkill)
     with pytest.raises(ValidationError):
         TypeAdapter(AnySkill).validate_python(Telepathy().model_dump())
-
-
-def test_psi_wraps_a_psionic_talent_for_use_in_career_tables() -> None:
-    entry = Psi(Telepathy())
-
-    assert isinstance(entry.talent, Telepathy)
 
 
 def test_character_without_psi_has_no_psionics_state() -> None:
@@ -142,9 +135,12 @@ def test_acquired_talent_is_kept_out_of_character_skills() -> None:
 @pytest.mark.parametrize(
     'pending',
     [
-        PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
-        PendingSkillTableChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
-        PendingRankBonusChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())], level=1),
+        PendingSkillTableChoice(
+            pending_id=(1, 0), instruction='Choose', options=[PsiEntry(Telepathy, allow_acquisition=True)]
+        ),
+        PendingRankBonusChoice(
+            pending_id=(1, 0), instruction='Choose', options=[PsiEntry(Telepathy, allow_acquisition=True)], level=1
+        ),
     ],
 )
 def test_possessed_psionic_talent_choice_does_not_request_an_acquisition_roll(pending) -> None:
@@ -155,15 +151,13 @@ def test_possessed_psionic_talent_choice_does_not_request_an_acquisition_roll(pe
     assert not any(isinstance(spec, NumberEntry) for spec in specs)
 
 
-@pytest.mark.parametrize(
-    'pending',
-    [
-        PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
-        PendingSkillTableChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())]),
-        PendingRankBonusChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())], level=1),
-    ],
-)
-def test_untrained_psionic_talent_choice_requests_an_acquisition_roll(pending) -> None:
+def test_untrained_talent_rank_bonus_choice_requests_an_acquisition_roll() -> None:
+    # Only the rank bonus form resolves acquisition inline; skill table choices
+    # queue PendingPsionicInstituteTraining instead.
+    pending = PendingRankBonusChoice(
+        pending_id=(1, 0), instruction='Choose', options=[PsiEntry(Telepathy, allow_acquisition=True)], level=1
+    )
+
     specs = pending.input_specs(_psionic_projection())
 
     assert any(isinstance(spec, NumberEntry) for spec in specs)
@@ -171,9 +165,15 @@ def test_untrained_psionic_talent_choice_requests_an_acquisition_roll(pending) -
 
 def test_possessed_psionic_talent_choice_improves_without_a_submitted_roll() -> None:
     projection = _psionic_projection(psionics=Psionics(psionic_talent_skills=[Telepathy()]))
-    pending = PendingInitialTrainingChoice(pending_id=(1, 0), instruction='Choose', options=[Psi(Telepathy())])
+    pending = PendingRankBonusChoice(
+        pending_id=(1, 0),
+        instruction='Choose',
+        options=[PsiEntry(Telepathy, allow_acquisition=True)],
+        level=1,
+        continue_career_progress=False,
+    )
 
-    event = pending.event_from_form({'skill': Psi(Telepathy()).model_dump_json()})
+    event = pending.event_from_form({'skill': PsiEntry(Telepathy, allow_acquisition=True).model_dump_json()})
     event.apply(projection, pending)
 
     assert projection.summary.psionics is not None
@@ -362,12 +362,16 @@ class TestPsionicTalentDefinition:
         } == PSIONIC_TALENT_LEARNING_DMS
         assert [type(talent) for talent in psionic_talent_instances()] == list(psionic_talent_classes())
 
-    def test_psi_wrapper_round_trips_each_talent_type(self) -> None:
-        adapter = TypeAdapter(Psi)
+    def test_psi_entry_round_trips_each_talent_type(self) -> None:
+        from ceres.character.domain.career.skill_table_entries import SkillTableItem
 
-        for talent in psionic_talent_instances():
-            restored = adapter.validate_json(adapter.dump_json(Psi(talent)))
-            assert type(restored.talent) is type(talent)
+        adapter = TypeAdapter(SkillTableItem)
+
+        for talent_cls in psionic_talent_classes():
+            restored = adapter.validate_json(adapter.dump_json(PsiEntry(talent_cls, allow_acquisition=True)))
+            assert isinstance(restored, PsiEntry)
+            assert restored.talent is talent_cls
+            assert restored.allow_acquisition is True
 
 
 class TestPsionicStrength:

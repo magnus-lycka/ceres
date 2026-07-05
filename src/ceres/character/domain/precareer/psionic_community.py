@@ -4,7 +4,13 @@ from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.psion import Psion
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
+from ceres.character.domain.precareer.precareer_data import (
+    PreCareerData,
+    PrecareerEntryBase,
+    PrecareerSkill,
+    PrecareerSkillChoice,
+    PreCareerTerm,
+)
 from ceres.character.domain.psionics import PendingPsionicTalentLevelChoice, queue_psionic_institute_training
 from ceres.character.domain.skills import Level, LifeScience, ProfessionSkill, ScienceSkill, Streetwise, skill_instances
 from ceres.character.mechanism.event_base import Event
@@ -16,10 +22,10 @@ class PsionicCommunityPreCareer(PreCareerData):
     entry: ClassVar[CharCheck] = CharCheck(characteristic=Chars.PSI, target=8)
     entry_requirement: ClassVar[str] = 'PSI 8+, DM+1 if INT 8+'
     entry_dms: ClassVar[dict[str, int]] = {'INT_8+': 1}
-    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
-        PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
-        PrecareerSkillEntry(skill=skill_instances(ScienceSkill), level=0),
-        PrecareerSkillEntry(skill=Streetwise(), level=0),
+    skill_choices: ClassVar[list[PrecareerEntryBase]] = [
+        PrecareerSkillChoice(skills=skill_instances(ProfessionSkill), level=0),
+        PrecareerSkillChoice(skills=skill_instances(ScienceSkill), level=0),
+        PrecareerSkill(skill=Streetwise(), level=0),
     ]
     graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.PSI, target=6)
     graduation_requirement: ClassVar[str] = 'PSI 6+, DM+1 if INT 8+'

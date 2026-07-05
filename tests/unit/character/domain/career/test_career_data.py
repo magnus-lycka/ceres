@@ -50,7 +50,6 @@ from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection_events import PendingConnectionsRoll
 from ceres.character.domain.health.health_events import PendingCharacteristicChoice, PendingInjuryTable
 from ceres.character.domain.life_events import PendingLifeEvent
-from ceres.character.domain.psionics import Psi, psionic_talent_instances
 from ceres.character.domain.skill_events import PendingSkillChoice
 from ceres.character.domain.skills import Admin, Electronics, Level
 from ceres.character.domain.sophont import VILANI
@@ -771,6 +770,28 @@ def test_apply_fixed_rank_bonus_characteristic_increases_stat():
     assert p.pending_inputs == ()
 
 
+def test_apply_fixed_rank_bonus_choice_offers_restricted_specializations():
+    # Marine rank 0: 'Gun Combat (any) 1 or Melee (blade) 1' — Gun Combat offers
+    # every specialization, Melee only blade.
+    from ceres.character.domain.career import MARINES
+    from ceres.character.domain.career.career_events import PendingRankBonusChoice
+    from ceres.character.input_specs import Select
+
+    p = _projection()
+
+    MARINES._apply_fixed_rank_bonus(p, rank=0, event_id=1)
+
+    pending = next(pi for pi in p.pending_inputs if isinstance(pi, PendingRankBonusChoice))
+    select = next(s for s in pending.input_specs(p) if isinstance(s, Select))
+    labels = [label for label, _ in select.options]
+    assert labels == [
+        'Gun Combat (Archaic)',
+        'Gun Combat (Energy)',
+        'Gun Combat (Slug)',
+        'Melee (Blade)',
+    ]
+
+
 # ── CareerData.update_current_term_rank ──────────────────────────────────────
 
 
@@ -878,28 +899,3 @@ def test_career_data_from_registry_falls_back_to_handler_for_unknown_kind():
     ta = TypeAdapter(CareerData)
     result = ta.validate_python({'kind': 'nonexistent_career_kind'})
     assert isinstance(result, CareerData)
-
-
-# ── Training helper methods: Chars and Psi short-circuits ─────────────────────
-
-
-def test_training_pending_choices_returns_empty_for_chars_entry():
-    p = _projection()
-    assert ARMY._training_pending_choices(p, Chars.STR) == ()
-
-
-def test_training_selectable_skills_returns_empty_for_chars_entry():
-    p = _projection()
-    assert ARMY._training_selectable_skills(p, Chars.STR) == ()
-
-
-def test_training_selectable_skills_returns_empty_for_psi_entry():
-    p = _projection()
-    psi = Psi(psionic_talent_instances()[0])
-    assert ARMY._training_selectable_skills(p, psi) == ()
-
-
-def test_training_option_is_unknown_returns_false_for_psi():
-    p = _projection()
-    psi = Psi(psionic_talent_instances()[0])
-    assert ARMY._training_option_is_unknown(p, psi) is False

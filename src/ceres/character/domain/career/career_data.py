@@ -6,26 +6,28 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from ceres.character.domain.benefits import AnyBenefit, ItemBenefit
+from ceres.character.domain.career.skill_table_entries import (
+    SkillChoice,
+    SkillTableEntryBase,
+)
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.dice import DiceRoll
-from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill, level_fields
 from ceres.character.domain.term_data import Term, TermData
 from ceres.character.mechanism.errors import ReplayError
-from ceres.character.mechanism.event_base import Event
+from ceres.character.mechanism.event_base import Event, EventHandlerBase
 from ceres.shared import NoteList
 
 if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
 
 
-type SkillTableItem = AnySkill | Psi | Chars
-type SkillTableEntry = SkillTableItem | tuple[SkillTableItem, ...]
+type SkillTableItem = AnySkill | SkillTableEntryBase
 
 
 @dataclass
 class SkillTable:
-    entries: list[SkillTableEntry]  # length 6, index 0 = die roll 1
+    entries: list[SkillTableEntryBase]  # length 6, index 0 = die roll 1
     min_edu: int | None = None
 
 
@@ -55,10 +57,13 @@ class RankBonus(BaseModel):
     characteristic: Chars | None = None
     level: int = 1
     choices: Sequence[SkillTableItem] | None = None
+    choice: SkillChoice | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def resolve_choices(self) -> Sequence[SkillTableItem] | None:
+        if self.choice:
+            return self.choice.restricted_options()
         if self.choices:
             return self.choices
         if self.skill:
@@ -87,6 +92,14 @@ class AdvancementDmOption(BaseModel):
 
     def label(self) -> str:
         return f'DM+{self.amount} to next advancement roll'
+
+    def select_options(self, projection: CharacterProjection, level: int | None) -> list[tuple[str, str]]:
+        return [(self.label(), self.model_dump_json())]
+
+    def chosen_handler(self) -> EventHandlerBase:
+        from ceres.character.domain.career.advancement import AdvancementDmChoiceHandler
+
+        return AdvancementDmChoiceHandler()
 
 
 class CareerTableEntry(BaseModel):
@@ -827,11 +840,7 @@ class CareerData(TermData):
         if choices:
             from ceres.character.domain.career.career_events import PendingRankBonusChoice
 
-            valid_choices = [
-                choice
-                for choice in choices
-                if (isinstance(choice, Psi) or projection.skill_choices([type(choice)], bonus.level))
-            ]
+            valid_choices = [choice for choice in choices if choice.is_available(projection, bonus.level)]
             if valid_choices:
                 used_sub_ids = {p.pending_id[1] for p in projection.pending_inputs if p.pending_id[0] == event_id}
                 projection.queue_deferred(
@@ -883,33 +892,28 @@ class CareerData(TermData):
         if grant_all:
             choice_idx = 0
             for entry in table.entries:
-                choices = self._training_pending_choices(projection, entry)
-                if not choices and isinstance(entry, Psi):
-                    continue
-                if len(choices) > 1 or isinstance(entry, Psi):
-                    skills = ', '.join(self._training_option_name(s) for s in choices)
+                candidates = entry.basic_training_candidates(projection)
+                if len(candidates) > 1:
+                    skills = ', '.join(type(s).name() for s in candidates)
                     projection.queue_deferred(
                         PendingInitialTrainingChoice(
                             pending_id=(event_id, choice_idx),
                             instruction=f'Initial training: choose one of {skills}',
-                            options=cast(list[SkillTableItem | AdvancementDmOption], choices),
+                            options=cast(list[SkillTableItem | AdvancementDmOption], candidates),
                         )
                     )
                     choice_idx += 1
-                elif len(choices) == 1:
-                    self._apply_initial_training_entry(projection, type(choices[0]))
-                elif not isinstance(entry, (Chars, tuple)):
-                    # Specific-specialty entry (e.g. Electronics(computers=1)): grant base skill at level 0.
-                    self._apply_initial_training_entry(projection, type(entry))
+                elif len(candidates) == 1:
+                    self._apply_initial_training_entry(projection, type(candidates[0]))
             return
 
-        raw: list[SkillTableItem] = []
+        raw: list[AnySkill] = []
         for entry in table.entries:
-            raw.extend(self._training_selectable_skills(projection, entry))
-        by_name: dict[str, SkillTableItem] = {}
+            raw.extend(entry.basic_training_candidates(projection))
+        by_name: dict[str, AnySkill] = {}
         for s in raw:
-            by_name.setdefault(self._training_option_name(s), s)
-        deduped: list[SkillTableItem] = sorted(by_name.values(), key=self._training_option_name)
+            by_name.setdefault(type(s).name(), s)
+        deduped: list[AnySkill] = sorted(by_name.values(), key=lambda s: type(s).name())
         if deduped:
             projection.queue_deferred(
                 PendingInitialTrainingChoice(
@@ -922,56 +926,6 @@ class CareerData(TermData):
     def _apply_initial_training_entry(self, projection, skill_cls: type[AnySkill]) -> None:
         if projection.summary.skill_level(skill_cls) is None:
             projection.summary.skills.append(skill_cls())
-
-    def _training_pending_choices(self, projection, entry: SkillTableEntry) -> tuple[SkillTableItem, ...]:
-        if isinstance(entry, Chars):
-            return ()
-        if isinstance(entry, Psi):
-            return ()
-        if isinstance(entry, tuple):
-            return self._unknown_training_skills(projection, entry)
-        skill_cls = type(entry)
-        fields = level_fields(skill_cls)
-        spec_field = next((f for f in fields if getattr(entry, f).value > 0), None)
-        if spec_field is not None:
-            return ()
-        if projection.summary.skill_level(skill_cls) is None:
-            return (skill_cls(),)
-        return ()
-
-    def _training_selectable_skills(self, projection, entry: SkillTableEntry) -> tuple[SkillTableItem, ...]:
-        if isinstance(entry, Chars):
-            return ()
-        if isinstance(entry, Psi):
-            return ()
-        if isinstance(entry, tuple):
-            return self._unknown_training_skills(projection, entry)
-        skill_cls = type(entry)
-        if projection.summary.skill_level(skill_cls) is None:
-            return (skill_cls(),)
-        return ()
-
-    @staticmethod
-    def _training_option_name(option: SkillTableItem) -> str:
-        if isinstance(option, Psi):
-            return type(option.talent).name()
-        if isinstance(option, Chars):
-            return option.value
-        return type(option).name()
-
-    def _training_option_is_unknown(self, projection, option: SkillTableItem) -> bool:
-        if isinstance(option, Psi):
-            return False
-        return projection.summary.skill_level(type(option)) is None
-
-    def _unknown_training_skills(self, projection, options: tuple[SkillTableItem, ...]) -> tuple[SkillTableItem, ...]:
-        by_type: dict[type[Any], SkillTableItem] = {}
-        for option in options:
-            if isinstance(option, Psi) or not self._training_option_is_unknown(projection, option):
-                continue
-            skill_cls = type(option)
-            by_type.setdefault(skill_cls, skill_cls())
-        return tuple(by_type.values())
 
     def _queue_skill_table_before_survival(self, projection, assignment: AssignmentData, event_id: int) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTable
@@ -1003,14 +957,6 @@ class CareerData(TermData):
             idx = self.assignment_index(assignment)
             result.append(SkillTableOption(label=assignment.name, key=f'assignment{idx}'))
         return sorted(result, key=lambda o: o.key)
-
-    def skill_table_option_is_available(
-        self,
-        projection: CharacterProjection,
-        table_name: str,
-        option: SkillTableItem,
-    ) -> bool:
-        return True
 
 
 # ── Muster-out and career term state ────────────────────────────────────────

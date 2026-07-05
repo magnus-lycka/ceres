@@ -5,6 +5,8 @@ import pytest
 from ceres.make.ship.base import ShipBase
 from ceres.make.ship.systems.facilities import (
     ConstructionDeck,
+    Laboratory,
+    LibraryFacility,
     TrainingFacility,
     Workshop,
 )
@@ -36,6 +38,23 @@ class TestWorkshop:
         assert 'power' not in dump
 
 
+class TestLaboratory:
+    def test_four_tons_one_mcredit(self):
+        part = _bind(Laboratory())
+        assert part.tons == 4.0
+        assert part.cost == 1_000_000.0
+        assert part.power == 0.0
+
+
+class TestLibraryFacility:
+    def test_four_tons_four_mcredits_at_tl8(self):
+        part = _bind(LibraryFacility())
+        assert part.tl == 8
+        assert part.tons == 4.0
+        assert part.cost == 4_000_000.0
+        assert part.power == 0.0
+
+
 class TestConstructionDeck:
     def test_half_ton_displacement_constructible(self):
         deck = _bind(ConstructionDeck(tons=100))
@@ -47,6 +66,7 @@ class TestConstructionDeck:
 
     def test_power_equals_tonnage(self):
         deck = _bind(ConstructionDeck(tons=100))
+        assert deck.cost == 50_000_000.0
         assert deck.power == pytest.approx(100.0)
 
     def test_tons_is_serialized_design_field(self):
@@ -63,3 +83,8 @@ class TestTrainingFacility:
         facility = _bind(TrainingFacility(trainees=2))
         assert facility.tons == 4.0
         assert facility.cost == 800_000.0
+
+    def test_description_includes_capacity(self):
+        facility = _bind(TrainingFacility(trainees=12))
+        assert facility.item_description() == 'Training Facility: 12-person capacity'
+        assert facility.power == 0.0

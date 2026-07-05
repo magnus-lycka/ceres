@@ -1,7 +1,7 @@
-"""Unit tests for systems/external.py — Aerofins, HolographicHull."""
+"""Unit tests for systems/external.py — external fittings."""
 
 from ceres.make.ship.base import ShipBase
-from ceres.make.ship.systems.external import Aerofins, HolographicHull
+from ceres.make.ship.systems.external import Aerofins, GrapplingArm, HolographicHull, TowCable
 
 
 class _Ship(ShipBase):
@@ -26,6 +26,11 @@ class TestAerofins:
         assert fins.cost == 2_000_000.0
         assert fins.power == 0.0
 
+    def test_pilot_dm_and_note_describe_atmospheric_benefit(self):
+        fins = _bind(Aerofins())
+        assert fins.atmospheric_pilot_dm == 2
+        assert 'DM +2 to Pilot checks in atmosphere' in fins.notes.infos
+
 
 class TestHolographicHull:
     def test_scales_with_displacement(self):
@@ -45,3 +50,19 @@ class TestHolographicHull:
     def test_note_describes_visual_capability(self):
         hull = _bind(HolographicHull())
         assert any('hull colours' in info or 'visual appearance' in info for info in hull.notes.infos)
+
+
+class TestTowCable:
+    def test_one_percent_of_displacement(self):
+        cable = _bind(TowCable(), displacement=400)
+        assert cable.tons == 4.0
+        assert cable.cost == 20_000.0
+        assert cable.power == 0.0
+
+
+class TestGrapplingArm:
+    def test_fixed_two_ton_one_mcredit_installation(self):
+        arm = _bind(GrapplingArm())
+        assert arm.tons == 2.0
+        assert arm.cost == 1_000_000.0
+        assert arm.power == 0.0

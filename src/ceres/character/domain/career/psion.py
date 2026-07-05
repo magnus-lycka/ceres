@@ -31,7 +31,6 @@ from ceres.character.domain.career.career_data import (
     RollMishapEntry,
     SkillChoiceEntry,
     SkillTable,
-    SkillTableItem,
     _blank_ranks,
 )
 from ceres.character.domain.career.career_events import (
@@ -42,9 +41,10 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Psi, PsiChoice, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.connection import Ally, Contact, make_connection
+from ceres.character.domain.connection import make_connection
 from ceres.character.domain.health.health_events import (
     PendingInjuryTable,
 )
@@ -53,21 +53,21 @@ from ceres.character.domain.psionics import queue_psionic_institute_training
 from ceres.character.domain.psionics_data import (
     Awareness,
     Clairvoyance,
-    Psi,
     Telekinesis,
     Telepathy,
     Teleportation,
-    psionic_talent_instances,
+    psionic_talent_classes,
 )
 from ceres.character.domain.skills import (
     AnySkill,
+    Arts,
     ArtSkill,
     Athletics,
     Deception,
     Electronics,
     GunCombat,
     JackOfAllTrades,
-    LanguageSkill,
+    Languages,
     Leadership,
     Level,
     LifeScience,
@@ -76,7 +76,7 @@ from ceres.character.domain.skills import (
     Melee,
     Persuade,
     Recon,
-    ScienceSkill,
+    Sciences,
     Stealth,
     Streetwise,
     Survival,
@@ -87,7 +87,7 @@ from ceres.character.domain.skills import (
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int
 from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
-_TALENTS: tuple[Psi, ...] = tuple(Psi(talent) for talent in psionic_talent_instances())
+_TALENTS: tuple[Psi, ...] = tuple(Psi(cls, allow_acquisition=True) for cls in psionic_talent_classes())
 _ALL_NON_JOT_SKILLS: list[AnySkill] = [
     cast(AnySkill, skill) for skill in skill_instances(AnySkill) if not isinstance(skill, JackOfAllTrades)
 ]
@@ -223,9 +223,7 @@ class PsionConnectionConvertedHandler(EventHandlerBase):
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
         connections = projection.summary.connections
-        if 0 <= self.connection_index < len(connections) and isinstance(
-            connections[self.connection_index], (Contact, Ally)
-        ):
+        if 0 <= self.connection_index < len(connections) and connections[self.connection_index].is_friendly:
             old = connections[self.connection_index]
             connections[self.connection_index] = make_connection(
                 self.new_kind, term=old.term, origin=old.origin, name=old.name, note=old.note
@@ -256,7 +254,7 @@ class PendingPsionConnectionConversion(PendingInputBase):
         options = [
             (f'{connection.display_name}: {connection.origin}', str(index))
             for index, connection in enumerate(projection.summary.connections)
-            if isinstance(connection, (Contact, Ally))
+            if connection.is_friendly
         ]
         if not options:
             options = [('No represented Contact or Ally; add new connection', '-1')]
@@ -401,18 +399,6 @@ class Psion(CareerData):
     def _basic_training_table_name(self, assignment: AssignmentData) -> str:
         return f'assignment{self.assignment_index(assignment)}'
 
-    def skill_table_option_is_available(
-        self,
-        projection: CharacterProjection,
-        table_name: str,
-        option: SkillTableItem,
-    ) -> bool:
-        if not isinstance(option, Psi):
-            return True
-        psionics = projection.summary.psionics
-        possessed = psionics is not None and psionics.talent_level(type(option.talent)) is not None
-        return possessed or table_name == 'service_skills'
-
     def start_new_term(
         self,
         projection: CharacterProjection,
@@ -459,43 +445,59 @@ class Psion(CareerData):
     ]
 
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
-        personal_development=SkillTable([Chars.EDU, Chars.INT, Chars.STR, Chars.DEX, Chars.END, Chars.PSI]),
+        personal_development=SkillTable(
+            [Char(Chars.EDU), Char(Chars.INT), Char(Chars.STR), Char(Chars.DEX), Char(Chars.END), Char(Chars.PSI)]
+        ),
         service_skills=SkillTable(
             [
-                Psi(Telepathy()),
-                Psi(Clairvoyance()),
-                Psi(Telekinesis()),
-                Psi(Awareness()),
-                Psi(Teleportation()),
-                _TALENTS,
+                Psi(Telepathy, allow_acquisition=True),
+                Psi(Clairvoyance, allow_acquisition=True),
+                Psi(Telekinesis, allow_acquisition=True),
+                Psi(Awareness, allow_acquisition=True),
+                Psi(Teleportation, allow_acquisition=True),
+                PsiChoice(Telepathy | Clairvoyance | Telekinesis | Awareness | Teleportation, allow_acquisition=True),
             ]
         ),
         advanced_education=SkillTable(
             [
-                skill_instances(LanguageSkill),
-                skill_instances(ArtSkill),
-                Electronics(),
-                Medic(),
-                skill_instances(ScienceSkill),
-                Mechanic(),
+                SkillChoice(Languages),
+                SkillChoice(Arts),
+                Skill(Electronics),
+                Skill(Medic),
+                SkillChoice(Sciences),
+                Skill(Mechanic),
             ],
             min_edu=8,
         ),
         assignment1=SkillTable(
-            [Psi(Telepathy()), Psi(Telekinesis()), Deception(), Stealth(), Streetwise(), (Melee(), GunCombat())]
+            [
+                Psi(Telepathy, allow_acquisition=False),
+                Psi(Telekinesis, allow_acquisition=False),
+                Skill(Deception),
+                Skill(Stealth),
+                Skill(Streetwise),
+                SkillChoice(Melee | GunCombat),
+            ]
         ),
         assignment2=SkillTable(
             [
-                Psi(Telepathy()),
-                Psi(Clairvoyance()),
-                Psi(Awareness()),
-                Medic(),
-                Persuade(),
-                skill_instances(ScienceSkill),
+                Psi(Telepathy, allow_acquisition=False),
+                Psi(Clairvoyance, allow_acquisition=False),
+                Psi(Awareness, allow_acquisition=False),
+                Skill(Medic),
+                Skill(Persuade),
+                SkillChoice(Sciences),
             ]
         ),
         assignment3=SkillTable(
-            [Psi(Telepathy()), Psi(Awareness()), Psi(Teleportation()), GunCombat(), VaccSuit(), Recon()]
+            [
+                Psi(Telepathy, allow_acquisition=False),
+                Psi(Awareness, allow_acquisition=False),
+                Psi(Teleportation, allow_acquisition=False),
+                Skill(GunCombat),
+                Skill(VaccSuit),
+                Skill(Recon),
+            ]
         ),
     )
 

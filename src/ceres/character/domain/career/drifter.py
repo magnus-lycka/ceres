@@ -41,6 +41,7 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillRollPendingBase,
     append_increment_existing_skill_pending,
 )
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.health.health_events import PendingInjuryTable
@@ -53,19 +54,18 @@ from ceres.character.domain.skills import (
     Drive,
     GunCombat,
     JackOfAllTrades,
-    LanguageSkill,
+    Languages,
     Leadership,
     Mechanic,
     Melee,
     Pilot,
-    ProfessionSkill,
+    Professions,
     Recon,
     Seafarer,
     Stealth,
     Streetwise,
     Survival,
     VaccSuit,
-    skill_instances,
 )
 from ceres.character.mechanism.event_base import ChoiceBase, Event
 
@@ -343,52 +343,52 @@ class Drifter(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.END,
-                Chars.DEX,
-                skill_instances(LanguageSkill),
-                skill_instances(ProfessionSkill),
-                JackOfAllTrades(),
+                Char(Chars.STR),
+                Char(Chars.END),
+                Char(Chars.DEX),
+                SkillChoice(Languages),
+                SkillChoice(Professions),
+                Skill(JackOfAllTrades),
             ]
         ),
         service_skills=SkillTable(
             [
-                Athletics(),
-                (Melee(),),
-                Recon(),
-                Streetwise(),
-                Stealth(),
-                Survival(),
+                Skill(Athletics),
+                Skill(Melee, specs=(Melee.unarmed,)),
+                Skill(Recon),
+                Skill(Streetwise),
+                Skill(Stealth),
+                Skill(Survival),
             ]
         ),
         assignment1=SkillTable(
             [  # Barbarian
-                Animals(),
-                Carouse(),
-                (Melee(),),
-                Stealth(),
-                (Seafarer(),),
-                Survival(),
+                Skill(Animals),
+                Skill(Carouse),
+                Skill(Melee, specs=(Melee.blade,)),
+                Skill(Stealth),
+                Skill(Seafarer, specs=(Seafarer.personal, Seafarer.sail)),
+                Skill(Survival),
             ]
         ),
         assignment2=SkillTable(
             [  # Wanderer
-                Drive(),
-                Deception(),
-                Recon(),
-                Stealth(),
-                Streetwise(),
-                Survival(),
+                Skill(Drive),
+                Skill(Deception),
+                Skill(Recon),
+                Skill(Stealth),
+                Skill(Streetwise),
+                Skill(Survival),
             ]
         ),
         assignment3=SkillTable(
             [  # Scavenger
-                (Pilot(),),
-                Mechanic(),
-                Astrogation(),
-                VaccSuit(),
-                skill_instances(ProfessionSkill),
-                GunCombat(),
+                Skill(Pilot, specs=(Pilot.small_craft,)),
+                Skill(Mechanic),
+                Skill(Astrogation),
+                Skill(VaccSuit),
+                SkillChoice(Professions),
+                Skill(GunCombat),
             ]
         ),
     )

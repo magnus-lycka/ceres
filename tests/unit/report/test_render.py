@@ -8,7 +8,15 @@ from pathlib import Path
 import jinja2
 import pytest
 
-from ceres.report.render import _fmt_cost, _fmt_mass, _to_typst, render_html, render_typst_source
+from ceres.report.render import (
+    _fmt_cost,
+    _fmt_mass,
+    _to_typst,
+    render_html,
+    render_pdf,
+    render_pdf_source,
+    render_typst_source,
+)
 
 # ---------------------------------------------------------------------------
 # _to_typst serialiser
@@ -49,9 +57,21 @@ def test_to_typst_empty_list():
     assert _to_typst([]) == '()'
 
 
+def test_to_typst_empty_tuple():
+    assert _to_typst(()) == '()'
+
+
+def test_to_typst_tuple():
+    assert _to_typst((1, 'x')) == '(1, "x",)'
+
+
 def test_to_typst_dict():
     result = _to_typst({'a': 1, 'b': 'x'})
     assert result == '(a: 1, b: "x")'
+
+
+def test_to_typst_quotes_keys_with_spaces():
+    assert _to_typst({'display name': 'Scout Courier'}) == '("display name": "Scout Courier")'
 
 
 def test_to_typst_nested():
@@ -67,6 +87,10 @@ def test_to_typst_pydantic_model():
         y: str
 
     assert _to_typst(M(x=5, y='hi')) == '(x: 5, y: "hi")'
+
+
+def test_to_typst_fallback_uses_string_representation():
+    assert _to_typst(Path('reports/out.pdf')) == '"reports/out.pdf"'
 
 
 # ---------------------------------------------------------------------------
@@ -169,3 +193,41 @@ def test_render_typst_source_data_before_template(tmp_path: Path):
     preamble_end = source.index('\n\n')
     assert 'report_data' in source[:preamble_end]
     assert 'TEMPLATE' in source[preamble_end:]
+
+
+def test_render_pdf_writes_combined_source_and_cleans_temp_dir(tmp_path: Path, monkeypatch):
+    tmpl = tmp_path / 'test.typ'
+    tmpl.write_text('#report_data.title', encoding='utf-8')
+    compiled_paths: list[Path] = []
+
+    def fake_compile(path: str) -> bytes:
+        typ_path = Path(path)
+        compiled_paths.append(typ_path)
+        source = typ_path.read_text(encoding='utf-8')
+        assert '"My Report"' in source
+        assert '#report_data.title' in source
+        return b'%PDF'
+
+    monkeypatch.setattr('ceres.report.render.typst.compile', fake_compile)
+
+    assert render_pdf(tmpl, {'title': 'My Report'}) == b'%PDF'
+    assert compiled_paths
+    assert not compiled_paths[0].exists()
+    assert not compiled_paths[0].parent.exists()
+
+
+def test_render_pdf_source_writes_source_and_cleans_temp_dir(monkeypatch):
+    compiled_paths: list[Path] = []
+
+    def fake_compile(path: str) -> bytes:
+        typ_path = Path(path)
+        compiled_paths.append(typ_path)
+        assert typ_path.read_text(encoding='utf-8') == 'complete typst source'
+        return b'%PDF'
+
+    monkeypatch.setattr('ceres.report.render.typst.compile', fake_compile)
+
+    assert render_pdf_source('complete typst source') == b'%PDF'
+    assert compiled_paths
+    assert not compiled_paths[0].exists()
+    assert not compiled_paths[0].parent.exists()

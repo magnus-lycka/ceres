@@ -1,6 +1,6 @@
 # Plan: Skill Table Entry Types
 
-## STATUS: NOT STARTED
+## STATUS: IN PROGRESS — Steps 1–5 complete; Step 6 next
 
 ## Background
 
@@ -149,6 +149,12 @@ Notes on the stubs:
   need only the entry types plus skill classes, which do not collide.
   If this gets ugly in practice, renaming the entry (e.g. `GainSkill`) is a
   cheap decision to revisit at Step 1 — record the outcome here.
+  **Step 1 decision:** Class names stay as planned (`Char`, `Skill`, etc.).
+  Discriminator values are prefixed `ste_` to avoid collisions with the
+  discriminator-literal audit (which scans HTML templates by substring, so
+  short values like `'char'` and `'skill'` collide with Jinja2 variables and
+  template prose). Discriminators: `'ste_char'`, `'ste_skill'`,
+  `'ste_skill_choice'`, `'ste_psi'`, `'ste_psi_choice'`.
 - **Level: data vs mode.** `level` appears both on entries (table data, e.g.
   a rank bonus granted at level 1) and on the context (application mode, e.g.
   basic training grants everything at level 0). Rule: `ctx.level` overrides

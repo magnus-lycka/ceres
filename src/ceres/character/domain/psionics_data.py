@@ -1,6 +1,6 @@
 from typing import Annotated, Literal, cast, get_args, get_origin
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field
 
 from ceres.character.domain.characteristics import characteristic_dm
 from ceres.character.domain.skills import Level, Skill, _level
@@ -36,14 +36,6 @@ type PsionicTalentSkills = Annotated[PsionicTalentSkillModels, Field(discriminat
 type PsionicTalentSkillClass = (
     type[Telepathy] | type[Clairvoyance] | type[Telekinesis] | type[Awareness] | type[Teleportation]
 )
-
-
-class Psi(RootModel[PsionicTalentSkills]):
-    """A career-table entry resolved through psionic talent training."""
-
-    @property
-    def talent(self) -> PsionicTalentSkills:
-        return self.root
 
 
 PSIONIC_TALENT_LEARNING_DMS: dict[PsionicTalentSkillClass, int] = {

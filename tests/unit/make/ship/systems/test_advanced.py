@@ -26,6 +26,10 @@ class TestGravScreen:
         assert 'cost' not in dump
         assert 'power' not in dump
 
+    def test_note_describes_sensor_effect(self):
+        part = _bind(GravScreen())
+        assert any('Blocks densitometers' in info for info in part.notes.infos)
+
 
 class TestGravityWellGenerator:
     def test_values(self):
@@ -34,6 +38,10 @@ class TestGravityWellGenerator:
         assert part.cost == 120_000_000.0
         assert part.power == 500.0
 
+    def test_note_describes_out_of_scope_effect(self):
+        part = _bind(GravityWellGenerator())
+        assert 'Creates an artificial gravity well; tactical effects are out of scope' in part.notes.infos
+
 
 class TestJumpFilter:
     def test_zero_tons_but_costs_power(self):
@@ -41,3 +49,8 @@ class TestJumpFilter:
         assert part.tons == 0.0
         assert part.cost == 5_000_000.0
         assert part.power == 1.0
+
+    def test_bandwidth_and_note(self):
+        part = _bind(JumpFilter())
+        assert part.bandwidth == 5
+        assert any('predict destination' in info for info in part.notes.infos)

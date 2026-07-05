@@ -1,6 +1,6 @@
 """Character connection types: contacts, allies, rivals, enemies."""
 
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
@@ -11,6 +11,7 @@ from ceres.shared import CeresModel
 class Connection(CeresModel):
     """Base class for character connections (contacts, allies, rivals, enemies)."""
 
+    is_friendly: ClassVar[bool] = False
     term: int | None = None
     origin: str = ''
     name: str = ''
@@ -23,6 +24,7 @@ class Connection(CeresModel):
 
 class Contact(Connection):
     kind: Literal[ConnectionKind.CONTACT] = ConnectionKind.CONTACT
+    is_friendly: ClassVar[bool] = True
 
     @property
     def display_name(self) -> str:
@@ -31,6 +33,7 @@ class Contact(Connection):
 
 class Ally(Connection):
     kind: Literal[ConnectionKind.ALLY] = ConnectionKind.ALLY
+    is_friendly: ClassVar[bool] = True
 
     @property
     def display_name(self) -> str:

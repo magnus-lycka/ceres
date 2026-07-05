@@ -11,7 +11,6 @@ from ceres.character.domain.psionics_data import (
     PSIONIC_TALENT_LEARNING_DMS,
     Awareness,
     Clairvoyance,
-    Psi,
     Psionics,
     PsionicTalentSkillClass,
     PsionicTalentSkillModels,
@@ -29,9 +28,11 @@ from ceres.character.mechanism.event_base import Event, EventHandlerBase, Pendin
 
 
 def talent_acquisition_roll_required(projection: CharacterProjection, options: Sequence[Any]) -> bool:
+    from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
+
     psionics = projection.summary.psionics
     return any(
-        isinstance(option, Psi) and (psionics is None or psionics.talent_level(type(option.talent)) is None)
+        isinstance(option, PsiEntry) and (psionics is None or psionics.talent_level(option.talent) is None)
         for option in options
     )
 

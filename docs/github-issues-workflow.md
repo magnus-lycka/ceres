@@ -121,7 +121,6 @@ building a large taxonomy up front.
 
 - `status:needs-triage`
 - `status:ready`
-- `status:blocked`
 - `status:in-progress`
 - `status:needs-review`
 
@@ -161,6 +160,23 @@ with a suggested split instead of doing a large opportunistic refactor.
 For loose ideas, use `kind:idea` and `status:needs-triage`. If an idea becomes a
 plan, either relabel the same issue as `kind:plan` or create a plan issue that
 links back to the idea issue.
+
+## Dependencies
+
+Use GitHub's built-in blocked/blocking relationships for dependency state.
+Do not use a separate `status:blocked` label.
+
+An issue that cannot proceed because another issue must be finished first should
+remain in its normal workflow status, usually `status:needs-triage` or
+`status:ready`, and should link the blocker explicitly:
+
+```bash
+gh issue edit BLOCKED_ISSUE --add-blocked-by BLOCKER_ISSUE
+gh issue edit BLOCKER_ISSUE --add-blocking BLOCKED_ISSUE
+```
+
+Add a short comment explaining why the dependency exists when the relationship
+is not obvious from the issue titles.
 
 ## Agent Rules
 

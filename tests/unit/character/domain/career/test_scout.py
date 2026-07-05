@@ -510,10 +510,9 @@ class TestScoutAssignmentTableCorrections:
         projection = replay(1, events)
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice))
-        assert pending.options == [
-            Pilot(small_craft=Level(value=1)),
-            Pilot(spacecraft=Level(value=1)),
-        ]
+        select = next(s for s in pending.input_specs(projection) if isinstance(s, Select))
+        labels = [label for label, _ in select.options]
+        assert labels == ['Pilot (Small Craft)', 'Pilot (Spacecraft)']
 
     def test_courier_roll_2_offers_flyer(self):
         # Courier roll 2 is Flyer (specialised) — player must choose a specialisation
@@ -571,7 +570,7 @@ class TestScoutAssignmentTableCorrections:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
+        assert {s.skill for s in pending.options} == _SCIENCE_CLASSES
 
     def test_advanced_edu_roll_5_creates_science_choice_pending(self):
         # EDU=10 ≥ 8 → can access advanced_education table
@@ -584,7 +583,7 @@ class TestScoutAssignmentTableCorrections:
 
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillTableChoice)), None)
         assert pending is not None
-        assert {type(s) for s in pending.options} == _SCIENCE_CLASSES
+        assert {s.skill for s in pending.options} == _SCIENCE_CLASSES
 
 
 # ── Homeworld trigger (RIC-006) ───────────────────────────────────────────────

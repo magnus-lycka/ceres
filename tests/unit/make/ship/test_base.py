@@ -96,6 +96,7 @@ def test_note_list_exposes_category_views():
 def test_ship_base_default_helpers():
     ship = ShipBase(tl=12, displacement=100)
 
+    assert ship.performance_displacement == 100.0
     assert ship.armour_volume_modifier == 1.0
     assert ship.remaining_usable_tonnage() == 0.0
 

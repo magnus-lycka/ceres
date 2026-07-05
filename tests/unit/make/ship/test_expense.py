@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from ceres.make.ship import hull, ship
@@ -12,6 +14,7 @@ from ceres.make.ship.drives import (
     MDrive2,
     PowerSection,
 )
+from ceres.make.ship.expense import ShipExpenses
 from ceres.make.ship.habitation import HabitationSection, Stateroom
 from ceres.make.ship.storage import FuelProcessor, FuelSection, JumpFuel, OperationFuel
 
@@ -143,3 +146,97 @@ def test_jump_drive_still_requires_refined_fuel_without_processor():
     assert my_ship.fuel.fuel_scoops is not None
     assert my_ship.fuel.fuel_processor is None
     assert my_ship.expenses.fuel == pytest.approx(20_333.3333333333)
+
+
+def test_minimal_expenses_have_zero_optional_operating_costs():
+    expense = ShipExpenses(
+        SimpleNamespace(
+            command=None,
+            habitation=None,
+            fuel=None,
+            _crew_salary_cost=lambda: 0.0,
+        )
+    )
+
+    assert expense.life_support_facilities == 0.0
+    assert expense.life_support_people == 0.0
+    assert expense.fuel == 0.0
+    assert expense.crew_salaries == 0.0
+
+
+def test_cockpit_ship_has_no_life_support_expense():
+    expense = ShipExpenses(
+        SimpleNamespace(
+            command=SimpleNamespace(cockpit=object()),
+            habitation=SimpleNamespace(
+                life_support_facilities_cost=lambda ship: 100.0,
+                life_support_people_cost=lambda ship: 200.0,
+            ),
+        )
+    )
+
+    assert expense.life_support_facilities == 0.0
+    assert expense.life_support_people == 0.0
+
+
+def test_production_cost_includes_craft_software_and_cargo_cranes():
+    fake_hull = SimpleNamespace(
+        breakaway_cost=lambda displacement: 2.0,
+        radiation_shielding_cost=lambda displacement: 3.0,
+        heat_shielding_cost=lambda displacement: 5.0,
+        reflec_cost=lambda displacement: 7.0,
+    )
+    fake_ship = SimpleNamespace(
+        displacement=100,
+        hull_cost=11.0,
+        hull=fake_hull,
+        craft=SimpleNamespace(
+            _all_parts=lambda: [
+                SimpleNamespace(craft=SimpleNamespace(cost=13.0)),
+                SimpleNamespace(craft=None),
+            ]
+        ),
+        cargo=SimpleNamespace(cargo_holds=[SimpleNamespace(crane_cost=lambda ship: 17.0)]),
+        computer=SimpleNamespace(software_packages=[SimpleNamespace(cost=19.0)]),
+        _all_parts=lambda: [SimpleNamespace(cost=23.0)],
+        _part_cost=lambda part: part.cost,
+    )
+
+    assert ShipExpenses(fake_ship).production_cost == pytest.approx(100.0)
+
+
+def test_production_cost_allows_missing_computer():
+    fake_hull = SimpleNamespace(
+        breakaway_cost=lambda displacement: 2.0,
+        radiation_shielding_cost=lambda displacement: 3.0,
+        heat_shielding_cost=lambda displacement: 5.0,
+        reflec_cost=lambda displacement: 7.0,
+    )
+    fake_ship = SimpleNamespace(
+        displacement=100,
+        hull_cost=11.0,
+        hull=fake_hull,
+        craft=None,
+        cargo=None,
+        computer=None,
+        _all_parts=lambda: [],
+        _part_cost=lambda part: part.cost,
+    )
+
+    assert ShipExpenses(fake_ship).production_cost == pytest.approx(28.0)
+
+
+def test_operation_fuel_absent_has_no_monthly_operation_cost():
+    expense = ShipExpenses(
+        SimpleNamespace(
+            drives=None,
+            fuel=SimpleNamespace(
+                fuel_scoops=None,
+                fuel_processor=None,
+                jump_fuel=None,
+                operation_fuel=None,
+            ),
+        )
+    )
+
+    assert expense.fuel == 0.0

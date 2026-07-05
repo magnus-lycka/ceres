@@ -3,7 +3,13 @@ from typing import ClassVar, Literal
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
+from ceres.character.domain.precareer.precareer_data import (
+    PreCareerData,
+    PrecareerEntryBase,
+    PrecareerSkill,
+    PrecareerSkillChoice,
+    PreCareerTerm,
+)
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import (
     AnySkill,
@@ -24,12 +30,12 @@ class SpacerCommunityPreCareer(PreCareerData):
     name: ClassVar[str] = 'Spacer Community'
     source: ClassVar[str] = 'Companion'
     entry_requirement: ClassVar[str] = 'Automatic if homeworld size code 0; INT 4+, DM+1 if DEX 8+'
-    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
-        PrecareerSkillEntry(skill=VaccSuit(), level=1),
-        PrecareerSkillEntry(skill=Astrogation(), level=0),
-        PrecareerSkillEntry(skill=Electronics(), level=0),
-        PrecareerSkillEntry(skill=Engineer(), level=0),
-        PrecareerSkillEntry(skill=skill_instances(ProfessionSkill), level=0),
+    skill_choices: ClassVar[list[PrecareerEntryBase]] = [
+        PrecareerSkill(skill=VaccSuit(), level=1),
+        PrecareerSkill(skill=Astrogation(), level=0),
+        PrecareerSkill(skill=Electronics(), level=0),
+        PrecareerSkill(skill=Engineer(), level=0),
+        PrecareerSkillChoice(skills=skill_instances(ProfessionSkill), level=0),
     ]
     entry_pick_count: ClassVar[int] = 2
     graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=8)
@@ -53,7 +59,7 @@ class SpacerCommunityPreCareer(PreCareerData):
         pending_idx = 0
         choice_pool: list[AnySkill] = []
         for entry in self.skill_choices:
-            if entry.skill and entry.level == 0:
+            if entry.level == 0:
                 choice_pool.extend(entry.skill_options)
         for i in range(2):
             projection.queue_deferred(

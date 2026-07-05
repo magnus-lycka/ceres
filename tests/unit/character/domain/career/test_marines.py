@@ -47,7 +47,13 @@ from ceres.character.domain.skills import (
 from ceres.character.domain.sophont import VILANI
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
-from tests.unit.character.helpers import MOCK_WORLD, AnySkillAtLevelTestMixin, CharacterDriver, _creation_events
+from tests.unit.character.helpers import (
+    MOCK_WORLD,
+    AnySkillAtLevelTestMixin,
+    CharacterDriver,
+    _creation_events,
+    survive_pending_id,
+)
 
 
 def _setup() -> list:
@@ -81,7 +87,7 @@ def _through_survive(assignment: str = 'Support', survive_roll: int = 5) -> list
     Support survival: END 5+, DM+0, roll 5 → 5 ≥ 5 (pass).
     """
     _ent = _enter_marines(assignment)
-    return [*_ent, Event(fulfills=(_ent[-1].id, 0), handler=SurviveHandler(roll=survive_roll))]
+    return [*_ent, Event(fulfills=survive_pending_id(_ent), handler=SurviveHandler(roll=survive_roll))]
 
 
 def _through_term_event(event_roll: int, assignment: str = 'Support') -> list:
@@ -97,7 +103,7 @@ class TestMarinesMishap4:
         _ent = _enter_marines()
         return [
             *_ent,
-            Event(fulfills=(_ent[-1].id, 0), handler=SurviveHandler(roll=4)),  # END 5+, DM+0, 4 < 5 — fail
+            Event(fulfills=survive_pending_id(_ent), handler=SurviveHandler(roll=4)),  # END 5+, DM+0, 4 < 5 — fail
         ]
 
     def test_mishap_4_creates_choice_pending(self):

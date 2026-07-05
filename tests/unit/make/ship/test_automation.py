@@ -70,6 +70,14 @@ def test_non_standard_automation_emits_hull_spec_row():
     assert row.notes.infos == ['DM-1 on all shipboard tasks after 1 week in space']
 
 
+def test_non_standard_automation_without_effect_note_emits_plain_hull_spec_row():
+    spec = _automation_test_ship(EnhancedAutomation()).build_spec()
+
+    row = spec.row('Enhanced Automation', section='Hull')
+    assert row.cost == pytest.approx(_automation_basis() * 0.25)
+    assert row.notes.infos == []
+
+
 def test_automation_serialization_selects_subclass_from_level():
     loaded = TypeAdapter(AnyAutomation).validate_python({'level': 'high'})
 

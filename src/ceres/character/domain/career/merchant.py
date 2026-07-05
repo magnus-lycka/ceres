@@ -40,6 +40,7 @@ from ceres.character.domain.career.common import CommonMishap1Handler, handle_ad
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 from ceres.character.domain.career.rogue import Rogue
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -58,8 +59,7 @@ from ceres.character.domain.skills import (
     Gunner,
     Investigate,
     JackOfAllTrades,
-    LanguageSkill,
-    Level,
+    Languages,
     Mechanic,
     Persuade,
     Pilot,
@@ -233,63 +233,63 @@ class Merchant(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.DEX,
-                Chars.END,
-                Chars.INT,
-                skill_instances(LanguageSkill),
-                Streetwise(),
+                Char(Chars.STR),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Char(Chars.INT),
+                SkillChoice(Languages),
+                Skill(Streetwise),
             ]
         ),
         service_skills=SkillTable(
             [
-                Drive(),
-                VaccSuit(),
-                Broker(),
-                Steward(),
-                Electronics(),
-                Persuade(),
+                Skill(Drive),
+                Skill(VaccSuit),
+                Skill(Broker),
+                Skill(Steward),
+                Skill(Electronics),
+                Skill(Persuade),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Engineer(),
-                Astrogation(),
-                Electronics(),
-                Pilot(),
-                Admin(),
-                Advocate(),
+                Skill(Engineer),
+                Skill(Astrogation),
+                Skill(Electronics),
+                Skill(Pilot),
+                Skill(Admin),
+                Skill(Advocate),
             ],
             min_edu=8,
         ),
         assignment1=SkillTable(
             [  # Merchant Marine
-                Pilot(),
-                VaccSuit(),
-                Athletics(),
-                Mechanic(),
-                Engineer(),
-                Electronics(),
+                Skill(Pilot),
+                Skill(VaccSuit),
+                Skill(Athletics),
+                Skill(Mechanic),
+                Skill(Engineer),
+                Skill(Electronics),
             ]
         ),
         assignment2=SkillTable(
             [  # Free Trader
-                Pilot(spacecraft=Level(value=1)),
-                VaccSuit(),
-                Deception(),
-                Mechanic(),
-                Streetwise(),
-                Gunner(),
+                Skill(Pilot, specs=(Pilot.spacecraft,)),
+                Skill(VaccSuit),
+                Skill(Deception),
+                Skill(Mechanic),
+                Skill(Streetwise),
+                Skill(Gunner),
             ]
         ),
         assignment3=SkillTable(
             [  # Broker
-                Admin(),
-                Advocate(),
-                Broker(),
-                Streetwise(),
-                Deception(),
-                Persuade(),
+                Skill(Admin),
+                Skill(Advocate),
+                Skill(Broker),
+                Skill(Streetwise),
+                Skill(Deception),
+                Skill(Persuade),
             ]
         ),
     )

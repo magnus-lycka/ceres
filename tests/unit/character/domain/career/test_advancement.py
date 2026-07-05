@@ -18,7 +18,9 @@ from ceres.character.domain.career.career_events import (
     PendingRankBonusChoice,
     SkillChoiceHandler,
 )
+from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
+from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Medic
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import NumberEntry, Select
@@ -197,6 +199,65 @@ class TestPendingRankBonusChoice:
         pending = PendingRankBonusChoice(pending_id=(1, 0), instruction='Rank bonus', level=1, options=[Admin()])
         specs = pending.input_specs(_projection())
         assert any(isinstance(s, Select) and s.name == 'skill' for s in specs)
+
+
+class TestPendingRankBonusChoiceTalents:
+    """Psion Acolyte/Master rank bonus: choose a talent; untrained talents need an acquisition roll."""
+
+    def _psionic_projection(self, trained: bool) -> CharacterProjection:
+        from ceres.character.domain.psionics_data import Psionics, Telepathy
+
+        psionics = Psionics(psionic_talent_skills=[Telepathy()] if trained else [])
+        return CharacterProjection(
+            character_id=1,
+            summary=CharacterSummary(name='T', characteristics={Chars.PSI: 9}, psionics=psionics),
+        )
+
+    def _pending(self) -> PendingRankBonusChoice:
+        from ceres.character.domain.psionics_data import Telepathy
+
+        return PendingRankBonusChoice(
+            pending_id=(1, 0),
+            instruction='Rank bonus',
+            level=1,
+            options=[PsiEntry(Telepathy, allow_acquisition=True)],
+            continue_career_progress=False,
+        )
+
+    def test_input_specs_lists_talent(self):
+        specs = self._pending().input_specs(self._psionic_projection(trained=False))
+        select = next(s for s in specs if isinstance(s, Select))
+        assert [label for label, _ in select.options] == ['Telepathy']
+
+    def test_untrained_talent_adds_acquisition_roll_field(self):
+        specs = self._pending().input_specs(self._psionic_projection(trained=False))
+        assert any(isinstance(s, NumberEntry) and s.name == 'roll' for s in specs)
+
+    def test_trained_talent_needs_no_acquisition_roll_field(self):
+        specs = self._pending().input_specs(self._psionic_projection(trained=True))
+        assert not any(isinstance(s, NumberEntry) for s in specs)
+
+    def test_event_from_form_produces_training_handler(self):
+        from ceres.character.domain.psionics import PsionicTalentTrainingHandler
+        from ceres.character.domain.psionics_data import Telepathy
+
+        pending = self._pending()
+        form = {'skill': PsiEntry(Telepathy, allow_acquisition=True).model_dump_json(), 'roll': '9'}
+        event = pending.event_from_form(form)
+        assert isinstance(event.handler, PsionicTalentTrainingHandler)
+        assert isinstance(event.handler.talent, Telepathy)
+        assert event.handler.roll == 9
+
+    def test_trained_talent_round_trip_increments_level(self):
+        from ceres.character.domain.psionics_data import Telepathy
+
+        proj = self._psionic_projection(trained=True)
+        pending = self._pending()
+        form = {'skill': PsiEntry(Telepathy, allow_acquisition=True).model_dump_json()}
+        event = pending.event_from_form(form)
+        event.apply(proj, pending)
+        assert proj.summary.psionics is not None
+        assert proj.summary.psionics.talent_level(Telepathy) == 1
 
 
 class TestRankBonusSkill:

@@ -1,9 +1,17 @@
-# List of potential things to do
+# Todo Migration Ledger
 
-Update todo items in this document as progress is made.
-When todo items are done, please move them to docs/archive/done_todos.md
+This file is no longer the active work log. It is a read-only migration ledger
+for todos that have been moved to GitHub Issues.
+
+Do not add new items here. Create GitHub issues instead. Keep the migrated todo
+text here until work starts; once work starts, the GitHub issue becomes the
+single source of truth and this file should keep only the issue reference.
+
+See [github-issues-workflow.md](github-issues-workflow.md).
 
 ## Psion skill table: incomplete Psi talent handling
+
+GitHub issue: [#2](https://github.com/magnus-lycka/ceres/issues/2)
 
 `PendingSkillTableChoice.on_psi_chosen` doing `pass` is intentional for
 continuation — reenlist/aging is already queued by `_apply_promotion()` before
@@ -37,11 +45,15 @@ encoding the service-skills acquisition rule directly. The driver tests for
 the Psion service-skills behaviour are written red-first in that plan's Step 4.
 
 ## Test suite: unit coverage gaps
+GitHub issue: [#3](https://github.com/magnus-lycka/ceres/issues/3)
+
 
 Run `tools/check_unit_coverage.sh` to find modules with no corresponding unit
 test file.
 
 ## Test suite: more usecase approval tests
+GitHub issue: [#4](https://github.com/magnus-lycka/ceres/issues/4)
+
 
 Candidates: complex multi-effect events (Scholar mishap 3 openly/secretly,
 mishap 5 start-again), Rogue/Entertainer/Psion events with branching choices,
@@ -50,6 +62,8 @@ Rule of thumb: if expressing the complete observable outcome needs more than
 five plain assertions, use a snapshot.
 
 ## Test suite: NPC end-to-end approval tests
+GitHub issue: [#5](https://github.com/magnus-lycka/ceres/issues/5)
+
 
 Add full pre-career → career(s) → muster-out tests under
 `tests/approval/character/npcs/`. Candidates: character with a pre-career
@@ -57,11 +71,15 @@ followed by one or more regular careers; character who fails qualification and
 enters the draft.
 
 ## Test suite: profiling and tuning
+GitHub issue: [#6](https://github.com/magnus-lycka/ceres/issues/6)
+
 
 Use `pytest --durations=20` to find slow tests and evaluate shared fixtures
 for long event-chain replays.
 
 ## Conditional NumberEntry visibility in input_specs
+GitHub issue: [#7](https://github.com/magnus-lycka/ceres/issues/7)
+
 
 In [src/ceres/character/input_specs.py](../src/ceres/character/input_specs.py),
 `NumberEntry` (and potentially other input types) has no way to express
@@ -83,6 +101,8 @@ Needed:
   required
 
 ## Projection diff testing helper
+GitHub issue: [#8](https://github.com/magnus-lycka/ceres/issues/8)
+
 
 Improve and document the `projection_diff` / DeepDiff-based test helper used in
 character tests.
@@ -108,6 +128,8 @@ Possible work:
   coverage of unexpected side effects
 
 ## Tighten character event typing
+GitHub issue: [#9](https://github.com/magnus-lycka/ceres/issues/9)
+
 
 Several character-domain APIs still use broad `Any` annotations such as
 `projection: Any`, `event: Any`, `form: Any`, `fulfilled_pending: Any`, and
@@ -131,6 +153,8 @@ Defer this until after the current pre-career effect migration. When picked up:
   existing code is cleaned up
 
 ## Import character-domain names from their owning modules
+GitHub issue: [#10](https://github.com/magnus-lycka/ceres/issues/10)
+
 
 `career_events.py` and `psionics.py` still act as compatibility import hubs:
 many tests and production modules import names from them that are actually
@@ -153,6 +177,8 @@ Clean this up gradually:
   on these hub imports.
 
 ## Character code: accidental-complexity cleanup candidates
+GitHub issue: [#11](https://github.com/magnus-lycka/ceres/issues/11)
+
 
 These are follow-up findings from a broader scan of character code outside the
 currently active career-entry / pending-input refactors. Treat them as
@@ -212,6 +238,8 @@ architectural cleanup candidates, not immediate blockers.
    fallbacks escape.
 
 ## Google Sheet fuel mismatch
+GitHub issue: [#12](https://github.com/magnus-lycka/ceres/issues/12)
+
 
 We should keep an eye out for any remaining Google Sheet / export-based fuel
 discrepancies after the `OperationFuel` fix to follow the book rule of a
@@ -226,6 +254,8 @@ Rule for future work:
   a real rule distinction
 
 ## Scientists on lab ships / stations
+GitHub issue: [#13](https://github.com/magnus-lycka/ceres/issues/13)
+
 
 We need an explicit policy for how to model scientists on laboratory ships and
 stations.
@@ -247,6 +277,8 @@ For now:
   interpretation
 
 ## Modulars and effective displacement
+GitHub issue: [#14](https://github.com/magnus-lycka/ceres/issues/14)
+
 
 We need an explicit policy for cases where the same ship has one displacement
 as a design object but a different effective displacement in some operating
@@ -298,6 +330,8 @@ Rule for future work:
   carrying Z dTons`
 
 ## External-load drive performance
+GitHub issue: [#15](https://github.com/magnus-lycka/ceres/issues/15)
+
 
 Note:
 
@@ -310,6 +344,8 @@ Note:
 - this likely wants parameterized specs, e.g. performance at `+X dTons`
 
 ## Culture property etc
+GitHub issue: [#16](https://github.com/magnus-lycka/ceres/issues/16)
+
 
 Ships are buit differently for different audiences.
 This is partly the biology of different species, but also a matter of
@@ -320,6 +356,8 @@ The sophont names in [travellermap.com/t5ss/sophonts](https://travellermap.com/t
 as well as 'other', 'independent' etc.
 
 ## Other distinctions
+GitHub issue: [#17](https://github.com/magnus-lycka/ceres/issues/17)
+
 
 We already have military boolean. The Adventure class ships split them in:
 Exploration, Merchant, Passenger, Working, Military, Travellers Be Like... (catch-all),
@@ -333,6 +371,8 @@ THere are obviously e.g. Bwap and Florian ships too.
 But maybe markers like this are best done by allowing arbitrary free tags on ships?
 
 ## Blurbs, pics and plans
+GitHub issue: [#18](https://github.com/magnus-lycka/ceres/issues/18)
+
 
 We want to be able to attach random, somewhat formatted text to be attached to ship
 designs. We'd use markdown for that.
@@ -340,6 +380,8 @@ designs. We'd use markdown for that.
 Eventually we'll also want to provide illustrations and floor plans/drwaings.
 
 ## Add other types of drives
+GitHub issue: [#19](https://github.com/magnus-lycka/ceres/issues/19)
+
 
 Keep this as a parking lot for genuinely new drive families, not power systems.
 
@@ -355,6 +397,8 @@ Candidates that still need rule/API work:
 - source-specific drive families from non-HG books
 
 ## Primitive Hulls
+GitHub issue: [#20](https://github.com/magnus-lycka/ceres/issues/20)
+
 
 Implement Spinward Extents primitive hulls.
 
@@ -395,6 +439,8 @@ Implementation notes:
   record as notes unless Ceres later gains scenario-state modelling.
 
 ## Breakaway multi-section model
+GitHub issue: [#21](https://github.com/magnus-lycka/ceres/issues/21)
+
 
 The current breakaway hull construction cost and tonnage support is complete
 for a single `Ship` design. Future work should only reopen this area when Ceres
@@ -410,6 +456,8 @@ Open design questions:
   multi-section model exists
 
 ## Spinning hull configurations (Double Hull, Hamster Cage)
+GitHub issue: [#22](https://github.com/magnus-lycka/ceres/issues/22)
+
 
 Reference: `refs/hg/05_specialised_hull_types.md`
 
@@ -422,6 +470,8 @@ layout dimensions. Spin radius and comfort are runtime/layout concerns; see
 RIS-021.
 
 ## Space stations as a build target
+GitHub issue: [#23](https://github.com/magnus-lycka/ceres/issues/23)
+
 
 Reference: `refs/hg/27_space_stations.md`
 
@@ -435,6 +485,8 @@ Space stations use almost the same design sequence as ships but with a few diffe
 Decide whether `Ship` should be extended or whether a separate `Station` class is warranted.
 
 ## Birthworld vs mutable homeworld during character creation
+GitHub issue: [#24](https://github.com/magnus-lycka/ceres/issues/24)
+
 
 See [docs/plan-homeworld-changes.md](docs/plan-homeworld-changes.md).
 
@@ -497,6 +549,8 @@ Current status:
   RIC-006.
 
 ## Character creation: known implementation gaps (rules not yet enforced)
+GitHub issue: [#25](https://github.com/magnus-lycka/ceres/issues/25)
+
 
 - **Injury table and `InjuryEntry.severity` redesign** — The injury table
   (Core p.49, rolled with 1D) has six rows:
@@ -596,6 +650,8 @@ Current status:
   ambiguity in the event log and makes the UI guess at why a result happened.
 
 ## Character creation: draft, career switching, and assignment changes
+GitHub issue: [#26](https://github.com/magnus-lycka/ceres/issues/26)
+
 
 IMPORTANT: Whatever is done in the scope of this todo has to consider the
 overarching goal in todo "Character creation: eliminate remaining semantic
@@ -696,6 +752,8 @@ The UI renders the flat list directly — one picker, all options visible at
 once, qualification requirements and DMs shown alongside each choice.
 
 ## Character creation: eliminate remaining semantic strings
+GitHub issue: [#27](https://github.com/magnus-lycka/ceres/issues/27)
+
 
 ### Consolidate career-entry state into a `TermChoices` object
 
@@ -706,6 +764,8 @@ draft constraints and future career-availability rules. Not urgent — the flat
 fields are clear enough for now.
 
 ## University pre-career: bring Ceres fully in line with Core
+GitHub issue: [#28](https://github.com/magnus-lycka/ceres/issues/28)
+
 
 University implements its basic skill choices and characteristic increases, but
 its career-entry benefits are not represented with the restrictions required by
@@ -735,6 +795,8 @@ Known differences:
   restricted qualification and commission benefits.
 
 ## Military Academy pre-careers: bring Ceres fully in line with Core
+GitHub issue: [#29](https://github.com/magnus-lycka/ceres/issues/29)
+
 
 Army, Marine, and Navy Academy share one implementation. Entry and basic direct
 skill grants are present, but several graduation benefits remain manual or lose
@@ -776,6 +838,8 @@ Known differences:
   tests of the represented Core outcomes.
 
 ## Colonial Upbringing pre-career: bring Ceres fully in line with Companion
+GitHub issue: [#30](https://github.com/magnus-lycka/ceres/issues/30)
+
 
 Colonial Upbringing grants most of its immediate skills, but eligibility,
 graduation choices, age, and career modifiers are incomplete.
@@ -808,6 +872,8 @@ Known differences:
   (Two Standard Terms)
 
 ## Merchant Academy pre-careers: bring Ceres fully in line with Companion
+GitHub issue: [#31](https://github.com/magnus-lycka/ceres/issues/31)
+
 
 The Business and Shipboard curricula correctly select their broad skill tables,
 but the random service skill and career-entry benefits are not faithfully
@@ -834,6 +900,8 @@ Known differences:
   replace them with tests of the represented benefits and their restrictions.
 
 ## School of Hard Knocks pre-career: bring Ceres fully in line with Companion
+GitHub issue: [#32](https://github.com/magnus-lycka/ceres/issues/32)
+
 
 School of Hard Knocks implements its immediate skills and characteristic
 change, but eligibility and the first-career penalty are not enforced.
@@ -858,6 +926,8 @@ Known differences:
   listed skills.
 
 ## Spacer Community pre-career: bring Ceres fully in line with Companion
+GitHub issue: [#33](https://github.com/magnus-lycka/ceres/issues/33)
+
 
 Spacer Community implements most immediate graduation rewards, but eligibility
 and its narrowly scoped Merchant benefit are incorrect.
@@ -882,6 +952,8 @@ Known differences:
   them, rather than allowing repeated selections from the same pool.
 
 ## Career tables: pending input ordering requirement
+GitHub issue: [#34](https://github.com/magnus-lycka/ceres/issues/34)
+
 
 **Before implementing any item in the career-table sections below**, read the
 Phase 2 section of
@@ -895,6 +967,8 @@ and defer the ordering fix as a separate step. Tail-of-flow pending inputs
 (survival, reenlist, muster-out) use `projection.queue_deferred(...)`.
 
 ## Agent career tables: remaining blocked items
+GitHub issue: [#35](https://github.com/magnus-lycka/ceres/issues/35)
+
 
 The `Agent` career now matches Core for all text and behavior that can be
 implemented. The remaining items are blocked on other infrastructure work.
@@ -919,6 +993,8 @@ Remaining differences (blocked):
   generic Life Events todo is fixed, re-check Agent event 7 against Core.
 
 ## Army career tables: remaining blocked items
+GitHub issue: [#36](https://github.com/magnus-lycka/ceres/issues/36)
+
 
 Most Army career gaps have been fixed (mishap 1 choice, event 6 injury table,
 event 11 Tactics (military) specialty, event 12 commission/promote choice,
@@ -930,6 +1006,8 @@ Remaining blocked:
   generic Life Events todo is fixed, re-check Army event 7 against Core.
 
 ## Citizen career tables: bring Ceres fully in line with Core
+GitHub issue: [#37](https://github.com/magnus-lycka/ceres/issues/37)
+
 
 The `Citizen` career has several substantial fidelity gaps in both event/mishap
 text and handler behavior compared with the Core Rulebook.
@@ -964,6 +1042,8 @@ Known differences:
   intentionally omitted).
 
 ## Drifter career tables: bring Ceres fully in line with Core
+GitHub issue: [#38](https://github.com/magnus-lycka/ceres/issues/38)
+
 
 The `Drifter` career has several meaningful fidelity gaps in both event/mishap
 text and handler behavior compared with the Core Rulebook.
@@ -1003,6 +1083,8 @@ Known differences:
   for word, excluding page references (which are intentionally omitted).
 
 ## Entertainer career tables: bring Ceres fully in line with Core
+GitHub issue: [#39](https://github.com/magnus-lycka/ceres/issues/39)
+
 
 The `Entertainer` career has several important fidelity gaps in both
 event/mishap text and handler behavior compared with the Core Rulebook.
@@ -1039,6 +1121,8 @@ Known differences:
   word for word, excluding page references (which are intentionally omitted).
 
 ## Marines career tables: bring Ceres fully in line with Core
+GitHub issue: [#40](https://github.com/magnus-lycka/ceres/issues/40)
+
 
 The `Marines` career has several substantial fidelity gaps in both
 event/mishap text and handler behavior compared with the Core Rulebook.
@@ -1077,6 +1161,8 @@ Known differences:
   for word, excluding page references (which are intentionally omitted).
 
 ## Merchant career tables: bring Ceres fully in line with Core
+GitHub issue: [#41](https://github.com/magnus-lycka/ceres/issues/41)
+
 
 The `Merchant` career has several important fidelity gaps in both event/mishap
 text and handler behavior compared with the Core Rulebook.
@@ -1111,6 +1197,8 @@ Known differences:
   word, excluding page references (which are intentionally omitted).
 
 ## Navy career tables: bring Ceres fully in line with Core
+GitHub issue: [#42](https://github.com/magnus-lycka/ceres/issues/42)
+
 
 The `Navy` career has several remaining fidelity gaps in its mishap/event
 handlers and skill specialties.
@@ -1145,6 +1233,8 @@ Known differences:
   word, excluding page references (which are intentionally omitted).
 
 ## Noble career tables: bring Ceres fully in line with Core
+GitHub issue: [#43](https://github.com/magnus-lycka/ceres/issues/43)
+
 
 The `Noble` career has several major event-handler substitutions and unresolved
 injury outcomes.
@@ -1177,6 +1267,8 @@ Known differences:
   for word, excluding page references (which are intentionally omitted).
 
 ## Prisoner career tables: bring Ceres fully in line with Core
+GitHub issue: [#44](https://github.com/magnus-lycka/ceres/issues/44)
+
 
 The `Prisoner` career has a particularly large mismatch in its Event 7
 subtable, plus several incomplete consequences elsewhere.
@@ -1208,6 +1300,8 @@ Known differences:
   (which are intentionally omitted).
 
 ## Rogue career tables: bring Ceres fully in line with Core
+GitHub issue: [#45](https://github.com/magnus-lycka/ceres/issues/45)
+
 
 The `Rogue` career implements several of its branching events, but still loses
 important specialties and leaves some outcomes unresolved.
@@ -1244,6 +1338,8 @@ Known differences:
   for word, excluding page references (which are intentionally omitted).
 
 ## Scholar career tables: bring Ceres fully in line with Core
+GitHub issue: [#46](https://github.com/magnus-lycka/ceres/issues/46)
+
 
 The `Scholar` career's more complicated events are largely represented, but its
 injury handling and some skill specialties still differ from Core.
@@ -1274,6 +1370,8 @@ Known differences:
   for word, excluding page references (which are intentionally omitted).
 
 ## Scout career tables: bring Ceres fully in line with Core
+GitHub issue: [#47](https://github.com/magnus-lycka/ceres/issues/47)
+
 
 The `Scout` career implements most of its branching events, but several skill
 choices lose the specialties or breadth required by Core.
@@ -1301,11 +1399,15 @@ Known differences:
   for word, excluding page references (which are intentionally omitted).
 
 ## Replace sophont string-name lookup with typed objects
+GitHub issue: [#48](https://github.com/magnus-lycka/ceres/issues/48)
+
 
 `sophonts/__init__.py` finds sophonts by string name. Sophonts should be
 referenced as typed objects or an enum rather than matched by string.
 
 ## Make ShipPart generic over assembly type
+GitHub issue: [#49](https://github.com/magnus-lycka/ceres/issues/49)
+
 
 Currently `ShipPart.assembly` returns `ShipBase`, which only declares `tl` and
 `displacement`. Parts that need to access `hull`, `drives`, `power`, etc. work

@@ -38,11 +38,13 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
 from ceres.character.domain.dice import DiceRoll
 from ceres.character.domain.skills import (
     Advocate,
+    Arts,
     ArtSkill,
     Athletics,
     Broker,
@@ -54,15 +56,14 @@ from ceres.character.domain.skills import (
     Gambler,
     Investigate,
     JackOfAllTrades,
-    LanguageSkill,
-    Level,
+    Languages,
     PerformingArt,
     Persuade,
     Pilot,
     PresentationArt,
-    ProfessionSkill,
+    Professions,
     Recon,
-    ScienceSkill,
+    Sciences,
     Stealth,
     Steward,
     Streetwise,
@@ -197,63 +198,63 @@ class Entertainer(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.DEX,
-                Chars.INT,
-                Chars.SOC,
-                skill_instances(LanguageSkill),
-                Carouse(),
-                JackOfAllTrades(),
+                Char(Chars.DEX),
+                Char(Chars.INT),
+                Char(Chars.SOC),
+                SkillChoice(Languages),
+                Skill(Carouse),
+                Skill(JackOfAllTrades),
             ]
         ),
         service_skills=SkillTable(
             [
-                skill_instances(ArtSkill),
-                Carouse(),
-                Deception(),
-                Drive(),
-                Persuade(),
-                Steward(),
+                SkillChoice(Arts),
+                Skill(Carouse),
+                Skill(Deception),
+                Skill(Drive),
+                Skill(Persuade),
+                Skill(Steward),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Advocate(),
-                Broker(),
-                Deception(),
-                skill_instances(ScienceSkill),
-                Streetwise(),
-                Diplomat(),
+                Skill(Advocate),
+                Skill(Broker),
+                Skill(Deception),
+                SkillChoice(Sciences),
+                Skill(Streetwise),
+                Skill(Diplomat),
             ],
             min_edu=10,
         ),
         assignment1=SkillTable(
             [  # Artist
-                skill_instances(ArtSkill),
-                Carouse(),
-                Electronics(computers=Level(value=1)),
-                Gambler(),
-                Persuade(),
-                skill_instances(ProfessionSkill),
+                SkillChoice(Arts),
+                Skill(Carouse),
+                Skill(Electronics, specs=(Electronics.computers,)),
+                Skill(Gambler),
+                Skill(Persuade),
+                SkillChoice(Professions),
             ]
         ),
         assignment2=SkillTable(
             [  # Journalist
-                PresentationArt(),
-                Electronics(),
-                Drive(),
-                Investigate(),
-                Recon(),
-                Streetwise(),
+                Skill(PresentationArt),
+                Skill(Electronics),
+                Skill(Drive),
+                Skill(Investigate),
+                Skill(Recon),
+                Skill(Streetwise),
             ]
         ),
         assignment3=SkillTable(
             [  # Performer
-                PerformingArt(),
-                Athletics(),
-                Carouse(),
-                Deception(),
-                Stealth(),
-                Streetwise(),
+                Skill(PerformingArt),
+                Skill(Athletics),
+                Skill(Carouse),
+                Skill(Deception),
+                Skill(Stealth),
+                Skill(Streetwise),
             ]
         ),
     )

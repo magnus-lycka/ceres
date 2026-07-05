@@ -43,13 +43,14 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillRollPendingBase,
     PendingAnySkillAtLevelOnSuccessRoll,
 )
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
     AnySkill,
-    ArtSkill,
+    Arts,
     Athletics,
     Deception,
     Diplomat,
@@ -58,10 +59,11 @@ from ceres.character.domain.skills import (
     Engineer,
     Flyer,
     Investigate,
-    LanguageSkill,
+    Languages,
     Medic,
     Navigation,
     Persuade,
+    Sciences,
     ScienceSkill,
     Survival,
     VaccSuit,
@@ -375,63 +377,63 @@ class Scholar(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.INT,
-                Chars.EDU,
-                Chars.SOC,
-                Chars.DEX,
-                Chars.END,
-                skill_instances(LanguageSkill),
+                Char(Chars.INT),
+                Char(Chars.EDU),
+                Char(Chars.SOC),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                SkillChoice(Languages),
             ]
         ),
         service_skills=SkillTable(
             [
-                (Drive(), Flyer()),
-                Electronics(),
-                Diplomat(),
-                Medic(),
-                Investigate(),
-                skill_instances(ScienceSkill),
+                SkillChoice(Drive | Flyer),
+                Skill(Electronics),
+                Skill(Diplomat),
+                Skill(Medic),
+                Skill(Investigate),
+                SkillChoice(Sciences),
             ]
         ),
         advanced_education=SkillTable(
             [
-                skill_instances(ArtSkill),
-                Advocate(),
-                Electronics(),
-                skill_instances(LanguageSkill),
-                Engineer(),
-                skill_instances(ScienceSkill),
+                SkillChoice(Arts),
+                Skill(Advocate),
+                Skill(Electronics),
+                SkillChoice(Languages),
+                Skill(Engineer),
+                SkillChoice(Sciences),
             ],
             min_edu=10,
         ),
         assignment1=SkillTable(
             [  # Field Researcher
-                Electronics(),
-                VaccSuit(),
-                Navigation(),
-                Survival(),
-                Investigate(),
-                skill_instances(ScienceSkill),
+                Skill(Electronics),
+                Skill(VaccSuit),
+                Skill(Navigation),
+                Skill(Survival),
+                Skill(Investigate),
+                SkillChoice(Sciences),
             ]
         ),
         assignment2=SkillTable(
             [  # Scientist
-                Admin(),
-                Engineer(),
-                skill_instances(ScienceSkill),
-                skill_instances(ScienceSkill),
-                Electronics(),
-                skill_instances(ScienceSkill),
+                Skill(Admin),
+                Skill(Engineer),
+                SkillChoice(Sciences),
+                SkillChoice(Sciences),
+                Skill(Electronics),
+                SkillChoice(Sciences),
             ]
         ),
         assignment3=SkillTable(
             [  # Physician
-                Medic(),
-                Electronics(),
-                Investigate(),
-                Medic(),
-                Persuade(),
-                skill_instances(ScienceSkill),
+                Skill(Medic),
+                Skill(Electronics),
+                Skill(Investigate),
+                Skill(Medic),
+                Skill(Persuade),
+                SkillChoice(Sciences),
             ]
         ),
     )

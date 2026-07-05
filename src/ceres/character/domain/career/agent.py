@@ -44,6 +44,7 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
 )
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.dice import DiceRoll
@@ -62,7 +63,7 @@ from ceres.character.domain.skills import (
     Gunner,
     Investigate,
     JackOfAllTrades,
-    LanguageSkill,
+    Languages,
     Level,
     Medic,
     Melee,
@@ -73,7 +74,6 @@ from ceres.character.domain.skills import (
     Streetwise,
     Tactics,
     VaccSuit,
-    skill_instances,
 )
 from ceres.character.mechanism.event_base import ChoiceBase, Event
 
@@ -388,63 +388,63 @@ class Agent(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                GunCombat(),
-                Chars.DEX,
-                Chars.END,
-                Melee(),
-                Chars.INT,
-                Athletics(),
+                Skill(GunCombat),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Skill(Melee),
+                Char(Chars.INT),
+                Skill(Athletics),
             ]
         ),
         service_skills=SkillTable(
             [
-                Streetwise(),
-                Drive(),
-                Investigate(),
-                Flyer(),
-                Recon(),
-                GunCombat(),
+                Skill(Streetwise),
+                Skill(Drive),
+                Skill(Investigate),
+                Skill(Flyer),
+                Skill(Recon),
+                Skill(GunCombat),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Advocate(),
-                skill_instances(LanguageSkill),
-                Explosives(),
-                Medic(),
-                VaccSuit(),
-                Electronics(),
+                Skill(Advocate),
+                SkillChoice(Languages),
+                Skill(Explosives),
+                Skill(Medic),
+                Skill(VaccSuit),
+                Skill(Electronics),
             ],
             min_edu=8,
         ),
         assignment1=SkillTable(
             [  # Law Enforcement
-                Investigate(),
-                Recon(),
-                Streetwise(),
-                Stealth(),
-                Melee(),
-                Advocate(),
+                Skill(Investigate),
+                Skill(Recon),
+                Skill(Streetwise),
+                Skill(Stealth),
+                Skill(Melee),
+                Skill(Advocate),
             ]
         ),
         assignment2=SkillTable(
             [  # Intelligence
-                Investigate(),
-                Recon(),
-                Electronics(),
-                Stealth(),
-                Persuade(),
-                Deception(),
+                Skill(Investigate),
+                Skill(Recon),
+                Skill(Electronics),
+                Skill(Stealth),
+                Skill(Persuade),
+                Skill(Deception),
             ]
         ),
         assignment3=SkillTable(
             [  # Corporate
-                Investigate(),
-                Electronics(),
-                Stealth(),
-                Carouse(),
-                Deception(),
-                Streetwise(),
+                Skill(Investigate),
+                Skill(Electronics),
+                Skill(Stealth),
+                Skill(Carouse),
+                Skill(Deception),
+                Skill(Streetwise),
             ]
         ),
     )

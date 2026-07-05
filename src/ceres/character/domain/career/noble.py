@@ -40,12 +40,14 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
     Animals,
+    Arts,
     ArtSkill,
     Broker,
     Carouse,
@@ -57,11 +59,11 @@ from ceres.character.domain.skills import (
     GunCombat,
     Investigate,
     JackOfAllTrades,
-    LanguageSkill,
+    Languages,
     Leadership,
     Melee,
     Persuade,
-    ScienceSkill,
+    Sciences,
     Stealth,
     Steward,
     Streetwise,
@@ -230,63 +232,63 @@ class Noble(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.DEX,
-                Chars.END,
-                Gambler(),
-                GunCombat(),
-                Melee(),
+                Char(Chars.STR),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Skill(Gambler),
+                Skill(GunCombat),
+                Skill(Melee),
             ]
         ),
         service_skills=SkillTable(
             [
-                Admin(),
-                Advocate(),
-                Electronics(),
-                Diplomat(),
-                Investigate(),
-                Persuade(),
+                Skill(Admin),
+                Skill(Advocate),
+                Skill(Electronics),
+                Skill(Diplomat),
+                Skill(Investigate),
+                Skill(Persuade),
             ]
         ),
         advanced_education=SkillTable(
             [
-                skill_instances(ScienceSkill),
-                Advocate(),
-                skill_instances(LanguageSkill),
-                Leadership(),
-                Diplomat(),
-                skill_instances(ArtSkill),
+                SkillChoice(Sciences),
+                Skill(Advocate),
+                SkillChoice(Languages),
+                Skill(Leadership),
+                Skill(Diplomat),
+                SkillChoice(Arts),
             ],
             min_edu=8,
         ),
         assignment1=SkillTable(
             [  # Administrator
-                Admin(),
-                Advocate(),
-                Broker(),
-                Diplomat(),
-                Leadership(),
-                Persuade(),
+                Skill(Admin),
+                Skill(Advocate),
+                Skill(Broker),
+                Skill(Diplomat),
+                Skill(Leadership),
+                Skill(Persuade),
             ]
         ),
         assignment2=SkillTable(
             [  # Diplomat
-                Advocate(),
-                Carouse(),
-                Electronics(),
-                Steward(),
-                Diplomat(),
-                Deception(),
+                Skill(Advocate),
+                Skill(Carouse),
+                Skill(Electronics),
+                Skill(Steward),
+                Skill(Diplomat),
+                Skill(Deception),
             ]
         ),
         assignment3=SkillTable(
             [  # Dilettante
-                Carouse(),
-                Deception(),
-                Flyer(),
-                Streetwise(),
-                Gambler(),
-                JackOfAllTrades(),
+                Skill(Carouse),
+                Skill(Deception),
+                Skill(Flyer),
+                Skill(Streetwise),
+                Skill(Gambler),
+                Skill(JackOfAllTrades),
             ]
         ),
     )

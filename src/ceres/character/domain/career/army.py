@@ -41,6 +41,7 @@ from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
     CareerSkillRollPendingBase,
 )
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
@@ -66,14 +67,13 @@ from ceres.character.domain.skills import (
     Melee,
     Navigation,
     Persuade,
-    ProfessionSkill,
+    Professions,
     Recon,
     Stealth,
     Streetwise,
     Survival,
     Tactics,
     VaccSuit,
-    skill_instances,
 )
 from ceres.character.mechanism.event_base import ChoiceBase, Event
 
@@ -277,73 +277,73 @@ class Army(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.DEX,
-                Chars.END,
-                Gambler(),
-                Medic(),
-                Melee(),
+                Char(Chars.STR),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Skill(Gambler),
+                Skill(Medic),
+                Skill(Melee),
             ]
         ),
         service_skills=SkillTable(
             [
-                (Drive(), VaccSuit()),
-                Athletics(),
-                GunCombat(),
-                Recon(),
-                Melee(),
-                HeavyWeapons(),
+                SkillChoice(Drive | VaccSuit),
+                Skill(Athletics),
+                Skill(GunCombat),
+                Skill(Recon),
+                Skill(Melee),
+                Skill(HeavyWeapons),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Tactics(military=Level(value=1)),
-                Electronics(),
-                Navigation(),
-                Explosives(),
-                Engineer(),
-                Survival(),
+                Skill(Tactics, specs=(Tactics.military,)),
+                Skill(Electronics),
+                Skill(Navigation),
+                Skill(Explosives),
+                Skill(Engineer),
+                Skill(Survival),
             ],
             min_edu=8,
         ),
         officer=SkillTable(
             [
-                Tactics(military=Level(value=1)),
-                Leadership(),
-                Advocate(),
-                Diplomat(),
-                Electronics(),
-                Admin(),
+                Skill(Tactics, specs=(Tactics.military,)),
+                Skill(Leadership),
+                Skill(Advocate),
+                Skill(Diplomat),
+                Skill(Electronics),
+                Skill(Admin),
             ]
         ),
         assignment1=SkillTable(
             [  # Support
-                Mechanic(),
-                (Drive(), Flyer()),
-                skill_instances(ProfessionSkill),
-                Explosives(),
-                Electronics(comms=Level(value=1)),
-                Medic(),
+                Skill(Mechanic),
+                SkillChoice(Drive | Flyer),
+                SkillChoice(Professions),
+                Skill(Explosives),
+                Skill(Electronics, specs=(Electronics.comms,)),
+                Skill(Medic),
             ]
         ),
         assignment2=SkillTable(
             [  # Infantry
-                GunCombat(),
-                Melee(),
-                HeavyWeapons(),
-                Stealth(),
-                Athletics(),
-                Recon(),
+                Skill(GunCombat),
+                Skill(Melee),
+                Skill(HeavyWeapons),
+                Skill(Stealth),
+                Skill(Athletics),
+                Skill(Recon),
             ]
         ),
         assignment3=SkillTable(
             [  # Cavalry
-                Mechanic(),
-                Drive(),
-                Flyer(),
-                Recon(),
-                HeavyWeapons(vehicle=Level(value=1)),
-                Electronics(sensors=Level(value=1)),
+                Skill(Mechanic),
+                Skill(Drive),
+                Skill(Flyer),
+                Skill(Recon),
+                Skill(HeavyWeapons, specs=(HeavyWeapons.vehicle,)),
+                Skill(Electronics, specs=(Electronics.sensors,)),
             ]
         ),
     )

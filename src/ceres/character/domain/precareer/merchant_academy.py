@@ -2,20 +2,18 @@ from typing import ClassVar, Literal
 
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.career.merchant import Merchant
+from ceres.character.domain.career.skill_table_entries import Skill
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_data import PreCareerData, PreCareerTerm
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
-from ceres.character.domain.psionics_data import Psi
 from ceres.character.domain.skills import AnySkill
 from ceres.character.mechanism.event_base import Event
 
 
 def _skill_instances_from_table(table) -> list[AnySkill]:
-    """Return skill instances for all non-characteristic, non-list entries in a SkillTable."""
-    from typing import cast as _cast
-
-    return [_cast(AnySkill, e) for e in table.entries if not isinstance(e, (Chars, Psi, tuple))]
+    """Return skill instances for all Skill entries in a SkillTable."""
+    return [e.skill() for e in table.entries if isinstance(e, Skill)]
 
 
 class MerchantAcademyPreCareer(PreCareerData):
@@ -45,8 +43,8 @@ class MerchantAcademyPreCareer(PreCareerData):
             table = merchant.skill_table(self.curriculum_table)
             if table:
                 for entry in table.entries:
-                    if not isinstance(entry, (Chars, Psi, tuple)):
-                        projection.grant_skill(entry)
+                    if isinstance(entry, Skill):
+                        projection.grant_skill(entry.skill())
             service_table = merchant.skill_table('service_skills')
             if service_table:
                 service_skills = _skill_instances_from_table(service_table)

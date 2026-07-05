@@ -1,8 +1,13 @@
-from typing import Annotated, Literal, Self, cast, get_args, get_origin
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Annotated, Literal, Self, cast, get_args, get_origin
 
 from pydantic import Field
+from pydantic._internal._model_construction import ModelMetaclass
 
 from ceres.shared import CeresModel
+
+if TYPE_CHECKING:
+    from ceres.character.domain.character_state import CharacterProjection
 
 
 class Level(CeresModel):
@@ -23,7 +28,33 @@ def _level(name: str | None = None):
     return Field(default_factory=Level, json_schema_extra={'name': name} if name else None)
 
 
-class Skill(CeresModel):
+@dataclass(frozen=True)
+class SpecRef:
+    """Typed reference to one specialization (Level field) of a skill class."""
+
+    skill_cls: type[Skill]
+    field: str
+
+    def __repr__(self) -> str:
+        return f'{self.skill_cls.__name__}.{self.field}'
+
+    def kind(self) -> str:
+        return self.skill_cls.model_fields['kind'].default
+
+
+class _SkillMeta(ModelMetaclass):
+    """Makes class-level access to a Level field yield a SpecRef, e.g. Melee.blade."""
+
+    def __getattr__(cls, name: str) -> object:
+        if not name.startswith('_'):
+            for klass in type.mro(cls):
+                fields = klass.__dict__.get('__pydantic_fields__')
+                if fields and name in fields and fields[name].annotation is Level:
+                    return SpecRef(cast(type['Skill'], cls), name)
+        return super().__getattr__(name)  # ty: ignore[unresolved-attribute]
+
+
+class Skill(CeresModel, metaclass=_SkillMeta):
     @classmethod
     def name(cls) -> str:
         raw = get_args(cls.model_fields['kind'].annotation)[0]
@@ -38,6 +69,35 @@ class Skill(CeresModel):
             extra = field.json_schema_extra or {}
             names.append(str(extra.get('name') or field_name.replace('_', ' ').title()))
         return tuple(names)
+
+    def label(self) -> str:
+        """Display label: skill name plus the active specialization, if one is set."""
+        cls = type(self)
+        fields = level_fields(cls)
+        if len(fields) > 1:
+            active = next((f for f in fields if getattr(self, f).value > 0), None)
+            if active is not None:
+                extra = cls.model_fields[active].json_schema_extra or {}
+                specialisation = str(extra.get('name') or active.replace('_', ' ').title())
+                return f'{cls.name()} ({specialisation})'
+        return cls.name()
+
+    def select_options(self, projection: CharacterProjection, level: int | None) -> list[tuple[str, str]]:
+        """(label, form_value) pairs for choosing this skill. Level fields set on this
+        instance restrict the offered specializations; a bare instance offers all."""
+        cls = type(self)
+        if level == 0:
+            return [(cls.name(), cls().model_dump_json())]
+        restricted = {f for f in level_fields(cls) if getattr(self, f).value > 0}
+        return [
+            (candidate.label(), candidate.model_dump_json())
+            for candidate in projection.skill_choices([cls], level)
+            if not restricted or any(getattr(candidate, f).value > 0 for f in restricted)
+        ]
+
+    def is_available(self, projection: CharacterProjection, level: int | None) -> bool:
+        """Whether choosing this skill at the given level would still benefit the character."""
+        return bool(projection.skill_choices([type(self)], level))
 
 
 class Admin(Skill):

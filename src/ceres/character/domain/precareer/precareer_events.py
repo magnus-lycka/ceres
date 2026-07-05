@@ -253,9 +253,7 @@ class PendingPreCareerSkillChoice(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=PreCareerSkillChoiceHandler(skill=skill))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.domain.skill_events import skill_option_label
-
-        options = [(skill_option_label(opt), opt.model_dump_json()) for opt in self._expanded_options()]
+        options = [(opt.label(), opt.model_dump_json()) for opt in self._expanded_options()]
         return [Select(name='skill', label='Choose a skill', options=options)]
 
 

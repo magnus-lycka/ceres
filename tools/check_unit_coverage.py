@@ -21,6 +21,7 @@ src/ceres/character/domain/career/agent.py
 src/ceres/character/domain/career/army.py
 src/ceres/character/domain/career/career_data.py
 src/ceres/character/domain/career/career_events.py
+src/ceres/character/domain/career/career_term.py
 src/ceres/character/domain/career/citizen.py
 src/ceres/character/domain/career/common.py
 src/ceres/character/domain/career/common_pending.py
@@ -60,11 +61,13 @@ src/ceres/character/domain/precareer/merchant_academy.py
 src/ceres/character/domain/precareer/military_academy.py
 src/ceres/character/domain/precareer/precareer_data.py
 src/ceres/character/domain/precareer/precareer_events.py
+src/ceres/character/domain/precareer/precareer_term.py
 src/ceres/character/domain/precareer/psionic_community.py
 src/ceres/character/domain/precareer/school_of_hard_knocks.py
 src/ceres/character/domain/precareer/spacer_community.py
 src/ceres/character/domain/precareer/university.py
 src/ceres/character/domain/psionics.py
+src/ceres/character/domain/psionics_data.py
 src/ceres/character/domain/skill_events.py
 src/ceres/character/domain/skills.py
 src/ceres/character/domain/sophont/__init__.py
@@ -76,6 +79,7 @@ src/ceres/character/mechanism/__init__.py
 src/ceres/character/mechanism/errors.py
 src/ceres/character/mechanism/event_base.py
 src/ceres/character/mechanism/pending_input.py
+src/ceres/character/mechanism/projection.py
 src/ceres/character/mechanism/replay.py
 src/ceres/character/mechanism/store.py
 src/ceres/character/notes.py
@@ -176,6 +180,16 @@ def test_path_for(src: Path) -> Path:
     return REPO_ROOT / 'tests' / 'unit' / rel.parent / f'test_{rel.name}'
 
 
+def coverage_percent_from_line(line: str) -> int | None:
+    for part in line.split():
+        if part.endswith('%'):
+            try:
+                return int(part.rstrip('%'))
+            except ValueError:
+                return None
+    return None
+
+
 def measure_coverage(test_file: Path, src_file: Path) -> int | None:
     result = subprocess.run(
         [
@@ -197,11 +211,7 @@ def measure_coverage(test_file: Path, src_file: Path) -> int | None:
     target = str(src_file.relative_to(REPO_ROOT))
     for line in (result.stdout + result.stderr).splitlines():
         if target in line:
-            parts = line.split()
-            try:
-                return int(parts[-1].rstrip('%'))
-            except ValueError, IndexError:
-                return None
+            return coverage_percent_from_line(line)
     return None
 
 

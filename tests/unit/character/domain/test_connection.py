@@ -4,6 +4,16 @@ from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.domain.connection import Ally, Contact, Enemy, Rival, make_connection
 
 
+class TestConnectionFriendliness:
+    def test_contact_and_ally_are_friendly(self):
+        assert Contact().is_friendly is True
+        assert Ally().is_friendly is True
+
+    def test_rival_and_enemy_are_not(self):
+        assert Rival().is_friendly is False
+        assert Enemy().is_friendly is False
+
+
 class TestConnectionDisplayName:
     def test_contact(self):
         assert Contact().display_name == 'Contact'

@@ -39,6 +39,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillChoicePendingBase, CareerSkillRollPendingBase
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.dice import DiceRoll
@@ -58,7 +59,7 @@ from ceres.character.domain.skills import (
     Flyer,
     GunCombat,
     JackOfAllTrades,
-    LanguageSkill,
+    Languages,
     Level,
     Mechanic,
     Medic,
@@ -66,14 +67,13 @@ from ceres.character.domain.skills import (
     Persuade,
     Pilot,
     Recon,
-    ScienceSkill,
+    Sciences,
     Seafarer,
     SpaceScience,
     Stealth,
     Streetwise,
     Survival,
     VaccSuit,
-    skill_instances,
 )
 from ceres.character.mechanism.event_base import Event
 
@@ -318,66 +318,63 @@ class Scout(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.STR,
-                Chars.DEX,
-                Chars.END,
-                Chars.INT,
-                Chars.EDU,
-                JackOfAllTrades(),
+                Char(Chars.STR),
+                Char(Chars.DEX),
+                Char(Chars.END),
+                Char(Chars.INT),
+                Char(Chars.EDU),
+                Skill(JackOfAllTrades),
             ]
         ),
         service_skills=SkillTable(
             [
-                (
-                    Pilot(small_craft=Level(value=1)),
-                    Pilot(spacecraft=Level(value=1)),
-                ),
-                Survival(),
-                Mechanic(),
-                Astrogation(),
-                VaccSuit(),
-                GunCombat(),
+                Skill(Pilot, specs=(Pilot.small_craft, Pilot.spacecraft)),
+                Skill(Survival),
+                Skill(Mechanic),
+                Skill(Astrogation),
+                Skill(VaccSuit),
+                Skill(GunCombat),
             ]
         ),
         advanced_education=SkillTable(
             [
-                Medic(),
-                skill_instances(LanguageSkill),
-                Seafarer(),
-                Explosives(),
-                skill_instances(ScienceSkill),
-                JackOfAllTrades(),
+                Skill(Medic),
+                SkillChoice(Languages),
+                Skill(Seafarer),
+                Skill(Explosives),
+                SkillChoice(Sciences),
+                Skill(JackOfAllTrades),
             ],
             min_edu=8,
         ),
         assignment1=SkillTable(
             [  # Courier
-                Electronics(),
-                Flyer(),
-                Pilot(),
-                Engineer(),
-                Athletics(),
-                Astrogation(),
+                Skill(Electronics),
+                Skill(Flyer),
+                Skill(Pilot),
+                Skill(Engineer),
+                Skill(Athletics),
+                Skill(Astrogation),
             ]
         ),
         assignment2=SkillTable(
             [  # Surveyor
-                Electronics(),
-                Persuade(),
-                Pilot(),
-                Navigation(),
-                Diplomat(),
-                Streetwise(),
+                Skill(Electronics),
+                Skill(Persuade),
+                Skill(Pilot),
+                Skill(Navigation),
+                Skill(Diplomat),
+                Skill(Streetwise),
             ]
         ),
         assignment3=SkillTable(
             [  # Explorer
-                Electronics(),
-                Pilot(),
-                Engineer(),
-                skill_instances(ScienceSkill),
-                Stealth(),
-                Recon(),
+                Skill(Electronics),
+                Skill(Pilot),
+                Skill(Engineer),
+                SkillChoice(Sciences),
+                Skill(Stealth),
+                Skill(Recon),
             ]
         ),
     )

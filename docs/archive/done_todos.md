@@ -1,4 +1,7 @@
-# Completed todo items
+# Completed Todo Items
+
+**Historical document. Current planning and progress are now handled in GitHub
+Issues.**
 
 Moved from `docs/todo_maybe.md` once fully implemented.
 

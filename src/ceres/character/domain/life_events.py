@@ -59,7 +59,6 @@ class LifeEventHandler(EventHandlerBase):
     ) -> None:
         from ceres.character.domain.career.career_data import BenefitRollDm
         from ceres.character.domain.career.career_events import PendingChoices
-        from ceres.character.domain.connection import Ally, Contact
         from ceres.character.domain.health.health_events import PendingInjuryTable
         from ceres.character.domain.homeworld.homeworld_events import PendingHomeworldChangeRequired
 
@@ -114,11 +113,7 @@ class LifeEventHandler(EventHandlerBase):
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 8:
-                convertible = [
-                    connection
-                    for connection in projection.summary.connections
-                    if isinstance(connection, (Contact, Ally))
-                ]
+                convertible = [connection for connection in projection.summary.connections if connection.is_friendly]
                 if convertible:
                     projection.queue_deferred(
                         PendingLifeEventBetrayalConvert(
@@ -312,11 +307,9 @@ class PendingLifeEventBetrayalConvert(PendingInputBase):
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        from ceres.character.domain.connection import Ally, Contact
-
         options: list[tuple[str, str]] = []
         for index, connection in enumerate(projection.summary.connections):
-            if isinstance(connection, (Contact, Ally)):
+            if connection.is_friendly:
                 label = f'{connection.kind.value.replace("connection_", "").title()} ({connection.origin})'
                 options.append((f'{label} → Rival', f'{index}|{ConnectionKind.RIVAL.value}'))
                 options.append((f'{label} → Enemy', f'{index}|{ConnectionKind.ENEMY.value}'))

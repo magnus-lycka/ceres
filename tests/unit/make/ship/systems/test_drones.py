@@ -22,6 +22,10 @@ def _bind(part, tl=12, displacement=400):
 
 
 class TestProbeDrones:
+    def test_singular_and_plural_descriptions(self):
+        assert ProbeDrones(count=1).item_description() == 'Probe Drone'
+        assert ProbeDrones(count=2).item_description() == 'Probe Drones'
+
     def test_tons_per_drone(self):
         assert _bind(ProbeDrones(count=10)).tons == pytest.approx(2.0)
 
@@ -38,6 +42,10 @@ class TestProbeDrones:
 
 
 class TestAdvancedProbeDrones:
+    def test_singular_and_plural_descriptions(self):
+        assert AdvancedProbeDrones(count=1).item_description() == 'Advanced Probe Drone'
+        assert AdvancedProbeDrones(count=2).item_description() == 'Advanced Probe Drones'
+
     def test_higher_cost_than_probe_drones(self):
         basic = _bind(ProbeDrones(count=10))
         advanced = _bind(AdvancedProbeDrones(count=10))
@@ -53,5 +61,12 @@ class TestRepairDrones:
 
 
 class TestMiningDrones:
+    def test_singular_and_plural_descriptions(self):
+        assert MiningDrones(count=1).item_description() == 'Mining Drone'
+        assert MiningDrones(count=2).item_description() == 'Mining Drones'
+
     def test_two_tons_per_drone(self):
         assert _bind(MiningDrones(count=10)).tons == pytest.approx(20.0)
+
+    def test_cost_per_drone(self):
+        assert _bind(MiningDrones(count=10)).cost == 2_000_000.0

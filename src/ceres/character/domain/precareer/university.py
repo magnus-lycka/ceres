@@ -6,7 +6,13 @@ from ceres.character.domain import skills as character_skills
 from ceres.character.domain.career.career_data import CharCheck
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.precareer.precareer_data import PreCareerData, PrecareerSkillEntry, PreCareerTerm
+from ceres.character.domain.precareer.precareer_data import (
+    PreCareerData,
+    PrecareerEntryBase,
+    PrecareerSkill,
+    PrecareerSkillChoice,
+    PreCareerTerm,
+)
 from ceres.character.domain.skills import (
     AnySkill,
     ArtSkill,
@@ -25,19 +31,19 @@ class UniversityPreCareer(PreCareerData):
     entry_term_dms: ClassVar[dict[int, int]] = {2: -1, 3: -2}
     entry_soc_bonus_min: ClassVar[int] = 9
     entry_soc_bonus: ClassVar[int] = 1
-    skill_choices: ClassVar[list[PrecareerSkillEntry]] = [
-        PrecareerSkillEntry(skill=character_skills.Admin()),
-        PrecareerSkillEntry(skill=character_skills.Advocate()),
-        PrecareerSkillEntry(skill=character_skills.Animals()),
-        PrecareerSkillEntry(skill=skill_instances(ArtSkill)),
-        PrecareerSkillEntry(skill=character_skills.Astrogation()),
-        PrecareerSkillEntry(skill=character_skills.Electronics()),
-        PrecareerSkillEntry(skill=character_skills.Engineer()),
-        PrecareerSkillEntry(skill=skill_instances(LanguageSkill)),
-        PrecareerSkillEntry(skill=character_skills.Medic()),
-        PrecareerSkillEntry(skill=character_skills.Navigation()),
-        PrecareerSkillEntry(skill=skill_instances(ProfessionSkill)),
-        PrecareerSkillEntry(skill=skill_instances(ScienceSkill)),
+    skill_choices: ClassVar[list[PrecareerEntryBase]] = [
+        PrecareerSkill(skill=character_skills.Admin()),
+        PrecareerSkill(skill=character_skills.Advocate()),
+        PrecareerSkill(skill=character_skills.Animals()),
+        PrecareerSkillChoice(skills=skill_instances(ArtSkill)),
+        PrecareerSkill(skill=character_skills.Astrogation()),
+        PrecareerSkill(skill=character_skills.Electronics()),
+        PrecareerSkill(skill=character_skills.Engineer()),
+        PrecareerSkillChoice(skills=skill_instances(LanguageSkill)),
+        PrecareerSkill(skill=character_skills.Medic()),
+        PrecareerSkill(skill=character_skills.Navigation()),
+        PrecareerSkillChoice(skills=skill_instances(ProfessionSkill)),
+        PrecareerSkillChoice(skills=skill_instances(ScienceSkill)),
     ]
     graduation: ClassVar[CharCheck] = CharCheck(characteristic=Chars.INT, target=6)
     honours_target: ClassVar[int] = 10

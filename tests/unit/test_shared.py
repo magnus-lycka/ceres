@@ -1,6 +1,18 @@
+from pydantic import BaseModel
 import pytest
 
-from ceres.shared import CeresPart, Equipment, ehex_to_int, int_to_ehex
+from ceres.shared import (
+    Assembly,
+    CeresModel,
+    CeresPart,
+    Equipment,
+    NoteList,
+    _append_note,
+    _Note,
+    _NoteCategory,
+    ehex_to_int,
+    int_to_ehex,
+)
 
 
 class TestEhexToInt:
@@ -82,6 +94,142 @@ class TestEhexRoundtrip:
     def test_all_values_roundtrip(self) -> None:
         for i in range(34):
             assert ehex_to_int(int_to_ehex(i)) == i
+
+
+class TestNoteList:
+    def test_note_factories_set_category_and_message(self):
+        assert _Note.item('hull').model_dump() == {'category': 'item', 'message': 'hull'}
+        assert _Note.content('fluff').model_dump() == {'category': 'content', 'message': 'fluff'}
+        assert _Note.info('info').model_dump() == {'category': 'info', 'message': 'info'}
+        assert _Note.warning('warning').model_dump() == {'category': 'warning', 'message': 'warning'}
+        assert _Note.error('error').model_dump() == {'category': 'error', 'message': 'error'}
+
+    def test_fluent_note_methods_append_and_return_self(self):
+        notes = NoteList()
+
+        result = notes.item('item').content('content').info('info').warning('warning').error('error')
+
+        assert result is notes
+        assert notes.items == ['item']
+        assert notes.contents == ['content']
+        assert notes.infos == ['info']
+        assert notes.warnings == ['warning']
+        assert notes.errors == ['error']
+
+    def test_item_note_is_replaced_when_added_again(self):
+        notes = NoteList().item('old').info('info')
+
+        notes.item('new')
+
+        assert notes.items == ['new']
+        assert notes[0].message == 'new'
+        assert notes.infos == ['info']
+
+    def test_item_note_is_inserted_before_existing_details(self):
+        notes = NoteList().info('info')
+
+        notes.item('item')
+
+        assert [note.message for note in notes] == ['item', 'info']
+
+    def test_advisories_problems_and_details_filter_categories(self):
+        notes = NoteList().item('item').content('content').info('info').warning('warning').error('error')
+
+        assert [note.message for note in notes.advisories] == ['info', 'warning']
+        assert [note.message for note in notes.problems] == ['warning', 'error']
+        assert [note.message for note in notes.details] == ['content', 'info', 'warning', 'error']
+        assert notes.detail_entries == [
+            {'category': 'content', 'message': 'content'},
+            {'category': 'info', 'message': 'info'},
+            {'category': 'warning', 'message': 'warning'},
+            {'category': 'error', 'message': 'error'},
+        ]
+
+    def test_item_message_returns_first_item_or_none(self):
+        assert NoteList().item_message is None
+        assert NoteList().item('item').item_message == 'item'
+
+    def test_pydantic_validation_returns_note_list(self):
+        class Container(BaseModel):
+            notes: NoteList
+
+        container = Container.model_validate({'notes': [{'category': 'info', 'message': 'hello'}]})
+
+        assert isinstance(container.notes, NoteList)
+        assert container.notes.infos == ['hello']
+
+    def test_append_note_with_item_category_sets_item_note(self):
+        notes = NoteList().info('info')
+
+        _append_note(notes, _NoteCategory.ITEM, 'item')
+
+        assert [note.message for note in notes] == ['item', 'info']
+
+
+class DescribedModel(CeresModel):
+    description: str = ''
+
+    def build_notes(self) -> list[_Note]:
+        return [_Note.info('built')]
+
+
+class TestCeresModel:
+    def test_item_description_defaults_to_empty_string(self):
+        assert CeresModel().item_description() == ''
+
+    def test_item_description_uses_description_attribute(self):
+        assert DescribedModel(description='desc').item_description() == 'desc'
+
+    def test_build_item_combines_display_label_and_description(self):
+        assert DescribedModel(display_label='Label', description='Desc').build_item() == 'Label (Desc)'
+
+    def test_build_item_can_use_only_label_or_only_description(self):
+        assert CeresModel(display_label='Label').build_item() == 'Label'
+        assert DescribedModel(description='Desc').build_item() == 'Desc'
+        assert CeresModel().build_item() is None
+
+    def test_notes_include_built_item_built_notes_and_manual_notes(self):
+        model = DescribedModel(display_label='Label', description='Desc')
+        model.content('content')
+        model.info('info')
+        model.warning('warning')
+        model.error('error')
+
+        assert model.notes.items == ['Label (Desc)']
+        assert model.notes.contents == ['content']
+        assert model.notes.infos == ['built', 'info']
+        assert model.notes.warnings == ['warning']
+        assert model.notes.errors == ['error']
+
+    def test_manual_item_overrides_built_item(self):
+        model = DescribedModel(display_label='Label', description='Desc')
+
+        model.item('Manual')
+
+        assert model.notes.items == ['Manual']
+
+    def test_model_post_init_is_no_op(self):
+        assert CeresModel().model_post_init(None) is None
+
+    def test_base_build_notes_is_empty(self):
+        assert CeresModel().build_notes() == []
+
+    def test_base_notes_can_be_empty(self):
+        assert CeresModel().notes == []
+
+
+class TestCeresPart:
+    def test_unbound_assembly_raises(self):
+        part = CeresPart()
+        with pytest.raises(RuntimeError, match='not bound to an Assembly'):
+            _ = part.assembly
+
+    def test_bound_assembly_is_returned(self):
+        assembly = Assembly(tl=12)
+        part = CeresPart()
+        part._assembly = assembly
+
+        assert part.assembly is assembly
 
 
 class TestEquipment:

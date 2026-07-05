@@ -1,6 +1,12 @@
 """Unit tests for systems/command.py — BriefingRoom, CommandBridge."""
 
+from ceres.make.ship.base import ShipBase
 from ceres.make.ship.systems.command import BriefingRoom, CommandBridge
+
+
+class _Ship(ShipBase):
+    def __init__(self, displacement: int):
+        super().__init__(tl=12, displacement=displacement)
 
 
 class TestBriefingRoom:
@@ -20,3 +26,24 @@ class TestCommandBridge:
         bridge = CommandBridge()
         assert bridge.tons == 40.0
         assert bridge.cost == 30_000_000.0
+
+    def test_build_notes_describes_tactics_bonus(self):
+        bridge = CommandBridge()
+        assert bridge.notes.infos == ['DM +1 to Tactics (naval) checks made within the command bridge']
+
+    def test_tactics_naval_dm_is_plus_one(self):
+        assert CommandBridge().tactics_naval_dm == 1
+
+    def test_bind_rejects_ship_at_minimum_displacement(self):
+        bridge = CommandBridge()
+
+        bridge.bind(_Ship(displacement=5_000))
+
+        assert bridge.notes.errors == ['Command bridge requires displacement greater than 5000 tons']
+
+    def test_bind_accepts_ship_above_minimum_displacement(self):
+        bridge = CommandBridge()
+
+        bridge.bind(_Ship(displacement=5_001))
+
+        assert bridge.notes.errors == []

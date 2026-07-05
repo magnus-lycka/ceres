@@ -41,13 +41,14 @@ from ceres.character.domain.career.common_pending import (
     PendingAnySkillAtLevelOnSuccessRoll,
     append_increment_existing_skill_pending,
 )
+from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
     Animals,
-    ArtSkill,
+    Arts,
     Athletics,
     Broker,
     Carouse,
@@ -61,7 +62,7 @@ from ceres.character.domain.skills import (
     Gambler,
     GunCombat,
     JackOfAllTrades,
-    LanguageSkill,
+    Languages,
     Leadership,
     Level,
     Mechanic,
@@ -69,9 +70,10 @@ from ceres.character.domain.skills import (
     Melee,
     Navigation,
     Persuade,
+    Professions,
     ProfessionSkill,
     Recon,
-    ScienceSkill,
+    Sciences,
     Steward,
     Streetwise,
     Survival,
@@ -309,63 +311,63 @@ class Citizen(CareerData):
     skill_tables: ClassVar[CareerSkillTables] = CareerSkillTables(
         personal_development=SkillTable(
             [
-                Chars.EDU,
-                Chars.INT,
-                Carouse(),
-                Gambler(),
-                Drive(),
-                JackOfAllTrades(),
+                Char(Chars.EDU),
+                Char(Chars.INT),
+                Skill(Carouse),
+                Skill(Gambler),
+                Skill(Drive),
+                Skill(JackOfAllTrades),
             ]
         ),
         service_skills=SkillTable(
             [
-                Drive(),
-                Flyer(),
-                Streetwise(),
-                Melee(),
-                Steward(),
-                skill_instances(ProfessionSkill),
+                Skill(Drive),
+                Skill(Flyer),
+                Skill(Streetwise),
+                Skill(Melee),
+                Skill(Steward),
+                SkillChoice(Professions),
             ]
         ),
         advanced_education=SkillTable(
             [
-                skill_instances(ArtSkill),
-                Advocate(),
-                Diplomat(),
-                skill_instances(LanguageSkill),
-                Electronics(computers=Level(value=1)),
-                Medic(),
+                SkillChoice(Arts),
+                Skill(Advocate),
+                Skill(Diplomat),
+                SkillChoice(Languages),
+                Skill(Electronics, specs=(Electronics.computers,)),
+                Skill(Medic),
             ],
             min_edu=10,
         ),
         assignment1=SkillTable(
             [  # Corporate
-                Advocate(),
-                Admin(),
-                Broker(),
-                Electronics(computers=Level(value=1)),
-                Diplomat(),
-                Leadership(),
+                Skill(Advocate),
+                Skill(Admin),
+                Skill(Broker),
+                Skill(Electronics, specs=(Electronics.computers,)),
+                Skill(Diplomat),
+                Skill(Leadership),
             ]
         ),
         assignment2=SkillTable(
             [  # Worker
-                Drive(),
-                Mechanic(),
-                Electronics(),
-                Engineer(),
-                skill_instances(ProfessionSkill),
-                skill_instances(ScienceSkill),
+                Skill(Drive),
+                Skill(Mechanic),
+                Skill(Electronics),
+                Skill(Engineer),
+                SkillChoice(Professions),
+                SkillChoice(Sciences),
             ]
         ),
         assignment3=SkillTable(
             [  # Colonist
-                Animals(),
-                Athletics(),
-                JackOfAllTrades(),
-                Drive(),
-                Survival(),
-                Recon(),
+                Skill(Animals),
+                Skill(Athletics),
+                Skill(JackOfAllTrades),
+                Skill(Drive),
+                Skill(Survival),
+                Skill(Recon),
             ]
         ),
     )
