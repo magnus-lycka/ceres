@@ -5,6 +5,12 @@ This document is the authoritative reference for how to develop and test Ceres.
 
 ## Ways of Working
 
+- **Work tracking** — Planned and ongoing work is tracked as GitHub issues, as
+  described in [docs/github-issues-workflow.md](docs/github-issues-workflow.md).
+  Use `gh issue ...` to list, create, comment on, and close issues. Do not add
+  new work to `docs/todo_maybe.md` — it is a read-only migration ledger being
+  phased out. Every active `docs/plan-*.md` should have a tracking issue that
+  links to it; completed plans are marked complete and moved to `docs/archive/`.
 - **TDD** — Write tests first, then implement. Tests live in `tests/`.
 - **Test Design** — Tests should verify that the code under test does what it
   is *supposed* to do. A test that encodes whatever the code currently does is

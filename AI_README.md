@@ -106,6 +106,12 @@ lives in the test suite, and nothing is deployed. Therefore:
 
 ## Ways of Working
 
+- **Work tracking** - Planned and ongoing work is tracked as GitHub issues, as
+  described in [docs/github-issues-workflow.md](docs/github-issues-workflow.md).
+  Use `gh issue ...` to list, create, comment on, and close issues. Do not add
+  new work to `docs/todo_maybe.md` — it is a read-only migration ledger being
+  phased out. Every active `docs/plan-*.md` should have a tracking issue that
+  links to it.
 - **TDD** - Write tests first, then implement. Tests live in `tests/`.
 - **Test Design** - Tests should verify that the code under test does what it is supposed to do.
   Tests written to verify that the code under test does what it does are of much less value.
@@ -196,7 +202,9 @@ Keep documentation in English. Use `docs/RULE_INTERPRETATIONS.md` for general
 rule interpretations, `docs/TEST_CASE_ASSEMBLIES.md` for test-case mapping
 conventions, and topic or `plan-*.md` files in `docs/` for implementation
 plans. When a plan is fully implemented, mark it complete at the top and move
-it to `docs/archive/` — do not delete it.
+it to `docs/archive/` — do not delete it. Work items, bugs, and progress
+tracking live in GitHub issues, not in docs — see
+[docs/github-issues-workflow.md](docs/github-issues-workflow.md).
 
 ## Commands
 
