@@ -114,8 +114,8 @@ writing any code.
 ## Relationship to Other Plans
 
 - The form-value parseable gap in `build_skill_select_options()` is tracked in
-  [plan-not-gained-api.md](plan-not-gained-api.md). If a `Characteristic` class
+  [plan-not-gained-api.md](archive/plan-not-gained-api.md). If a `Characteristic` class
   knows how to parse itself from form data, that gap closes automatically.
 - `Chars` appears in `SkillTableItem` type aliases. After this plan, the type
   alias and all its consumers (`_apply_skill_table_entry()`, etc.) will need
-  updating — coordinate with [plan-not-gained-api.md](plan-not-gained-api.md).
+  updating — coordinate with [plan-not-gained-api.md](archive/plan-not-gained-api.md).

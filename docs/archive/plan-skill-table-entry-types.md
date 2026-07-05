@@ -1,6 +1,19 @@
 # Plan: Skill Table Entry Types
 
-## STATUS: IN PROGRESS — Steps 1–5 complete; Step 6 next
+## STATUS: COMPLETE (2026-07-05)
+
+All six steps implemented. The final design differs from the sketches below in
+one significant way: specialization restrictions are expressed with typed
+`SpecRef` references (`Skill(Seafarer, specs=(Seafarer.personal, Seafarer.sail))`,
+via a metaclass that makes class-level Level-field access return a `SpecRef`)
+rather than string specializations or instance-holding entry types — the
+interim `SpecificSkill` and `InstanceChoice` types were introduced and then
+removed in favour of the `specs` parameter on `Skill` and `SkillChoice`.
+Career skill-table cells carry no levels (they are increments per the book);
+levels appear only in rank bonuses. The legacy `psionics_data.Psi` RootModel
+is deleted; psion rank-bonus talents use the new `Psi` entry with inline
+acquisition-roll resolution on `PendingRankBonusChoice`. Follow-on OOP
+cleanups are tracked in GitHub issues #53 and #54.
 
 ## Background
 

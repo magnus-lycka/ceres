@@ -1,6 +1,8 @@
 """Unit tests for skill_events.py — SkillChoiceHandler, PendingSkillChoice, helpers."""
 
-from ceres.character.domain.career.career_data import AdvancementDmOption
+from ceres.character.domain.career import ARMY
+from ceres.character.domain.career.advancement import PendingAdvancement, PendingCommissionChoice
+from ceres.character.domain.career.career_data import AdvancementDmOption, CareerTerm
 from ceres.character.domain.career.career_events import SurviveHandler
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.skill_events import (
@@ -107,6 +109,16 @@ class TestSkillChoiceHandler:
         handler = SkillChoiceHandler(skill=Admin(level=Level(value=1)))
         handler.apply(proj, _any_event())
         assert proj.summary.skill_level(Admin, 0) == 1
+
+    def test_queues_career_progress_when_skill_is_chosen_during_career(self):
+        proj = _projection()
+        proj.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Infantry')))
+        event = Event(id=7, handler=SkillChoiceHandler(skill=Admin(level=Level(value=1))))
+
+        event.apply(proj)
+
+        assert proj.summary.skill_level(Admin, 0) == 1
+        assert any(isinstance(pending, PendingAdvancement | PendingCommissionChoice) for pending in proj.pending_inputs)
 
     def test_delegates_to_on_skill_chosen_when_present(self):
         from ceres.character.domain.life_events import PendingLifeEventAlienScience

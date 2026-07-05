@@ -4,6 +4,7 @@ import pytest
 
 from ceres.character.domain.career import ARMY, SCOUT
 from ceres.character.domain.career.advancement import (
+    AdvancementDmChoiceHandler,
     AdvancementHandler,
     CommissionHandler,
     PendingAdvancement,
@@ -13,18 +14,15 @@ from ceres.character.domain.career.advancement import (
     rank_bonus_skill,
 )
 from ceres.character.domain.career.career_data import AdvancementDmOption, RankBonus
-from ceres.character.domain.career.career_events import (
-    AdvancementDmChoiceHandler,
-    PendingRankBonusChoice,
-    SkillChoiceHandler,
-)
+from ceres.character.domain.career.career_events import PendingRankBonusChoice, SkillChoiceHandler
 from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Medic
+from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Level, Medic
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.event_base import Event
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
 
 # Army Support: advancement EDU 7+, commission SOC 8+.
@@ -138,6 +136,14 @@ def _projection(**kwargs) -> CharacterProjection:
     )
 
 
+def _projection_in_army_support(**kwargs) -> CharacterProjection:
+    from ceres.character.domain.career.career_data import CareerTerm
+
+    projection = _projection(**kwargs)
+    projection.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Support')))
+    return projection
+
+
 class TestPendingAdvancement:
     def test_event_from_form_parses_roll(self):
         pending = PendingAdvancement(pending_id=(1, 0), instruction='Roll 2D')
@@ -181,6 +187,55 @@ class TestPendingCommissionChoice:
         specs = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission?').input_specs(_projection())
         assert any(isinstance(s, Select) and s.name == 'choice' for s in specs)
         assert any(isinstance(s, NumberEntry) and s.name == 'roll' for s in specs)
+
+
+class TestCommissionHandler:
+    def test_skip_commission_queues_advancement(self):
+        projection = _projection_in_army_support()
+
+        CommissionHandler(attempt=False).apply(projection, Event(id=12, handler=CommissionHandler(attempt=False)))
+
+        assert any(isinstance(pending, PendingAdvancement) for pending in projection.pending_inputs)
+
+    def test_failed_commission_spends_pending_dm_and_queues_advancement(self):
+        projection = _projection_in_army_support(characteristics={Chars.SOC: 2})
+        projection.pending_advancement_dm = 4
+
+        CommissionHandler(attempt=True, roll=2).apply(
+            projection, Event(id=12, handler=CommissionHandler(attempt=True, roll=2))
+        )
+
+        assert projection.pending_advancement_dm == 0
+        assert any(isinstance(pending, PendingAdvancement) for pending in projection.pending_inputs)
+
+    def test_commission_attempt_without_commission_rules_raises(self):
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        projection = _projection()
+        projection.summary.terms.append(CareerTerm(career=SCOUT, assignment=SCOUT.assignment('Courier')))
+
+        with pytest.raises(ReplayError, match='Scout does not support commission'):
+            CommissionHandler(attempt=True, roll=12).apply(
+                projection, Event(id=12, handler=CommissionHandler(attempt=True, roll=12))
+            )
+
+
+class TestAdvancementDmChoiceHandler:
+    def test_without_current_career_only_records_pending_dm(self):
+        projection = _projection()
+
+        AdvancementDmChoiceHandler().apply(projection, Event(id=12, handler=AdvancementDmChoiceHandler()))
+
+        assert projection.pending_advancement_dm == 4
+        assert projection.pending_inputs == ()
+
+    def test_with_current_career_records_dm_and_queues_advancement(self):
+        projection = _projection_in_army_support()
+
+        AdvancementDmChoiceHandler().apply(projection, Event(id=12, handler=AdvancementDmChoiceHandler()))
+
+        assert projection.pending_advancement_dm == 4
+        assert any(isinstance(pending, PendingAdvancement) for pending in projection.pending_inputs)
 
 
 class TestPendingRankBonusChoice:
@@ -270,6 +325,20 @@ class TestRankBonusSkill:
     def test_no_skill_raises(self):
         bonus = RankBonus(level=1)
         with pytest.raises(ReplayError):
+            rank_bonus_skill(bonus)
+
+    def test_specialised_skill_with_one_active_field_uses_that_field(self):
+        bonus = RankBonus(skill=GunCombat(slug=Level(value=1)), level=2)
+
+        result = rank_bonus_skill(bonus)
+
+        assert isinstance(result, GunCombat)
+        assert result.slug.value == 2
+
+    def test_specialised_skill_without_chosen_field_raises(self):
+        bonus = RankBonus(skill=GunCombat(), level=2)
+
+        with pytest.raises(ReplayError, match='requires one chosen specialisation'):
             rank_bonus_skill(bonus)
 
 

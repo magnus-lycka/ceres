@@ -438,6 +438,11 @@ def build_web_router(service: CharacterService) -> APIRouter:
 
         form = await request.form()
         fulfills = str(form.get('fulfills', ''))
+        wizard_url = str(request.url_for('character_wizard', character_id=str(character_id)))
+
+        pending_id = _parse_fulfills_id(fulfills)
+        if not any(p.pending_id == pending_id for p in projection.pending_inputs):
+            return RedirectResponse(url=wizard_url, status_code=303)
 
         try:
             event = _build_event_from_form(fulfills, form, projection)
@@ -543,13 +548,15 @@ def build_web_router(service: CharacterService) -> APIRouter:
     return router
 
 
-def _build_event_from_form(fulfills: str, form: Any, projection: CharacterProjection) -> Event:
+def _parse_fulfills_id(fulfills: str) -> tuple[int, int] | str:
     parts = fulfills.split('.')
-    pending_id: tuple[int, int] | str
     if len(parts) == 2 and parts[0].lstrip('-').isdigit() and parts[1].lstrip('-').isdigit():
-        pending_id = (int(parts[0]), int(parts[1]))
-    else:
-        pending_id = fulfills
+        return (int(parts[0]), int(parts[1]))
+    return fulfills
+
+
+def _build_event_from_form(fulfills: str, form: Any, projection: CharacterProjection) -> Event:
+    pending_id = _parse_fulfills_id(fulfills)
     pending = next((p for p in projection.pending_inputs if p.pending_id == pending_id), None)
     if pending is None:
         raise ValueError(f'No pending input with id={fulfills!r}')

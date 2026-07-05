@@ -1,18 +1,20 @@
 # Plan: Visible No-Ops and Silent-Drop Policy
 
-## STATUS: IN PROGRESS — Step 1 complete; Steps 2–4 expected to be absorbed by plan-skill-table-entry-types
+## STATUS: COMPLETE (2026-07-05) — absorbed by plan-skill-table-entry-types; remnant tracked in issue #55
 
-Steps 2–4 are not started and should not be started independently:
+Closing notes after `plan-skill-table-entry-types` completed:
 
-- Step 2 (parseable-Chars form gap): resolved by design — `Char` never
-  becomes a choice option in the new entry types.
-- Step 3 (drop-without-recording sites): relevant sites move into
-  `Skill.apply()` and `Psi.apply()` and will be TDD'd there.
-- Step 4 (ReplayError for unknown entries): disappears with polymorphic
-  dispatch — no isinstance chain left to fall off the end of.
-
-After `plan-skill-table-entry-types` is complete, revisit and close this
-plan with a note on what was absorbed.
+- Step 1 (`not_gained()` API): implemented; used by `Psi.apply()` when a
+  talent is rolled without PSI.
+- Step 2 (parseable-Chars form gap): resolved by design — `Char` entries apply
+  immediately and never become choice options; `Chars` was removed from the
+  career options union entirely.
+- Step 3 (drop-without-recording sites): the `Psi` site is done. Recording
+  `not_gained()` for skipped basic-training and rank-bonus skills remains
+  open — tracked in GitHub issue #55.
+- Step 4 (ReplayError for unknown entries): resolved by design — polymorphic
+  dispatch plus the pydantic discriminated union leave no isinstance chain to
+  fall off the end of; unknown kinds fail validation.
 
 ## Background
 

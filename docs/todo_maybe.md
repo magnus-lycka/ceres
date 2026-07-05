@@ -37,7 +37,7 @@ go directly to `_apply_skill_table_entry` (return `False` from
 `psionics.increment_talent()` for possessed talents. The former is simpler and
 consistent.
 
-Superseded by [plan-skill-table-entry-types.md](plan-skill-table-entry-types.md):
+Superseded by [plan-skill-table-entry-types.md](archive/plan-skill-table-entry-types.md):
 the quick fix (make `skill_table_option_is_available` return `False` for Psi
 entries on service_skills) is abandoned in favour of entry types that carry
 their own `apply()` behaviour, with `Psi(talent, allow_acquisition=True)`

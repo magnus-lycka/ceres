@@ -1,6 +1,8 @@
 """Unit tests for common_pending — shared career pending input mechanics."""
 
+from ceres.character.domain.career.advancement import AdvancementDmChoiceHandler
 from ceres.character.domain.career.army import PendingArmyEvent11SkillChoice
+from ceres.character.domain.career.career_data import AdvancementDmOption
 from ceres.character.domain.career.career_events import SkillChoiceHandler, SkillRollHandler
 from ceres.character.domain.career.common_pending import (
     PendingAdvancedTrainingSkillRoll,
@@ -10,7 +12,7 @@ from ceres.character.domain.career.common_pending import (
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skill_events import PendingSkillChoice
-from ceres.character.domain.skills import Admin, Drive, Level
+from ceres.character.domain.skills import Admin, Drive, Level, Tactics
 from ceres.character.domain.sophont import VILANI
 from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.event_base import Event
@@ -121,12 +123,69 @@ class TestCareerSkillChoicePendingBase:
         assert isinstance(event.handler, SkillChoiceHandler)
         assert isinstance(event.handler.skill, Admin)
 
+    def test_event_from_form_returns_advancement_dm_choice_event(self):
+        opt = AdvancementDmOption()
+        pending = PendingArmyEvent11SkillChoice(pending_id=(1, 0), instruction='Choose a skill', options=[opt])
+
+        event = pending.event_from_form({'skill': opt.model_dump_json()})
+
+        assert isinstance(event.handler, AdvancementDmChoiceHandler)
+
     def test_input_specs_returns_select(self):
         pending = PendingArmyEvent11SkillChoice(pending_id=(1, 0), instruction='Choose a skill', options=[Admin()])
         proj = _projection()
         specs = pending.input_specs(proj)
         assert len(specs) == 1
         assert isinstance(specs[0], Select) and specs[0].name == 'skill'
+
+    def test_input_specs_include_advancement_dm_option(self):
+        opt = AdvancementDmOption()
+        pending = PendingArmyEvent11SkillChoice(pending_id=(1, 0), instruction='Choose a skill', options=[opt])
+
+        specs = pending.input_specs(_projection())
+
+        assert isinstance(specs[0], Select)
+        assert specs[0].options == [(opt.label(), opt.model_dump_json())]
+
+    def test_input_specs_restrict_preset_specialised_skill_to_active_field(self):
+        pending = PendingArmyEvent11SkillChoice(
+            pending_id=(1, 0),
+            instruction='Choose a skill',
+            options=[Tactics(military=Level(value=1))],
+        )
+
+        specs = pending.input_specs(_projection())
+
+        assert isinstance(specs[0], Select)
+        labels = [label for label, _ in specs[0].options]
+        assert labels == ['Tactics (Military)']
+
+    def test_input_specs_omit_preset_specialised_skill_when_no_improvement(self):
+        pending = PendingArmyEvent11SkillChoice(
+            pending_id=(1, 0),
+            instruction='Choose a skill',
+            options=[Tactics(military=Level(value=1))],
+        )
+        proj = _projection(skills=[Tactics(military=Level(value=1))])
+
+        specs = pending.input_specs(proj)
+
+        assert isinstance(specs[0], Select)
+        assert specs[0].options == []
+
+    def test_input_specs_bare_specialised_skill_offers_each_available_speciality(self):
+        pending = PendingArmyEvent11SkillChoice(
+            pending_id=(1, 0),
+            instruction='Choose a skill',
+            options=[Drive()],
+        )
+
+        specs = pending.input_specs(_projection())
+
+        assert isinstance(specs[0], Select)
+        labels = [label for label, _ in specs[0].options]
+        assert 'Drive (Wheel)' in labels
+        assert 'Drive (Hovercraft)' in labels
 
     def test_on_skill_chosen_grants_skill(self):
         pending = PendingArmyEvent11SkillChoice(pending_id=(1, 0), instruction='Choose a skill', options=[Admin()])
