@@ -221,7 +221,7 @@ class TestBrainSoftware:
         import pytest
 
         with pytest.raises(ValidationError):
-            sw.bandwidth = 2
+            sw.bandwidth = 2  # ty: ignore[invalid-assignment] - the point of the test
 
     def test_json_roundtrip(self):
         sw = BrainSoftware(name='Universal Translator', bandwidth=3, tl=12, cost=25000.0)

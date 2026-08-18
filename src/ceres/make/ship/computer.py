@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Literal, cast
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field, PrivateAttr, model_validator
 
@@ -304,9 +304,9 @@ class ComputerSection(CeresModel):
             jump_control.warning(f'Limited to Jump {drives.j_drive.level} by drive capacity')
 
     def _all_parts(self) -> list[ShipPart]:
-        parts: list[ShipPart] = [cast(ShipPart, self.hardware)]
+        parts: list[ShipPart] = [self.hardware]
         if self.backup_hardware is not None:
-            parts.append(cast(ShipPart, self.backup_hardware))
+            parts.append(self.backup_hardware)
         return parts
 
     def add_spec_rows(self, ship, spec: ShipSpec) -> None:

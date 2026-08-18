@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .parts import ShipPart
+from .parts import ShipPart, ShipPartBase
 from .spec import ShipSpec, SpecSection
 
 BRIDGE_TABLE_MAX_DISPLACEMENT = 200_000
@@ -18,7 +18,7 @@ DETACHABLE_BRIDGE_MINIMUMS = (
 DETACHABLE_CAPITAL_BRIDGE_MINIMUM_TONS = 80.0
 
 
-class Cockpit(ShipPart):
+class Cockpit(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -62,7 +62,7 @@ class Cockpit(ShipPart):
         return 0.0
 
 
-class Bridge(ShipPart):
+class Bridge(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]

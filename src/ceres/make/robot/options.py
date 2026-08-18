@@ -32,7 +32,7 @@ from ceres.gear.comm import RadioTransceiverPart
 
 from .chassis import Trait, chassis_entry
 from .locomotion import LocomotionUnion
-from .parts import RobotBase, RobotPart, RobotPartMixin
+from .parts import RobotBase, RobotPart, RobotPartBase, RobotPartMixin
 
 _CLEANING_TABLE: dict[str, dict[str, int | float]] = {
     'small': {'slots': 1, 'cost': 100.0},
@@ -62,7 +62,7 @@ _STORAGE_COST_PER_SLOT: dict[str, float] = {
 }
 
 
-class StorageCompartment(RobotPart):
+class StorageCompartment(RobotPartBase):
     """refs/robot/29_storage_compartment.md — TL6; Cr50/slot standard, Cr100/slot refrigerated, Cr500/slot hazardous."""
 
     slots_count: int
@@ -86,7 +86,7 @@ class StorageCompartment(RobotPart):
         return f'Storage Compartment ({self.slots_count} Slots {self.storage_type})'
 
 
-class DomesticCleaningEquipment(RobotPart):
+class DomesticCleaningEquipment(RobotPartBase):
     """refs/robot/21_cleaning_options.md."""
 
     size: str
@@ -104,7 +104,7 @@ class DomesticCleaningEquipment(RobotPart):
         return f'Domestic Cleaning Equipment ({self.size})'
 
 
-class ReconSensor(RobotPart):
+class ReconSensor(RobotPartBase):
     """refs/robot/31_neural_activity_sensor.md — Recon Sensor table.
 
     Skill grants are hardware-based: NOT modified by robot INT DM.
@@ -131,7 +131,7 @@ class ReconSensor(RobotPart):
         return f'Recon Sensor ({self.quality})'
 
 
-class ExternalPower(RobotPart):
+class ExternalPower(RobotPartBase):
     """refs/robot/29_storage_compartment.md — External Power.
 
     Slots = ceil(5% × base_slots); Cost = Cr100 × base_slots.
@@ -156,7 +156,7 @@ class ExternalPower(RobotPart):
         return 'External Power'
 
 
-class RoboticDroneController(RobotPart):
+class RoboticDroneController(RobotPartBase):
     """refs/robot/22_communications_options.md — Robotic Drone Controller table."""
 
     quality: str = 'basic'
@@ -197,7 +197,7 @@ _OLFACTORY_TABLE: dict[str, tuple[int, float, str | None]] = {
 }
 
 
-class NavigationSystem(RobotPart):
+class NavigationSystem(RobotPartBase):
     """refs/robot/32_navigation_system.md — Navigation System table."""
 
     quality: str = 'basic'
@@ -221,7 +221,7 @@ class NavigationSystem(RobotPart):
         return f'Navigation System ({self.quality})'
 
 
-class AgriculturalEquipment(RobotPart):
+class AgriculturalEquipment(RobotPartBase):
     """refs/robot/105_utility_robots.md — Agricultural Equipment."""
 
     size: str = 'medium'
@@ -240,7 +240,7 @@ class AgriculturalEquipment(RobotPart):
         return f'Agricultural Equipment ({self.size})'
 
 
-class LightIntensifierSensor(RobotPart):
+class LightIntensifierSensor(RobotPartBase):
     """refs/robot/18_geiger_counter.md — Light Intensifier Sensor."""
 
     quality: str = 'basic'
@@ -262,7 +262,7 @@ class LightIntensifierSensor(RobotPart):
         return f'Light Intensifier Sensor ({self.quality})'
 
 
-class OlfactorySensor(RobotPart):
+class OlfactorySensor(RobotPartBase):
     """refs/robot/18_geiger_counter.md — Olfactory Sensor."""
 
     quality: str = 'basic'
@@ -284,7 +284,7 @@ class OlfactorySensor(RobotPart):
         return f'Olfactory Sensor ({self.quality})'
 
 
-class ThermalSensor(RobotPart):
+class ThermalSensor(RobotPartBase):
     """refs/robot/18_geiger_counter.md — Thermal Sensor, TL6, IR Vision, Cr500."""
 
     tl: int = 6
@@ -301,7 +301,7 @@ class ThermalSensor(RobotPart):
         return 'Thermal Sensor'
 
 
-class PrisSensor(RobotPart):
+class PrisSensor(RobotPartBase):
     """refs/robot/18_geiger_counter.md — PRIS Sensor, TL12, zero-slot, Cr2000, IR/UV Vision."""
 
     tl: int = 12
@@ -318,7 +318,7 @@ class PrisSensor(RobotPart):
         return 'PRIS Sensor'
 
 
-class GeckoGrippers(RobotPart):
+class GeckoGrippers(RobotPartBase):
     """refs/robot/15_voder_speaker.md — Gecko Grippers, TL9, zero-slot, Cr500/base_slot.
 
     Allows climbing vertical surfaces and adhering to walls/ceilings in 0–1.5G environments.
@@ -362,7 +362,7 @@ _CAMOUFLAGE_OLFACTORY_TABLE: dict[str, tuple[int, int, float]] = {
 }
 
 
-class CamouflageVisual(RobotPart):
+class CamouflageVisual(RobotPartBase):
     """refs/robot/11_zero_slot_options.md — Camouflage: Visual Concealment.
 
     Zero-slot. Cost = cost_per_base_slot × base_slots.
@@ -391,7 +391,7 @@ class CamouflageVisual(RobotPart):
         return f'Camouflage: Visual ({self.quality})'
 
 
-class CamouflageAudible(RobotPart):
+class CamouflageAudible(RobotPartBase):
     """refs/robot/12_camouflage_audible_concealment.md — Camouflage: Audible Concealment.
 
     Zero-slot. Cost = cost_per_base_slot × base_slots.
@@ -415,7 +415,7 @@ class CamouflageAudible(RobotPart):
         return f'Camouflage: Audible ({self.quality})'
 
 
-class CamouflageOlfactory(RobotPart):
+class CamouflageOlfactory(RobotPartBase):
     """refs/robot/12_camouflage_audible_concealment.md — Camouflage: Olfactory Concealment.
 
     Zero-slot. Cost = cost_per_base_slot × base_slots.
@@ -447,7 +447,7 @@ _AUTOCHEF_TABLE: dict[str, dict[str, int | float]] = {
 }
 
 
-class Autochef(RobotPart):
+class Autochef(RobotPartBase):
     """refs/robot/27_autobar.md — Autochef, food preparation system.
 
     Quality: basic (TL9, Cr500) / improved (TL10, Cr2000) / enhanced (TL11, Cr5000) / advanced (TL12, Cr10000).
@@ -471,7 +471,7 @@ class Autochef(RobotPart):
         return f'Autochef ({self.quality})'
 
 
-class StylistToolkit(RobotPart):
+class StylistToolkit(RobotPartBase):
     """refs/robot/32_fire_extinguisher.md — Stylist Toolkit, TL6, 3 Slots, Cr2000.
 
     Tools for hair styling, nail care, makeup and similar species-specific beauty tasks.
@@ -491,7 +491,7 @@ class StylistToolkit(RobotPart):
         return 'Stylist Toolkit'
 
 
-class VehicleSpeedModification(RobotPart):
+class VehicleSpeedModification(RobotPartBase):
     """refs/robot/08_locomotion_modifications.md — Vehicle Speed Movement.
 
     Slots = ceil(25% × base_slots). Cost = Base Chassis Cost.
@@ -540,7 +540,7 @@ _SWARM_CONTROLLER_TABLE: dict[str, dict[str, int | float]] = {
 }
 
 
-class AvatarController(RobotPart):
+class AvatarController(RobotPartBase):
     """refs/robot/42_avatars.md — Avatar Controller table."""
 
     quality: str = 'basic'
@@ -559,7 +559,7 @@ class AvatarController(RobotPart):
         return f'Avatar Controller ({self.quality})'
 
 
-class AvatarReceiver(RobotPart):
+class AvatarReceiver(RobotPartBase):
     """refs/robot/42_avatars.md — Avatar Receiver. TL11, 1 slot, Cr10000 flat.
 
     Acts as a drone interface. Requires Advanced brain or higher.
@@ -579,7 +579,7 @@ class AvatarReceiver(RobotPart):
         return 'Avatar Receiver'
 
 
-class ActiveCamouflage(RobotPart):
+class ActiveCamouflage(RobotPartBase):
     """refs/robot/19_slot_cost_options.md — Active Camouflage. TL15, 1 slot, Cr10000 per base slot.
 
     Grants Stealth 4 and the Invisible trait. Only one may be installed.
@@ -608,7 +608,7 @@ class ActiveCamouflage(RobotPart):
         return 'Active Camouflage'
 
 
-class SwarmController(RobotPart):
+class SwarmController(RobotPartBase):
     """refs/robot/23_satellite_uplink.md — Swarm Controller table."""
 
     quality: str = 'enhanced'
@@ -627,7 +627,7 @@ class SwarmController(RobotPart):
         return f'Swarm Controller ({self.quality})'
 
 
-class DecreasedResiliency(RobotPart):
+class DecreasedResiliency(RobotPartBase):
     """refs/robot/07_chassis_options.md — Decreased Resiliency.
 
     Chassis modification: reduces hits, saves cost. Not listed in options display.
@@ -651,7 +651,7 @@ class DecreasedResiliency(RobotPart):
 # refs/robot/10_default_suite.md
 
 
-class VisualSpectrumSensor(RobotPart):
+class VisualSpectrumSensor(RobotPartBase):
     """refs/robot/10_default_suite.md — Visual Spectrum Sensor, TL8, zero-slot."""
 
     tl: int = 8
@@ -660,7 +660,7 @@ class VisualSpectrumSensor(RobotPart):
         return 'Visual Spectrum Sensor'
 
 
-class VoderSpeaker(RobotPart):
+class VoderSpeaker(RobotPartBase):
     """refs/robot/15_voder_speaker.md — Voder Speaker.
 
     Standard: TL8, zero-slot, Cr100 standalone.
@@ -682,7 +682,7 @@ class VoderSpeaker(RobotPart):
         return 'Voder Speaker'
 
 
-class AuditorySensor(RobotPart):
+class AuditorySensor(RobotPartBase):
     """refs/robot/17_stinger.md — Auditory Sensor.
 
     Standard: TL5/TL8 (default suite context), zero-slot, Cr10 standalone.
@@ -709,7 +709,7 @@ class AuditorySensor(RobotPart):
         return 'Auditory Sensor'
 
 
-class WirelessDataLink(RobotPart):
+class WirelessDataLink(RobotPartBase):
     """refs/robot/10_default_suite.md — Wireless Data Link, TL8, zero-slot."""
 
     tl: int = 8
@@ -718,7 +718,7 @@ class WirelessDataLink(RobotPart):
         return 'Wireless Data Link'
 
 
-class DroneInterface(RobotPart):
+class DroneInterface(RobotPartBase):
     """refs/robot/10_default_suite.md — Drone Interface, TL6, zero-slot.
 
     Free default-suite substitution; cost source unknown, always Cr0.
@@ -753,7 +753,7 @@ _VIDEO_SCREEN_TABLE: dict[str, dict[str, int | float]] = {
 }
 
 
-class VideoScreen(RobotPart):
+class VideoScreen(RobotPartBase):
     """refs/robot/14_encryption_module.md — Video Screen, zero-slot.
 
     Quality: basic (TL7, Cr200) / improved (TL8, Cr500) / advanced (TL10, Cr2000).
@@ -804,7 +804,7 @@ class RobotTransceiver(RadioTransceiverPart, RobotPartMixin):
         return f'Transceiver {self.range_km:,}km ({self.quality})'
 
 
-class EncryptionModule(RobotPart):
+class EncryptionModule(RobotPartBase):
     """refs/robot/14_encryption_module.md — Encryption Module, TL6, zero-slot, Cr4000."""
 
     tl: int = 6
@@ -817,7 +817,7 @@ class EncryptionModule(RobotPart):
         return 'Encryption Module'
 
 
-class EnvironmentProcessor(RobotPart):
+class EnvironmentProcessor(RobotPartBase):
     """refs/robot/17_stinger.md — Environment Processor, TL10, zero-slot, Cr10000, Heightened Senses, Recon 0."""
 
     tl: int = 10
@@ -838,7 +838,7 @@ class EnvironmentProcessor(RobotPart):
         return 'Environment Processor'
 
 
-class ParasiticLink(RobotPart):
+class ParasiticLink(RobotPartBase):
     """refs/robot/16_laser_designator.md — Parasitic Link, TL10, zero-slot, Cr10000."""
 
     tl: int = 10
@@ -851,7 +851,7 @@ class ParasiticLink(RobotPart):
         return 'Parasitic Link'
 
 
-class InjectorNeedle(RobotPart):
+class InjectorNeedle(RobotPartBase):
     """refs/robot/15_voder_speaker.md — Injector Needle, TL7, zero-slot, Cr20 each."""
 
     tl: int = 7
@@ -870,7 +870,7 @@ _SELF_MAINTENANCE_TABLE: dict[str, tuple[int, float, float]] = {
 }
 
 
-class SelfMaintenanceEnhancement(RobotPart):
+class SelfMaintenanceEnhancement(RobotPartBase):
     """refs/robot/16_laser_designator.md — Self-Maintenance Enhancement, cost per base slot."""
 
     quality: str = 'improved'
@@ -895,7 +895,7 @@ class SelfMaintenanceEnhancement(RobotPart):
         return f'Self-Maintenance Enhancement ({self.quality})'
 
 
-class VacuumEnvironmentProtection(RobotPart):
+class VacuumEnvironmentProtection(RobotPartBase):
     """refs/robot/13_solar_coating.md — Vacuum Environment Protection, TL7, zero-slot, Cr600 per base slot."""
 
     tl: int = 7
@@ -961,7 +961,7 @@ _MEDICAL_CHAMBER_SUB_OPTIONS: dict[str, dict[str, int | float]] = {
 }
 
 
-class BioscanneSensor(RobotPart):
+class BioscanneSensor(RobotPartBase):
     """refs/robot/30_no_internal_power.md — Bioscanner Sensor, TL15, 2 slots, Cr350000."""
 
     tl: int = 15
@@ -978,7 +978,7 @@ class BioscanneSensor(RobotPart):
         return 'Bioscanner Sensor'
 
 
-class DensitometerSensor(RobotPart):
+class DensitometerSensor(RobotPartBase):
     """refs/robot/30_no_internal_power.md — Densitometer Sensor, TL14, 3 slots, Cr20000."""
 
     tl: int = 14
@@ -995,7 +995,7 @@ class DensitometerSensor(RobotPart):
         return 'Densitometer Sensor'
 
 
-class NeuralActivitySensor(RobotPart):
+class NeuralActivitySensor(RobotPartBase):
     """refs/robot/31_neural_activity_sensor.md — Neural Activity Sensor, TL15, 5 slots, Cr35000."""
 
     tl: int = 15
@@ -1012,7 +1012,7 @@ class NeuralActivitySensor(RobotPart):
         return 'Neural Activity Sensor'
 
 
-class Medikit(RobotPart):
+class Medikit(RobotPartBase):
     """refs/robot/26_medikit.md — Medikit, 1 slot.
 
     Quality: basic (TL8, Cr1000) / improved (TL10, Cr1500) / enhanced (TL12, Cr5000) / advanced (TL14, Cr10000).
@@ -1034,7 +1034,7 @@ class Medikit(RobotPart):
         return f'Medikit ({self.quality})'
 
 
-class SolarCoating(RobotPart):
+class SolarCoating(RobotPartBase):
     """refs/robot/13_solar_coating.md — Solar Coating.
 
     Zero-slot. Cost = cost_per_base_slot × base_slots.
@@ -1058,7 +1058,7 @@ class SolarCoating(RobotPart):
         return f'Solar Coating ({self.quality})'
 
 
-class ScientificToolkit(RobotPart):
+class ScientificToolkit(RobotPartBase):
     """refs/robot/32_fire_extinguisher.md — Scientific Toolkit.
 
     Quality: basic (TL5, 4 slots, Cr2000) / improved (TL8, 3 slots, Cr4000) /
@@ -1085,7 +1085,7 @@ class ScientificToolkit(RobotPart):
         return f'Scientific Toolkit ({self.quality})'
 
 
-class FabricationChamber(RobotPart):
+class FabricationChamber(RobotPartBase):
     """refs/robot/28_fabrication_chamber.md — Fabrication Chamber.
 
     Slots = slots_count. Cost = slots_count × cost_per_chamber_slot.
@@ -1110,7 +1110,7 @@ class FabricationChamber(RobotPart):
         return f'Fabrication Chamber ({self.quality}, {self.slots_count} Slots)'
 
 
-class MedicalChamber(RobotPart):
+class MedicalChamber(RobotPartBase):
     """refs/robot/24_tightbeam_communicator.md — Medical Chamber.
 
     Base: TL8, Cr200/slot. Sub-options occupy additional slots and raise effective TL.
@@ -1192,7 +1192,7 @@ _INCREASED_ARMOUR_BANDS: list[tuple[int, int, float, int, float]] = [
 _AGILITY_COST_TABLE: dict[int, float] = {1: 1.0, 2: 2.0, 3: 4.0, 4: 8.0}
 
 
-class Autobar(RobotPart):
+class Autobar(RobotPartBase):
     """refs/robot/27_autobar.md — Autobar beverage dispenser, 2 slots.
 
     Quality: basic (TL8, Cr500) / improved (TL9, Cr1000) / enhanced (TL10, Cr2000) / advanced (TL11, Cr5000).
@@ -1214,7 +1214,7 @@ class Autobar(RobotPart):
         return f'Autobar ({self.quality})'
 
 
-class IncreasedArmour(RobotPart):
+class IncreasedArmour(RobotPartBase):
     """refs/robot/07_chassis_options.md — Increased Armour chassis modification.
 
     Chassis modification: adds armour points, uses slots, costs per slot.
@@ -1254,7 +1254,7 @@ class IncreasedArmour(RobotPart):
                 break
 
 
-class AgilityEnhancement(RobotPart):
+class AgilityEnhancement(RobotPartBase):
     """refs/robot/08_locomotion_modifications.md — Agility Enhancement chassis modification.
 
     Zero-slot. Cost = level_multiplier × BCC (cumulative). Grants Athletics (dexterity) N.
@@ -1279,7 +1279,7 @@ class AgilityEnhancement(RobotPart):
         object.__setattr__(self, 'cost', _AGILITY_COST_TABLE[self.level] * bcc)
 
 
-class Efficiency(RobotPart):
+class Efficiency(RobotPartBase):
     """refs/robot/07_chassis_options.md — Efficiency, TL7+.
 
     Zero-slot. Cost = 50% of Base Chassis Cost. Doubles endurance.
@@ -1301,7 +1301,7 @@ class Efficiency(RobotPart):
         return 'Efficiency'
 
 
-class RadiationEnvironmentProtection(RobotPart):
+class RadiationEnvironmentProtection(RobotPartBase):
     """refs/robot/20_radiation_environment_protection.md — Radiation Environment Protection.
 
     TL7, 1 slot, Cr600 per base slot (same as VacuumEnvironmentProtection but slotted).
@@ -1322,7 +1322,7 @@ class RadiationEnvironmentProtection(RobotPart):
         return 'Radiation Environment Protection'
 
 
-class SecondaryLocomotion(RobotPart):
+class SecondaryLocomotion(RobotPartBase):
     """refs/robot/08_locomotion_modifications.md — Secondary Locomotion.
 
     Slots = ceil(25% × base_slots). Cost = Cr500 × slots × secondary_locomotion_multiplier.
@@ -1354,7 +1354,7 @@ class SecondaryLocomotion(RobotPart):
         return f'Secondary Locomotion ({self.locomotion.label()})'
 
 
-class StarshipEngineeringToolkit(RobotPart):
+class StarshipEngineeringToolkit(RobotPartBase):
     """refs/robot/32_fire_extinguisher.md — Starship Engineering Toolkit.
 
     Quality: basic (TL8, 6 slots, Cr1000) / improved (TL10, 5 slots, Cr2000) /
@@ -1377,7 +1377,7 @@ class StarshipEngineeringToolkit(RobotPart):
         return f'Starship Engineer Toolkit ({self.quality})'
 
 
-class WeaponMount(RobotPart):
+class WeaponMount(RobotPartBase):
     """refs/robot/32_fire_extinguisher.md — Weapon Mount.
 
     Size: small (1 slot, Cr500) / medium (2 slots, Cr1000) /
@@ -1412,7 +1412,7 @@ def default_suite(
     drone: bool = False,
     basic_transceiver: bool = False,
     screen: bool = False,
-) -> list[RobotPartMixin]:
+) -> list[RobotPart]:
     """Return the five standard default suite items (all zero-cost, included in BCC).
 
     refs/robot/10_default_suite.md — substitution rules.
@@ -1425,7 +1425,7 @@ def default_suite(
     flags = [see, speak, hear, wireless, improved_transceiver, drone, basic_transceiver, screen]
     if sum(flags) > DEFAULT_SUITE_ITEM_LIMIT:
         raise ValueError(f'default_suite allows at most 5 items; got {sum(flags)}')
-    items: list[RobotPartMixin] = []
+    items: list[RobotPart] = []
     if see:
         items.append(VisualSpectrumSensor())
     if speak:

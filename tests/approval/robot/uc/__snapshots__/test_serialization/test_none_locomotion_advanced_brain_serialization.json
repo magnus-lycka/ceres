@@ -21,31 +21,31 @@
     },
     "options": [
       {
-        "cost": 0.0,
+        "display_label": null,
         "tl": 8,
-        "display_label": null
+        "cost": 0.0
       },
       {
-        "cost": 0.0,
-        "tl": 8,
         "display_label": null,
+        "tl": 8,
+        "cost": 0.0,
         "quality": "standard"
       },
       {
-        "cost": 0.0,
-        "tl": 8,
         "display_label": null,
+        "tl": 8,
+        "cost": 0.0,
         "quality": "standard"
       },
       {
-        "cost": 0.0,
+        "display_label": null,
         "tl": 8,
-        "display_label": null
+        "cost": 0.0
       },
       {
-        "cost": 0.0,
-        "tl": 8,
         "display_label": null,
+        "tl": 8,
+        "cost": 0.0,
         "medium": "radio_comm",
         "range_km": 5,
         "mass_kg": 0.0,
@@ -55,18 +55,18 @@
     ],
     "manipulators": [
       {
-        "cost": 100.0,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "cost": 100.0,
         "kind": "MANIPULATOR",
         "size": null,
         "str_bonus": 0,
         "dex_bonus": 0
       },
       {
-        "cost": 100.0,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "cost": 100.0,
         "kind": "MANIPULATOR",
         "size": null,
         "str_bonus": 0,

@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .parts import ShipPart
+from .parts import ShipPart, ShipPartBase
 from .spec import ShipSpec, SpecSection
 from .text import format_counted_label, optional_count
 
@@ -75,14 +75,14 @@ def _sensor_package_notes(
     return notes
 
 
-def _capability_tl(part: ShipPart) -> int:
+def _capability_tl(part: ShipPartBase) -> int:
     owner = getattr(part, '_assembly', None)
     if owner is None:
         return part.tl
     return part.assembly_tl
 
 
-class SensorPackage(ShipPart):
+class SensorPackage(ShipPartBase):
     notes: ClassVar[NoteList]
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -210,7 +210,7 @@ class AdvancedSensors(SensorPackage):
         )
 
 
-class CountermeasuresSuite(ShipPart):
+class CountermeasuresSuite(ShipPartBase):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
     tl: int = 13
     tons: ClassVar[float]
@@ -235,7 +235,7 @@ class CountermeasuresSuite(ShipPart):
         return 1.0
 
 
-class MilitaryCountermeasuresSuite(ShipPart):
+class MilitaryCountermeasuresSuite(ShipPartBase):
     description: Literal['Military Countermeasures Suite'] = 'Military Countermeasures Suite'
     tl: int = 15
     tons: ClassVar[float]
@@ -260,7 +260,7 @@ class MilitaryCountermeasuresSuite(ShipPart):
         return 2.0
 
 
-class DeepPenetrationScanners(ShipPart):
+class DeepPenetrationScanners(ShipPartBase):
     description: Literal['Deep Penetration Scanners'] = 'Deep Penetration Scanners'
     tl: int = 13
     tons: float
@@ -282,7 +282,7 @@ class DeepPenetrationScanners(ShipPart):
         return 1.0
 
 
-class LifeScanner(ShipPart):
+class LifeScanner(ShipPartBase):
     description: Literal['Life Scanner'] = 'Life Scanner'
     tl: int = 12
     tons: ClassVar[float]
@@ -308,7 +308,7 @@ class LifeScanner(ShipPart):
         return 1.0
 
 
-class LifeScannerAnalysisSuite(ShipPart):
+class LifeScannerAnalysisSuite(ShipPartBase):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
     tl: int = 14
     tons: ClassVar[float]
@@ -334,7 +334,7 @@ class LifeScannerAnalysisSuite(ShipPart):
         return 1.0
 
 
-class MailDistributionArray(ShipPart):
+class MailDistributionArray(ShipPartBase):
     description: Literal['Mail Distribution Array'] = 'Mail Distribution Array'
     tl: Literal[10, 13] = 10
     tons: ClassVar[float]
@@ -366,7 +366,7 @@ class MailDistributionArray(ShipPart):
         return 0.0
 
 
-class MineralDetectionSuite(ShipPart):
+class MineralDetectionSuite(ShipPartBase):
     description: Literal['Mineral Detection Suite'] = 'Mineral Detection Suite'
     tl: int = 12
     tons: ClassVar[float]
@@ -396,7 +396,7 @@ class MineralDetectionSuite(ShipPart):
         return 0.0
 
 
-class SensorStations(ShipPart):
+class SensorStations(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -423,7 +423,7 @@ class SensorStations(ShipPart):
         return 0.0
 
 
-class ShallowPenetrationSuite(ShipPart):
+class ShallowPenetrationSuite(ShipPartBase):
     description: Literal['Shallow Penetration Suite'] = 'Shallow Penetration Suite'
     tl: int = 10
     tons: ClassVar[float]
@@ -448,7 +448,7 @@ class ShallowPenetrationSuite(ShipPart):
         return 1.0
 
 
-class ImprovedSignalProcessing(ShipPart):
+class ImprovedSignalProcessing(ShipPartBase):
     description: Literal['Improved Signal Processing'] = 'Improved Signal Processing'
     tl: int = 11
     tons: ClassVar[float]
@@ -474,7 +474,7 @@ class ImprovedSignalProcessing(ShipPart):
         return 1.0
 
 
-class EnhancedSignalProcessing(ShipPart):
+class EnhancedSignalProcessing(ShipPartBase):
     description: Literal['Enhanced Signal Processing'] = 'Enhanced Signal Processing'
     tl: int = 13
     tons: ClassVar[float]
@@ -499,7 +499,7 @@ class EnhancedSignalProcessing(ShipPart):
         return 2.0
 
 
-class DistributedArray(ShipPart):
+class DistributedArray(ShipPartBase):
     description: Literal['Distributed Array'] = 'Distributed Array'
     tl: int = 11
     tons: ClassVar[float]
@@ -536,7 +536,7 @@ class DistributedArray(ShipPart):
         return self._primary_suite.power * 3
 
 
-class ExtendedArrays(ShipPart):
+class ExtendedArrays(ShipPartBase):
     description: Literal['Extended Arrays'] = 'Extended Arrays'
     tl: int = 11
     tons: ClassVar[float]
@@ -580,7 +580,7 @@ class RapidDeploymentExtendedArrays(ExtendedArrays):
         return self._primary_suite.cost * 4
 
 
-class ExtensionNet(ShipPart):
+class ExtensionNet(ShipPartBase):
     description: Literal['Extension Net'] = 'Extension Net'
     tl: int = 10
     tons: ClassVar[float]

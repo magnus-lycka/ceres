@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal, Protocol
 
 from pydantic import ConfigDict, Field, PrivateAttr, TypeAdapter
 
 from ceres.shared import CeresModel, CeresPart, NoteList, _Note
 
 from .base import ShipBase
+from .installable import not_installable
 from .text import collapse_repeated_labels
 
 
@@ -203,32 +204,26 @@ _customisation_adapter: TypeAdapter[CustomisationUnion] = TypeAdapter(Customisat
 
 
 class ShipPartMixin(ABC):
-    """Pure-Python ABC mixin for parts installable in a ship.
+    """Reusable installation behaviour for parts installable in a ship.
 
-    Declares the contract that concrete ship-part classes must satisfy:
-    ``assembly``, ``tons``, ``power``, and ``armoured_bulkhead``.
+    Carries behaviour only. It deliberately declares **no attributes**: Pydantic
+    *does* collect annotations from a plain mixin base and turns them into
+    required fields, so declaring the contract here silently made `tons`,
+    `power` and `notes` required constructor arguments on every ship part. The
+    contract lives in the `ShipPart` protocol instead, and what these methods
+    need of their host is stated by `_ShipPartMixinHost`.
 
-    Pydantic cannot see annotations on a plain mixin, so concrete classes must
-    redeclare ``tons``, ``power``, and ``armoured_bulkhead`` as explicit Pydantic
-    fields (and ``_armoured_bulkhead_part`` as a ``PrivateAttr``). The abstract
-    declarations here make the requirement explicit and eliminate the "shadows an
-    attribute" Pydantic warnings that plain class-variable defaults would trigger.
+    Implementing this mixin is what marks a class as installable in a ship —
+    including parts such as computers that reach a ship through the mixin alone
+    and never inherit `ShipPartBase`.
     """
-
-    tons: float
-    power: float
-    armoured_bulkhead: bool
-    cost: float
-    tl: int
-    notes: NoteList
-    _armoured_bulkhead_part: ShipPart | None
 
     # ------------------------------------------------------------------
     # Ship binding
     # ------------------------------------------------------------------
 
-    def bind(self, assembly: ShipBase) -> None:
-        self._assembly = assembly
+    def bind(self: _ShipPartMixinHost, assembly: ShipBase) -> None:
+        self._store_assembly(assembly)
         self.check_tl()
         if message := self.build_item():
             self.item(message)
@@ -251,7 +246,7 @@ class ShipPartMixin(ABC):
     def assembly_tl(self) -> int:
         return self.assembly.tl
 
-    def check_tl(self) -> None:
+    def check_tl(self: _ShipPartMixinHost) -> None:
         if self.assembly_tl < self.tl:
             self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
 
@@ -262,12 +257,12 @@ class ShipPartMixin(ABC):
     def bulkhead_label(self) -> str:
         return self.build_item() or self.__class__.__name__
 
-    def bulkhead_protected_tonnage(self) -> float:
+    def bulkhead_protected_tonnage(self: _ShipPartMixinHost) -> float:
         return self.tons
 
-    def _refresh_armoured_bulkhead(self, assembly: ShipBase) -> None:
+    def _refresh_armoured_bulkhead(self: _ShipPartMixinHost, assembly: ShipBase) -> None:
         if not self.armoured_bulkhead:
-            self._armoured_bulkhead_part = None
+            self._store_armoured_bulkhead_part(None)
             return
         from .hull import ArmouredBulkhead  # noqa: PLC0415
 
@@ -277,22 +272,113 @@ class ShipPartMixin(ABC):
             from_ship_part=True,
         )
         bulkhead.bind(assembly)
-        self._armoured_bulkhead_part = bulkhead
+        self._store_armoured_bulkhead_part(bulkhead)
 
     @property
     def armoured_bulkhead_part(self) -> ShipPart | None:
         return self._armoured_bulkhead_part
+
+    def _store_armoured_bulkhead_part(self, part: ShipPart | None) -> None:
+        """Own the private slot, so the mixin need not reach into it."""
+        self._armoured_bulkhead_part = part
 
     # ------------------------------------------------------------------
     # Grouping (used by spec table rendering)
     # ------------------------------------------------------------------
 
     @property
-    def group_key(self) -> str:
+    def group_key(self: _ShipPartMixinHost) -> str:
         return self.notes.item_message or self.__class__.__name__
 
 
-class ShipPart(CeresPart, ShipPartMixin):
+class _ShipPartMixinHost(Protocol):
+    """Typing scaffolding: what `ShipPartMixin`'s own methods need of their host.
+
+    Private, and distinct from `ShipPart`: the mixin reaches for things a ship
+    never asks of a part, including private state. Annotating the mixin's `self`
+    with this is what keeps its method bodies type-checkable once phase 3
+    removes the attribute annotations that currently declare them.
+    """
+
+    @property
+    def tl(self) -> int: ...
+
+    @property
+    def tons(self) -> float: ...
+
+    @property
+    def armoured_bulkhead(self) -> bool: ...
+
+    @property
+    def assembly_tl(self) -> int: ...
+
+    @property
+    def armoured_bulkhead_part(self) -> ShipPart | None: ...
+
+    def _store_armoured_bulkhead_part(self, part: ShipPart | None) -> None: ...
+
+    def bulkhead_protected_tonnage(self) -> float: ...
+
+    def bulkhead_label(self) -> str: ...
+
+    def build_item(self) -> str | None: ...
+
+    def check_tl(self) -> None: ...
+
+    def _refresh_armoured_bulkhead(self, assembly: ShipBase) -> None: ...
+
+    def _store_assembly(self, assembly: ShipBase | None) -> None: ...
+
+    @property
+    def notes(self) -> NoteList: ...
+
+    def item(self, message: str) -> Any: ...
+
+    def error(self, message: str) -> Any: ...
+
+
+class ShipPart(Protocol):
+    """Everything a ship may ask of an installed part.
+
+    This is the promise. `ShipPartBase` is only shared implementation, and does
+    not by itself guarantee this contract — parts satisfy it either by storing a
+    value as a Pydantic field (a supplied design input) or by computing it as a
+    property (a derived value). Consumers should be typed against this rather
+    than against the base class, so that parts reaching a ship through
+    `ShipPartMixin` alone are equally acceptable.
+
+    Every member is read-only. Parts are frozen Pydantic models, so declaring
+    any member as a plain attribute would demand a writability they do not
+    have — `ty` rejects `tl: int` here with "the member does not accept writes
+    of type `int`".
+    """
+
+    @property
+    def tl(self) -> int: ...
+
+    @property
+    def tons(self) -> float: ...
+
+    @property
+    def power(self) -> float: ...
+
+    @property
+    def cost(self) -> float: ...
+
+    @property
+    def notes(self) -> NoteList: ...
+
+    @property
+    def group_key(self) -> str: ...
+
+    @property
+    def armoured_bulkhead_part(self) -> ShipPart | None: ...
+
+    def bind(self, assembly: ShipBase) -> None: ...
+
+
+@not_installable
+class ShipPartBase(CeresPart, ShipPartMixin):
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
     tons: float = 0.0
     power: float = 0.0
@@ -325,7 +411,8 @@ class ShipPart(CeresPart, ShipPartMixin):
         super().model_post_init(__context)
 
 
-class CustomisableShipPart(ShipPart):
+@not_installable
+class CustomisableShipPart(ShipPartBase):
     customisation: CustomisationUnion | None = None
     allowed_modifications: ClassVar[frozenset[str]] = frozenset()
 

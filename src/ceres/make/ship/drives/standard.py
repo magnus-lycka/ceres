@@ -12,6 +12,7 @@ from ..parts import (
     IncreasedSize,
     Modification,
     ShipPart,
+    ShipPartBase,
     SizeReduction,
 )
 from ..power import (  # noqa: F401
@@ -570,7 +571,7 @@ type JDrive = Annotated[
 ]
 
 
-class SolarSail(ShipPart):
+class SolarSail(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     description: Literal['Solar Sail'] = 'Solar Sail'
@@ -594,7 +595,7 @@ class SolarSail(ShipPart):
         return notes
 
 
-class _SpinExtSolarSail(ShipPart):
+class _SpinExtSolarSail(ShipPartBase):
     cost: ClassVar[float]
     power: ClassVar[float]
     drive_type: str
@@ -672,7 +673,7 @@ type AnySolarSail = Annotated[
 ]
 
 
-class DriveSection(ShipPart):
+class DriveSection(ShipPartBase):
     m_drive: MDrive | None = None
     r_drive: RDrive | None = None
     j_drive: JDrive | None = None

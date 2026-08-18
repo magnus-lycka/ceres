@@ -5,7 +5,7 @@ from pydantic import Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 from .common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
 
 PSIONIC_SHIELDING_IMPENETRABLE_MAX_DISPLACEMENT = 100
@@ -30,7 +30,7 @@ class Armoury(_ZeroPowerSystemPart):
         return 250_000.0
 
 
-class PsionicShielding(ShipPart):
+class PsionicShielding(ShipPartBase):
     system_type: Literal['PSIONIC_SHIELDING'] = 'PSIONIC_SHIELDING'
     description: Literal['Psionic Shielding'] = 'Psionic Shielding'
     tl: int = 12
@@ -64,7 +64,7 @@ class PsionicShielding(ShipPart):
         return 0.0
 
 
-class AdvancedPsionicShielding(ShipPart):
+class AdvancedPsionicShielding(ShipPartBase):
     system_type: Literal['ADVANCED_PSIONIC_SHIELDING'] = 'ADVANCED_PSIONIC_SHIELDING'
     description: Literal['Advanced Psionic Shielding'] = 'Advanced Psionic Shielding'
     tl: int = 16
@@ -127,7 +127,7 @@ class _BoobyTrap(CeresModel):
     cost: float
     damage_per_round: str
 
-    def check_tl(self, part: ShipPart) -> None:
+    def check_tl(self, part: ShipPartBase) -> None:
         if part.assembly_tl < self.tl:
             part.error(f'Requires TL{self.tl}, ship is TL{part.assembly_tl}')
 

@@ -1,0 +1,342 @@
+# Plan: `ceres.rounds` — round-by-round encounter tracker
+
+Status: **proposed** — not yet started.
+
+Tracking issue: [#56](https://github.com/magnus-lycka/ceres/issues/56)
+
+## Purpose
+
+A referee's bookkeeping aid for combat and other round-by-round action. It
+tracks *who is involved, whose turn it is, what round we are in, what each
+combatant has already done, and how hurt they are*. It does **not** resolve
+attacks: no to-hit checks, no dice, no armour, no ranges, no weapons.
+
+Rules reference: `refs/core/03_combat.md` (pages 73–96), plus
+`characteristic_dm` from `refs/core/02_traveller_creation.md`.
+
+Typical size: under 20 combatants, a handful of rounds.
+
+## Architecture decision: NiceGUI, single Python codebase
+
+The UI question was explored across three shapes: a REST/HTMX split like
+`ceres.character.web`, a pure client-side page (vanilla JS / Svelte / Pyodide),
+and a Python UI framework. The chosen shape is a **Python UI framework —
+NiceGUI**, because there is no meaningful backend to design here: the whole
+application is an editable table with a few side effects, and splitting it
+across a network boundary invents work that does not exist.
+
+Why NiceGUI over the alternatives considered:
+
+- **NiceGUI 3.16 — chosen.** Event-driven callbacks (`on_click` → mutate
+  encounter → refresh) match a turn tracker directly. Real per-row buttons and
+  dialogs with no key gymnastics. Built on FastAPI/Starlette, which Ceres
+  already depends on. Installs clean on 3.14 (~20 transitive deps). Ships a
+  pytest plugin (`nicegui.testing`) for in-process UI tests.
+- *Streamlit* — rejected. The whole-script-rerun model fights a stateful turn
+  tracker, per-row buttons need unique-key loops, and persistence is hand-rolled
+  anyway. `st.data_editor` is its one genuine advantage here.
+- *Gradio* — rejected. Built for ML demo I/O, not stateful tables with per-row
+  actions.
+- *Plotly Dash* — rejected. Input/Output/State callback ceremony is heavy, and
+  per-row buttons need pattern-matching callbacks.
+- *Anvil* — rejected. Adds a platform/runtime dependency for a local
+  single-user tool.
+- *Jupyter / Marimo* — rejected for the app itself. A notebook is a fine
+  scratchpad but a poor thing to drive at the table mid-fight.
+- *FastAPI + HTMX*, like `ceres.character.web` — rejected per the above: there
+  is no backend worth the split.
+- *Client-side JS* (Svelte, vanilla, or Pyodide) — rejected. Svelte and vanilla
+  put the rules outside pytest and add an npm toolchain to a repo that has
+  none; Pyodide keeps them in Python but pays ~8MB of wasm and a bundling step
+  for no gain over a local Python process.
+
+**The framework choice is deliberately reversible.** All rules and state live in
+`ceres/rounds/domain/`, a pure-Python package that imports nothing from the UI
+layer and nothing heavy from the rest of Ceres. The NiceGUI module is a thin
+view over that domain. If NiceGUI disappoints, only the view is rewritten.
+
+New dependency: `nicegui`. `deptry` and `pre-commit.sh` must stay green.
+
+## Module layout
+
+```text
+src/ceres/rounds/
+  domain/
+    ids.py          — ActorId, PartyId (typed identifiers, never bare str)
+    tracks.py       — DamageTrack base; CharacteristicTrack, HitsTrack
+    damage.py       — DamageKind (lethal / stun) and damage application
+    actor.py        — Actor: name, party, initiative, turn state, damage track
+    initiative.py   — InitiativeMode, initiative ordering and tie handling
+    turns.py        — per-round turn state, action budget, reaction carryover
+    actions.py      — the round log ("X attacks Y", damage applied, reactions)
+    situation.py    — Situation: roster, parties, round counter, turn pointer
+    storage.py      — Situation <-> JSON, undo stack
+  ui/
+    app.py          — ui.run entry point
+    table.py        — the actor table, which is the whole UI (see below)
+
+tests/unit/rounds/   — mirrors domain/, one test module per domain module
+```
+
+### Naming: Situation and Actor
+
+This package is not only about combat. It serves any situation run in rounds
+with people taking turns: a firefight, an actual fire, patching a hull breach
+before the compartment empties. So the aggregate is a **`Situation`**, not an
+encounter or a combat, and the thing taking a turn is an **`Actor`** — a word
+that covers PCs, NPCs and animals without claiming any of them is a combatant
+or a character.
+
+### Composition over subclassing
+
+What varies between actors is not their behaviour in the round — taking turns,
+delaying and reacting are identical for everyone — but **how they absorb
+damage**. So an `Actor` *has a* `DamageTrack`:
+
+- `CharacteristicTrack` — STR/DEX/END, for Travellers and NPCs.
+- `HitsTrack` — a single Hits score, for animals.
+
+This avoids a `CharacterActor`/`CreatureActor` split, and lets a robot (Hits,
+but not an animal) later reuse `HitsTrack` without pretending to be a creature.
+`Actor` needs no `isinstance` checks: it asks its track.
+
+The track owns its own rules — `apply(damage, kind)`, `is_unconscious`,
+`is_dead`, `action_dm` — and the UI asks the track rather than computing
+anything from raw numbers.
+
+`domain/` may import `ceres.character.domain.characteristics` (`Chars`,
+`characteristic_dm`) — a leaf module with no dependencies beyond `enum`. The
+characteristic DM table is shared Traveller arithmetic and must not be
+duplicated here.
+
+Per the typed-identifier rule, the domain holds `Actor` *objects* in the
+situation; `ActorId` exists for the storage and UI boundary only, and is a
+frozen dataclass, not a bare string.
+
+## Rules to encode
+
+Each item cites the rule it comes from. Tests are derived from these, not from
+the implementation.
+
+### CharacteristicTrack — lethal damage (`03_combat.md:259-268`)
+
+- Damage applies to END first.
+- Excess past 0 END goes to STR **or** DEX, the target's choice. The domain
+  takes the choice as a parameter; the UI supplies it from a per-actor
+  preference, not a popup (see the UI section).
+- When STR or DEX reaches 0 the actor is **unconscious**, and further damage
+  goes to the remaining physical characteristic.
+- All three physical characteristics at 0 → **dead**.
+- Characteristic DMs are recalculated from current values and the impaired DM
+  is used until healed (`03_combat.md:268`). STR/DEX/END DM are shown live.
+
+### CharacteristicTrack — stun damage (`03_combat.md:366`)
+
+- Stun damage is deducted from END **only**; it never spills into STR or DEX,
+  and so can never kill.
+- If END reaches 0, the target is **incapacitated for (damage − END) rounds**,
+  where END is the value at the moment of the hit.
+- Stun damage heals completely with one hour of rest, unlike lethal damage.
+
+#### Interpretation: stun and lethal damage share one END score
+
+The rules never say whether a character softened up by a stunner is easier to
+knock out with lethal damage, or vice versa. Searching the community turns up no
+consensus and barely any discussion, for an identifiable reason: nearly all of
+it predates the 2022 Update, which replaced the old stun rule (an END check at
+DM− equal to damage, failure meaning unconsciousness) with the END-reduction
+rule quoted above. Mongoose's own published clarifications address the STR/DEX
+split but never stun.
+
+**Ruling: one END score, reduced by both kinds of damage.** So a character with
+END 7 who has taken 5 stun damage needs 9 more lethal points to fall
+unconscious, not 14; and a character with END 6 who has taken 4 lethal points is
+stunned by 2 further stun points, not 6. The supporting evidence:
+
+- Both rules reduce the same *characteristic*, not a pool: "Damage is initially
+  applied to a target's END" against "Damage is only deducted from END".
+- A baton round applies half of a single attack's damage as Stun
+  (`refs/vehicle/21_specialised_ammunition.md:35`), so the designers expect both
+  kinds on one character at once — and supplied no separate-pool bookkeeping.
+- Where the authors do mean a separate accumulating total, they say so: the
+  animal stun rule reads "a *cumulative* amount of damage equal to half of its
+  Hits" (`03_combat.md:604`). That word is absent from the character rule.
+- The Companion's optional Knockout Blow rule treats END as one running score
+  reduced "from its starting value to 0" (`refs/companion/13_combat.md:71`).
+
+The consequence is deliberately harsh: softening a target with a stunner really
+does make them easier to kill.
+
+`CharacteristicTrack` therefore keeps `lethal_end` and `stun_end` as two
+buckets **for healing only** — stun points vanish after an hour's rest, lethal
+ones do not. Every threshold uses the single derived value,
+`END = max − lethal_end − stun_end`. No rule may branch on the buckets.
+
+### HitsTrack (`03_combat.md:604, 652-660`)
+
+- All damage goes to Hits, not to characteristics.
+- Hits 0 → **dead**.
+- Hits ≤ 10% of starting Hits → **unconscious** (stated as optional; default on,
+  with a per-situation toggle).
+- Hits ≤ half starting Hits → **may be driven off** (referee's option; shown as
+  a hint, never applied automatically).
+- Hits reduced to −(starting Hits) or worse → **body destroyed**.
+- A stun weapon incapacitates a creature once *cumulative* stun damage reaches
+  half its Hits.
+
+### Initiative (`03_combat.md:28-48, 62, 81`)
+
+- Initiative is the Effect of a DEX or INT check. **The referee types the value
+  in; the app rolls nothing.**
+- Order is highest first. Ties break on higher DEX. Still tied → the actors act
+  simultaneously, shown as a tie group the referee can order by hand.
+- `InitiativeMode.FIXED` (RAW: "Every Traveller retains the same Initiative
+  score for every combat round", `:81`) or `InitiativeMode.PER_ROUND`, an
+  explicitly requested house option that clears and re-prompts each round.
+- A **party** may hold one shared initiative (`03_combat.md:36`), which its
+  members inherit; order within a shared-initiative party is arbitrary and
+  referee-orderable. Any individual may override with their own value. PC and
+  NPC parties are the same kind of thing — either may be shared or individual.
+
+*Out of scope, with reason:* the ambush DM+6/−6 (`:44`) and the Tactics Effect
+(`:48`) are modifiers to a check the app does not roll. By the time a value is
+typed in, they are already in it. Adding fields for them would be theatre.
+
+### The round and the action budget (`03_combat.md:62-81, 117-192`)
+
+- A round is six seconds. Elapsed time = rounds × 6s, which matters because
+  unconsciousness recovery is checked per *minute* = every 10 rounds.
+- Per round each actor gets one Significant + one Minor action, **or** three
+  Minor actions. Free actions are unlimited and untracked.
+- Reactions are unlimited, but **each reaction costs DM−1 on the actor's next
+  set of actions** (`:192`).
+- Diving for cover forfeits the next set of actions entirely (`:208`).
+- An actor may freely **delay** and act later in the turn (`:32`).
+- The round ends once everyone has had the chance to act.
+
+*Interpretation to record:* "their next set of actions" is read as *the next
+unspent set*. A reaction taken before the actor has acted this round penalises
+this round's actions; one taken after they have acted penalises next round's.
+This is implemented as a penalty that attaches to the next unspent action set,
+not as a flat "next round" rule.
+
+### Recovery (`03_combat.md:537-539, 366`)
+
+- Stun incapacitation counts down automatically as rounds advance.
+- An unconscious character may attempt an END check every minute (every 10
+  rounds), with a cumulative DM+1 per previously failed check. The app tracks
+  the cadence and the accumulated DM and prompts; the referee rolls and reports
+  pass or fail.
+
+### Roster changes
+
+- Actors may join mid-situation with an initiative value, flagged as to whether
+  they act in the current round.
+- Actors may withdraw or flee: removed from the turn order, retained in the log.
+
+## The UI — to be settled by prototype, not by argument
+
+The shape below is what to build first and then try at the table. It is not to
+be refined further on paper.
+
+**Table columns:** Name | Party | Ini | STR | DEX | END | Stun | React | Action
+| Status. ("Ini", not "Init".)
+
+**Cell formats.** Characteristics read `current/max:DM` — `5/8:-1`, `0/6:-3`,
+`9/9:+1` — so the DM lives in the cell it belongs to rather than in one
+meaningless "DM" column. Stun reads `points(rounds)` — `4(11)` is four stun
+points currently suppressing END with eleven rounds of incapacitation left.
+
+Worked example, an actor at 888 who takes 4 lethal and then 15 stun:
+
+| STR | DEX | END | Stun |
+| --- | --- | --- | ---- |
+| 8/8:0 | 8/8:0 | 0/8:-3 | 4(11) |
+
+END absorbs 4 of the stun before hitting 0; the remaining 11 become rounds of
+incapacitation. After an hour's rest those 4 points come back, the 4 lethal ones
+do not.
+
+**React** is its own column: −1 per Dodge or Parry, cleared after the actor's
+next set of actions.
+
+**Action** shows the last action taken — `Melee X`, `Ranged Y`, `Move 12` —
+rather than a bare target, since damage often has no attacker at all. Falls,
+fire and vacuum injure people too, so the source of damage is optional.
+
+**A combat dialog is wanted after all**, kept simple: X attacks Y (X may be
+nobody), optional reaction of Dodge / Dive / Parry, net damage in lethal and
+stun points, and whether to pull from STR or DEX first. Dive greys the target
+out — it forfeits their next actions. Dodge and Parry each add −1 to React.
+
+**Round flow.** "New round" is an explicit command. On a new round: actors may
+be added to a party, and initiative is either inherited from the previous round
+or set now, individually or for a whole party in one operation. Then the actors
+with the highest Ini turn **green** and may act, unless stunned or otherwise
+incapable. Acting turns them **grey**; waiting leaves them green. The next Ini
+step then turns green as well, joining everyone still waiting. Grey until the
+next round.
+
+## Persistence and undo
+
+`Situation` serialises to and from JSON on its own (`storage.py`), independent
+of NiceGUI, so it is testable with `tmp_path`. Situations are stored under
+`settings.data_dir() / 'rounds'`, one JSON file each, written after every
+mutation. A browser reload or a restart mid-fight loses nothing.
+
+Undo is a bounded stack of whole-situation snapshots taken before each mutation.
+With under 20 actors a snapshot is trivial, and snapshot-undo is far simpler and
+more reliable than inverse operations. Mis-entered damage is the single most
+likely referee error, so undo is v1, not a nicety.
+
+## TDD phases
+
+Each phase is red → green → refactor, tests first, `uvx ruff check --fix` after
+each edit, `./pre-commit.sh` green before the phase is called done.
+
+The aim is a clickable walking skeleton early, because the UI questions can only
+be answered by using it.
+
+1. **Damage tracks.** `CharacteristicTrack` cascade, unconscious, dead, live
+   DMs, the shared-END stun ruling and its incapacitation countdown;
+   `HitsTrack` thresholds. Pure domain, no situation yet.
+2. **Situation and round flow.** Actors, parties, the explicit new-round
+   command, initiative (inherit or set, individual or per party), and the
+   green → grey turn state machine with waiting.
+3. **Prototype UI.** The table and the combat dialog, on top of 1–2, good
+   enough to run a fight at the table and find out what is wrong with it.
+4. **Iterate on what the prototype teaches**, then fill in: reaction carryover
+   details, the 1+1 / 3-minor budget, stun countdown and the 10-round
+   unconsciousness check cadence.
+5. **Persistence and undo.** JSON round-trip, snapshot stack.
+6. **Docs.** Record the interpretations above in
+   `docs/RULE_INTERPRETATIONS.md`; note the package in `docs/ARCHITECTURE.md`;
+   mark this plan complete and move it to `docs/archive/`.
+
+Test modules mirror the domain modules one-for-one. Rule tests go through the
+`Situation` / `Actor` / `DamageTrack` public API — that *is* the domain API, so
+no separate driver is needed, unlike `CharacterDriver` in `ceres.character`. If
+UI tests start reaching into domain internals, that is the signal to add one.
+
+## Explicitly deferred
+
+- **Per-round injury provenance.** Which round each point of injury arrived in
+  matters, because first aid must be applied within one minute — ten rounds — so
+  some of an actor's injury may already be past saving while the rest is still
+  treatable. Worth tracking internally without displaying it. Postponed.
+- **Actions spanning more than one round**, such as first aid or any extended
+  action (`03_combat.md:180-186`). Postponed.
+- **Fatigue** (`03_combat.md:402-410`) — referee deferred it.
+- **Armour and Protection** — the referee enters damage after protection.
+- **Dice** — no initiative or damage rolls.
+- **Healing** beyond stun recovery — first aid, medical care, natural healing.
+- **Importing actors from the character store** — v1 actors are entered by hand.
+  The model should make a later import path a matter of populating the same
+  fields, nothing more.
+- **Robots as actors** — robots have Hits and their own damage rules from the
+  robot book; they will reuse `HitsTrack` only once those rules are read.
+- **The Companion's optional rules** — Natural Resilience, Knockout Blow, Random
+  First Blood, alternative initiative, disabling wounds
+  (`refs/companion/13_combat.md`). Noted as existing; not implemented.
+- **Ranges, movement, cover, weapons, attack resolution** — permanently out of
+  scope for this package.

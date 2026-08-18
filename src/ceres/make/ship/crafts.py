@@ -5,7 +5,8 @@ from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .parts import ShipPart
+from .installable import not_installable
+from .parts import ShipPart, ShipPartBase
 from .spec import ShipSpec, SpecRow, SpecSection
 
 type VehicleSpec = dict[str, int | float | str]
@@ -142,7 +143,8 @@ def _kind_for_shipping_size(shipping_size: int) -> str:
     return 'V'
 
 
-class _ZeroPowerCraftPart(ShipPart):
+@not_installable
+class _ZeroPowerCraftPart(ShipPartBase):
     power: ClassVar[float]
     maintained: bool = True
 
@@ -242,7 +244,7 @@ class FullHangar(_ZeroPowerCraftPart):
         return 0.0
 
 
-class _LaunchRecoveryPart(ShipPart):
+class _LaunchRecoveryPart(ShipPartBase):
     largest_craft_tons: float
     tons: ClassVar[float]
     cost: ClassVar[float]

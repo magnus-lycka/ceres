@@ -11,7 +11,7 @@ from ..armour import (
     MolecularBondedArmour,
     TitaniumSteelArmour,
 )
-from ..parts import ShipPart
+from ..parts import ShipPart, ShipPartBase
 from ..spec import ShipSpec, SpecRow, SpecSection
 from ..systems import Aerofins, Airlock
 
@@ -140,7 +140,7 @@ buffered_planetoid = HullConfiguration(
 )
 
 
-class Stealth(ShipPart):
+class Stealth(ShipPartBase):
     description: str
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -202,7 +202,7 @@ HullStealth = Annotated[
 ]
 
 
-class ArmouredBulkhead(ShipPart):
+class ArmouredBulkhead(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -219,7 +219,7 @@ class ArmouredBulkhead(ShipPart):
         notes = NoteList()
         notes.info('Critical hit severity reduced by 1 if critical hit severity >1')
         if not self.from_ship_part:
-            notes.warning('Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead')
+            notes.warning('Prefer armoured_bulkhead=True on the protected part over manual ArmouredBulkhead')
         return notes
 
     @property
@@ -235,7 +235,7 @@ class ArmouredBulkhead(ShipPart):
         return 0.0
 
 
-class AdjustableHull(ShipPart):
+class AdjustableHull(ShipPartBase):
     description: Literal['Adjustable Hull'] = 'Adjustable Hull'
     tons: ClassVar[float]
     cost: ClassVar[float]

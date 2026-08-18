@@ -3,10 +3,10 @@ from typing import ClassVar, Literal
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 
 
-class GravScreen(ShipPart):
+class GravScreen(ShipPartBase):
     system_type: Literal['GRAV_SCREEN'] = 'GRAV_SCREEN'
     description: Literal['Grav Screen'] = 'Grav Screen'
     tl: int = 12
@@ -32,7 +32,7 @@ class GravScreen(ShipPart):
         return self.tons * 2.0
 
 
-class GravityWellGenerator(ShipPart):
+class GravityWellGenerator(ShipPartBase):
     system_type: Literal['GRAVITY_WELL_GENERATOR'] = 'GRAVITY_WELL_GENERATOR'
     description: Literal['Gravity Well Generator'] = 'Gravity Well Generator'
     tl: int = 16
@@ -58,7 +58,7 @@ class GravityWellGenerator(ShipPart):
         return 500.0
 
 
-class JumpFilter(ShipPart):
+class JumpFilter(ShipPartBase):
     system_type: Literal['JUMP_FILTER'] = 'JUMP_FILTER'
     description: Literal['Jump Filter'] = 'Jump Filter'
     tl: int = 14

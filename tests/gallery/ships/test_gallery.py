@@ -72,7 +72,7 @@ _SHIPS = sorted(
         ('test_ultralight_fighter', build_ultralight_fighter),
         ('test_valiant_light_cruiser', build_valiant_light_cruiser),
     ],
-    key=lambda entry: (entry[1]().ship_class or entry[1]().ship_type).lower(),
+    key=lambda entry: (entry[1]().ship_class or entry[1]().ship_type or '').lower(),
 )
 
 

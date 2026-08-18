@@ -1,5 +1,6 @@
 """Skill table entry types. Each entry knows how to apply itself to a character."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, get_args, get_origin
 
@@ -17,6 +18,18 @@ if TYPE_CHECKING:
     from ceres.character.domain.character_state import CharacterProjection
 
 
+def skill_with_levels(skill_cls: type[AnySkill], fields: Iterable[str], level: int = 1) -> AnySkill:
+    """Build a skill instance with runtime-chosen specialisation fields set.
+
+    The field names are decided at runtime, so the mapping is genuinely dynamic.
+    Saying so once, here, keeps a type checker from matching every key against
+    every parameter of all 60+ classes in the skill union — which it otherwise
+    reports as one error per variant, per call site.
+    """
+    levels: dict[str, Any] = {field: Level(value=level) for field in fields}
+    return skill_cls(**levels)
+
+
 def expand_skill_classes(skills: object) -> tuple[type[AnySkill], ...]:
     """Expand a skill class, TypeAliasType alias, or union to a tuple of concrete skill classes."""
     if hasattr(skills, '__value__'):
@@ -27,7 +40,9 @@ def expand_skill_classes(skills: object) -> tuple[type[AnySkill], ...]:
     if args:
         return tuple(args)
     if isinstance(skills, type) and issubclass(skills, SkillModel):
-        return (skills,)  # type: ignore[return-value]
+        # issubclass has established this at runtime; AnySkill is the union of
+        # concrete Skill subclasses, which a checker cannot infer from the base.
+        return (cast(type[AnySkill], skills),)
     raise ValueError(f'Cannot expand {skills!r} to skill classes')
 
 
@@ -62,7 +77,7 @@ def _validate_skill_class(v: object) -> type[AnySkill]:
     if isinstance(v, str):
         return _skill_class_by_kind(v)
     if isinstance(v, type) and issubclass(v, SkillModel):
-        return v  # type: ignore[return-value]
+        return cast(type[AnySkill], v)
     raise ValueError(f'Expected a skill class or kind string, got {v!r}')
 
 
@@ -136,7 +151,7 @@ class Char(SkillTableEntryBase):
     characteristic: Chars
 
     def __init__(self, characteristic: Chars, **kwargs: object) -> None:
-        super().__init__(characteristic=characteristic, **kwargs)  # ty: ignore[unknown-argument]
+        super().__init__(characteristic=characteristic, **kwargs)
 
     def apply(self, projection: CharacterProjection, ctx: SkillTableApplyContext) -> None:
         chars = projection.summary.characteristics
@@ -155,7 +170,7 @@ class Skill(SkillTableEntryBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def __init__(self, skill: type[AnySkill], level: int | None = None, specs: object = None, **kwargs: object) -> None:
-        super().__init__(skill=skill, level=level, specs=specs, **kwargs)  # ty: ignore[unknown-argument]
+        super().__init__(skill=skill, level=level, specs=specs, **kwargs)
 
     @model_validator(mode='after')
     def _specs_belong_to_skill(self) -> Skill:
@@ -172,8 +187,14 @@ class Skill(SkillTableEntryBase):
         return level_fields(self.skill)
 
     def _marker_instance(self) -> AnySkill:
-        """Instance with each allowed specialization set — marks the restriction for option building."""
-        return self.skill(**{f: Level(value=1) for f in self._allowed_fields()})
+        """Instance with each allowed specialization set — marks the restriction for option building.
+
+        The field names are chosen at runtime, so the mapping is genuinely
+        dynamic: `dict[str, Any]` states that, rather than inviting a type
+        checker to match every key against every parameter of all 60+ skill
+        classes in the union.
+        """
+        return skill_with_levels(self.skill, self._allowed_fields())
 
     def apply(self, projection: CharacterProjection, ctx: SkillTableApplyContext) -> None:
         effective_level = ctx.level if ctx.level is not None else self.level
@@ -185,7 +206,7 @@ class Skill(SkillTableEntryBase):
         elif effective_level is None:
             projection.increment_skill(self._marker_instance() if self.specs else self.skill())
         else:
-            instance = self.skill(**{allowed[0]: Level(value=effective_level)}) if allowed else self.skill()
+            instance = skill_with_levels(self.skill, allowed[:1], effective_level) if allowed else self.skill()
             projection.grant_skill(instance)
 
     def _queue_specialization_choice(
@@ -243,7 +264,7 @@ class Psi(SkillTableEntryBase):
         allow_acquisition: bool = False,
         **kwargs: object,
     ) -> None:
-        super().__init__(talent=talent, level=level, allow_acquisition=allow_acquisition, **kwargs)  # ty: ignore[unknown-argument]
+        super().__init__(talent=talent, level=level, allow_acquisition=allow_acquisition, **kwargs)
 
     def apply(self, projection: CharacterProjection, ctx: SkillTableApplyContext) -> None:
         psionics = projection.summary.psionics
@@ -279,7 +300,7 @@ class SkillChoice(SkillTableEntryBase):
     model_config = {'arbitrary_types_allowed': True}
 
     def __init__(self, skills: object, level: int | None = None, specs: object = None, **kwargs: object) -> None:
-        super().__init__(skills=expand_skill_classes(skills), level=level, specs=specs, **kwargs)  # ty: ignore[unknown-argument]
+        super().__init__(skills=expand_skill_classes(skills), level=level, specs=specs, **kwargs)
 
     @model_validator(mode='after')
     def _specs_belong_to_choice(self) -> SkillChoice:
@@ -294,7 +315,7 @@ class SkillChoice(SkillTableEntryBase):
 
     def restricted_options(self) -> list[AnySkill]:
         """One instance per skill class, with any spec restriction marked on its Level fields."""
-        return [cls(**{ref.field: Level(value=1) for ref in self._specs_for(cls) or ()}) for cls in self.skills]
+        return [skill_with_levels(cls, [ref.field for ref in self._specs_for(cls) or ()]) for cls in self.skills]
 
     def apply(self, projection: CharacterProjection, ctx: SkillTableApplyContext) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTableChoice
@@ -328,7 +349,7 @@ class PsiChoice(SkillTableEntryBase):
         allow_acquisition: bool = False,
         **kwargs: object,
     ) -> None:
-        super().__init__(talents=expand_talent_classes(talents), allow_acquisition=allow_acquisition, **kwargs)  # ty: ignore[unknown-argument]
+        super().__init__(talents=expand_talent_classes(talents), allow_acquisition=allow_acquisition, **kwargs)
 
     def apply(self, projection: CharacterProjection, ctx: SkillTableApplyContext) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTableChoice

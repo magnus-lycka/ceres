@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Literal
 import pytest
 
 from ceres.make.robot.chassis import Trait
-from ceres.make.robot.parts import RobotPart
+from ceres.make.robot.parts import RobotPartBase
 from ceres.make.robot.skills import (
     Admin,
     Electronics,
@@ -25,7 +25,7 @@ from ceres.make.robot.skills import (
 )
 
 
-class _SlottedPart(RobotPart):
+class _SlottedPart(RobotPartBase):
     """Two-slot part used to test used_slots, remaining_slots, and slot overload."""
 
     type: Literal['SLOTTED'] = 'SLOTTED'
@@ -33,7 +33,7 @@ class _SlottedPart(RobotPart):
     slots: ClassVar[int] = 2
 
 
-class _TraitPart(RobotPart):
+class _TraitPart(RobotPartBase):
     """Part that injects an ATV trait — used to test option trait aggregation."""
 
     type: Literal['TRAIT_PART'] = 'TRAIT_PART'
@@ -44,7 +44,7 @@ class _TraitPart(RobotPart):
         return (Trait('ATV'),)
 
 
-class _SkillPart(RobotPart):
+class _SkillPart(RobotPartBase):
     """Part that grants Recon 1 — used to test option skill aggregation."""
 
     type: Literal['SKILL_PART'] = 'SKILL_PART'

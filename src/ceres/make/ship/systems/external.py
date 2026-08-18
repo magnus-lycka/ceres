@@ -2,7 +2,7 @@ from typing import ClassVar, Literal
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 from .common import _ZeroPowerSystemPart
 
 
@@ -29,7 +29,7 @@ class Aerofins(_ZeroPowerSystemPart):
         return self.tons * 100_000.0
 
 
-class HolographicHull(ShipPart):
+class HolographicHull(ShipPartBase):
     system_type: Literal['HOLOGRAPHIC_HULL'] = 'HOLOGRAPHIC_HULL'
     description: Literal['Holographic Hull'] = 'Holographic Hull'
     tl: int = 10

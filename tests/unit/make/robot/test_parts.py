@@ -1,4 +1,4 @@
-"""Tests for RobotPart binding behaviour.
+"""Tests for RobotPartBase binding behaviour.
 
 A concrete subclass is defined locally. Tests verify the contract:
 - unbound part raises RuntimeError on .assembly access
@@ -14,18 +14,18 @@ import pytest
 
 from ceres.make.robot import PrimitiveBrain, Robot, RobotSize, WheelsLocomotion
 from ceres.make.robot.base import RobotBase
-from ceres.make.robot.parts import RobotPart, RobotPartMixin
-from ceres.shared import NoteList
+from ceres.make.robot.parts import RobotPartBase, RobotPartMixin
+from ceres.shared import Assembly, NoteList
 
 
-class _SamplePart(RobotPart):
-    """Minimal concrete RobotPart for testing — zero slots, no label."""
+class _SamplePart(RobotPartBase):
+    """Minimal concrete RobotPartBase for testing — zero slots, no label."""
 
     type: Literal['SAMPLE'] = 'SAMPLE'
     tl: int = 5
 
 
-class _LabelledPart(RobotPart):
+class _LabelledPart(RobotPartBase):
     """Part that returns a label from build_item."""
 
     type: Literal['LABELLED'] = 'LABELLED'
@@ -42,6 +42,10 @@ class _MixinPart(RobotPartMixin):
 
     def __init__(self) -> None:
         self.notes = NoteList()
+
+    def _store_assembly(self, assembly: Assembly | None) -> None:
+        """A host owns its own assembly slot; the mixin asks rather than pokes."""
+        self._assembly = assembly if isinstance(assembly, RobotBase) else None
 
     @property
     def slots(self) -> int:

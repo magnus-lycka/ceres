@@ -2,9 +2,11 @@ from typing import ClassVar, Literal
 
 from ceres.shared import NoteList, _Note
 
+from ..installable import not_installable
 from .common import _ZeroPowerSystemPart
 
 
+@not_installable
 class _ReEntrySystem(_ZeroPowerSystemPart):
     _capacity: ClassVar[int]
     _protection: ClassVar[int | None] = None

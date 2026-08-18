@@ -2,10 +2,12 @@ from typing import ClassVar
 
 from pydantic import ConfigDict, Field
 
-from ..parts import ShipPart
+from ..installable import not_installable
+from ..parts import ShipPartBase
 
 
-class _ZeroPowerSystemPart(ShipPart):
+@not_installable
+class _ZeroPowerSystemPart(ShipPartBase):
     power: ClassVar[float]
 
     @property
@@ -13,7 +15,8 @@ class _ZeroPowerSystemPart(ShipPart):
         return 0.0
 
 
-class _ExplicitTonsSystemPart(ShipPart):
+@not_installable
+class _ExplicitTonsSystemPart(ShipPartBase):
     tons: ClassVar[float]
     base_tons: float = Field(0.0, alias='tons')
     model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)

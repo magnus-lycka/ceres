@@ -109,16 +109,16 @@
         "usage_factor": 1.0
       },
       "armour": {
-        "armoured_bulkhead": false,
         "display_label": null,
+        "armoured_bulkhead": false,
         "hardened": false,
         "description": "Crystaliron",
         "protection": 13
       },
       "stealth": {
-        "armoured_bulkhead": false,
-        "tl": 10,
         "display_label": null,
+        "tl": 10,
+        "armoured_bulkhead": false,
         "hardened": false,
         "description": "Improved Stealth"
       },
@@ -126,33 +126,33 @@
       "adjustable_hull": null,
       "airlocks": [
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "size": 2.0,
           "booby_trap": null
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "size": 2.0,
           "booby_trap": null
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "size": 2.0,
           "booby_trap": null
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "size": 2.0,
           "booby_trap": null
@@ -164,17 +164,17 @@
       "reflec": false
     },
     "drives": {
+      "display_label": null,
+      "tl": 0,
+      "cost": 0.0,
       "tons": 0.0,
       "power": 0.0,
       "armoured_bulkhead": false,
-      "cost": 0.0,
-      "tl": 0,
-      "display_label": null,
       "hardened": false,
       "m_drive": {
-        "armoured_bulkhead": true,
-        "tl": 13,
         "display_label": null,
+        "tl": 13,
+        "armoured_bulkhead": true,
         "hardened": false,
         "customisation": null,
         "drive_type": "mdrive_7",
@@ -186,17 +186,17 @@
       "solar_sail": null
     },
     "power": {
+      "display_label": null,
+      "tl": 0,
+      "cost": 0.0,
       "tons": 0.0,
       "power": 0.0,
       "armoured_bulkhead": false,
-      "cost": 0.0,
-      "tl": 0,
-      "display_label": null,
       "hardened": false,
       "plant": {
-        "armoured_bulkhead": true,
-        "tl": 12,
         "display_label": null,
+        "tl": 12,
+        "armoured_bulkhead": true,
         "hardened": false,
         "customisation": null,
         "output": 450.0,
@@ -211,17 +211,17 @@
       "jump_fuel": null,
       "collector": null,
       "operation_fuel": {
-        "armoured_bulkhead": true,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "armoured_bulkhead": true,
         "hardened": false,
         "weeks": 16
       },
       "reaction_fuel": null,
       "fuel_scoops": {
-        "armoured_bulkhead": false,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "armoured_bulkhead": false,
         "hardened": false,
         "description": "Fuel Scoops",
         "free": true
@@ -234,9 +234,9 @@
     "command": {
       "display_label": null,
       "bridge": {
-        "armoured_bulkhead": true,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "armoured_bulkhead": true,
         "hardened": false,
         "small": false,
         "holographic": true,
@@ -247,26 +247,26 @@
     "computer": {
       "display_label": null,
       "hardware": {
-        "armoured_bulkhead": false,
-        "tl": 13,
         "display_label": null,
+        "tl": 13,
         "processing": 25,
         "retro_levels": 0,
         "kind": "computer_25",
         "bis": false,
         "fib": true,
-        "proto_levels": 0
+        "proto_levels": 0,
+        "armoured_bulkhead": false
       },
       "backup_hardware": {
-        "armoured_bulkhead": false,
-        "tl": 12,
         "display_label": null,
+        "tl": 12,
         "processing": 20,
         "retro_levels": 0,
         "kind": "computer_20",
         "bis": false,
         "fib": true,
-        "proto_levels": 0
+        "proto_levels": 0,
+        "armoured_bulkhead": false
       },
       "software": [
         {
@@ -289,9 +289,9 @@
     "sensors": {
       "display_label": null,
       "primary": {
-        "armoured_bulkhead": true,
-        "tl": 12,
         "display_label": null,
+        "tl": 12,
+        "armoured_bulkhead": true,
         "hardened": false,
         "low_intercept": "NONE",
         "description": "Improved Sensors"
@@ -303,32 +303,32 @@
       "mineral_detection_suite": null,
       "shallow_penetration_suite": null,
       "countermeasures": {
-        "armoured_bulkhead": true,
-        "tl": 13,
         "display_label": null,
+        "tl": 13,
+        "armoured_bulkhead": true,
         "hardened": false,
         "description": "Countermeasures Suite"
       },
       "signal_processing": {
-        "armoured_bulkhead": true,
-        "tl": 13,
         "display_label": null,
+        "tl": 13,
+        "armoured_bulkhead": true,
         "hardened": false,
         "description": "Enhanced Signal Processing"
       },
       "distributed_array": null,
       "extended_arrays": {
-        "armoured_bulkhead": true,
-        "tl": 11,
         "display_label": null,
+        "tl": 11,
+        "armoured_bulkhead": true,
         "hardened": false,
         "description": "Extended Arrays"
       },
       "extension_net": null,
       "sensor_stations": {
-        "armoured_bulkhead": true,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "armoured_bulkhead": true,
         "hardened": false,
         "count": 2
       }
@@ -336,9 +336,9 @@
     "screens": null,
     "craft": null,
     "automation": {
-      "armoured_bulkhead": false,
-      "tl": 0,
       "display_label": null,
+      "tl": 0,
+      "armoured_bulkhead": false,
       "hardened": false,
       "level": "standard_auto"
     },
@@ -347,81 +347,81 @@
       "display_label": null,
       "staterooms": [
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "kind": "standard",
           "occupancy": 2
@@ -434,9 +434,9 @@
       "barracks": [],
       "cabin_space": null,
       "common_area": {
-        "armoured_bulkhead": false,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "armoured_bulkhead": false,
         "hardened": false,
         "tons": 10.0,
         "description": "Common Area"
@@ -453,42 +453,42 @@
       "display_label": null,
       "internal_systems": [
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "system_type": "ARMOURY",
           "description": "Armoury"
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "tons": 4.0,
           "system_type": "BIOSPHERE",
           "description": "Biosphere"
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "system_type": "MEDICAL_BAY",
           "autodoc": null
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "system_type": "TRAINING_FACILITY",
           "trainees": 2
         },
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "system_type": "WORKSHOP",
           "description": "Workshop"
@@ -496,9 +496,9 @@
       ],
       "drones": [
         {
-          "armoured_bulkhead": false,
-          "tl": 0,
           "display_label": null,
+          "tl": 0,
+          "armoured_bulkhead": false,
           "hardened": false,
           "drone_type": "REPAIR_DRONES",
           "description": "Repair Drones"
@@ -512,17 +512,17 @@
       "carronades": [],
       "barbettes": [
         {
-          "armoured_bulkhead": true,
-          "tl": 11,
           "display_label": null,
+          "tl": 11,
+          "armoured_bulkhead": true,
           "hardened": false,
           "customisation": null,
           "barbette_type": "particle_barbette"
         },
         {
-          "armoured_bulkhead": true,
-          "tl": 11,
           "display_label": null,
+          "tl": 11,
+          "armoured_bulkhead": true,
           "hardened": false,
           "customisation": null,
           "barbette_type": "particle_barbette"
@@ -531,9 +531,9 @@
       "spinal_mounts": [],
       "bays": [
         {
-          "armoured_bulkhead": true,
-          "tl": 7,
           "display_label": null,
+          "tl": 7,
+          "armoured_bulkhead": true,
           "hardened": false,
           "customisation": {
             "display_label": null,
@@ -588,18 +588,18 @@
       ],
       "point_defense_batteries": [
         {
-          "armoured_bulkhead": true,
-          "tl": 12,
           "display_label": null,
+          "tl": 12,
+          "armoured_bulkhead": true,
           "hardened": false,
           "customisation": null,
           "battery_type": "laser_point_defense_2"
         }
       ],
       "missile_storage": {
-        "armoured_bulkhead": true,
-        "tl": 0,
         "display_label": null,
+        "tl": 0,
+        "armoured_bulkhead": true,
         "hardened": false,
         "count": 480
       },

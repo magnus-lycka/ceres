@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import CustomisableShipPart, ShipPart, SizeReduction
+from ..parts import CustomisableShipPart, ShipPartBase, SizeReduction
 from .common import _GENERAL_WEAPON_MODIFICATIONS, _check_intense_focus, _damage_multiple_text
 
 BarbetteWeapon = Literal[
@@ -40,7 +40,7 @@ class _Barbette(CustomisableShipPart):
         return f'{item} ({damage_text})'
 
     def build_notes(self) -> list[_Note]:
-        notes = NoteList(ShipPart.build_notes(self))
+        notes = NoteList(ShipPartBase.build_notes(self))
         if self.customisation is not None:
             _check_intense_focus(notes, self.customisation, self.weapon)
             notes.info(self.customisation.note_text)

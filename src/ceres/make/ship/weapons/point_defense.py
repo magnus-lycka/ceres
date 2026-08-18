@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import CustomisableShipPart, ShipPart, SizeReduction
+from ..parts import CustomisableShipPart, ShipPartBase, SizeReduction
 from .common import _GENERAL_WEAPON_MODIFICATIONS
 
 PointDefenseRating = Literal[1, 2, 3]
@@ -111,7 +111,7 @@ class GaussPointDefenseBattery3(_GaussPointDefenseBattery):
     base_cost = 10_000_000.0
 
 
-class TorpedoInterceptorCluster(ShipPart):
+class TorpedoInterceptorCluster(ShipPartBase):
     battery_type: Literal['torpedo_interceptor_cluster'] = 'torpedo_interceptor_cluster'
     description: Literal['Torpedo-Interceptor Cluster'] = 'Torpedo-Interceptor Cluster'
     tl: int = 10

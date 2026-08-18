@@ -2,7 +2,7 @@ from typing import Annotated, ClassVar, Literal
 
 from ceres.shared import NoteList, _Note
 
-from .parts import ShipPart
+from .parts import ShipPartBase
 from .spec import ShipSpec, SpecRow, SpecSection
 
 """
@@ -11,7 +11,7 @@ in Traveller Companion Update 2024.
 """
 
 
-class Automation(ShipPart):
+class Automation(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]

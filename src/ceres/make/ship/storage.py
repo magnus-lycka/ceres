@@ -5,14 +5,16 @@ from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .parts import ShipPart
+from .installable import not_installable
+from .parts import ShipPart, ShipPartBase
 from .spec import ShipSpec, SpecRow, SpecSection
 
 SMALL_CRAFT_MAX_DISPLACEMENT = 100
 TONNAGE_EPSILON = 0.005
 
 
-class _ZeroPowerStoragePart(ShipPart):
+@not_installable
+class _ZeroPowerStoragePart(ShipPartBase):
     power: ClassVar[float]
 
     @property
@@ -20,7 +22,8 @@ class _ZeroPowerStoragePart(ShipPart):
         return 0.0
 
 
-class _ExplicitTonsStoragePart(ShipPart):
+@not_installable
+class _ExplicitTonsStoragePart(ShipPartBase):
     tons: ClassVar[float]
     base_tons: float = Field(0.0, alias='tons')
     model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
@@ -282,7 +285,7 @@ class Ramscoop(_ZeroPowerStoragePart):
         return notes
 
 
-class MetalHydrideStorage(ShipPart):
+class MetalHydrideStorage(ShipPartBase):
     description: Literal['Metal Hydride Storage'] = 'Metal Hydride Storage'
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -402,7 +405,8 @@ class CargoCrane(CeresModel):
         return self.tons_for_space(cargo_space) * 1_000_000.0
 
 
-class _LoadingBelt(ShipPart):
+@not_installable
+class _LoadingBelt(ShipPartBase):
     description: Literal['Loading Belt'] = 'Loading Belt'
     tons: ClassVar[float]
     _replaced_loading_crew: ClassVar[int]

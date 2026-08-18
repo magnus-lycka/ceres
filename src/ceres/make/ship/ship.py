@@ -16,7 +16,7 @@ from .expense import ShipExpenses
 from .habitation import HabitationSection
 from .hull import ArmouredBulkhead, Hull, Streamlined
 from .occupants import ShipOccupant
-from .parts import ShipPart
+from .parts import ShipPart, ShipPartBase
 from .screens import ScreensSection
 from .sensors import SensorsSection
 from .spec import PassengerRow, ShipSpec, SpecRow, SpecSection
@@ -284,7 +284,7 @@ class Ship(ShipBase):
 
     def _display_notes(self, obj) -> NoteList:
         notes = NoteList(obj.notes.details)
-        if isinstance(obj, ShipPart) and getattr(obj, 'hardened', False):
+        if isinstance(obj, ShipPartBase) and getattr(obj, 'hardened', False):
             if obj.power > 0:
                 notes.info('Hardened against Ion weapons')
             else:

@@ -75,14 +75,14 @@ class TestArmouredBulkheadSerialization:
 
         assert bulkhead.item_description() == 'Armoured Bulkhead'
         assert 'Critical hit severity reduced by 1 if critical hit severity >1' in bulkhead.notes.infos
-        assert 'Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead' in (
+        assert 'Prefer armoured_bulkhead=True on the protected part over manual ArmouredBulkhead' in (
             bulkhead.notes.warnings
         )
 
     def test_bulkhead_created_from_ship_part_omits_manual_warning(self):
         bulkhead = hull.ArmouredBulkhead(protected_tonnage=20.0, from_ship_part=True)
 
-        assert 'Prefer armoured_bulkhead=True on the protected ShipPart over manual ArmouredBulkhead' not in (
+        assert 'Prefer armoured_bulkhead=True on the protected part over manual ArmouredBulkhead' not in (
             bulkhead.notes.warnings
         )
 

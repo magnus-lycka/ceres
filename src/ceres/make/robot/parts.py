@@ -1,26 +1,79 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
-from ceres.shared import CeresPart, NoteList
+from ceres.shared import Assembly, CeresPart, NoteList
 
 from .base import RobotBase
 from .chassis import Trait
 
 
-class RobotPartMixin(ABC):
-    """Pure-Python ABC mixin for parts installable in a robot."""
+class RobotPart(Protocol):
+    """Everything a robot may ask of an installed part.
 
-    cost: float
-    tl: int
-    notes: NoteList
-    _assembly: RobotBase | None
+    The promise, as distinct from `RobotPartBase`, which is only shared
+    implementation. Parts such as `RobotTransceiver` reach a robot through
+    `RobotPartMixin` alone and never inherit the base, so consumers typed
+    against the base would exclude them.
+
+    Read-only throughout: parts are frozen models.
+    """
+
+    @property
+    def tl(self) -> int: ...
+
+    @property
+    def cost(self) -> float: ...
+
+    @property
+    def slots(self) -> int: ...
+
+    @property
+    def notes(self) -> NoteList: ...
+
+
+class _RobotPartMixinHost(Protocol):
+    """Typing scaffolding: what `RobotPartMixin`'s own methods need of their host.
+
+    Once a mixin method's `self` is typed as this protocol, `ty` sees only what
+    the protocol declares — so it must carry the mixin's own self-called methods
+    as well as the host's state, not merely the attributes the stripped mixin
+    left unresolved.
+    """
+
+    @property
+    def tl(self) -> int: ...
+
+    @property
+    def _assembly(self) -> Assembly | None: ...
+
+    def _store_assembly(self, assembly: Assembly | None) -> None: ...
+
+    def build_item(self) -> str | None: ...
+
+    def check_tl(self) -> None: ...
+
+    @property
+    def assembly_tl(self) -> int: ...
+
+    def item(self, message: str) -> Any: ...
+
+    def error(self, message: str) -> Any: ...
+
+
+class RobotPartMixin(ABC):
+    """Reusable installation behaviour for parts installable in a robot.
+
+    Carries behaviour only, and declares no attributes — see `ShipPartMixin`
+    for why. What these methods need of their host is stated by
+    `_RobotPartMixinHost`.
+    """
 
     @property
     @abstractmethod
     def slots(self) -> int: ...
 
-    def bind(self, assembly: RobotBase) -> None:
-        self._assembly = assembly
+    def bind(self: _RobotPartMixinHost, assembly: RobotBase) -> None:
+        self._store_assembly(assembly)
         self.check_tl()
         if message := self.build_item():
             self.item(message)
@@ -29,7 +82,7 @@ class RobotPartMixin(ABC):
     @abstractmethod
     def assembly(self) -> RobotBase: ...
 
-    def _robot_assembly(self) -> RobotBase:
+    def _robot_assembly(self: _RobotPartMixinHost) -> RobotBase:
         assembly = self._assembly
         if assembly is None:
             raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
@@ -50,7 +103,7 @@ class RobotPartMixin(ABC):
     def assembly_tl(self) -> int:
         return self.assembly.tl
 
-    def check_tl(self) -> None:
+    def check_tl(self: _RobotPartMixinHost) -> None:
         if self.assembly_tl < self.tl:
             self.error(f'Requires TL{self.tl}, robot is TL{self.assembly_tl}')
 
@@ -79,7 +132,7 @@ class RobotPartMixin(ABC):
         return 0
 
 
-class RobotPart(CeresPart, RobotPartMixin):
+class RobotPartBase(CeresPart, RobotPartMixin):
     """Concrete base for robot-installable parts."""
 
     cost: float = 0.0

@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import NoteList
 
-from ..parts import Modification, ShipPart
+from ..parts import Modification, ShipPartBase
 
 SpinExtPlasmaDriveEnergyEfficient = Modification(
     name='Energy Efficient',
@@ -38,7 +38,7 @@ SpinExtPlasmaDriveFuelInefficient = Modification(
 )
 
 
-class SpinExtPlasmaDrive(ShipPart):
+class SpinExtPlasmaDrive(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]

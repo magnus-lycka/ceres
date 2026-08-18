@@ -4,7 +4,16 @@ from pydantic import ConfigDict, Field
 
 from ceres.shared import NoteList
 
-from .parts import CustomisableShipPart, EnergyInefficient, IncreasedSize, Modification, ShipPart, SizeReduction
+from .installable import not_installable
+from .parts import (
+    CustomisableShipPart,
+    EnergyInefficient,
+    IncreasedSize,
+    Modification,
+    ShipPart,
+    ShipPartBase,
+    SizeReduction,
+)
 from .spec import ShipSpec, SpecSection
 
 SPINEXT_SOLAR_COATING_HULL_OPTION_MIN_TL = 12
@@ -210,7 +219,8 @@ type AnyPowerPlant = Annotated[
 ]
 
 
-class _SolarPowerSource(ShipPart):
+@not_installable
+class _SolarPowerSource(ShipPartBase):
     cost: ClassVar[float]
     power: ClassVar[float]
     solar_type: str
@@ -289,7 +299,7 @@ class AdvancedSolarPanels(_SolarPanels):
     cost_per_unit: ClassVar[int] = 400_000
 
 
-class _SpinExtSolarPanels(ShipPart):
+class _SpinExtSolarPanels(ShipPartBase):
     cost: ClassVar[float]
     power: ClassVar[float]
     solar_type: str
@@ -345,7 +355,7 @@ class SpinExtSolarPanelsTL12(_SpinExtSolarPanels):
     cost_per_ton: ClassVar[int] = 400_000
 
 
-class _SpinExtSolarCoating(ShipPart):
+class _SpinExtSolarCoating(ShipPartBase):
     cost: ClassVar[float]
     power: ClassVar[float]
     tons: ClassVar[float]
@@ -484,7 +494,7 @@ type AnySolarPowerSource = Annotated[
 ]
 
 
-class _HighEfficiencyBatteries(ShipPart):
+class _HighEfficiencyBatteries(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -535,7 +545,7 @@ type AnyHighEfficiencyBatteries = Annotated[
 ]
 
 
-class EmergencyPowerSystem(ShipPart):
+class EmergencyPowerSystem(ShipPartBase):
     description: Literal['Emergency Power System'] = 'Emergency Power System'
     tons: ClassVar[float]
     cost: ClassVar[float]
@@ -566,7 +576,7 @@ class EmergencyPowerSystem(ShipPart):
         return 0.0
 
 
-class PowerSection(ShipPart):
+class PowerSection(ShipPartBase):
     plant: AnyPowerPlant | None = None
     solar: list[AnySolarPowerSource] = Field(default_factory=list)
     batteries: list[AnyHighEfficiencyBatteries] = Field(default_factory=list)

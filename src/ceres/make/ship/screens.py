@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import CeresModel, NoteList
 
-from .parts import CustomisableShipPart, EnergyEfficient, ShipPart, SizeReduction
+from .parts import CustomisableShipPart, EnergyEfficient, ShipPart, ShipPartBase, SizeReduction
 from .spec import ShipSpec, SpecSection
 
 
@@ -121,7 +121,7 @@ class BlackGlobeGenerator(_Screen):
         return notes
 
 
-class BlackGlobeCapacitorBank(ShipPart):
+class BlackGlobeCapacitorBank(ShipPartBase):
     description: Literal['Black Globe Capacitor Bank'] = 'Black Globe Capacitor Bank'
     tl: int = 15
     tons: float

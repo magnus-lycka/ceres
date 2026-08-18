@@ -253,7 +253,7 @@ class TestEquipment:
 
         e = Equipment()
         with pytest.raises(ValidationError):
-            e.tl = 5
+            e.tl = 5  # ty: ignore[invalid-assignment] - the point of the test
 
     def test_serialises_and_roundtrips(self):
         part = CeresPart(tl=10, cost=500.0)

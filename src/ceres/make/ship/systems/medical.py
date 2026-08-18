@@ -2,7 +2,7 @@ from typing import ClassVar, Literal
 
 from ceres.shared import CeresModel
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 from .common import _ExplicitTonsSystemPart
 
 
@@ -14,7 +14,7 @@ class BasicAutodoc(CeresModel):
         return 100_000.0
 
 
-class MedicalBay(ShipPart):
+class MedicalBay(ShipPartBase):
     system_type: Literal['MEDICAL_BAY'] = 'MEDICAL_BAY'
     tons: ClassVar[float]
     cost: ClassVar[float]

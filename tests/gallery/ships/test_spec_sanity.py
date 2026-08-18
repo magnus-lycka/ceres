@@ -217,8 +217,10 @@ def test_ship_spec_collapse_preserves_power_by_section_and_kind(
                     lambda row: row.power is not None and row.power < 0 and not row.emphasize_power,
                 ),
             ]:
-                raw_power = sum(row.power for row in spec.rows if row.section == section and predicate(row))
-                collapsed_power = sum(row.power for row in collapsed_rows if row.section == section and predicate(row))
+                raw_power = sum(row.power or 0 for row in spec.rows if row.section == section and predicate(row))
+                collapsed_power = sum(
+                    row.power or 0 for row in collapsed_rows if row.section == section and predicate(row)
+                )
                 power_delta = collapsed_power - raw_power
                 if abs(power_delta) > 0.005:
                     deviations.append(

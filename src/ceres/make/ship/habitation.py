@@ -6,6 +6,7 @@ from pydantic import ConfigDict, Field, TypeAdapter, field_validator, model_vali
 
 from ceres.shared import CeresModel, NoteList
 
+from .installable import not_installable
 from .occupants import (
     BasicPassage,
     Crew,
@@ -16,14 +17,14 @@ from .occupants import (
     ResidenceAllocator,
     ResidenceDemand,
 )
-from .parts import ShipPart
+from .parts import ShipPart, ShipPartBase
 from .spec import ShipSpec, SpecRow, SpecSection
 from .systems import CommonArea, HotTub, SwimmingPool, Theatre, WetBar
 
 STABLE_MIN_TONS = 10
 
 
-class Stateroom(ShipPart):
+class Stateroom(ShipPartBase):
     kind: Literal['standard'] = 'standard'
     description: ClassVar[str] = 'Stateroom'
     plural_label: ClassVar[str] = 'Staterooms'
@@ -106,7 +107,8 @@ StateroomUnion = Annotated[Stateroom | HighStateroom | LuxuryStateroom | PsionSt
 _stateroom_adapter: TypeAdapter[StateroomUnion] = TypeAdapter(StateroomUnion)
 
 
-class _ExplicitCostHabitationPart(ShipPart):
+@not_installable
+class _ExplicitCostHabitationPart(ShipPartBase):
     cost: ClassVar[float]
     base_cost: float = Field(0.0, alias='cost')
     model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
@@ -116,7 +118,8 @@ class _ExplicitCostHabitationPart(ShipPart):
         return self.base_cost
 
 
-class _ExplicitTonsHabitationPart(ShipPart):
+@not_installable
+class _ExplicitTonsHabitationPart(ShipPartBase):
     tons: ClassVar[float]
     base_tons: float = Field(0.0, alias='tons')
     model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
@@ -126,7 +129,7 @@ class _ExplicitTonsHabitationPart(ShipPart):
         return self.base_tons
 
 
-class LowBerth(ShipPart):
+class LowBerth(ShipPartBase):
     description: ClassVar[str] = 'Low Berth'
     plural_label: ClassVar[str] = 'Low Berths'
     tons: ClassVar[float]
@@ -161,7 +164,7 @@ class LowBerth(ShipPart):
         return 1.0 if index % 10 == 0 else 0.0
 
 
-class EmergencyLowBerth(ShipPart):
+class EmergencyLowBerth(ShipPartBase):
     description: ClassVar[str] = 'Emergency Low Berth'
     plural_label: ClassVar[str] = 'Emergency Low Berths'
     tons: ClassVar[float]
@@ -186,7 +189,7 @@ class EmergencyLowBerth(ShipPart):
         return 1.0
 
 
-class Brig(ShipPart):
+class Brig(ShipPartBase):
     description: Literal['Brig'] = 'Brig'
     plural_label: ClassVar[str] = 'Brigs'
     tons: ClassVar[float]

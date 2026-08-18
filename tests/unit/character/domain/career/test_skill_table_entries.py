@@ -35,6 +35,7 @@ from ceres.character.domain.psionics_data import (
 )
 from ceres.character.domain.skills import (
     Admin,
+    AnySkill,
     Athletics,
     Electronics,
     Gambler,
@@ -618,7 +619,7 @@ class TestSkillTableEntryChosenHandler:
 class TestPendingSkillTableChoiceFormBoundary:
     """Web form boundary: input_specs() and event_from_form() for Skill/Psi wrapper options."""
 
-    def _pending_skill_choice(self, *skill_cls: type) -> PendingSkillTableChoice:
+    def _pending_skill_choice(self, *skill_cls: type[AnySkill]) -> PendingSkillTableChoice:
         return PendingSkillTableChoice(
             pending_id=(1, 0),
             instruction='Choose a skill',

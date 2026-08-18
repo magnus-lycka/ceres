@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 from .common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
 
 
@@ -37,7 +37,7 @@ class CommercialZone(_ExplicitTonsSystemPart):
         return float(max(1, int(self.tons // 200)))
 
 
-class MultiEnvironmentSpace(ShipPart):
+class MultiEnvironmentSpace(ShipPartBase):
     system_type: Literal['MULTI_ENVIRONMENT_SPACE'] = 'MULTI_ENVIRONMENT_SPACE'
     description: Literal['Multi-Environment Space'] = 'Multi-Environment Space'
     covered_tons: float
@@ -85,7 +85,7 @@ class Theatre(CommonArea):
         return self.tons * 100_000.0
 
 
-class Brewery(ShipPart):
+class Brewery(ShipPartBase):
     system_type: Literal['BREWERY'] = 'BREWERY'
     description: Literal['Brewery'] = 'Brewery'
     tl: int = 10
@@ -110,7 +110,7 @@ class Brewery(ShipPart):
         return 0.0
 
 
-class GourmetKitchen(ShipPart):
+class GourmetKitchen(ShipPartBase):
     system_type: Literal['GOURMET_KITCHEN'] = 'GOURMET_KITCHEN'
     description: Literal['Gourmet Kitchen'] = 'Gourmet Kitchen'
     diners: int

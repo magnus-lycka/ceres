@@ -18,11 +18,16 @@ class ResidenceDemand(StrEnum):
 
 
 class Occupant(Protocol):
-    demand: ResidenceDemand
+    """Read-only: occupants are frozen models, so a writable member would
+    demand a mutability they do not have."""
+
+    @property
+    def demand(self) -> ResidenceDemand: ...
 
 
 class Residence(Protocol):
-    provides: list[tuple[ResidenceDemand, int]]
+    @property
+    def provides(self) -> list[tuple[ResidenceDemand, int]]: ...
 
 
 class ShipOccupantBase(BaseModel):

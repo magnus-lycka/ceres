@@ -14,16 +14,16 @@ class DummyShip(ShipBase):
         super().__init__(tl=tl, displacement=displacement)
 
 
-class FixedPart(parts.ShipPart):
+class FixedPart(parts.ShipPartBase):
     tl: int = 9
 
 
-class LabelledPart(parts.ShipPart):
+class LabelledPart(parts.ShipPartBase):
     def item_description(self) -> str:
         return 'Labelled Part'
 
 
-class HighTlPart(parts.ShipPart):
+class HighTlPart(parts.ShipPartBase):
     tl: int = 15
 
 

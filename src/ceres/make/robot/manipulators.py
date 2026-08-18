@@ -11,7 +11,7 @@ from pydantic import ConfigDict, Field
 from ceres.shared import CeresModel
 
 from .chassis import RobotSize, chassis_entry
-from .parts import RobotBase, RobotPart
+from .parts import RobotBase, RobotPartBase
 
 _DELTA_TO_PCT: list[tuple[int, float]] = [
     (2, 0.40),
@@ -37,7 +37,7 @@ class Leg(CeresModel):
     kind: Literal['LEG'] = 'LEG'
 
 
-class Manipulator(RobotPart):
+class Manipulator(RobotPartBase):
     """A robot manipulator arm.
 
     size=None means inherit robot size at bind time.

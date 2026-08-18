@@ -3,7 +3,7 @@ from typing import ClassVar, Literal
 from pydantic import Field
 
 from .base import ShipBase
-from .parts import ShipPart
+from .parts import ShipPartBase
 
 ARMOUR_MIN_DISPLACEMENT = 5
 ARMOUR_SIZE_FACTOR_4_MAX_DISPLACEMENT = 16
@@ -11,7 +11,7 @@ ARMOUR_SIZE_FACTOR_3_MAX_DISPLACEMENT = 26
 SMALL_CRAFT_MAX_DISPLACEMENT = 100
 
 
-class Armour(ShipPart):
+class Armour(ShipPartBase):
     description: str
     protection: int
     tons: ClassVar[float]

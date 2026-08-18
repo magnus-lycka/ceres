@@ -5,13 +5,13 @@ from pydantic import Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 from .common import MountWeapon, _mounted_weapon_cost, _mounted_weapon_notes, _mounted_weapon_power
 
 POP_UP_MOUNT_MIN_TL = 10
 
 
-class FixedMount(ShipPart):
+class FixedMount(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]
@@ -59,7 +59,7 @@ class FixedMount(ShipPart):
 TurretSize = Literal['single', 'double', 'triple', 'quad']
 
 
-class _Turret(ShipPart):
+class _Turret(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]

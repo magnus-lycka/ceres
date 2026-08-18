@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class ShipBase(Assembly):
-    """Minimal ship interface that ShipPart subclasses depend on."""
+    """Minimal ship interface that ShipPartBase subclasses depend on."""
 
     tl: int
     displacement: int

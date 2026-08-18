@@ -5,7 +5,7 @@ from .locomotion import LocomotionUnion
 
 
 class RobotBase(Assembly):
-    """Minimal robot interface that RobotPart subclasses depend on."""
+    """Minimal robot interface that RobotPartBase subclasses depend on."""
 
     tl: int
     size: RobotSize

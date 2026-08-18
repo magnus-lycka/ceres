@@ -958,3 +958,71 @@ specialisations given. Note that the cost and bandwidth requirement
 for this is the same as for three entirely separate skills with
 the same price and bandwith, e.g. Admin(level=1), Mechanics(level=1)
 and Steward(level=1)
+
+### RIS-022 Stun And Lethal Damage Reduce One Shared END Score
+
+The rules do not say whether a character softened up by a stunner is easier to
+knock out with lethal damage, or whether prior injury makes someone easier to
+stun. Community discussion offers no consensus and barely addresses it, because
+almost all of it predates the 2022 Update, which replaced the old stun rule (an
+END check at DM− equal to the damage, failure meaning unconsciousness) with the
+END-reduction rule now printed at `refs/core/03_combat.md:366`.
+
+Ceres rules that there is **one END score**, reduced by both kinds of damage.
+A character with END 7 who has taken 5 stun points needs 9 more lethal points to
+fall unconscious, not 14; a character with END 6 who has taken 4 lethal points is
+stunned by 5 further stun points rather than needing a fresh 6.
+
+Reasons:
+
+- Both rules reduce the same *characteristic*, not a pool: "Damage is initially
+  applied to a target's END" (`:264`) against "Damage is only deducted from END"
+  (`:366`).
+- A baton round applies half of one attack's damage as Stun
+  (`refs/vehicle/21_specialised_ammunition.md:35`), so both kinds are expected on
+  one character at once, with no separate bookkeeping supplied.
+- Where the authors mean a separate accumulating total they say so: the animal
+  stun rule reads "a *cumulative* amount of damage equal to half of its Hits"
+  (`:604`). That word is absent from the character rule.
+- The Companion's optional Knockout Blow treats END as one running score reduced
+  "from its starting value to 0" (`refs/companion/13_combat.md:71`).
+
+`CharacteristicTrack` therefore keeps lethal and stun END damage in two buckets
+**for healing only** — stun points are cleared by an hour of rest (`:366`),
+lethal ones are not. Every threshold uses the single derived value.
+
+### RIS-023 Stun Damage Can Never Complete A Kill
+
+Following RIS-022, an actor may reach 0 in all three physical characteristics
+while part of the END loss is stun damage. The Core Rulebook says a Traveller
+with all three physical characteristics at 0 has been killed (`:266`), but it
+also says Stun weapons "deal non-lethal damage, incapacitating a living target
+rather than killing it" (`:366`).
+
+Ceres resolves the conflict in favour of the Stun trait: **death requires all
+three physical characteristics to be reduced to 0 by lethal damage.** An actor
+whose STR and DEX are gone and whose END is only zero because of a stunner is
+unconscious and stunned, not dead, and recovers that END after an hour's rest.
+Otherwise a stunner could finish someone off, which the trait explicitly rules
+out.
+
+In that state every characteristic reads zero, so the damage cascade has nowhere
+left to put further lethal damage — yet stun may still be occupying END capacity
+that lethal damage has never claimed. **Further lethal damage claims it**,
+displacing the stun points one for one, and death follows once END's full
+maximum has been lost to lethal damage. Without this, an actor with any stun
+points and all three characteristics at zero could never be killed at all.
+
+The invariant this preserves: stun changes *when an actor falls unconscious*,
+but never *how much lethal damage it takes to kill them*. An actor with
+STR 4/DEX 4/END 4 dies to 12 points of lethal damage whether or not they were
+stunned first.
+
+### RIS-024 A Reaction Penalises The Next Unspent Set Of Actions
+
+Every Reaction costs DM−1 "on their next set of actions"
+(`refs/core/03_combat.md:192`). Ceres reads "next" as *the next unspent set*: a
+reaction taken before the actor has acted this round penalises this round's
+actions, while one taken after they have acted penalises next round's. The
+penalty attaches to the next unspent action set rather than always to the
+following round.

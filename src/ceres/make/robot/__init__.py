@@ -33,7 +33,7 @@ from .options import (
     WirelessDataLink as WirelessDataLink,
     default_suite as default_suite,
 )
-from .parts import RobotPart as RobotPart, RobotPartMixin as RobotPartMixin
+from .parts import RobotPartBase as RobotPartBase, RobotPartMixin as RobotPartMixin
 from .robot import Robot as Robot
 from .skills import BrainSoftware as BrainSoftware
 from .spec import RobotSpec as RobotSpec, RobotSpecRow as RobotSpecRow, RobotSpecSection as RobotSpecSection

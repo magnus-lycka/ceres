@@ -5,11 +5,11 @@ from pydantic import Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 from ..storage import CargoHold
 
 
-class _SpinalMount(ShipPart):
+class _SpinalMount(ShipPartBase):
     tons: ClassVar[float]
     cost: ClassVar[float]
     power: ClassVar[float]

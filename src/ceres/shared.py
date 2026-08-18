@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import ClassVar, Self
+from typing import Self
 
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic_core import core_schema
@@ -158,7 +158,6 @@ def _new_note_list() -> NoteList:
 
 
 class CeresModel(BaseModel):
-    notes: ClassVar[NoteList]
     display_label: str | None = None
     _notes: NoteList = PrivateAttr(default_factory=_new_note_list)
 
@@ -222,6 +221,11 @@ class CeresPart(CeresModel):
     """
 
     _assembly: Assembly | None = PrivateAttr(default=None)
+
+    def _store_assembly(self, assembly: Assembly | None) -> None:
+        """Own the private slot, so context mixins need not reach into it."""
+        self._assembly = assembly
+
     tl: int = 0
     cost: float = 0.0
     model_config = {'frozen': True}

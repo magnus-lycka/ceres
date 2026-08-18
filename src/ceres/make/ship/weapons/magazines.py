@@ -1,9 +1,9 @@
 from typing import ClassVar
 
-from ..parts import ShipPart
+from ..parts import ShipPartBase
 
 
-class MissileStorage(ShipPart):
+class MissileStorage(ShipPartBase):
     """Magazine for missiles: 12 missiles per ton, no cost."""
 
     tons: ClassVar[float]
@@ -27,7 +27,7 @@ class MissileStorage(ShipPart):
         return 0.0
 
 
-class TorpedoStorage(ShipPart):
+class TorpedoStorage(ShipPartBase):
     """Magazine for torpedoes: 3 torpedoes per ton, no cost."""
 
     tons: ClassVar[float]
@@ -51,7 +51,7 @@ class TorpedoStorage(ShipPart):
         return 0.0
 
 
-class SandcasterCanisterStorage(ShipPart):
+class SandcasterCanisterStorage(ShipPartBase):
     """Magazine for sand canisters: 20 canisters per ton, no cost."""
 
     tons: ClassVar[float]

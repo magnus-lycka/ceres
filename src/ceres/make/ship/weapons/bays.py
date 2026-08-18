@@ -4,7 +4,7 @@ from pydantic import Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import CustomisableShipPart, ShipPart, SizeReduction
+from ..parts import CustomisableShipPart, ShipPartBase, SizeReduction
 from .common import (
     _GENERAL_WEAPON_MODIFICATIONS,
     HighYield,
@@ -72,7 +72,7 @@ class _Bay(CustomisableShipPart):
         return f'{super().group_key}|{type(self).__name__}'
 
     def build_notes(self) -> list[_Note]:
-        notes = NoteList(ShipPart.build_notes(self))
+        notes = NoteList(ShipPartBase.build_notes(self))
         if self.magazine_summary is not None:
             notes.info(self.magazine_summary)
         if self.customisation is not None:
@@ -107,7 +107,7 @@ class _Bay(CustomisableShipPart):
         return self.base_power * self.power_multiplier
 
 
-class _Carronade(ShipPart):
+class _Carronade(ShipPartBase):
     carronade_type: str
     description: ClassVar[str]
     damage: ClassVar[str]
@@ -294,7 +294,7 @@ class LargeMassDriverBay(_LargeBay):
     base_cost = 80_000_000.0
 
 
-class GeneralPurposeMassDriverBay(ShipPart):
+class GeneralPurposeMassDriverBay(ShipPartBase):
     bay_type: Literal['general_purpose_mass_driver_bay'] = 'general_purpose_mass_driver_bay'
     description: Literal['Small General-Purpose Mass Driver Bay'] = 'Small General-Purpose Mass Driver Bay'
     tl: int = 8
