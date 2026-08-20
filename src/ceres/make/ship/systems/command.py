@@ -3,15 +3,14 @@ from typing import ClassVar, Literal
 from ceres.shared import NoteList, _Note
 
 from ..base import ShipBase
-from .common import _ZeroPowerSystemPart
+from ..parts import UnpoweredShipPart
 
 COMMAND_BRIDGE_MIN_DISPLACEMENT = 5_000
 
 
-class BriefingRoom(_ZeroPowerSystemPart):
+class BriefingRoom(UnpoweredShipPart):
     system_type: Literal['BRIEFING_ROOM'] = 'BRIEFING_ROOM'
     description: Literal['Briefing Room'] = 'Briefing Room'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -23,10 +22,9 @@ class BriefingRoom(_ZeroPowerSystemPart):
         return 500_000.0
 
 
-class CommandBridge(_ZeroPowerSystemPart):
+class CommandBridge(UnpoweredShipPart):
     system_type: Literal['COMMAND_BRIDGE'] = 'COMMAND_BRIDGE'
     description: Literal['Command Bridge'] = 'Command Bridge'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     def bind(self, assembly: ShipBase) -> None:

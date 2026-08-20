@@ -15,6 +15,7 @@ from ceres.shared import NoteList
 
 def _row(
     item='Widget',
+    *,
     tons=2.0,
     cost=100.0,
     power=-4.0,

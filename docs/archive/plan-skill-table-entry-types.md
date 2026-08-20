@@ -68,9 +68,9 @@ class SkillTableApplyContext:
     """
 
     event: Event
-    level: int | None = None      # mode: None = increment; 0 = grant base at 0; N = set-if-lower
+    level: int | None = None  # mode: None = increment; 0 = grant base at 0; N = set-if-lower
 
-    def next_pending_id(self) -> tuple[int, int]: ...   # allocates (event.id, idx), idx increments
+    def next_pending_id(self) -> tuple[int, int]: ...  # allocates (event.id, idx), idx increments
 
 
 class SkillTableEntryBase(CeresModel):
@@ -95,8 +95,8 @@ class Char(SkillTableEntryBase):
 
 class Skill(SkillTableEntryBase):
     kind: Literal['skill'] = 'skill'
-    skill: type[AnySkill]          # serialized as the skill's kind string
-    level: int | None = None       # None = increment; int = set-if-lower
+    skill: type[AnySkill]  # serialized as the skill's kind string
+    level: int | None = None  # None = increment; int = set-if-lower
 
     def __init__(self, skill: type[AnySkill], level: int | None = None, **kwargs) -> None:
         super().__init__(skill=skill, level=level, **kwargs)
@@ -104,7 +104,7 @@ class Skill(SkillTableEntryBase):
 
 class SkillChoice(SkillTableEntryBase):
     kind: Literal['skill_choice'] = 'skill_choice'
-    skills: UnionType | type[AnySkill]   # Drive | VaccSuit, or a broad alias like Sciences
+    skills: UnionType | type[AnySkill]  # Drive | VaccSuit, or a broad alias like Sciences
     level: int | None = None
 
     def __init__(self, skills: UnionType | type[AnySkill], level: int | None = None, **kwargs) -> None:
@@ -123,7 +123,7 @@ class Psi(SkillTableEntryBase):
 
 class PsiChoice(SkillTableEntryBase):
     kind: Literal['psi_choice'] = 'psi_choice'
-    talents: UnionType                   # Telepathy | Clairvoyance | ...
+    talents: UnionType  # Telepathy | Clairvoyance | ...
     level: int | None = None
     allow_acquisition: bool = False
 
@@ -131,9 +131,7 @@ class PsiChoice(SkillTableEntryBase):
         super().__init__(talents=talents, level=level, **kwargs)
 
 
-type SkillTableItem = Annotated[
-    Char | Skill | SkillChoice | Psi | PsiChoice, Field(discriminator='kind')
-]
+type SkillTableItem = Annotated[Char | Skill | SkillChoice | Psi | PsiChoice, Field(discriminator='kind')]
 ```
 
 Notes on the stubs:
@@ -301,8 +299,8 @@ as options, replace both with a single handler:
 ```python
 class SkillTableEntryChosenHandler(EventHandlerBase):
     kind: Literal['skill_table_entry_chosen'] = 'skill_table_entry_chosen'
-    entry: SkillTableItem          # the chosen concrete Skill or Psi entry
-    roll: int | None = None        # psi acquisition roll (2D), when required
+    entry: SkillTableItem  # the chosen concrete Skill or Psi entry
+    roll: int | None = None  # psi acquisition roll (2D), when required
 
     def apply(self, projection, event, fulfilled_pending=None) -> None:
         # resolve pending, then: self.entry.apply(projection, ctx)
@@ -372,7 +370,7 @@ mean behaviour, not import confusion.
 The bridge:
 
 ```python
-type SkillTableItem = AnySkill | LegacyPsi | Chars | SkillTableEntryBase   # transitional
+type SkillTableItem = AnySkill | LegacyPsi | Chars | SkillTableEntryBase  # transitional
 ```
 
 and at the top of each legacy dispatch site:

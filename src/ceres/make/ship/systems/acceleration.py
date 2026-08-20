@@ -1,13 +1,12 @@
 from typing import ClassVar, Literal
 
-from .common import _ZeroPowerSystemPart
+from ..parts import UnpoweredShipPart
 
 
-class AccelerationSeat(_ZeroPowerSystemPart):
+class AccelerationSeat(UnpoweredShipPart):
     system_type: Literal['ACCELERATION_SEAT'] = 'ACCELERATION_SEAT'
     tl: int = 1
     description: Literal['Acceleration Seat'] = 'Acceleration Seat'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -19,11 +18,10 @@ class AccelerationSeat(_ZeroPowerSystemPart):
         return 30_000.0
 
 
-class AccelerationBench(_ZeroPowerSystemPart):
+class AccelerationBench(UnpoweredShipPart):
     system_type: Literal['ACCELERATION_BENCH'] = 'ACCELERATION_BENCH'
     tl: int = 1
     description: Literal['Acceleration Bench'] = 'Acceleration Bench'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     seats: int = 4
 

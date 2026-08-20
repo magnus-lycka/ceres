@@ -1,12 +1,11 @@
 from typing import ClassVar, Literal
 
-from .common import _ZeroPowerSystemPart
+from ..parts import UnpoweredShipPart
 
 
-class ProbeDrones(_ZeroPowerSystemPart):
+class ProbeDrones(UnpoweredShipPart):
     drone_type: Literal['PROBE_DRONES'] = 'PROBE_DRONES'
     tl: int = 9
-    tons: ClassVar[float]
     cost: ClassVar[float]
     drones_per_ton: ClassVar[int] = 5
     cost_per_ton: ClassVar[float] = 500_000.0
@@ -37,12 +36,11 @@ class AdvancedProbeDrones(ProbeDrones):
         return 'Advanced Probe Drones'
 
 
-class RepairDrones(_ZeroPowerSystemPart):
+class RepairDrones(UnpoweredShipPart):
     """Repair drones: 1 ton per 100 tons of displacement, Cr200,000 per ton."""
 
     drone_type: Literal['REPAIR_DRONES'] = 'REPAIR_DRONES'
     description: Literal['Repair Drones'] = 'Repair Drones'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -54,9 +52,8 @@ class RepairDrones(_ZeroPowerSystemPart):
         return self.tons * 200_000.0
 
 
-class MiningDrones(_ZeroPowerSystemPart):
+class MiningDrones(UnpoweredShipPart):
     drone_type: Literal['MINING_DRONES'] = 'MINING_DRONES'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     count: int
 

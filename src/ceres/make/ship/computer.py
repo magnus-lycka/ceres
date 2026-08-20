@@ -24,9 +24,7 @@ class ComputerBase(ComputerPart, ShipPartMixin):
     _label: ClassVar[str]
     _base_cost: ClassVar[float]
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     armoured_bulkhead: bool = False
 
     @model_validator(mode='after')

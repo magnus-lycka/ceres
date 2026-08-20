@@ -25,7 +25,8 @@ The gear layer should answer item-specific questions:
 
 This follows the rule in `docs/assemblies_and_parts.md`: context-independent
 properties belong on the generic part, and context-dependent installation
-properties belong in assembly-specific mixins or wrappers.
+*behaviour* belongs in assembly-specific mixins. Mixins must not declare
+attributes — Pydantic turns those into required fields.
 
 ## Default Suite As Part of Options
 
@@ -33,9 +34,7 @@ The five default suite items are not a separate field. They are `RobotPart`
 instances in `Robot.options`, exactly like any other installed option:
 
 ```python
-options: list[RobotPartMixin] = Field(
-    default_factory=lambda: list(DefaultSuite())
-)
+options: list[RobotPartMixin] = Field(default_factory=lambda: list(DefaultSuite()))
 ```
 
 `DefaultSuite()` returns the five standard items:
@@ -79,16 +78,15 @@ exists to make construction convenient.
 
 ```python
 def DefaultSuite(
-    see: bool = True,               # Visual Spectrum Sensor
-    speak: bool = True,             # Voder Speaker
-    hear: bool = True,              # Auditory Sensor
-    wireless: bool = True,          # Wireless Data Link
+    see: bool = True,  # Visual Spectrum Sensor
+    speak: bool = True,  # Voder Speaker
+    hear: bool = True,  # Auditory Sensor
+    wireless: bool = True,  # Wireless Data Link
     improved_transceiver: bool = True,  # Transceiver 5km (improved)
-    drone: bool = False,            # Drone Interface
-    basic_transceiver: bool = False,    # Transceiver 5km (basic)
-    screen: bool = False,           # Video Screen (basic)
-) -> list[RobotPartMixin]:
-    ...
+    drone: bool = False,  # Drone Interface
+    basic_transceiver: bool = False,  # Transceiver 5km (basic)
+    screen: bool = False,  # Video Screen (basic)
+) -> list[RobotPartMixin]: ...
 ```
 
 At most 5 of the eight flags may be `True` (validation error otherwise). The
@@ -99,7 +97,7 @@ The eight possible items correspond to the substitution options in
 level — paying for a better transceiver means adding it outside `DefaultSuite()`:
 
 ```python
-options=DefaultSuite(improved_transceiver=False) + [RobotTransceiver(range_km=50)]
+options = DefaultSuite(improved_transceiver=False) + [RobotTransceiver(range_km=50)]
 ```
 
 ### Zero-Slot Quota
@@ -110,10 +108,7 @@ applies uniformly to every zero-slot item in the options list:
 
 ```python
 zero_slot_count = sum(
-    1 for o in self.options
-    if isinstance(o, RobotPartMixin)
-    and o.slots == 0
-    and o.notes.item_message is not None
+    1 for o in self.options if isinstance(o, RobotPartMixin) and o.slots == 0 and o.notes.item_message is not None
 )
 excess_zero_slots = max(0, zero_slot_count - (5 + int(self.size) + self.tl))
 ```

@@ -2,13 +2,11 @@ from typing import ClassVar, Literal
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPartBase
-from .common import _ZeroPowerSystemPart
+from ..parts import ShipPartBase, UnpoweredShipPart
 
 
-class Aerofins(_ZeroPowerSystemPart):
+class Aerofins(UnpoweredShipPart):
     description: Literal['Aerofins'] = 'Aerofins'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -33,9 +31,7 @@ class HolographicHull(ShipPartBase):
     system_type: Literal['HOLOGRAPHIC_HULL'] = 'HOLOGRAPHIC_HULL'
     description: Literal['Holographic Hull'] = 'Holographic Hull'
     tl: int = 10
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def tons(self) -> float:
@@ -55,11 +51,10 @@ class HolographicHull(ShipPartBase):
         return notes
 
 
-class TowCable(_ZeroPowerSystemPart):
+class TowCable(UnpoweredShipPart):
     system_type: Literal['TOW_CABLE'] = 'TOW_CABLE'
     tl: int = 7
     description: Literal['Tow Cable'] = 'Tow Cable'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -71,11 +66,10 @@ class TowCable(_ZeroPowerSystemPart):
         return self.assembly.displacement * 0.01 * 5_000
 
 
-class GrapplingArm(_ZeroPowerSystemPart):
+class GrapplingArm(UnpoweredShipPart):
     system_type: Literal['GRAPPLING_ARM'] = 'GRAPPLING_ARM'
     tl: int = 9
     description: Literal['Grappling Arm'] = 'Grappling Arm'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property

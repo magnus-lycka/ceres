@@ -39,9 +39,7 @@ SpinExtPlasmaDriveFuelInefficient = Modification(
 
 
 class SpinExtPlasmaDrive(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     drive_type: Literal['spinext_plasma_drive'] = 'spinext_plasma_drive'
     description: Literal['SpinExt Plasma Drive'] = 'SpinExt Plasma Drive'
     tl: int = 8

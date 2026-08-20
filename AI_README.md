@@ -20,14 +20,15 @@ Ships can be rendered to HTML, Typst, or PDF from a `Ship` or `ShipSpec`:
 ```python
 from ceres.report import render_ship_html, render_ship_pdf, render_ship_typst
 
-html = render_ship_html(ship)          # Jinja2 -> HTML string
-typst = render_ship_typst(ship)        # Typst source string
-pdf = render_ship_pdf(ship)            # Typst -> PDF bytes
+html = render_ship_html(ship)  # Jinja2 -> HTML string
+typst = render_ship_typst(ship)  # Typst source string
+pdf = render_ship_pdf(ship)  # Typst -> PDF bytes
 
 # From a pre-built spec:
 from ceres.report import render_ship_spec_html, render_ship_spec_pdf
+
 html = render_ship_spec_html(spec, theme='dark')
-pdf  = render_ship_spec_pdf(spec, page_size='us-letter')
+pdf = render_ship_spec_pdf(spec, page_size='us-letter')
 ```
 
 Robots can be rendered to Typst or PDF from a `Robot` or `RobotSpec`:
@@ -140,7 +141,11 @@ lives in the test suite, and nothing is deployed. Therefore:
   helper or shared assertion that keeps the tests readable.
 
 The usual full local gate is `./pre-commit.sh`, which also runs `deptry` and
-`bandit`.
+`bandit`. The versioned `.pre-commit-config.yaml` runs this gate from Git's
+pre-commit hook. Install it once per clone with `uv tool install --upgrade
+pre-commit` followed by `pre-commit install`. Ruff applies safe lint fixes
+first; if any hook changes files, pre-commit rejects the commit so the changes
+can be reviewed and staged.
 
 ## Code and Test Structure
 

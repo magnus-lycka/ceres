@@ -62,7 +62,6 @@ select = [
 
 ignore = [
   "PLR0913",  # too many arguments; often noisy
-  "PLR0917",  # too many positional arguments; same noise as PLR0913
   "RUF001",  # No, we don't just want ASCII
   "RUF002",  # No, we don't just want ASCII
   "RUF003",  # No, we don't just want ASCII

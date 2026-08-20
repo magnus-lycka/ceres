@@ -101,10 +101,7 @@ class ScoutTerm(CareerTerm):
 
 class AgentTerm(CareerTerm):
     def continues_career_run_from(self, previous: CareerTerm) -> bool:
-        return (
-            isinstance(previous, AgentTerm)
-            and self.assignment_index == previous.assignment_index
-        )
+        return isinstance(previous, AgentTerm) and self.assignment_index == previous.assignment_index
 ```
 
 The exact Agent rule is an example, not a settled interpretation. The important

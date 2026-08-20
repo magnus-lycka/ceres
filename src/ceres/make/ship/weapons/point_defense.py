@@ -11,9 +11,7 @@ PointDefenseRating = Literal[1, 2, 3]
 
 
 class _PointDefenseBattery(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     battery_type: str
     rating: ClassVar[PointDefenseRating]
     description: ClassVar[str]
@@ -115,9 +113,7 @@ class TorpedoInterceptorCluster(ShipPartBase):
     battery_type: Literal['torpedo_interceptor_cluster'] = 'torpedo_interceptor_cluster'
     description: Literal['Torpedo-Interceptor Cluster'] = 'Torpedo-Interceptor Cluster'
     tl: int = 10
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()

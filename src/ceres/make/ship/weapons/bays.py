@@ -31,9 +31,7 @@ BayWeapon = Literal[
 
 
 class _Bay(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     bay_type: str
     size: ClassVar[BaySize]
     weapon: ClassVar[BayWeapon]
@@ -114,9 +112,7 @@ class _Carronade(ShipPartBase):
     traits: ClassVar[tuple[str, ...]] = ('Weak',)
     base_cost: ClassVar[float]
     base_power: ClassVar[float]
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def hardpoints_required(self) -> int:
@@ -299,9 +295,7 @@ class GeneralPurposeMassDriverBay(ShipPartBase):
     description: Literal['Small General-Purpose Mass Driver Bay'] = 'Small General-Purpose Mass Driver Bay'
     tl: int = 8
     extra_launch_capacity: float = 0.0
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def hardpoints_required(self) -> int:

@@ -2,13 +2,12 @@ from typing import ClassVar, Literal
 
 from ceres.shared import NoteList, _Note
 
-from .common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
+from ..parts import ShipPartBase, UnpoweredShipPart
 
 
-class Workshop(_ZeroPowerSystemPart):
+class Workshop(UnpoweredShipPart):
     system_type: Literal['WORKSHOP'] = 'WORKSHOP'
     description: Literal['Workshop'] = 'Workshop'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -20,10 +19,9 @@ class Workshop(_ZeroPowerSystemPart):
         return 900_000.0
 
 
-class Laboratory(_ZeroPowerSystemPart):
+class Laboratory(UnpoweredShipPart):
     system_type: Literal['LABORATORY'] = 'LABORATORY'
     description: Literal['Laboratory'] = 'Laboratory'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -35,11 +33,10 @@ class Laboratory(_ZeroPowerSystemPart):
         return 1_000_000.0
 
 
-class LibraryFacility(_ZeroPowerSystemPart):
+class LibraryFacility(UnpoweredShipPart):
     system_type: Literal['LIBRARY'] = 'LIBRARY'
     description: Literal['Library'] = 'Library'
     tl: int = 8
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -51,11 +48,11 @@ class LibraryFacility(_ZeroPowerSystemPart):
         return 4_000_000.0
 
 
-class ConstructionDeck(_ExplicitTonsSystemPart):
+class ConstructionDeck(ShipPartBase):
+    tons: float = 0.0
     system_type: Literal['CONSTRUCTION_DECK'] = 'CONSTRUCTION_DECK'
     description: Literal['Construction Deck'] = 'Construction Deck'
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def maximum_constructible_tons(self) -> float:
@@ -75,9 +72,8 @@ class ConstructionDeck(_ExplicitTonsSystemPart):
         return notes
 
 
-class TrainingFacility(_ZeroPowerSystemPart):
+class TrainingFacility(UnpoweredShipPart):
     system_type: Literal['TRAINING_FACILITY'] = 'TRAINING_FACILITY'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     trainees: int
 

@@ -14,9 +14,7 @@ SMALL_CRAFT_MAX_DISPLACEMENT = 100
 class Armour(ShipPartBase):
     description: str
     protection: int
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     _cost_per_ton: ClassVar[int] = 0
     _tonnage_consumed: ClassVar[int] = 0

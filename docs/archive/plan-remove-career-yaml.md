@@ -41,7 +41,7 @@ After:
 ```python
 from ceres.character.skills import Gambler, Medic, Melee
 
-personal_development=SkillTable([Chars.STR, Chars.DEX, Chars.END, Gambler(), Medic(), Melee()])
+personal_development = SkillTable([Chars.STR, Chars.DEX, Chars.END, Gambler(), Medic(), Melee()])
 ```
 
 ---
@@ -58,7 +58,7 @@ class CareerSkillTables(CeresModel):
     personal_development: SkillTable
     service_skills: SkillTable
     advanced_education: SkillTable | None = None
-    officer: SkillTable | None = None          # commissioned ranks only
+    officer: SkillTable | None = None  # commissioned ranks only
     assignment1: SkillTable
     assignment2: SkillTable
     assignment3: SkillTable
@@ -75,9 +75,10 @@ A skill table is a list of six entries (index 0 = die roll 1):
 ```python
 type SkillTableEntry = AnySkill | Chars | list[AnySkill]
 
+
 class SkillTable(CeresModel):
-    entries: list[SkillTableEntry]             # always length 6
-    min_edu: int = 0                           # advanced_education gate
+    entries: list[SkillTableEntry]  # always length 6
+    min_edu: int = 0  # advanced_education gate
 ```
 
 - `AnySkill` instance → gain that skill at the instance's level (default 0)

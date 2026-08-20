@@ -3,11 +3,11 @@ from typing import ClassVar, Literal
 from ceres.shared import NoteList, _Note
 
 from ..installable import not_installable
-from .common import _ZeroPowerSystemPart
+from ..parts import UnpoweredShipPart
 
 
 @not_installable
-class _ReEntrySystem(_ZeroPowerSystemPart):
+class _ReEntrySystem(UnpoweredShipPart):
     _capacity: ClassVar[int]
     _protection: ClassVar[int | None] = None
     _detection_dm: ClassVar[int | None] = None
@@ -46,7 +46,6 @@ class BasicReEntryCapsule(_ReEntrySystem):
     system_type: Literal['BASIC_RE_ENTRY_CAPSULE'] = 'BASIC_RE_ENTRY_CAPSULE'
     tl: int = 8
     description: Literal['Re-entry Capsule (basic)'] = 'Re-entry Capsule (basic)'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     _capacity: ClassVar[int] = 1
 
@@ -63,7 +62,6 @@ class AssaultReEntryCapsule(_ReEntrySystem):
     system_type: Literal['ASSAULT_RE_ENTRY_CAPSULE'] = 'ASSAULT_RE_ENTRY_CAPSULE'
     tl: int = 10
     description: Literal['Re-entry Capsule (assault)'] = 'Re-entry Capsule (assault)'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     _capacity: ClassVar[int] = 1
     _protection: ClassVar[int | None] = 20
@@ -82,7 +80,6 @@ class HighSurvivabilityReEntryCapsule(_ReEntrySystem):
     system_type: Literal['HIGH_SURVIVABILITY_RE_ENTRY_CAPSULE'] = 'HIGH_SURVIVABILITY_RE_ENTRY_CAPSULE'
     tl: int = 14
     description: Literal['Re-entry Capsule (high-survivability)'] = 'Re-entry Capsule (high-survivability)'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     _capacity: ClassVar[int] = 1
     _protection: ClassVar[int | None] = 30
@@ -102,7 +99,6 @@ class ReEntryPod(_ReEntrySystem):
     system_type: Literal['RE_ENTRY_POD'] = 'RE_ENTRY_POD'
     tl: int = 9
     description: Literal['Re-entry Pod'] = 'Re-entry Pod'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     _capacity: ClassVar[int] = 2
 

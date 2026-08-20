@@ -268,7 +268,7 @@ custom entry.
 This phase should produce visible simplification in career modules like:
 
 ```python
-effects=[GainEnemyEffect(), GainSkillEffect(skill=Deception(level=Level(value=1)))]
+effects = [GainEnemyEffect(), GainSkillEffect(skill=Deception(level=Level(value=1)))]
 ```
 
 becoming:

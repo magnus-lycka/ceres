@@ -19,9 +19,7 @@ DETACHABLE_CAPITAL_BRIDGE_MINIMUM_TONS = 80.0
 
 
 class Cockpit(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     holographic: bool = False
     dual: bool = False
     ejector_seat: bool = False
@@ -63,9 +61,7 @@ class Cockpit(ShipPartBase):
 
 
 class Bridge(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     small: bool = False
     holographic: bool = False
     detachable: bool = False

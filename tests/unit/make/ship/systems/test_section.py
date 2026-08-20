@@ -30,12 +30,12 @@ class TestSystemsSection:
 
     def test_typed_internal_system_accessors(self):
         armoury = Armoury()
-        biosphere = Biosphere(tons=4)
-        commercial_zone = CommercialZone(tons=10)
+        biosphere = Biosphere()
+        commercial_zone = CommercialZone()
         medical_bay = MedicalBay()
         laboratory = Laboratory()
         library = LibraryFacility()
-        briefing_room = BriefingRoom(tons=4)
+        briefing_room = BriefingRoom()
         command_bridge = CommandBridge()
         training_facility = TrainingFacility(trainees=2)
         workshop = Workshop()

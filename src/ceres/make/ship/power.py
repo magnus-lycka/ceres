@@ -22,9 +22,7 @@ IncreasedPower = Modification(name='Increased Power', advantage=2, output_multip
 
 
 class _PowerPlant(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     power_per_ton: ClassVar[int | float]
     cost_per_ton: ClassVar[int | float]
     output: ClassVar[float]
@@ -222,7 +220,6 @@ type AnyPowerPlant = Annotated[
 @not_installable
 class _SolarPowerSource(ShipPartBase):
     cost: ClassVar[float]
-    power: ClassVar[float]
     solar_type: str
     tl: int
     grade: ClassVar[str]
@@ -247,8 +244,6 @@ class _SolarPowerSource(ShipPartBase):
 
 
 class _SolarPanels(_SolarPowerSource):
-    tons: ClassVar[float]
-
     @property
     def tons(self) -> float:
         return self.units
@@ -301,7 +296,6 @@ class AdvancedSolarPanels(_SolarPanels):
 
 class _SpinExtSolarPanels(ShipPartBase):
     cost: ClassVar[float]
-    power: ClassVar[float]
     solar_type: str
     tl: int
     tons: float = Field(0.5, ge=0.5)
@@ -357,8 +351,6 @@ class SpinExtSolarPanelsTL12(_SpinExtSolarPanels):
 
 class _SpinExtSolarCoating(ShipPartBase):
     cost: ClassVar[float]
-    power: ClassVar[float]
-    tons: ClassVar[float]
     solar_type: str
     tl: int
     covered_tons: float
@@ -420,8 +412,6 @@ class SpinExtSolarCoatingTL12(_SpinExtSolarCoating):
 
 
 class _SolarCoating(_SolarPowerSource):
-    tons: ClassVar[float]
-
     @property
     def tons(self) -> float:
         return 0.0
@@ -495,9 +485,7 @@ type AnySolarPowerSource = Annotated[
 
 
 class _HighEfficiencyBatteries(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     battery_type: str
     tl: int
     stored_power: int
@@ -547,9 +535,7 @@ type AnyHighEfficiencyBatteries = Annotated[
 
 class EmergencyPowerSystem(ShipPartBase):
     description: Literal['Emergency Power System'] = 'Emergency Power System'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @classmethod
     def from_fusion_plant(cls, plant: _FusionPlant) -> EmergencyPowerSystem:
@@ -577,6 +563,16 @@ class EmergencyPowerSystem(ShipPartBase):
 
 
 class PowerSection(ShipPartBase):
+    @property
+    def tons(self) -> float:
+        """A section has no tonnage of its own; its contents carry it."""
+        return 0.0
+
+    @property
+    def power(self) -> float:
+        """A section draws no power of its own; its contents draw it."""
+        return 0.0
+
     plant: AnyPowerPlant | None = None
     solar: list[AnySolarPowerSource] = Field(default_factory=list)
     batteries: list[AnyHighEfficiencyBatteries] = Field(default_factory=list)

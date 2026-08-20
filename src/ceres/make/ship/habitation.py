@@ -28,9 +28,7 @@ class Stateroom(ShipPartBase):
     kind: Literal['standard'] = 'standard'
     description: ClassVar[str] = 'Stateroom'
     plural_label: ClassVar[str] = 'Staterooms'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     occupancy: int = 2
     tons_per_room: ClassVar[float] = 4.0
     cost_per_room: ClassVar[float] = 500_000.0
@@ -118,23 +116,10 @@ class _ExplicitCostHabitationPart(ShipPartBase):
         return self.base_cost
 
 
-@not_installable
-class _ExplicitTonsHabitationPart(ShipPartBase):
-    tons: ClassVar[float]
-    base_tons: float = Field(0.0, alias='tons')
-    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
-
-    @property
-    def tons(self) -> float:
-        return self.base_tons
-
-
 class LowBerth(ShipPartBase):
     description: ClassVar[str] = 'Low Berth'
     plural_label: ClassVar[str] = 'Low Berths'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     tons_per_berth: ClassVar[float] = 0.5
     cost_per_berth: ClassVar[float] = 50_000.0
 
@@ -167,9 +152,7 @@ class LowBerth(ShipPartBase):
 class EmergencyLowBerth(ShipPartBase):
     description: ClassVar[str] = 'Emergency Low Berth'
     plural_label: ClassVar[str] = 'Emergency Low Berths'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     capacity: ClassVar[int] = 4
 
     @property
@@ -192,9 +175,7 @@ class EmergencyLowBerth(ShipPartBase):
 class Brig(ShipPartBase):
     description: Literal['Brig'] = 'Brig'
     plural_label: ClassVar[str] = 'Brigs'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def tons(self) -> float:
@@ -209,9 +190,9 @@ class Brig(ShipPartBase):
         return 0.0
 
 
-class Barracks(_ExplicitTonsHabitationPart):
+class Barracks(ShipPartBase):
+    tons: float = 0.0
     cost: ClassVar[float]
-    power: ClassVar[float]
     occupants: str | None = None
 
     def item_description(self) -> str:
@@ -231,8 +212,6 @@ class Barracks(_ExplicitTonsHabitationPart):
 class AdvancedEntertainmentSystem(_ExplicitCostHabitationPart):
     description: Literal['Advanced Entertainment System'] = 'Advanced Entertainment System'
     tl: int = 5
-    tons: ClassVar[float]
-    power: ClassVar[float]
     minimum_cost: ClassVar[float] = 100.0
     maximum_cost: ClassVar[float] = 10_000.0
 
@@ -255,10 +234,10 @@ class AdvancedEntertainmentSystem(_ExplicitCostHabitationPart):
         return 0.0
 
 
-class CabinSpace(_ExplicitTonsHabitationPart):
+class CabinSpace(ShipPartBase):
+    tons: float = 0.0
     description: Literal['Cabin Space'] = 'Cabin Space'
     cost: ClassVar[float]
-    power: ClassVar[float]
     tons_per_passenger: ClassVar[float] = 1.5
     life_support_per_ton: ClassVar[float] = 250.0
 
@@ -283,10 +262,10 @@ class CabinSpace(_ExplicitTonsHabitationPart):
         return [(ResidenceDemand.PASSENGER_STATEROOM_BED, self.passenger_capacity)]
 
 
-class Stable(_ExplicitTonsHabitationPart):
+class Stable(ShipPartBase):
+    tons: float = 0.0
     description: Literal['Stable'] = 'Stable'
     cost: ClassVar[float]
-    power: ClassVar[float]
     life_support_per_ton: ClassVar[float] = 250.0
 
     @property

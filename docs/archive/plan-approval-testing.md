@@ -15,6 +15,7 @@ under `__snapshots__/` beside the test file, committed to the repository.
 ```python
 from tests.approval.snapshot import AnnotatedJSONSnapshotExtension, AnnotatedSnapshot
 
+
 @pytest.mark.approval
 def test_some_scenario(snapshot):
     d = _setup_helper()
@@ -159,9 +160,7 @@ def test_scholar_event3_accept_full_delta(snapshot):
     d.choose_career_skill(LifeScience(biology=Level(value=1)))
     d.name_connection()
 
-    assert stable_projection_diff(before, d.projection) == snapshot(
-        extension_class=JSONSnapshotExtension
-    )
+    assert stable_projection_diff(before, d.projection) == snapshot(extension_class=JSONSnapshotExtension)
 ```
 
 Advantages:

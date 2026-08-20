@@ -12,9 +12,7 @@ POP_UP_MOUNT_MIN_TL = 10
 
 
 class FixedMount(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     mount_cost: ClassVar[int] = 100_000
     tl: int = 9
     pop_up: bool = False
@@ -60,9 +58,7 @@ TurretSize = Literal['single', 'double', 'triple', 'quad']
 
 
 class _Turret(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     turret_type: str
     size: ClassVar[TurretSize]
     mount_cost: ClassVar[float]

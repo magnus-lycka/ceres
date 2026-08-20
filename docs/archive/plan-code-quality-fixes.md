@@ -92,10 +92,7 @@ This is O(n²) and relies on `remove()` finding by equality. Replace with a
 single in-place filter:
 
 ```python
-projection.pending_inputs[:] = [
-    p for p in projection.pending_inputs
-    if not isinstance(p, PendingPreCareerGraduation)
-]
+projection.pending_inputs[:] = [p for p in projection.pending_inputs if not isinstance(p, PendingPreCareerGraduation)]
 ```
 
 This fix is mechanical and should not change observable behaviour. Check that

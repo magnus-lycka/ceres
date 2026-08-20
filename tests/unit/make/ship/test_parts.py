@@ -15,7 +15,11 @@ class DummyShip(ShipBase):
 
 
 class FixedPart(parts.ShipPartBase):
+    """Tonnage and power are supplied design inputs here, so they are fields."""
+
     tl: int = 9
+    tons: float = 0.0
+    power: float = 0.0
 
 
 class LabelledPart(parts.ShipPartBase):
@@ -28,6 +32,8 @@ class HighTlPart(parts.ShipPartBase):
 
 
 class CustomPart(parts.CustomisableShipPart):
+    tons: float = 0.0
+    power: float = 0.0
     allowed_modifications: ClassVar[frozenset[str]] = frozenset(
         {
             parts.EnergyEfficient.name,

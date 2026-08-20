@@ -10,9 +10,7 @@ class GravScreen(ShipPartBase):
     system_type: Literal['GRAV_SCREEN'] = 'GRAV_SCREEN'
     description: Literal['Grav Screen'] = 'Grav Screen'
     tl: int = 12
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -36,9 +34,7 @@ class GravityWellGenerator(ShipPartBase):
     system_type: Literal['GRAVITY_WELL_GENERATOR'] = 'GRAVITY_WELL_GENERATOR'
     description: Literal['Gravity Well Generator'] = 'Gravity Well Generator'
     tl: int = 16
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -62,9 +58,7 @@ class JumpFilter(ShipPartBase):
     system_type: Literal['JUMP_FILTER'] = 'JUMP_FILTER'
     description: Literal['Jump Filter'] = 'Jump Filter'
     tl: int = 14
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     bandwidth: ClassVar[int] = 5
 
     def build_notes(self) -> list[_Note]:

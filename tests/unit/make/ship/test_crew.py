@@ -443,7 +443,11 @@ def test_maintained_craft_tonnage_counts_toward_maintenance_need():
         computer=ComputerSection(hardware=Computer5()),
         craft=CraftSection(
             docking_clamps=[
-                DockingClamp(craft=SpaceCraft.from_catalog("Ship's Boat"), transported=True, maintained=True)
+                DockingClamp(  # ty: ignore[pydantic-discarded-extra-argument] - maintained is inert, see #59
+                    craft=SpaceCraft.from_catalog("Ship's Boat"),
+                    transported=True,
+                    maintained=True,
+                )
             ]
         ),
     )

@@ -67,8 +67,7 @@ class PendingChoices(PendingInputBase):
         return CareerChoiceEvent(choice=form_str(form, 'choice', ''), fulfills=self.id)
 
     def input_specs(self, projection) -> list[InputSpec]:
-        return [Select(name='choice', label=self.instruction,
-                       options=[(c.label, c.kind) for c in self.choices])]
+        return [Select(name='choice', label=self.instruction, options=[(c.label, c.kind) for c in self.choices])]
 ```
 
 `AnyChoice` is a Pydantic discriminated union of all concrete choice classes (see below).
@@ -99,6 +98,7 @@ now the choice's `kind` rather than an arbitrary label, which makes it self-docu
 
 ```python
 # citizen.py
+
 
 class CitizenEvent8DoSo(ChoiceBase):
     kind: Literal['citizen_event_8_do_so'] = 'citizen_event_8_do_so'
@@ -160,9 +160,7 @@ class CitizenEvent8GainContact(ChoiceBase):
     label: str = 'Criminal Contact'
 
     def handle(self, projection: CharacterProjection, event: Any) -> None:
-        projection.summary.connections.append(
-            Contact(source='Criminal contact (Citizen event 8)')
-        )
+        projection.summary.connections.append(Contact(source='Criminal contact (Citizen event 8)'))
 
 
 class CitizenEvent8Handler(CareerHandlerBase):

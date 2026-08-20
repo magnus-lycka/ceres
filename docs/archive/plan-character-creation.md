@@ -286,6 +286,7 @@ class PendingInput(BaseModel):
     options: list[str] = []
     blocking: bool = True
 
+
 class ScheduledEffect(BaseModel):
     trigger: str
     source_event_id: int
@@ -293,9 +294,11 @@ class ScheduledEffect(BaseModel):
     expires: str | None = None
     consume: bool = True
 
+
 class Connection(BaseModel):
     kind: Literal['contact', 'ally', 'rival', 'enemy']
     source: str = ''
+
 
 class CharacterSummary(BaseModel):
     name: str | None = None
@@ -313,6 +316,7 @@ class CharacterSummary(BaseModel):
     benefits: list[str] = []
     muster_out_cash_count: int = 0
     dead: bool = False
+
 
 class CharacterProjection(BaseModel):
     character_id: int

@@ -12,9 +12,7 @@ in Traveller Companion Update 2024.
 
 
 class Automation(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     level: str
 
     description: ClassVar[str]

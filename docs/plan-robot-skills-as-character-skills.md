@@ -108,21 +108,21 @@ skill strings with shared skill objects.
 Current style:
 
 ```python
-SkillPackage(name="Electronics (remote ops)", level=1, bandwidth=1)
-SkillGrant("Recon", 0)
+SkillPackage(name='Electronics (remote ops)', level=1, bandwidth=1)
+SkillGrant('Recon', 0)
 ```
 
 Target style:
 
 ```python
-RobotSkillPackage(skill=Skill.parse("Electronics (remote ops)"), level=1, bandwidth=1)
-SkillGrant(skill=Skill.parse("Recon"), level=0)
+RobotSkillPackage(skill=Skill.parse('Electronics (remote ops)'), level=1, bandwidth=1)
+SkillGrant(skill=Skill.parse('Recon'), level=0)
 ```
 
 or, if `SkillLevel` exists:
 
 ```python
-SkillGrant(skill_level=SkillLevel(skill=Skill.parse("Recon"), level=0))
+SkillGrant(skill_level=SkillLevel(skill=Skill.parse('Recon'), level=0))
 ```
 
 Compatibility constructors may accept strings during migration, but internal
@@ -173,7 +173,7 @@ The cost table may apply to the broad/base skill while the installed package
 uses a speciality. That mapping should be explicit:
 
 ```python
-RobotSkillPackage(skill=Skill.parse("Electronics (remote ops)")).base_cost_key
+RobotSkillPackage(skill=Skill.parse('Electronics (remote ops)')).base_cost_key
 ```
 
 should resolve to the Robot Handbook `Electronics` row, not to an unrelated

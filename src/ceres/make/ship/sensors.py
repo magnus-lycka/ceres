@@ -84,9 +84,7 @@ def _capability_tl(part: ShipPartBase) -> int:
 
 class SensorPackage(ShipPartBase):
     notes: ClassVar[NoteList]
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     base_tons: ClassVar[float] = 0.0
     base_cost: ClassVar[float] = 0.0
     base_power: ClassVar[float] = 0.0
@@ -213,9 +211,7 @@ class AdvancedSensors(SensorPackage):
 class CountermeasuresSuite(ShipPartBase):
     description: Literal['Countermeasures Suite'] = 'Countermeasures Suite'
     tl: int = 13
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -238,9 +234,7 @@ class CountermeasuresSuite(ShipPartBase):
 class MilitaryCountermeasuresSuite(ShipPartBase):
     description: Literal['Military Countermeasures Suite'] = 'Military Countermeasures Suite'
     tl: int = 15
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -265,7 +259,6 @@ class DeepPenetrationScanners(ShipPartBase):
     tl: int = 13
     tons: float
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -285,9 +278,7 @@ class DeepPenetrationScanners(ShipPartBase):
 class LifeScanner(ShipPartBase):
     description: Literal['Life Scanner'] = 'Life Scanner'
     tl: int = 12
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -311,9 +302,7 @@ class LifeScanner(ShipPartBase):
 class LifeScannerAnalysisSuite(ShipPartBase):
     description: Literal['Life Scanner Analysis Suite'] = 'Life Scanner Analysis Suite'
     tl: int = 14
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -337,9 +326,7 @@ class LifeScannerAnalysisSuite(ShipPartBase):
 class MailDistributionArray(ShipPartBase):
     description: Literal['Mail Distribution Array'] = 'Mail Distribution Array'
     tl: Literal[10, 13] = 10
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def item_description(self) -> str:
         return f'Mail Distribution Array (TL{self.tl})'
@@ -369,9 +356,7 @@ class MailDistributionArray(ShipPartBase):
 class MineralDetectionSuite(ShipPartBase):
     description: Literal['Mineral Detection Suite'] = 'Mineral Detection Suite'
     tl: int = 12
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -397,9 +382,7 @@ class MineralDetectionSuite(ShipPartBase):
 
 
 class SensorStations(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     count: int
 
     def item_description(self) -> str:
@@ -426,9 +409,7 @@ class SensorStations(ShipPartBase):
 class ShallowPenetrationSuite(ShipPartBase):
     description: Literal['Shallow Penetration Suite'] = 'Shallow Penetration Suite'
     tl: int = 10
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -451,9 +432,7 @@ class ShallowPenetrationSuite(ShipPartBase):
 class ImprovedSignalProcessing(ShipPartBase):
     description: Literal['Improved Signal Processing'] = 'Improved Signal Processing'
     tl: int = 11
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -477,9 +456,7 @@ class ImprovedSignalProcessing(ShipPartBase):
 class EnhancedSignalProcessing(ShipPartBase):
     description: Literal['Enhanced Signal Processing'] = 'Enhanced Signal Processing'
     tl: int = 13
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -502,9 +479,7 @@ class EnhancedSignalProcessing(ShipPartBase):
 class DistributedArray(ShipPartBase):
     description: Literal['Distributed Array'] = 'Distributed Array'
     tl: int = 11
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def _primary_suite(self) -> ShipPart:
@@ -539,9 +514,7 @@ class DistributedArray(ShipPartBase):
 class ExtendedArrays(ShipPartBase):
     description: Literal['Extended Arrays'] = 'Extended Arrays'
     tl: int = 11
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -583,9 +556,7 @@ class RapidDeploymentExtendedArrays(ExtendedArrays):
 class ExtensionNet(ShipPartBase):
     description: Literal['Extension Net'] = 'Extension Net'
     tl: int = 10
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()

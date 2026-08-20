@@ -1,17 +1,29 @@
 from typing import ClassVar, Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ceres.shared import NoteList, _Note
 
-from ..parts import ShipPartBase
-from .common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
+from ..parts import ShipPartBase, UnpoweredShipPart
 
 
-class CommonArea(_ExplicitTonsSystemPart):
+class CommonArea(ShipPartBase):
+    """Tonnage is supplied, but `HotTub` derives its own from `users`.
+
+    A subclass cannot override an inherited field with a property, so the
+    supplied value is stored under another name and exposed as a property the
+    subclass may override. This indirection is needed only where a stored
+    parent has a derived child.
+    """
+
+    base_tons: float = Field(0.0, alias='tons')
+    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
     description: Literal['Common Area'] = 'Common Area'
     cost: ClassVar[float]
-    power: ClassVar[float]
+
+    @property
+    def tons(self) -> float:
+        return self.base_tons
 
     @property
     def cost(self) -> float:
@@ -22,11 +34,11 @@ class CommonArea(_ExplicitTonsSystemPart):
         return 0.0
 
 
-class CommercialZone(_ExplicitTonsSystemPart):
+class CommercialZone(ShipPartBase):
+    tons: float = 0.0
     system_type: Literal['COMMERCIAL_ZONE'] = 'COMMERCIAL_ZONE'
     description: Literal['Commercial Zone'] = 'Commercial Zone'
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def cost(self) -> float:
@@ -41,9 +53,7 @@ class MultiEnvironmentSpace(ShipPartBase):
     system_type: Literal['MULTI_ENVIRONMENT_SPACE'] = 'MULTI_ENVIRONMENT_SPACE'
     description: Literal['Multi-Environment Space'] = 'Multi-Environment Space'
     covered_tons: float
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def item_description(self) -> str:
         return f'Multi-Environment Space ({self.covered_tons:g} tons)'
@@ -90,9 +100,7 @@ class Brewery(ShipPartBase):
     description: Literal['Brewery'] = 'Brewery'
     tl: int = 10
     litres_per_week: float
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def item_description(self) -> str:
         return f'Brewery ({self.litres_per_week:g} litres/week)'
@@ -114,9 +122,7 @@ class GourmetKitchen(ShipPartBase):
     system_type: Literal['GOURMET_KITCHEN'] = 'GOURMET_KITCHEN'
     description: Literal['Gourmet Kitchen'] = 'Gourmet Kitchen'
     diners: int
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def item_description(self) -> str:
         diner_label = 'diner' if self.diners == 1 else 'diners'
@@ -156,9 +162,8 @@ class ZeroGRoom(CommonArea):
         return notes
 
 
-class WetBar(_ZeroPowerSystemPart):
+class WetBar(UnpoweredShipPart):
     description: Literal['Wet Bar'] = 'Wet Bar'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -171,9 +176,7 @@ class WetBar(_ZeroPowerSystemPart):
 
 
 class HotTub(CommonArea):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     base_tons: float = Field(0.0, alias='tons', exclude=True)
     users: int = 1
 

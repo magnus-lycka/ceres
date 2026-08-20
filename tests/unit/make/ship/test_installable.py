@@ -9,13 +9,11 @@ explicit statement rather than by guessing at the inheritance shape.
 
 import pytest
 
-from ceres.make.ship.crafts import _ZeroPowerCraftPart
-from ceres.make.ship.habitation import _ExplicitCostHabitationPart, _ExplicitTonsHabitationPart
+from ceres.make.ship.habitation import _ExplicitCostHabitationPart
 from ceres.make.ship.installable import is_installable, not_installable
-from ceres.make.ship.parts import CustomisableShipPart, ShipPartBase
+from ceres.make.ship.parts import CustomisableShipPart, ShipPartBase, UnpoweredShipPart
 from ceres.make.ship.power import _SolarPowerSource
-from ceres.make.ship.storage import _ExplicitTonsStoragePart, _LoadingBelt, _ZeroPowerStoragePart
-from ceres.make.ship.systems.common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
+from ceres.make.ship.storage import _LoadingBelt
 from ceres.make.ship.systems.reentry import _ReEntrySystem
 
 # Classes that implement ShipPartMixin but are bases for parts, not parts. Each
@@ -24,12 +22,7 @@ from ceres.make.ship.systems.reentry import _ReEntrySystem
 BASES = [
     ShipPartBase,
     CustomisableShipPart,
-    _ZeroPowerSystemPart,
-    _ZeroPowerStoragePart,
-    _ZeroPowerCraftPart,
-    _ExplicitTonsSystemPart,
-    _ExplicitTonsStoragePart,
-    _ExplicitTonsHabitationPart,
+    UnpoweredShipPart,
     _ExplicitCostHabitationPart,
     _LoadingBelt,
     _ReEntrySystem,
@@ -48,7 +41,7 @@ def descendants(cls: type) -> set[type]:
 def test_a_marked_class_is_not_installable():
     @not_installable
     class HelperBase:
-        """Stands in for _ZeroPowerSystemPart and friends."""
+        """Stands in for UnpoweredShipPart and friends."""
 
     assert not is_installable(HelperBase)
 
@@ -56,7 +49,7 @@ def test_a_marked_class_is_not_installable():
 def test_marking_does_not_reach_subclasses():
     """The whole point: descendants of a marked helper *are* installable.
 
-    _ZeroPowerSystemPart has 25 descendants and they are all real parts. A
+    UnpoweredShipPart has 25 descendants and they are all real parts. A
     marker that were inherited would excuse exactly the classes the conformance
     test exists to check.
     """
@@ -80,7 +73,7 @@ def test_a_base_for_parts_is_marked_not_installable(cls):
 def test_the_real_parts_built_on_those_bases_remain_installable(cls):
     """The marker must not reach the parts themselves.
 
-    Bases nest — `_ReEntrySystem` extends `_ZeroPowerSystemPart` — so a
+    Bases nest — `_ReEntrySystem` extends `UnpoweredShipPart` — so a
     descendant that is itself a declared base is excluded rather than treated
     as a failure.
     """

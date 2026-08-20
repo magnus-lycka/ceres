@@ -192,10 +192,7 @@ Example:
 
 ```python
 type AnyPowerPlant = Annotated[
-    FusionPlantTL8
-    | FusionPlantTL12
-    | FissionPlant
-    | SpinExtSterlingFissionPlantTL8,
+    FusionPlantTL8 | FusionPlantTL12 | FissionPlant | SpinExtSterlingFissionPlantTL8,
     Field(discriminator='plant_type'),
 ]
 ```

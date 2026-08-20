@@ -3,15 +3,14 @@ from typing import ClassVar, Literal
 from ceres.shared import NoteList, _Note
 
 from ..base import ShipBase
-from .common import _ZeroPowerSystemPart
+from ..parts import UnpoweredShipPart
 from .security import BoobyTrap
 
 AIRLOCK_FREE_DISPLACEMENT_INTERVAL = 100
 FORCED_LINKAGE_MAX_DISPLACEMENT = 5_000
 
 
-class Airlock(_ZeroPowerSystemPart):
-    tons: ClassVar[float]
+class Airlock(UnpoweredShipPart):
     cost: ClassVar[float]
     size: float = 2.0
     booby_trap: BoobyTrap | None = None
@@ -57,10 +56,9 @@ class Airlock(_ZeroPowerSystemPart):
         return self.tons * 100_000.0 + trap_cost
 
 
-class BreachingTube(_ZeroPowerSystemPart):
+class BreachingTube(UnpoweredShipPart):
     system_type: Literal['BREACHING_TUBE'] = 'BREACHING_TUBE'
     description: Literal['Breaching Tube'] = 'Breaching Tube'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -87,10 +85,9 @@ _FORCED_LINKAGE_TABLE: dict[str, tuple[int, int, float]] = {
 }
 
 
-class ForcedLinkageApparatus(_ZeroPowerSystemPart):
+class ForcedLinkageApparatus(UnpoweredShipPart):
     system_type: Literal['FORCED_LINKAGE_APPARATUS'] = 'FORCED_LINKAGE_APPARATUS'
     tl: int = 0
-    tons: ClassVar[float]
     cost: ClassVar[float]
     tier: Literal['Basic', 'Improved', 'Enhanced', 'Advanced']
 

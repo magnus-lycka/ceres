@@ -142,9 +142,7 @@ buffered_planetoid = HullConfiguration(
 
 class Stealth(ShipPartBase):
     description: str
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     cost_per_ton: ClassVar[int] = 0
     tonnage: ClassVar[float] = 0
     sensors_dm: ClassVar[int] = 0
@@ -203,9 +201,7 @@ HullStealth = Annotated[
 
 
 class ArmouredBulkhead(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     protected_tonnage: float
     protected_item: str | None = None
     from_ship_part: bool = False
@@ -237,9 +233,7 @@ class ArmouredBulkhead(ShipPartBase):
 
 class AdjustableHull(ShipPartBase):
     description: Literal['Adjustable Hull'] = 'Adjustable Hull'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     tl: Literal[12, 15] = 12
 
     @property

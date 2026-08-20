@@ -3,7 +3,6 @@ from typing import ClassVar, Literal
 from ceres.shared import CeresModel
 
 from ..parts import ShipPartBase
-from .common import _ExplicitTonsSystemPart
 
 
 class BasicAutodoc(CeresModel):
@@ -16,9 +15,7 @@ class BasicAutodoc(CeresModel):
 
 class MedicalBay(ShipPartBase):
     system_type: Literal['MEDICAL_BAY'] = 'MEDICAL_BAY'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     autodoc: BasicAutodoc | None = None
 
     def item_description(self) -> str:
@@ -42,11 +39,11 @@ class MedicalBay(ShipPartBase):
         return 1.0
 
 
-class Biosphere(_ExplicitTonsSystemPart):
+class Biosphere(ShipPartBase):
+    tons: float = 0.0
     system_type: Literal['BIOSPHERE'] = 'BIOSPHERE'
     description: Literal['Biosphere'] = 'Biosphere'
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def cost(self) -> float:

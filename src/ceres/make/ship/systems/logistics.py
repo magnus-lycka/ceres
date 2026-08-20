@@ -1,12 +1,12 @@
 from typing import ClassVar, Literal
 
-from .common import _ExplicitTonsSystemPart
+from ..parts import ShipPartBase
 
 
-class UNREPSystem(_ExplicitTonsSystemPart):
+class UNREPSystem(ShipPartBase):
+    tons: float = 0.0
     system_type: Literal['UNREP_SYSTEM'] = 'UNREP_SYSTEM'
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def item_description(self) -> str:
         return f'UNREP System ({self.transfer_rate:g} tons/hour)'

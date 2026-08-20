@@ -89,8 +89,8 @@ def build_beagle_laboratory_ship() -> ship.Ship:
         ),
         craft=CraftSection(
             docking_clamps=[
-                DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True, maintained=True),
-                DockingClamp(craft=Vehicle.from_catalog('ATV'), transported=False, maintained=False),
+                DockingClamp(craft=SpaceCraft.from_catalog('Pinnace'), transported=True, maintained=True),  # ty: ignore[pydantic-discarded-extra-argument] - inert, see #59
+                DockingClamp(craft=Vehicle.from_catalog('ATV'), transported=False, maintained=False),  # ty: ignore[pydantic-discarded-extra-argument] - inert, see #59
             ],
             internal_housing=[InternalDockingSpace(craft=Vehicle.from_catalog('Air/Raft'))],
         ),

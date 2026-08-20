@@ -10,9 +10,7 @@ from ..storage import CargoHold
 
 
 class _SpinalMount(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     spinal_type: str
     size_multiple: int = Field(default=1, ge=1)
     tl_improvement: Literal[0, 1, 2, 3] = 0

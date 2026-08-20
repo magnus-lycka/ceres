@@ -39,12 +39,12 @@ class Manipulator(RobotPart):
     model_config = {'frozen': True}
 
     size: RobotSize | None = None  # None = inherit robot size at bind time
-    str_bonus: int = 0             # STR above default; cost = Cr100 × size × bonus²
-    dex_bonus: int = 0             # DEX above default; cost = Cr200 × size × bonus²
+    str_bonus: int = 0  # STR above default; cost = Cr100 × size × bonus²
+    dex_bonus: int = 0  # DEX above default; cost = Cr200 × size × bonus²
 
     def resolved_size(self, robot_size: RobotSize) -> RobotSize: ...
-    def default_str(self, robot_size: RobotSize) -> int: ...   # 2 × size − 1
-    def default_dex(self, tl: int) -> int: ...          # ceil(TL / 2) + 1
+    def default_str(self, robot_size: RobotSize) -> int: ...  # 2 × size − 1
+    def default_dex(self, tl: int) -> int: ...  # ceil(TL / 2) + 1
     def effective_str(self, robot_size: RobotSize) -> int: ...
     def effective_dex(self, tl: int) -> int: ...
     def stat_label(self, robot_size: RobotSize, tl: int) -> str: ...
@@ -59,9 +59,7 @@ slot math (see below).
 ### `Robot.manipulators` Field
 
 ```python
-manipulators: list[Manipulator] = Field(
-    default_factory=lambda: [Manipulator(), Manipulator()]
-)
+manipulators: list[Manipulator] = Field(default_factory=lambda: [Manipulator(), Manipulator()])
 ```
 
 **Position semantics** determine how each manipulator is priced and slotted:
@@ -186,9 +184,7 @@ cost already included in BCC.
 ```python
 class WalkerLocomotion(_LocomotionBase):
     ...
-    legs: list[Leg | Manipulator] = Field(
-        default_factory=lambda: [Leg(), Leg()]
-    )
+    legs: list[Leg | Manipulator] = Field(default_factory=lambda: [Leg(), Leg()])
 ```
 
 When a `Manipulator` appears in `legs`:

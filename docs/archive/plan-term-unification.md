@@ -8,10 +8,10 @@
 structures:
 
 ```python
-career_terms: list[CareerTerm]               # career history only
-precareer: _PreCareerField | None            # currently in-progress pre-career
+career_terms: list[CareerTerm]  # career history only
+precareer: _PreCareerField | None  # currently in-progress pre-career
 precareer_completed: _PreCareerField | None  # at most one completed pre-career
-precareer_skills: list[AnySkill]             # skills pending graduation boost
+precareer_skills: list[AnySkill]  # skills pending graduation boost
 ```
 
 Problems with this layout:
@@ -42,7 +42,7 @@ Add alongside the existing `TermData` (which is the *definition* base; `Term` is
 
 ```python
 class Term(BaseModel):
-    kind: str          # discriminator; concrete subclasses fix to a Literal
+    kind: str  # discriminator; concrete subclasses fix to a Literal
     event: str | None = None
     mishap: str | None = None
     prison: str | None = None
@@ -70,7 +70,8 @@ class CareerTerm(Term):
 ```python
 class PreCareerTerm(Term):
     """Base record for all pre-career terms."""
-    completed: bool = False   # True once graduation or non-graduation is resolved
+
+    completed: bool = False  # True once graduation or non-graduation is resolved
     graduated: bool = False
     honours: bool = False
 
@@ -147,6 +148,7 @@ def _deserialise_term(v: object) -> object:
                 return CareerTerm.model_validate(v)
             case 'university':
                 from ceres.character.domain.precareer.precareer_term import UniversityTerm
+
                 return UniversityTerm.model_validate(v)
             # ... remaining cases ...
 ```
@@ -182,10 +184,12 @@ terms: list[...]  # as above
 def career_terms(self) -> list[CareerTerm]:
     return [t for t in self.terms if isinstance(t, CareerTerm)]
 
+
 @property
 def current_precareer_term(self) -> PreCareerTerm | None:
     """The in-progress pre-career term, if any."""
     from ceres.character.domain.precareer.precareer_term import PreCareerTerm
+
     t = self.terms[-1] if self.terms else None
     if isinstance(t, PreCareerTerm) and not t.completed:
         return t
@@ -206,7 +210,7 @@ def terms_started(self, *, only_current_career: bool, include_precareer: bool) -
         ct = self.latest_career_run_terms(career) if career is not None else []
         return len(ct)
     if include_precareer:
-        return len(self.terms)   # correctly counts all terms including multiple pre-careers
+        return len(self.terms)  # correctly counts all terms including multiple pre-careers
     return len(self.career_terms)
 ```
 

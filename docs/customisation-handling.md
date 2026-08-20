@@ -112,7 +112,8 @@ methods are removed.
 ```python
 class Customisation(CeresModel):
     """Base class for a declared customisation grade + its modifications."""
-    grade: CustomisationGrade          # Literal in each subclass; acts as discriminator
+
+    grade: CustomisationGrade  # Literal in each subclass; acts as discriminator
     modifications: tuple[Modification, ...]
     model_config = {'frozen': True}
 
@@ -151,9 +152,13 @@ class Customisation(CeresModel):
 
 class EarlyPrototype(Customisation):
     grade: Literal[CustomisationGrade.EARLY_PROTOTYPE] = CustomisationGrade.EARLY_PROTOTYPE
-    _required_advantages    = 0;  _required_disadvantages = 2
-    _cost_multiplier        = 11.0;  _tons_multiplier = 2.0
-    _tl_delta               = -2;  _display_name = 'Early Prototype'
+    _required_advantages = 0
+    _required_disadvantages = 2
+    _cost_multiplier = 11.0
+    _tons_multiplier = 2.0
+    _tl_delta = -2
+    _display_name = 'Early Prototype'
+
 
 # … Prototype, Budget, Advanced, VeryAdvanced, HighTechnology follow the same pattern
 ```
@@ -202,28 +207,26 @@ PointDefenseBattery(kind='laser', rating=2, energy_efficient=True)
 MountWeapon(weapon='pulse_laser', very_high_yield=True, energy_efficient=True)
 
 # after
-SmallMissileBay(armoured_bulkhead=True,
-    customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction]))
-MDrive7(armoured_bulkhead=True,
-    customisation=Budget(modifications=[IncreasedSize]))
-FusionPlantTL12(output=482,
-    customisation=Budget(modifications=[IncreasedSize]))
-ParticleBarbette(
-    customisation=VeryAdvanced(modifications=[VeryHighYield]))
-LaserPointDefenseBattery2(
-    customisation=Advanced(modifications=[EnergyEfficient]))
-PulseLaser(
-    customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
+SmallMissileBay(
+    armoured_bulkhead=True, customisation=HighTechnology(modifications=[SizeReduction, SizeReduction, SizeReduction])
+)
+MDrive7(armoured_bulkhead=True, customisation=Budget(modifications=[IncreasedSize]))
+FusionPlantTL12(output=482, customisation=Budget(modifications=[IncreasedSize]))
+ParticleBarbette(customisation=VeryAdvanced(modifications=[VeryHighYield]))
+LaserPointDefenseBattery2(customisation=Advanced(modifications=[EnergyEfficient]))
+PulseLaser(customisation=HighTechnology(modifications=[VeryHighYield, EnergyEfficient]))
 ```
 
 A triple turret can have three independently-customised weapons:
 
 ```python
-TripleTurret(weapons=[
-    PulseLaser(customisation=Advanced(modifications=[EnergyEfficient])),
-    BeamLaser(),
-    Sandcaster(customisation=Budget(modifications=[IncreasedSize])),
-])
+TripleTurret(
+    weapons=[
+        PulseLaser(customisation=Advanced(modifications=[EnergyEfficient])),
+        BeamLaser(),
+        Sandcaster(customisation=Budget(modifications=[IncreasedSize])),
+    ]
+)
 ```
 
 ### Note format

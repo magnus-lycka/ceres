@@ -1,7 +1,7 @@
 # Plan: model part attributes honestly
 
-Status: **in progress** — phases 1–3 complete, plus a full `ty` cleanup and
-the robot vocabulary. Phases 4–8 remain. See the results sections below.
+Status: **complete** — all eight phases done. Move to `docs/archive/` once
+#57 is closed.
 
 Tracking issue: [#57](https://github.com/magnus-lycka/ceres/issues/57)
 
@@ -12,10 +12,11 @@ attribute as a class variable and then implement it as a per-instance property:
 
 ```python
 class Armour(ShipPart):
-    tons: ClassVar[float]      # not true: tons differs per instance
+    tons: ClassVar[float]  # not true: tons differs per instance
     ...
+
     @property
-    def tons(self) -> float:   # the real, computed value
+    def tons(self) -> float:  # the real, computed value
         ...
 ```
 
@@ -59,12 +60,12 @@ takes three stacked mechanisms, duplicated in three modules
 
 ```python
 class _ExplicitTonsSystemPart(ShipPart):
-    tons: ClassVar[float]                          # suppress the inherited field
-    base_tons: float = Field(0.0, alias='tons')    # rename the real field, alias it back
+    tons: ClassVar[float]  # suppress the inherited field
+    base_tons: float = Field(0.0, alias='tons')  # rename the real field, alias it back
     model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
 
     @property
-    def tons(self) -> float:                       # re-expose under the original name
+    def tons(self) -> float:  # re-expose under the original name
         return self.base_tons
 ```
 
@@ -313,8 +314,7 @@ the definition site:
 
 ```python
 @not_installable
-class _ZeroPowerSystemPart(ShipPartBase):
-    ...
+class _ZeroPowerSystemPart(ShipPartBase): ...
 ```
 
 **The marker must match the exact class, never inheritance.** A plain class
@@ -563,20 +563,20 @@ and `ruff`/`ty` run at every step.
    the `CeresModel.notes` shield; point the mixins' `self` at their host
    protocols. Regenerate the 4 affected snapshots, confirming the diff is
    ordering-only. **Must precede phase 4** — see the forced ordering below.
-4. **One atomic step:** remove `tons`/`power` from `ShipPartBase` *and* add the
+4. ✅ **One atomic step:** remove `tons`/`power` from `ShipPartBase` *and* add the
    explicit zero properties to `DriveSection` and `PowerSection` *and* give
    `FixedPart`/`CustomPart` their field declarations. These cannot be separated:
    adding a property while the inherited field still exists makes the field's
    default *the property object*, which then serialises.
-5. **Add the conformance test** over every unmarked non-abstract
+5. ✅ **Add the conformance test** over every unmarked non-abstract
    `ShipPartMixin` implementation, including the 17 computers outside the
    `ShipPartBase` tree. Discovery imports every module under `ceres.make.ship`
    before enumerating, and is itself tested against known members and a
    population floor. Asserts `tons` and `power` only; `cost` belongs to #58.
    Passes as soon as phase 4 lands, and guards the invariant thereafter.
-6. **Delete the redundant `tons`/`power` `ClassVar` lines, module by module.**
+6. ✅ **Delete the redundant `tons`/`power` `ClassVar` lines, module by module.**
    One module per step, ~35 modules. **`cost` declarations are untouched.**
-7. **Resolve the six helpers — they encode two different things, and get
+7. ✅ **Resolve the six helpers — they encode two different things, and get
    opposite treatments.**
    - `_ExplicitTons*` (17 users across 3 bases) means *"tonnage is a supplied
      design input"*. With no inherited field to suppress, that is just
@@ -588,7 +588,7 @@ and `ruff`/`ty` run at every step.
      `UnpoweredShipPart`, rather than three near-duplicates named for a value.
    The seventh helper, `_ExplicitCostHabitationPart` (`habitation.py:109`), is
    `cost`-based and stays for #58.
-8. **Rewrite the architecture documentation.** `docs/assemblies_and_parts.md` is
+8. ✅ **Rewrite the architecture documentation.** `docs/assemblies_and_parts.md` is
    the **primary artifact**, not `ARCHITECTURE.md`: it is the canonical statement
    of this design and its "Core Rule" section currently teaches the false rule
    outright — *"A mixin may add fields and simple behavior"*, illustrated with
@@ -770,6 +770,46 @@ its sibling `PLR0913`, which was already ignored as noisy. It began appearing
 only because `pre-commit.sh` invokes `uvx ruff` unpinned, so a tool release
 changed the gate without a commit — which is the argument for pinning `ruff` and
 `ty` versions, still outstanding.
+
+## Phases 4-8 results
+
+`./pre-commit.sh` green throughout: **4466 tests, 175 snapshots, `ruff`, `ty`,
+`deptry`, `bandit` — exit 0.**
+
+- **Phase 4** removed `tons`/`power` from `ShipPartBase` atomically with the two
+  section properties and the fixture fields. Two snapshots changed, and this time
+  **not** by ordering: `DriveSection` and `PowerSection` stopped persisting four
+  meaningless zeros, because they now compute those values. Verified round-trip
+  idempotent and production cost unchanged before accepting; diff was 8 deletions
+  and 0 insertions.
+- **Phase 5** added the conformance test with tested discovery. It found a flaw
+  in itself immediately: `__subclasses__()` picked up *test-defined* doubles, so
+  the guard was order-dependent. Discovery is now scoped to `ceres.` and that
+  scoping is asserted.
+- **Phase 6** deleted 187 redundant `ClassVar` lines across 32 modules. The
+  conformance test caught the one case the deletion exposed.
+- **Phase 7** treated the two helper families oppositely, as planned:
+  `_ZeroPower*` (42 users) consolidated into **`UnpoweredShipPart`**, named for
+  the reason; `_ExplicitTons*` (17 users) **dissolved** into ordinary `tons`
+  fields. One exception emerged and is documented: `CommonArea` keeps the
+  rename-and-alias form because `HotTub` derives its tonnage from `users`, and a
+  subclass cannot override an inherited field with a property.
+- **Phase 8** rewrote `docs/assemblies_and_parts.md`. Its architecture was sound
+  all along — one inheritance chain plus context mixins, no `isinstance` against
+  the base, prefer protocols; it even anticipated `ShipPartLike`. Its *"A mixin
+  may add fields and simple behavior"* was **true**, but granted a permission
+  without its consequence: the field is required, on every model using the
+  mixin. The genuinely false claim was in `ShipPartMixin`'s own docstring —
+  *"Pydantic cannot see annotations on a plain mixin"* — the opposite of the
+  document, and the version the code was written to. The rewrite states the rule
+  as a prohibition and says why. `ARCHITECTURE.md` now summarises and links to
+  it.
+
+**Found along the way:** `DockingClamp.maintained` is inert — `crew.py` reads it
+via `getattr(part, 'maintained', True)` but no such field exists, so every
+carried craft counts as maintained. Filed as
+[#59](https://github.com/magnus-lycka/ceres/issues/59); the call sites carry a
+directive pointing at it rather than hiding it.
 
 ## Risks and open questions
 

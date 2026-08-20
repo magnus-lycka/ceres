@@ -97,9 +97,7 @@ LateJump = Modification(
 
 
 class _RDrive(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
@@ -276,9 +274,7 @@ type RDrive = Annotated[
 
 
 class _MDrive(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
@@ -446,9 +442,7 @@ type MDrive = Annotated[
 
 
 class _JDrive(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     drive_type: str
     level: ClassVar[int]
     _tons_percent: ClassVar[float]
@@ -572,7 +566,6 @@ type JDrive = Annotated[
 
 
 class SolarSail(ShipPartBase):
-    tons: ClassVar[float]
     cost: ClassVar[float]
     description: Literal['Solar Sail'] = 'Solar Sail'
     drive_type: Literal['solar_sail'] = 'solar_sail'
@@ -597,7 +590,6 @@ class SolarSail(ShipPartBase):
 
 class _SpinExtSolarSail(ShipPartBase):
     cost: ClassVar[float]
-    power: ClassVar[float]
     drive_type: str
     tl: int
     tons: float
@@ -674,6 +666,16 @@ type AnySolarSail = Annotated[
 
 
 class DriveSection(ShipPartBase):
+    @property
+    def tons(self) -> float:
+        """A section has no tonnage of its own; its contents carry it."""
+        return 0.0
+
+    @property
+    def power(self) -> float:
+        """A section draws no power of its own; its contents draw it."""
+        return 0.0
+
     m_drive: MDrive | None = None
     r_drive: RDrive | None = None
     j_drive: JDrive | None = None

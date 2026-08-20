@@ -10,11 +10,20 @@ globally frozen.
 
 ### Parts expose numeric values
 
-`ShipPart` exposes `cost`, `power`, and `tons` as the public numeric API.
-Simple ad hoc parts can still store those as ordinary `float` fields, while
-domain part families generally expose them as properties computed from design
-state and the bound ship context. Binding must not copy derived values back onto
-frozen parts as cached fields.
+The `ShipPart` **protocol** is the public numeric API: `cost`, `power` and
+`tons`. `ShipPartBase` is only shared implementation and declares none of them —
+each part says for itself whether a value is a supplied design input (a Pydantic
+field) or derived (a property computed from design state and the bound ship).
+Binding must not copy derived values back onto frozen parts as cached fields,
+and derived values must never serialise.
+
+Type consumers against the protocol rather than the base: parts such as
+computers reach a ship through `ShipPartMixin` alone and never inherit
+`ShipPartBase`. An architecture test enforces that every installable part
+declares its values in one of the two forms.
+
+See [assemblies_and_parts.md](assemblies_and_parts.md) for the full rules —
+including why a context mixin must not declare attributes.
 
 `tons` in Traveller ship design means **displacement tons** (`dTons`), not
 metric mass. One displacement ton is a volume measure: the volume occupied by
@@ -424,9 +433,10 @@ The mechanism layer owns two thin container types:
 
 ```python
 class Event(BaseModel):
-    id: int = 0                            # assigned by store on append
+    id: int = 0  # assigned by store on append
     fulfills: tuple[int, int] | None = None
     handler: EventHandlerBase
+
 
 class EventHandlerBase(BaseModel):
     def apply(self, projection, event, fulfilled_pending=None): ...
@@ -440,7 +450,7 @@ relevant domain module — never in the mechanism layer.
 ```python
 # In career_data.py (domain)
 class SurviveHandler(EventHandlerBase):
-    kind: Literal['survive'] = 'survive'   # Pydantic discriminator only
+    kind: Literal['survive'] = 'survive'  # Pydantic discriminator only
     roll: int
 
     def apply(self, projection, event, fulfilled_pending=None):
@@ -468,6 +478,7 @@ class PendingInput(BaseModel):
     pending_id: tuple[int, int]
     blocking: bool = True
     handler: PendingHandlerBase
+
 
 class PendingHandlerBase(BaseModel):
     def resolve(self, projection, event): ...

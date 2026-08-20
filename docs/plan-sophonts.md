@@ -26,8 +26,8 @@ class Sophont:
     name: str
     ucp_stats: tuple[Chars, ...]
     char_mods: dict[Chars, int] = field(default_factory=dict)
-    extra_chars: tuple[Chars, ...] = ()   # e.g. PSI, CHA, TER when always rolled
-    traits: tuple[str, ...] = ()          # named trait flags, e.g. 'small', 'heightened_senses'
+    extra_chars: tuple[Chars, ...] = ()  # e.g. PSI, CHA, TER when always rolled
+    traits: tuple[str, ...] = ()  # named trait flags, e.g. 'small', 'heightened_senses'
 ```
 
 `char_mods` are applied once at character start (after UCP rolls). `extra_chars`

@@ -9,9 +9,7 @@ from .spec import ShipSpec, SpecSection
 
 
 class _Screen(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     screen_type: str
     description: ClassVar[str]
     damage_reduction: ClassVar[str]

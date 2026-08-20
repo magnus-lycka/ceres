@@ -37,6 +37,7 @@ Add two methods to `CharacterProjection`:
 def queue_immediate(self, *pending_inputs: PendingInput) -> None:
     self._pending_inputs[:0] = pending_inputs
 
+
 def queue_deferred(self, *pending_inputs: PendingInput) -> None:
     self._pending_inputs.extend(pending_inputs)
 ```

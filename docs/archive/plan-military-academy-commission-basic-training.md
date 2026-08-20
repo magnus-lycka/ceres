@@ -194,7 +194,7 @@ ends up at index 0:
 
 ```python
 projection.pending_inputs.insert(0, second_thing)  # goes to position 1 after next insert
-projection.pending_inputs.insert(0, first_thing)   # at position 0 — resolved first
+projection.pending_inputs.insert(0, first_thing)  # at position 0 — resolved first
 ```
 
 Or build a list and use `pending_inputs[0:0] = [first, second]`.

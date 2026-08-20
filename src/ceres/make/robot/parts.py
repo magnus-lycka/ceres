@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from ceres.shared import Assembly, CeresPart, NoteList
 
@@ -72,18 +72,19 @@ class RobotPartMixin(ABC):
     @abstractmethod
     def slots(self) -> int: ...
 
-    def bind(self: _RobotPartMixinHost, assembly: RobotBase) -> None:
-        self._store_assembly(assembly)
+    def bind(self, assembly: RobotBase) -> None:
+        host = cast(_RobotPartMixinHost, self)
+        host._store_assembly(assembly)
         self.check_tl()
-        if message := self.build_item():
-            self.item(message)
+        if message := host.build_item():
+            host.item(message)
 
     @property
     @abstractmethod
     def assembly(self) -> RobotBase: ...
 
-    def _robot_assembly(self: _RobotPartMixinHost) -> RobotBase:
-        assembly = self._assembly
+    def _robot_assembly(self) -> RobotBase:
+        assembly = cast(_RobotPartMixinHost, self)._assembly
         if assembly is None:
             raise RuntimeError(f'{type(self).__name__} not bound to an Assembly')
         if not isinstance(assembly, RobotBase):
@@ -103,9 +104,10 @@ class RobotPartMixin(ABC):
     def assembly_tl(self) -> int:
         return self.assembly.tl
 
-    def check_tl(self: _RobotPartMixinHost) -> None:
-        if self.assembly_tl < self.tl:
-            self.error(f'Requires TL{self.tl}, robot is TL{self.assembly_tl}')
+    def check_tl(self) -> None:
+        host = cast(_RobotPartMixinHost, self)
+        if host.assembly_tl < host.tl:
+            host.error(f'Requires TL{host.tl}, robot is TL{host.assembly_tl}')
 
     @property
     def hits_delta(self) -> int:

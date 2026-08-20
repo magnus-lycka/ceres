@@ -57,8 +57,6 @@
       "display_label": null,
       "tl": 0,
       "cost": 0.0,
-      "tons": 0.0,
-      "power": 0.0,
       "armoured_bulkhead": false,
       "hardened": false,
       "m_drive": {
@@ -79,8 +77,6 @@
       "display_label": null,
       "tl": 0,
       "cost": 0.0,
-      "tons": 0.0,
-      "power": 0.0,
       "armoured_bulkhead": false,
       "hardened": false,
       "plant": {

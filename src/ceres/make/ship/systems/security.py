@@ -5,8 +5,7 @@ from pydantic import Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from ..parts import ShipPartBase
-from .common import _ExplicitTonsSystemPart, _ZeroPowerSystemPart
+from ..parts import ShipPartBase, UnpoweredShipPart
 
 PSIONIC_SHIELDING_IMPENETRABLE_MAX_DISPLACEMENT = 100
 PSIONIC_SHIELDING_DM4_MAX_DISPLACEMENT = 300
@@ -15,10 +14,9 @@ VAULT_MIN_TONS = 4
 VAULT_MAX_TONS = 40
 
 
-class Armoury(_ZeroPowerSystemPart):
+class Armoury(UnpoweredShipPart):
     system_type: Literal['ARMOURY'] = 'ARMOURY'
     description: Literal['Armoury'] = 'Armoury'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -34,9 +32,7 @@ class PsionicShielding(ShipPartBase):
     system_type: Literal['PSIONIC_SHIELDING'] = 'PSIONIC_SHIELDING'
     description: Literal['Psionic Shielding'] = 'Psionic Shielding'
     tl: int = 12
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -68,9 +64,7 @@ class AdvancedPsionicShielding(ShipPartBase):
     system_type: Literal['ADVANCED_PSIONIC_SHIELDING'] = 'ADVANCED_PSIONIC_SHIELDING'
     description: Literal['Advanced Psionic Shielding'] = 'Advanced Psionic Shielding'
     tl: int = 16
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def build_notes(self) -> list[_Note]:
         notes = NoteList()
@@ -90,11 +84,11 @@ class AdvancedPsionicShielding(ShipPartBase):
         return 0.0
 
 
-class Vault(_ExplicitTonsSystemPart):
+class Vault(ShipPartBase):
+    tons: float = 0.0
     system_type: Literal['VAULT'] = 'VAULT'
     description: Literal['Vault'] = 'Vault'
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     @property
     def cost(self) -> float:

@@ -1,41 +1,20 @@
 import math
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import ConfigDict, Field
+from pydantic import Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
 from .installable import not_installable
-from .parts import ShipPart, ShipPartBase
+from .parts import ShipPart, ShipPartBase, UnpoweredShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 
 SMALL_CRAFT_MAX_DISPLACEMENT = 100
 TONNAGE_EPSILON = 0.005
 
 
-@not_installable
-class _ZeroPowerStoragePart(ShipPartBase):
-    power: ClassVar[float]
-
-    @property
-    def power(self) -> float:
-        return 0.0
-
-
-@not_installable
-class _ExplicitTonsStoragePart(ShipPartBase):
-    tons: ClassVar[float]
-    base_tons: float = Field(0.0, alias='tons')
-    model_config = ConfigDict(frozen=True, populate_by_name=True, serialize_by_alias=True)
-
-    @property
-    def tons(self) -> float:
-        return self.base_tons
-
-
-class FuelScoops(_ZeroPowerStoragePart):
+class FuelScoops(UnpoweredShipPart):
     description: Literal['Fuel Scoops'] = 'Fuel Scoops'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     free: bool = False
 
@@ -51,8 +30,7 @@ class FuelScoops(_ZeroPowerStoragePart):
         return 0.0 if self.free else 1_000_000.0
 
 
-class OperationFuel(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class OperationFuel(UnpoweredShipPart):
     cost: ClassVar[float]
     weeks: int
 
@@ -106,8 +84,7 @@ class OperationFuel(_ZeroPowerStoragePart):
         return 0.0
 
 
-class JumpFuel(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class JumpFuel(UnpoweredShipPart):
     cost: ClassVar[float]
     parsecs: int
 
@@ -134,8 +111,7 @@ class JumpFuel(_ZeroPowerStoragePart):
         return 0.0
 
 
-class Collector(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class Collector(UnpoweredShipPart):
     cost: ClassVar[float]
     description: Literal['Collector'] = 'Collector'
     tl: Literal[14] = 14
@@ -158,8 +134,7 @@ class Collector(_ZeroPowerStoragePart):
         return notes
 
 
-class ReactionFuel(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class ReactionFuel(UnpoweredShipPart):
     cost: ClassVar[float]
     minutes: int
 
@@ -200,9 +175,9 @@ class ReactionFuel(_ZeroPowerStoragePart):
         return 0.0
 
 
-class FuelProcessor(_ExplicitTonsStoragePart):
+class FuelProcessor(ShipPartBase):
+    tons: float = 0.0
     cost: ClassVar[float]
-    power: ClassVar[float]
 
     def item_description(self) -> str:
         return f'Fuel Processor ({self.tons * 20:g} tons/day)'
@@ -216,9 +191,9 @@ class FuelProcessor(_ExplicitTonsStoragePart):
         return self.tons
 
 
-class FuelRefinery(_ExplicitTonsStoragePart):
+class FuelRefinery(ShipPartBase):
+    tons: float = 0.0
     cost: ClassVar[float]
-    power: ClassVar[float]
     description: Literal['Fuel Refinery'] = 'Fuel Refinery'
     tl: Literal[7, 10, 13] = 7
 
@@ -252,8 +227,7 @@ class FuelRefinery(_ExplicitTonsStoragePart):
         return notes
 
 
-class Ramscoop(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class Ramscoop(UnpoweredShipPart):
     cost: ClassVar[float]
     extra_tons: float = 0.0
 
@@ -287,9 +261,7 @@ class Ramscoop(_ZeroPowerStoragePart):
 
 class MetalHydrideStorage(ShipPartBase):
     description: Literal['Metal Hydride Storage'] = 'Metal Hydride Storage'
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     tl: Literal[9] = 9
 
     @property
@@ -408,7 +380,6 @@ class CargoCrane(CeresModel):
 @not_installable
 class _LoadingBelt(ShipPartBase):
     description: Literal['Loading Belt'] = 'Loading Belt'
-    tons: ClassVar[float]
     _replaced_loading_crew: ClassVar[int]
 
     @property
@@ -442,9 +413,8 @@ class LoadingBeltTL12(_LoadingBelt):
 type LoadingBelt = Annotated[LoadingBeltTL7 | LoadingBeltTL12, Field(discriminator='loading_belt_type')]
 
 
-class CargoScoop(_ZeroPowerStoragePart):
+class CargoScoop(UnpoweredShipPart):
     description: Literal['Cargo Scoop'] = 'Cargo Scoop'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -462,9 +432,8 @@ class CargoScoop(_ZeroPowerStoragePart):
         return notes
 
 
-class CargoNet(_ZeroPowerStoragePart):
+class CargoNet(UnpoweredShipPart):
     description: Literal['Cargo Net'] = 'Cargo Net'
-    tons: ClassVar[float]
     cost: ClassVar[float]
 
     @property
@@ -482,10 +451,10 @@ class CargoNet(_ZeroPowerStoragePart):
         return notes
 
 
-class ConcealedCompartment(_ExplicitTonsStoragePart):
+class ConcealedCompartment(ShipPartBase):
+    tons: float = 0.0
     description: Literal['Concealed Compartment'] = 'Concealed Compartment'
     cost: ClassVar[float]
-    power: ClassVar[float]
     sensors_dm: ClassVar[int] = -2
     investigate_dm: ClassVar[int] = -4
 
@@ -508,10 +477,10 @@ class ConcealedCompartment(_ExplicitTonsStoragePart):
         return notes
 
 
-class FuelTankCompartment(_ExplicitTonsStoragePart):
+class FuelTankCompartment(ShipPartBase):
+    tons: float = 0.0
     description: Literal['Fuel Tank Compartment'] = 'Fuel Tank Compartment'
     cost: ClassVar[float]
-    power: ClassVar[float]
     sensors_dm: ClassVar[int] = -4
     investigate_dm: ClassVar[int] = -6
 
@@ -546,9 +515,8 @@ class FuelTankCompartment(_ExplicitTonsStoragePart):
         return self.tons / period_fuel * plant.fuel_period_weeks
 
 
-class ExternalCargoMount(_ZeroPowerStoragePart):
+class ExternalCargoMount(UnpoweredShipPart):
     description: Literal['External Cargo Mount'] = 'External Cargo Mount'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     capacity: float
 
@@ -585,8 +553,7 @@ class ExternalCargoMount(_ZeroPowerStoragePart):
         return notes
 
 
-class _JumpNet(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class _JumpNet(UnpoweredShipPart):
     cost: ClassVar[float]
     capacity: float
     cost_per_ton: ClassVar[float]
@@ -662,8 +629,7 @@ class CargoHold(CeresModel):
         return self.total_tons(owner) - self.crane_tons(owner)
 
 
-class CargoAirlock(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class CargoAirlock(UnpoweredShipPart):
     cost: ClassVar[float]
     size: float = 2.0
 
@@ -679,8 +645,7 @@ class CargoAirlock(_ZeroPowerStoragePart):
         return self.tons * 100_000.0
 
 
-class FuelCargoContainer(_ZeroPowerStoragePart):
-    tons: ClassVar[float]
+class FuelCargoContainer(UnpoweredShipPart):
     cost: ClassVar[float]
     capacity: float
 

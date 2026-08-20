@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Annotated, Any, ClassVar, Literal, Protocol
+from typing import Annotated, Any, ClassVar, Literal, Protocol, cast
 
 from pydantic import ConfigDict, Field, PrivateAttr, TypeAdapter
 
@@ -222,11 +222,12 @@ class ShipPartMixin(ABC):
     # Ship binding
     # ------------------------------------------------------------------
 
-    def bind(self: _ShipPartMixinHost, assembly: ShipBase) -> None:
-        self._store_assembly(assembly)
+    def bind(self, assembly: ShipBase) -> None:
+        host = cast(_ShipPartMixinHost, self)
+        host._store_assembly(assembly)
         self.check_tl()
-        if message := self.build_item():
-            self.item(message)
+        if message := host.build_item():
+            host.item(message)
         self._refresh_armoured_bulkhead(assembly)
 
     @property
@@ -246,9 +247,10 @@ class ShipPartMixin(ABC):
     def assembly_tl(self) -> int:
         return self.assembly.tl
 
-    def check_tl(self: _ShipPartMixinHost) -> None:
-        if self.assembly_tl < self.tl:
-            self.error(f'Requires TL{self.tl}, ship is TL{self.assembly_tl}')
+    def check_tl(self) -> None:
+        host = cast(_ShipPartMixinHost, self)
+        if host.assembly_tl < host.tl:
+            host.error(f'Requires TL{host.tl}, ship is TL{host.assembly_tl}')
 
     # ------------------------------------------------------------------
     # Armoured bulkhead support
@@ -257,22 +259,23 @@ class ShipPartMixin(ABC):
     def bulkhead_label(self) -> str:
         return self.build_item() or self.__class__.__name__
 
-    def bulkhead_protected_tonnage(self: _ShipPartMixinHost) -> float:
-        return self.tons
+    def bulkhead_protected_tonnage(self) -> float:
+        return cast(_ShipPartMixinHost, self).tons
 
-    def _refresh_armoured_bulkhead(self: _ShipPartMixinHost, assembly: ShipBase) -> None:
-        if not self.armoured_bulkhead:
-            self._store_armoured_bulkhead_part(None)
+    def _refresh_armoured_bulkhead(self, assembly: ShipBase) -> None:
+        host = cast(_ShipPartMixinHost, self)
+        if not host.armoured_bulkhead:
+            host._store_armoured_bulkhead_part(None)
             return
         from .hull import ArmouredBulkhead  # noqa: PLC0415
 
         bulkhead = ArmouredBulkhead(
-            protected_tonnage=self.bulkhead_protected_tonnage(),
-            protected_item=self.bulkhead_label(),
+            protected_tonnage=host.bulkhead_protected_tonnage(),
+            protected_item=host.bulkhead_label(),
             from_ship_part=True,
         )
         bulkhead.bind(assembly)
-        self._store_armoured_bulkhead_part(bulkhead)
+        host._store_armoured_bulkhead_part(bulkhead)
 
     @property
     def armoured_bulkhead_part(self) -> ShipPart | None:
@@ -287,8 +290,8 @@ class ShipPartMixin(ABC):
     # ------------------------------------------------------------------
 
     @property
-    def group_key(self: _ShipPartMixinHost) -> str:
-        return self.notes.item_message or self.__class__.__name__
+    def group_key(self) -> str:
+        return cast(_ShipPartMixinHost, self).notes.item_message or self.__class__.__name__
 
 
 class _ShipPartMixinHost(Protocol):
@@ -322,10 +325,6 @@ class _ShipPartMixinHost(Protocol):
     def bulkhead_label(self) -> str: ...
 
     def build_item(self) -> str | None: ...
-
-    def check_tl(self) -> None: ...
-
-    def _refresh_armoured_bulkhead(self, assembly: ShipBase) -> None: ...
 
     def _store_assembly(self, assembly: ShipBase | None) -> None: ...
 
@@ -380,8 +379,6 @@ class ShipPart(Protocol):
 @not_installable
 class ShipPartBase(CeresPart, ShipPartMixin):
     _armoured_bulkhead_part: ShipPart | None = PrivateAttr(default=None)
-    tons: float = 0.0
-    power: float = 0.0
     armoured_bulkhead: bool = False
     hardened: bool = False
 
@@ -409,6 +406,20 @@ class ShipPartBase(CeresPart, ShipPartMixin):
 
     def model_post_init(self, __context: Any) -> None:
         super().model_post_init(__context)
+
+
+@not_installable
+class UnpoweredShipPart(ShipPartBase):
+    """A part that draws no power of its own.
+
+    Named for the reason rather than the value: 42 parts share this fact, which
+    is a genuine domain statement, unlike the three near-identical per-module
+    helpers it replaces.
+    """
+
+    @property
+    def power(self) -> float:
+        return 0.0
 
 
 @not_installable

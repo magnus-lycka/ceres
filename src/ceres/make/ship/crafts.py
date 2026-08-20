@@ -5,8 +5,7 @@ from pydantic import ConfigDict, Field
 
 from ceres.shared import CeresModel, NoteList, _Note
 
-from .installable import not_installable
-from .parts import ShipPart, ShipPartBase
+from .parts import ShipPart, ShipPartBase, UnpoweredShipPart
 from .spec import ShipSpec, SpecRow, SpecSection
 
 type VehicleSpec = dict[str, int | float | str]
@@ -143,22 +142,7 @@ def _kind_for_shipping_size(shipping_size: int) -> str:
     return 'V'
 
 
-@not_installable
-class _ZeroPowerCraftPart(ShipPartBase):
-    power: ClassVar[float]
-    maintained: bool = True
-
-    @property
-    def power(self) -> float:
-        return 0.0
-
-    @property
-    def performance_displacement_contribution(self) -> float:
-        return 0.0
-
-
-class DockingClamp(_ZeroPowerCraftPart):
-    tons: ClassVar[float]
+class DockingClamp(UnpoweredShipPart):
     cost: ClassVar[float]
     kind: str | None = None
     craft: AnyCarriedOccupant | None = None
@@ -196,9 +180,8 @@ class DockingClamp(_ZeroPowerCraftPart):
         return 0.0
 
 
-class InternalDockingSpace(_ZeroPowerCraftPart):
+class InternalDockingSpace(UnpoweredShipPart):
     housing_type: Literal['DOCKING_SPACE'] = 'DOCKING_SPACE'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     craft: AnyCarriedOccupant
 
@@ -220,9 +203,8 @@ class InternalDockingSpace(_ZeroPowerCraftPart):
         return 0.0
 
 
-class FullHangar(_ZeroPowerCraftPart):
+class FullHangar(UnpoweredShipPart):
     housing_type: Literal['FULL_HANGAR'] = 'FULL_HANGAR'
-    tons: ClassVar[float]
     cost: ClassVar[float]
     craft: AnyCarriedOccupant
 
@@ -246,9 +228,7 @@ class FullHangar(_ZeroPowerCraftPart):
 
 class _LaunchRecoveryPart(ShipPartBase):
     largest_craft_tons: float
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     _label: ClassVar[str]
     _note: ClassVar[str]
 

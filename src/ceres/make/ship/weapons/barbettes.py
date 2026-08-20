@@ -21,9 +21,7 @@ BarbetteWeapon = Literal[
 
 
 class _Barbette(CustomisableShipPart):
-    tons: ClassVar[float]
     cost: ClassVar[float]
-    power: ClassVar[float]
     barbette_type: str
     weapon: ClassVar[BarbetteWeapon]
     weapon_label: ClassVar[str]

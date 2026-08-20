@@ -1404,6 +1404,7 @@ DEFAULT_SUITE_ITEM_LIMIT = 5
 
 
 def default_suite(
+    *,
     see: bool = True,
     speak: bool = True,
     hear: bool = True,
