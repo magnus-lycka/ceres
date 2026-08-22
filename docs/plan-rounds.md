@@ -1,6 +1,6 @@
 # Plan: `ceres.rounds` — round-by-round encounter tracker
 
-Status: **proposed** — not yet started.
+Status: **in progress** — phases 1–3 complete; see "Phases 1–3 results".
 
 Tracking issue: [#56](https://github.com/magnus-lycka/ceres/issues/56)
 
@@ -315,26 +315,67 @@ each edit, `./pre-commit.sh` green before the phase is called done.
 The aim is a clickable walking skeleton early, because the UI questions can only
 be answered by using it.
 
-1. **Damage tracks.** `CharacteristicTrack` cascade, unconscious, dead, live
+1. ✅ **Damage tracks.** `CharacteristicTrack` cascade, unconscious, dead, live
    DMs, the shared-END stun ruling and its incapacitation countdown;
    `HitsTrack` thresholds. Pure domain, no situation yet.
-2. **Situation and round flow.** Actors, parties, the explicit new-round
+2. ✅ **Situation and round flow.** Actors, parties, the explicit new-round
    command, initiative (inherit or set, individual or per party), and the
    green → grey turn state machine with waiting.
-3. **Prototype UI.** The table and the combat dialog, on top of 1–2, good
+3. ✅ **Prototype UI.** The table and the combat dialog, on top of 1–2, good
    enough to run a fight at the table and find out what is wrong with it.
-4. **Iterate on what the prototype teaches**, then fill in: reaction carryover
-   details, the 1+1 / 3-minor budget, stun countdown and the 10-round
-   unconsciousness check cadence.
+4. **Iterate on what the prototype teaches**, then fill in:
+   - reaction carryover — DM−1 per Reaction against the next *unspent* set of
+     actions (RIS-024), cleared once those actions are spent;
+   - the 1+1 / 3-minor action budget;
+   - the stun countdown and the 10-round unconsciousness check cadence;
+   - a third `InitiativeMode` beyond FIXED and PER_ROUND: **fixed with a
+     first-round adjustment that expires**, for the ambush ±6 (RIS-025);
+   - optionally the *Battlefield Dev* shape — one nominated leader per side
+     rolling each round, with Tactics levels as a DM on that check.
 5. **Persistence and undo.** JSON round-trip, snapshot stack.
-6. **Docs.** Record the interpretations above in
-   `docs/RULE_INTERPRETATIONS.md`; note the package in `docs/ARCHITECTURE.md`;
-   mark this plan complete and move it to `docs/archive/`.
+6. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
+   complete and move it to `docs/archive/`. The rule interpretations are already
+   recorded — RIS-022 (stun and lethal share one END score), RIS-023 (stun can
+   never complete a kill), RIS-024 (a reaction penalises the next unspent set of
+   actions) and RIS-025 (the ambush DM applies to Initiative only, round one
+   only).
 
 Test modules mirror the domain modules one-for-one. Rule tests go through the
 `Situation` / `Actor` / `DamageTrack` public API — that *is* the domain API, so
 no separate driver is needed, unlike `CharacterDriver` in `ceres.character`. If
 UI tests start reaching into domain internals, that is the signal to add one.
+
+## Phases 1–3 results
+
+Landed and committed: `ceres/rounds/domain/` (`tracks.py`, `damage.py`,
+`actor.py`, `situation.py`) and `ceres/rounds/ui/` (`app.py`, `table.py`), with
+**55 tests** in `tests/unit/rounds/`. Run the prototype with
+`uv run python -m ceres.rounds.ui.app` on port 8081.
+
+**Phase 1 — damage tracks.** The lethal cascade, unconscious and dead, live
+impaired DMs, stun on a shared END score with its countdown and one-hour rest,
+and `HitsTrack`'s dead / unconscious / driven-off / destroyed thresholds with
+cumulative stun. Mutation-checked: twelve deliberate breaks, twelve reds.
+
+**Phase 2 — situation and round flow.** Parties with shared initiative,
+individual override, DEX tie-break, the explicit new-round command, and the
+pending → ready → acted state machine where waiting keeps an actor ready while
+the next initiative step opens.
+
+**Phase 3 — prototype UI.** The NiceGUI table plus an attack/damage dialog
+where the attacker may be "nobody", since falls and fires injure people too.
+
+**Two defects found by writing the rules down rather than by testing.** The
+combat handouts (`handouts/combat_cards.typ`) forced several rules to be pinned
+that the code had left vague, and one of those — the ambush ±6 — invalidated a
+scoping decision in this plan; see the Initiative section. The other, an actor
+with stun points and all characteristics at zero being unkillable, was found by
+the referee asking what that state meant in practice.
+
+**Still unrun at the table.** Phase 4 is "iterate on what the prototype
+teaches", and nobody has yet used it in a real fight. Its action-budget and
+reaction design was sketched before there was anything to try, so expect it to
+move.
 
 ## Explicitly deferred
 
