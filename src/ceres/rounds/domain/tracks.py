@@ -10,9 +10,15 @@ from abc import ABC, abstractmethod
 from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.rounds.domain.damage import DamageKind
 
+PHYSICAL_CHARACTERISTICS = (Chars.STR, Chars.DEX, Chars.END)
+
 
 class DamageTrack(ABC):
     """Knows how much punishment its owner has taken and what that means."""
+
+    def __init__(self) -> None:
+        self._stun_points = 0
+        self._incapacitated_rounds = 0
 
     def apply(self, points: int, kind: DamageKind) -> None:
         if points <= 0:
@@ -22,9 +28,28 @@ class DamageTrack(ABC):
         else:
             self._apply_lethal(points)
 
-    @abstractmethod
     def round_passed(self) -> None:
         """Advance any countdown the track maintains."""
+        if self._incapacitated_rounds > 0:
+            self._incapacitated_rounds -= 1
+
+    def rest_one_hour(self) -> None:
+        """Clear damage received from Stun weapons (:366)."""
+        self._stun_points = 0
+        self._incapacitated_rounds = 0
+
+    def _apply_stun_with_room(self, points: int, room: int) -> None:
+        """Store stun up to a track-specific floor; overflow becomes rounds."""
+        absorbed = min(points, room)
+        self._stun_points += absorbed
+        overflow = points - absorbed
+        self._incapacitated_rounds = max(self._incapacitated_rounds, overflow)
+
+    @staticmethod
+    def _validate_stun_state(stun_points: int, incapacitated_rounds: int) -> None:
+        if stun_points < 0 or incapacitated_rounds < 0:
+            msg = 'stun points and rounds cannot be negative'
+            raise ValueError(msg)
 
     @abstractmethod
     def _apply_lethal(self, points: int) -> None: ...
@@ -45,6 +70,16 @@ class DamageTrack(ABC):
     def is_incapacitated(self) -> bool:
         """Put out of action by stun rather than by injury."""
 
+    @property
+    def stun_points(self) -> int:
+        """Stun damage currently suppressing the track's damage-bearing stat."""
+        return self._stun_points
+
+    @property
+    def incapacitated_rounds(self) -> int:
+        """Rounds of stun overflow remaining."""
+        return self._incapacitated_rounds
+
 
 class CharacteristicTrack(DamageTrack):
     """STR, DEX and END, eroded by damage (refs/core/03_combat.md:259-268).
@@ -56,10 +91,9 @@ class CharacteristicTrack(DamageTrack):
     """
 
     def __init__(self, *, strength: int, dexterity: int, endurance: int, excess_to: Chars = Chars.DEX):
+        super().__init__()
         self._maximum = {Chars.STR: strength, Chars.DEX: dexterity, Chars.END: endurance}
         self._lethal = {Chars.STR: 0, Chars.DEX: 0, Chars.END: 0}
-        self._stun_points = 0
-        self._incapacitated_rounds = 0
         self.excess_to = excess_to
 
     def maximum(self, characteristic: Chars) -> int:
@@ -74,22 +108,36 @@ class CharacteristicTrack(DamageTrack):
     def dm(self, characteristic: Chars) -> int:
         return characteristic_dm(self.current(characteristic))
 
-    @property
-    def stun_points(self) -> int:
-        return self._stun_points
+    def correct_state(
+        self,
+        *,
+        maximum: dict[Chars, int],
+        current: dict[Chars, int],
+        stun_points: int,
+        incapacitated_rounds: int,
+    ) -> None:
+        """Replace the editable state from the values shown to the referee."""
+        self._validate_stun_state(stun_points, incapacitated_rounds)
+        if any(maximum[characteristic] <= 0 for characteristic in PHYSICAL_CHARACTERISTICS):
+            msg = 'maximum characteristics must be positive'
+            raise ValueError(msg)
+        if any(
+            not 0 <= current[characteristic] <= maximum[characteristic] for characteristic in PHYSICAL_CHARACTERISTICS
+        ):
+            msg = 'current characteristics must be between zero and their maximum'
+            raise ValueError(msg)
+        if current[Chars.END] + stun_points > maximum[Chars.END]:
+            msg = 'current END plus stun points cannot exceed maximum END'
+            raise ValueError(msg)
 
-    @property
-    def incapacitated_rounds(self) -> int:
-        return self._incapacitated_rounds
-
-    def round_passed(self) -> None:
-        if self._incapacitated_rounds > 0:
-            self._incapacitated_rounds -= 1
-
-    def rest_one_hour(self) -> None:
-        """Stun damage is completely healed by one hour of rest (:366)."""
-        self._stun_points = 0
-        self._incapacitated_rounds = 0
+        self._maximum = {characteristic: maximum[characteristic] for characteristic in PHYSICAL_CHARACTERISTICS}
+        self._lethal = {
+            characteristic: maximum[characteristic] - current[characteristic]
+            for characteristic in PHYSICAL_CHARACTERISTICS
+        }
+        self._lethal[Chars.END] -= stun_points
+        self._stun_points = stun_points
+        self._incapacitated_rounds = incapacitated_rounds
 
     def _apply_lethal(self, points: int) -> None:
         for characteristic in self._drain_order():
@@ -124,10 +172,7 @@ class CharacteristicTrack(DamageTrack):
         return Chars.END, self.excess_to, spare
 
     def _apply_stun(self, points: int) -> None:
-        endurance = self.current(Chars.END)
-        self._stun_points += min(points, endurance)
-        if points >= endurance:
-            self._incapacitated_rounds = max(self._incapacitated_rounds, points - endurance)
+        self._apply_stun_with_room(points, self.current(Chars.END))
 
     @property
     def is_unconscious(self) -> bool:
@@ -149,12 +194,12 @@ class CharacteristicTrack(DamageTrack):
 
 
 class HitsTrack(DamageTrack):
-    """A single Hits score, as animals use (refs/core/03_combat.md:604, 652-660)."""
+    """Animal Hits, including the shared stun contract defined by RIC-015."""
 
     def __init__(self, *, hits: int):
+        super().__init__()
         self._maximum = hits
         self._damage = 0
-        self._stun_total = 0
 
     @property
     def maximum(self) -> int:
@@ -163,30 +208,66 @@ class HitsTrack(DamageTrack):
     @property
     def current(self) -> int:
         """Allowed to go negative: destruction is measured below zero (:660)."""
+        return self._lethal_current - self._stun_points
+
+    @property
+    def _lethal_current(self) -> int:
         return self._maximum - self._damage
 
     @property
-    def stun_total(self) -> int:
-        return self._stun_total
+    def _stun_floor(self) -> int:
+        """Stun can suppress Hits to half their starting value, rounded down."""
+        return self._maximum // 2
 
-    def round_passed(self) -> None:
-        """Nothing to count down: the animal stun rule states no duration (:604)."""
+    def _stun_room(self) -> int:
+        """How many stun points can still suppress Hits before overflow."""
+        return max(self._lethal_current - self._stun_floor - self._stun_points, 0)
+
+    def correct_state(
+        self,
+        *,
+        maximum: int,
+        current: int,
+        stun_points: int,
+        incapacitated_rounds: int,
+    ) -> None:
+        """Replace the editable state from the values shown to the referee."""
+        self._validate_stun_state(stun_points, incapacitated_rounds)
+        if maximum <= 0:
+            msg = 'maximum Hits must be positive'
+            raise ValueError(msg)
+        if current > maximum:
+            msg = 'current Hits cannot exceed maximum Hits'
+            raise ValueError(msg)
+
+        lethal_current = current + stun_points
+        maximum_stun = max(lethal_current - maximum // 2, 0)
+        if stun_points > maximum_stun:
+            msg = 'stun points cannot suppress Hits below half maximum'
+            raise ValueError(msg)
+
+        self._maximum = maximum
+        self._damage = maximum - lethal_current
+        self._stun_points = stun_points
+        self._incapacitated_rounds = incapacitated_rounds
 
     def _apply_lethal(self, points: int) -> None:
         self._damage += points
+        maximum_stun = max(self._lethal_current - self._stun_floor, 0)
+        self._stun_points = min(self._stun_points, maximum_stun)
 
     def _apply_stun(self, points: int) -> None:
-        """Stun accumulates separately and never reduces Hits (:604)."""
-        self._stun_total += points
+        """Suppress Hits to half; excess determines incapacitation rounds."""
+        self._apply_stun_with_room(points, self._stun_room())
 
     @property
     def is_dead(self) -> bool:
-        return self.current <= 0
+        return self._lethal_current <= 0
 
     @property
     def is_unconscious(self) -> bool:
         """Reduced to a tenth of starting Hits or less (:658)."""
-        return 0 < self.current * 10 <= self._maximum
+        return 0 < self._lethal_current * 10 <= self._maximum
 
     @property
     def may_be_driven_off(self) -> bool:
@@ -196,9 +277,8 @@ class HitsTrack(DamageTrack):
     @property
     def is_destroyed(self) -> bool:
         """Body destroyed at negative starting Hits or worse (:660)."""
-        return self.current <= -self._maximum
+        return self._lethal_current <= -self._maximum
 
     @property
     def is_incapacitated(self) -> bool:
-        """A stun weapon incapacitates at cumulative half Hits (:604)."""
-        return self._stun_total * 2 >= self._maximum
+        return self._incapacitated_rounds > 0

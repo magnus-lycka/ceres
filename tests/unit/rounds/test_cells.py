@@ -1,16 +1,28 @@
 """Cell formats for the table, as specified by the referee.
 
 Characteristics read `current/max:DM` — 5/8:-1, 0/6:-3, 9/9:+1.
-Stun reads `points(rounds)` — 4(11).
+Stun reads `points(rounds)` for every actor — 4(11).
 """
 
 from ceres.character.domain.characteristics import Chars
-from ceres.rounds.domain.actions import AttackKind
-from ceres.rounds.domain.actor import Actor, TurnState
+from ceres.rounds.domain.actions import AttackKind, ReactionKind
+from ceres.rounds.domain.actor import Actor, ActorCondition, TurnState
 from ceres.rounds.domain.damage import DamageKind
 from ceres.rounds.domain.situation import Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
-from ceres.rounds.ui.table import characteristic_cell, row_style, stun_cell, vitality_cells
+from ceres.rounds.ui.table import (
+    characteristic_cell,
+    condition_tags,
+    round_time_text,
+    row_style,
+    stun_cell,
+    vitality_cells,
+)
+
+
+def test_round_time_is_shown_as_the_interval_in_progress():
+    assert round_time_text(1) == 'Round 1: 0–6s'
+    assert round_time_text(2) == 'Round 2: 6–12s'
 
 
 def test_undamaged_characteristic_shows_a_bare_zero_dm():
@@ -66,6 +78,15 @@ def test_an_animal_shows_hits_in_the_endurance_column():
     assert vitality_cells(track) == ('—', '—', '15/20')
 
 
+def test_animal_stun_uses_the_same_points_and_rounds_format():
+    track = HitsTrack(hits=20)
+
+    track.apply(14, DamageKind.STUN)
+
+    assert vitality_cells(track) == ('—', '—', '10/20')
+    assert stun_cell(track) == '10(4)'
+
+
 def test_a_stunned_actor_is_grey_while_the_next_actor_is_green():
     situation = Situation()
     party = situation.add_party('Actors')
@@ -101,3 +122,24 @@ def test_a_stunned_actor_is_grey_while_the_next_actor_is_green():
 
     assert thug.can_act
     assert row_style(thug) == 'background-color: #dcfce7'
+
+
+def test_prone_is_a_visible_condition_tag_until_cleared():
+    situation = Situation()
+    party = situation.add_party('Actors')
+    actor = situation.add_actor(
+        Actor(
+            name='Rin',
+            party=party,
+            track=CharacteristicTrack(strength=8, dexterity=8, endurance=8),
+            initiative=6,
+        )
+    )
+    situation.new_round()
+    situation.react(actor, ReactionKind.DIVE)
+
+    assert condition_tags(actor) == ('Prone',)
+
+    situation.clear_condition(actor, ActorCondition.PRONE)
+
+    assert condition_tags(actor) == ()

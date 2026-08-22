@@ -801,6 +801,15 @@ Reasons:
 **for healing only** — stun points are cleared by an hour of rest (`:366`),
 lethal ones are not. Every threshold uses the single derived value.
 
+The incapacitation countdown is separate from the stun damage that suppresses
+END. When the countdown reaches zero, the END loss remains until one hour of
+rest. A later stun hit is measured against that reduced END; if END is already
+zero, every point of the new hit is excess and incapacitates for the same number
+of rounds. A hit that merely reduces END to exactly zero has zero excess and
+therefore causes zero rounds of incapacitation. If another hit lands during an
+existing countdown, its newly calculated duration replaces the remaining
+duration only when it is longer; durations do not add together.
+
 ### RIC-012 Stun Damage Can Never Complete A Kill
 
 Following RIC-011, an actor may reach 0 in all three physical characteristics
@@ -877,6 +886,34 @@ ordering, and needs no per-actor DM of its own.
 **Note:** *Traveller: Battlefield Dev* (Mongoose, 2024) replaces only the two
 initiative paragraphs on p.73 and leaves this ambush text standing, so the
 interpretation is required under either initiative system.
+
+### RIC-015 Animal Stun Uses The Same Points-And-Overflow Model As Character Stun
+
+The animal rule says that a Stun weapon incapacitates an animal when cumulative
+stun damage reaches half its starting Hits (`refs/core/03_combat.md:604`), but
+does not state a duration. Ceres normalises this to the character Stun rule so
+that stun has one operational meaning for every living actor:
+
+- Stun points suppress current Hits, but cannot take them below half starting
+  Hits. For odd starting Hits, this floor is rounded down.
+- Damage beyond that floor is overflow, and incapacitates the animal for the
+  same number of rounds.
+- A later stun hit is measured against the current Hits. If lethal injury has
+  already reduced Hits to half or below, every stun point is overflow.
+- When a countdown reaches zero, stored stun continues to suppress Hits. More
+  stun then causes overflow immediately. A new countdown replaces the remaining
+  countdown only if it is longer; durations do not add.
+- One hour of rest clears both the stored stun and its countdown (`:366`).
+
+Lethal damage and stun share the displayed Hits score down to the stun floor,
+but stun must remain non-lethal. As lethal damage claims capacity currently
+occupied by stun, it displaces those stun points one for one. Injury-based
+unconsciousness, death, and destruction therefore still require lethal damage;
+stun never reduces the amount needed to reach those states.
+
+The table uses the same `X(Y)` notation for characters and animals: `X` is the
+stun currently suppressing END or Hits, and `Y` is the remaining overflow
+countdown.
 
 ## Rule Interpretations for robots
 

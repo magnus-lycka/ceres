@@ -1,37 +1,80 @@
-# Plan: `ceres.rounds` — round-by-round encounter tracker
+# Plan: `ceres.rounds` — round-by-round situation (combat) tracker
 
 Status: **in progress** — phases 1–3 complete; see "Phases 1–3 results".
 
 Tracking issue: [#56](https://github.com/magnus-lycka/ceres/issues/56)
 
-## Purpose
+## Purpose and goals
 
-A referee's bookkeeping aid for combat and other round-by-round action. It
-tracks *who is involved, whose turn it is, what round we are in, what each
-combatant has already done, and how hurt they are*. It does **not** resolve
-attacks: no to-hit checks, no dice, no armour, no ranges, no weapons.
+A referee's bookkeeping aid for situations run in combat rounds. It tracks
+*who is involved, whose turn it is, what round we are in, what each actor has
+already done, and how hurt they are*. It does **not** resolve attacks: no to-hit
+checks, no dice, no armour, no ranges and no weapons.
+
+The product goals are:
+
+- **Run a fight quickly and clearly.** At a glance the referee can see who may
+  act, who cannot, what each actor last did, their reactions, conditions and
+  injury. Recording the next event must take only a few deliberate actions.
+- **Track combat, not every six-second activity.** The only recorded actor
+  actions are Melee attack, Ranged attack, reactions and Done. Damage from
+  falls, fire and similar hazards may come from Other. Movement, Minor actions
+  and general activity are deliberately absent.
+- **Keep a reusable actor library.** PCs, NPCs, animals and eventually robots
+  can be found, inspected, copied, added, corrected and removed without being
+  recreated for every fight. Creating several similar actors must not require
+  repeating a captive form one actor at a time.
+- **Preserve consequences between situations.** Injury and stun belong to the
+  actor and survive removal from one Situation and use in another until healed
+  or explicitly reset. Initiative, turn progress, local party assignment and
+  tactical conditions belong to a Situation.
+- **Make preparation reusable but non-binding.** A Party is a reusable group
+  of actors. Adding it prepares a Situation quickly, after which the referee
+  may change that Situation's composition and party assignments without
+  changing the reusable Party.
+- **Make correction safe and immediate.** Any entered fact can be corrected
+  when the referee notices a mistake, while derived states such as stunned,
+  unconscious and dead remain consistent with the underlying facts.
+- **Do not lose an active fight.** Reloading or reconnecting must not discard
+  work. Durable storage must also survive closing the browser or restarting the
+  application.
+- **Interoperate without coupling the applications together.** Actors may be
+  derived from richer `ceres.character`, `ceres.make.robot` and future
+  `ceres.make.animal` objects, but rounds must retain a sufficient validated
+  representation to work independently. Those source systems must not depend
+  on the rounds UI or its mutable combat state.
+- **Remain open to practical authoring workflows.** In-app pages, validated
+  local files, Python constructors, copying, LLM-generated data and possible
+  future external tools all operate on the same actor, party and situation
+  concepts. The plan does not require one of them to be the sole authoring
+  method.
+
+The model and its names should make these different concepts and lifetimes
+obvious. Protocols, JSON schemas, repositories and UI widgets are means of
+achieving these goals, not goals in themselves.
 
 Rules reference: `refs/core/03_combat.md` (pages 73–96), plus
 `characteristic_dm` from `refs/core/02_traveller_creation.md`.
 
-Typical size: under 20 combatants, a handful of rounds.
+Typical live Situation: under 20 actors, a handful of rounds. The reusable
+Actor library may be much larger.
 
 ## Architecture decision: NiceGUI, single Python codebase
 
 The UI question was explored across three shapes: a REST/HTMX split like
 `ceres.character.web`, a pure client-side page (vanilla JS / Svelte / Pyodide),
 and a Python UI framework. The chosen shape is a **Python UI framework —
-NiceGUI**, because there is no meaningful backend to design here: the whole
-application is an editable table with a few side effects, and splitting it
-across a network boundary invents work that does not exist.
+NiceGUI**, because this remains a local, single-process application. Actor,
+Party and Situation repositories are real application boundaries, but exposing
+them through a separate network API would invent work that does not exist.
 
 Why NiceGUI over the alternatives considered:
 
-- **NiceGUI 3.16 — chosen.** Event-driven callbacks (`on_click` → mutate
-  encounter → refresh) match a turn tracker directly. Real per-row buttons and
-  dialogs with no key gymnastics. Built on FastAPI/Starlette, which Ceres
-  already depends on. Installs clean on 3.14 (~20 transitive deps). Ships a
-  pytest plugin (`nicegui.testing`) for in-process UI tests.
+- **NiceGUI 3.16 — chosen.** Event-driven callbacks (`on_click` → application
+  service → refresh) match both the live tracker and local library pages. Built
+  on FastAPI/Starlette, which Ceres already depends on. Installs clean on 3.14
+  (~20 transitive deps). Ships a pytest plugin (`nicegui.testing`) for
+  in-process UI tests.
 - *Streamlit* — rejected. The whole-script-rerun model fights a stateful turn
   tracker, per-row buttons need unique-key loops, and persistence is hand-rolled
   anyway. `st.data_editor` is its one genuine advantage here.
@@ -62,29 +105,92 @@ New dependency: `nicegui`. `deptry` and `pre-commit.sh` must stay green.
 ```text
 src/ceres/rounds/
   domain/
-    ids.py          — ActorId, PartyId (typed identifiers, never bare str)
+    ids.py          — ActorId, PartyId, SituationId (never bare str)
     tracks.py       — DamageTrack base; CharacteristicTrack, HitsTrack
     damage.py       — DamageKind (lethal / stun) and damage application
-    actor.py        — Actor: name, party, initiative, turn state, damage track
+    actor.py        — persistent Actor definition and health state
+    sources.py      — read-only source protocols and extraction adapters
+    party.py        — reusable Party definitions referencing ActorId values
     initiative.py   — InitiativeMode, initiative ordering and tie handling
     actions.py      — Melee/Ranged attacks and Dodge/Parry/Dive reactions
-    situation.py    — Situation: roster, parties, round counter, turn pointer
-    storage.py      — Situation <-> JSON, undo stack
+    situation.py    — memberships, local parties, round counter, turn pointer
+    repository.py   — actor, party and situation repository protocols
+  storage/
+    json_store.py   — validated local JSON and durable temporal state
   ui/
     app.py          — ui.run entry point
-    table.py        — the actor table, which is the whole UI (see below)
+    actors.py       — searchable actor library and occasional maintenance
+    parties.py      — reusable party composition
+    situations.py   — prepared situation composition
+    table.py        — the live round table and correction controls
 
 tests/unit/rounds/   — mirrors domain/, one test module per domain module
 ```
 
 ### Naming: Situation and Actor
 
-This package is not only about combat. It serves any situation run in rounds
-with people taking turns: a firefight, an actual fire, patching a hull breach
-before the compartment empties. So the aggregate is a **`Situation`**, not an
-encounter or a combat, and the thing taking a turn is an **`Actor`** — a word
-that covers PCs, NPCs and animals without claiming any of them is a combatant
-or a character.
+The tracker is built for combat, but neither the group of involved actors nor
+its lasting consequences cease to exist at the boundary of one encounter. The
+aggregate is therefore a **`Situation`**, not an encounter or a combat, and the
+thing taking a turn is an **`Actor`** — a word that covers PCs, NPCs, animals
+and eventually robots without claiming all of them are characters. This naming
+does not expand the tracked action vocabulary beyond combat actions.
+
+### Persistent actors and situation membership
+
+There is one persistent **Actor**, identified by `ActorId`. It contains two
+different lifetimes of data:
+
+- its definition: name, kind, source reference and default combat properties;
+- its persistent health state: lethal damage, stun damage and duration, and
+  dead or destroyed state derived from those values.
+
+Current STR/DEX/END or Hits are derived from defaults and stored damage. A new
+situation therefore does not heal an actor. Healing or resetting health is an
+explicit actor operation.
+
+A Situation does not create a second actor or copy actor state. It stores a
+**membership** referencing `ActorId`, with only situation-local facts: local
+party, party or individual initiative, pending/ready/acted state, reaction
+modifiers, last action and tactical conditions such as prone. Removing a
+membership leaves the persistent actor untouched.
+
+A reusable **Party** is a named collection of ActorId values. Adding it to a
+Situation copies its current composition and name into situation-local party
+and membership records, while continuing to reference the same Actors. The
+local composition may then diverge freely without changing the reusable Party.
+
+Actor, Party and Situation authoring must be local-file-first and efficient for
+batches of similar entries. The in-app editor remains a correction surface
+during play, not the primary bulk-entry workflow.
+
+### Rich source objects and the JSON boundary
+
+`ceres.rounds` consumes projections of richer objects created by
+`ceres.character`, `ceres.make.robot` and a future `ceres.make.animal`. It owns
+read-only structural Protocols describing only what each extraction adapter
+needs. The source packages need not import `ceres.rounds`; real source objects
+must be checked for structural conformance by `ty`.
+
+The Protocol is not itself the serialisation format. An adapter converts a
+source object into a Pydantic Actor definition from a discriminated union such
+as `CharacterActorDefinition | AnimalActorDefinition |
+RobotActorDefinition`. These models are versioned, validate independently of
+the source system, generate JSON Schema and serialise to JSON. A stored source
+reference records provenance, while the projection is retained so rounds can
+operate without the richer source being available. Refreshing a definition
+from its source is explicit and must preserve or deliberately reconcile the
+Actor's persistent health state.
+
+Extraction creates or refreshes the Actor definition only. It does not import
+initiative, prone, damage, stun or other temporal state from a source object.
+A newly imported Actor starts with a separate healthy state; refreshing an
+existing Actor preserves its state unless the user explicitly changes it.
+
+Use one source Protocol per genuinely different source shape rather than one
+artificial umbrella. The character protocol and adapter are in scope now;
+robot and animal contracts are added only when their combat properties are
+known.
 
 ### Composition over subclassing
 
@@ -95,9 +201,10 @@ damage**. So an `Actor` *has a* `DamageTrack`:
 - `CharacteristicTrack` — STR/DEX/END, for Travellers and NPCs.
 - `HitsTrack` — a single Hits score, for animals.
 
-This avoids a `CharacterActor`/`CreatureActor` split, and lets a robot (Hits,
-but not an animal) later reuse `HitsTrack` without pretending to be a creature.
-`Actor` needs no `isinstance` checks: it asks its track.
+This avoids a behavioural `CharacterActor`/`CreatureActor` hierarchy. Robots
+will have their own damage model once their combat rules are implemented; they
+must not reuse animal semantics merely because both display Hits. `Actor`
+delegates health rules to its track.
 
 The track owns its own rules — `apply(damage, kind)`, `is_unconscious`,
 `is_dead`, `action_dm` — and the UI asks the track rather than computing
@@ -108,9 +215,9 @@ anything from raw numbers.
 characteristic DM table is shared Traveller arithmetic and must not be
 duplicated here.
 
-Per the typed-identifier rule, the domain holds `Actor` *objects* in the
-situation; `ActorId` exists for the storage and UI boundary only, and is a
-frozen dataclass, not a bare string.
+Per the typed-identifier rule, Parties and Situations reference actors by
+`ActorId`, a frozen typed identifier rather than a bare string. Display names
+need not be unique.
 
 ## Rules to encode
 
@@ -135,41 +242,22 @@ the implementation.
   and so can never kill.
 - If END reaches 0, the target is **incapacitated for (damage − END) rounds**,
   where END is the value at the moment of the hit.
+- The END loss remains after that countdown reaches zero. Further stun is
+  measured against the remaining END, so every point of a later hit is excess
+  when END is already zero.
 - Stun damage heals completely with one hour of rest, unlike lethal damage.
 
-#### Interpretation: stun and lethal damage share one END score
+#### Interpretation: one shared END score
 
-The rules never say whether a character softened up by a stunner is easier to
-knock out with lethal damage, or vice versa. Searching the community turns up no
-consensus and barely any discussion, for an identifiable reason: nearly all of
-it predates the 2022 Update, which replaced the old stun rule (an END check at
-DM− equal to damage, failure meaning unconsciousness) with the END-reduction
-rule quoted above. Mongoose's own published clarifications address the STR/DEX
-split but never stun.
+Recorded as **RIC-011** (stun and lethal reduce one shared END score) and
+**RIC-012** (stun can never complete a kill) in
+`docs/RULE_INTERPRETATIONS.md`, with the reasoning and the source evidence.
 
-**Ruling: one END score, reduced by both kinds of damage.** So a character with
-END 7 who has taken 5 stun damage needs 9 more lethal points to fall
-unconscious, not 14; and a character with END 6 who has taken 4 lethal points is
-stunned by 2 further stun points, not 6. The supporting evidence:
-
-- Both rules reduce the same *characteristic*, not a pool: "Damage is initially
-  applied to a target's END" against "Damage is only deducted from END".
-- A baton round applies half of a single attack's damage as Stun
-  (`refs/vehicle/21_specialised_ammunition.md:35`), so the designers expect both
-  kinds on one character at once — and supplied no separate-pool bookkeeping.
-- Where the authors do mean a separate accumulating total, they say so: the
-  animal stun rule reads "a *cumulative* amount of damage equal to half of its
-  Hits" (`03_combat.md:604`). That word is absent from the character rule.
-- The Companion's optional Knockout Blow rule treats END as one running score
-  reduced "from its starting value to 0" (`refs/companion/13_combat.md:71`).
-
-The consequence is deliberately harsh: softening a target with a stunner really
-does make them easier to kill.
-
-`CharacteristicTrack` therefore keeps `lethal_end` and `stun_end` as two
-buckets **for healing only** — stun points vanish after an hour's rest, lethal
-ones do not. Every threshold uses the single derived value,
-`END = max − lethal_end − stun_end`. No rule may branch on the buckets.
+What it means for the code: `CharacteristicTrack` keeps `lethal_end` and
+`stun_end` as two buckets **for healing only** — stun points vanish after an
+hour's rest, lethal ones do not. Every threshold uses the single derived value,
+`END = max − lethal_end − stun_end`. No rule may branch on the buckets, except
+death, which counts lethal damage alone.
 
 ### HitsTrack (`03_combat.md:604, 652-660`)
 
@@ -180,8 +268,11 @@ ones do not. Every threshold uses the single derived value,
 - Hits ≤ half starting Hits → **may be driven off** (referee's option; shown as
   a hint, never applied automatically).
 - Hits reduced to −(starting Hits) or worse → **body destroyed**.
-- A stun weapon incapacitates a creature once *cumulative* stun damage reaches
-  half its Hits.
+- Stun suppresses current Hits, but only down to half starting Hits. Damage
+  beyond that floor determines the number of rounds of incapacitation.
+- Lethal damage displaces stun already suppressing Hits, so stun never reduces
+  the lethal damage needed to kill the animal.
+- Stored stun and its countdown clear after one hour of rest.
 
 ### Initiative (`03_combat.md:28-48, 62, 81`)
 
@@ -233,11 +324,9 @@ ever were.
 - An actor may freely **delay** and act later in the turn (`:32`).
 - The round ends once everyone has had the chance to act.
 
-*Interpretation to record:* "their next set of actions" is read as *the next
-unspent set*. A reaction taken before the actor has acted this round penalises
-this round's actions; one taken after they have acted penalises next round's.
-This is implemented as a penalty that attaches to the next unspent action set,
-not as a flat "next round" rule.
+"Their next set of actions" is read as *the next unspent set* — a reaction
+before the actor has acted penalises this round, one after penalises next round.
+Recorded as **RIC-013**.
 
 ### Recovery (`03_combat.md:537-539, 366`)
 
@@ -249,22 +338,43 @@ not as a flat "next round" rule.
 
 ### Roster changes
 
-- Actors may join mid-situation with an initiative value, flagged as to whether
-  they act in the current round.
-- Actors may withdraw or flee: removed from the turn order, retained in the log.
+- Actor-library changes are independent of Party and Situation composition.
+- Reusable Parties support add, copy, edit, archive, and bulk member changes.
+- Adding a Party to a Situation copies its composition into local memberships.
+- Actors may be added, removed or reassigned locally without changing the
+  reusable Party.
+- An actor added mid-situation receives local initiative/turn state, while its
+  existing persistent health state is used unchanged.
+- Withdrawing from a Situation removes only the membership.
 
-## The UI — to be settled by prototype, not by argument
+## UI surfaces
 
-The shape below is what to build first and then try at the table. It is not to
-be refined further on paper.
+Bulk authoring through captive modal forms was rejected after trying the
+prototype. The application needs four ordinary pages:
+
+- **Actors:** browse, search and filter the library; import, copy, archive and
+  occasionally edit an actor. Batch creation remains file-, constructor- or
+  importer-first.
+- **Parties:** edit reusable Parties with searchable, multi-select actor
+  addition and removal.
+- **Situations:** prepare local parties and memberships; adding a reusable Party
+  copies its current composition, after which it can be changed locally.
+- **Run:** the live round table described below. Its per-row editor is for quick
+  corrections during play, not primary data entry.
+
+Python constructors, LLM-generated documents and future external adapters such
+as Google Sheets all write the same validated models as the UI. No authoring
+surface gets a separate domain representation.
 
 **Table columns:** Name | Party | Ini | STR | DEX | END | Stun | React | Action
 | Status. ("Ini", not "Init".)
 
 **Cell formats.** Characteristics read `current/max:DM` — `5/8:-1`, `0/6:-3`,
 `9/9:+1` — so the DM lives in the cell it belongs to rather than in one
-meaningless "DM" column. Stun reads `points(rounds)` — `4(11)` is four stun
-points currently suppressing END with eleven rounds of incapacitation left.
+meaningless "DM" column. Stun has the same `points(rounds)` meaning for every
+actor: `4(11)` means four stun points currently suppress the damage-bearing
+stat, with eleven rounds of incapacitation left. Stun suppresses character END
+towards zero and animal Hits towards half their starting value.
 
 Worked example, an actor at 888 who takes 4 lethal and then 15 stun:
 
@@ -288,27 +398,59 @@ hazards without consuming anyone's turn.
 **Other**), Melee or Ranged for actor sources, optional reaction of Dodge / Dive
 / Parry, net damage in lethal and stun points, and whether to pull from STR or
 DEX first. Dive greys the target out — it forfeits their next turn. Dodge and
-Parry each add −1 to React.
+Parry each add −1 to React. Dive also marks the target prone. Prone persists
+across rounds as a removable **Prone** tag. Clicking the tag or its × clears it
+without recording an action or introducing movement-action bookkeeping.
 
-**Round flow.** "New round" is an explicit command. On a new round: actors may
-be added to a party, and initiative is either inherited from the previous round
-or set now, individually or for a whole party in one operation. Then the actors
-with the highest Ini turn **green** and may act, unless stunned or otherwise
-incapable. Acting turns them **grey**; waiting leaves them green. The next Ini
-step then turns green as well, joining everyone still waiting. Grey until the
-next round.
+Every actor row also has **Edit** as a correction surface. Persistent health
+corrections update the referenced Actor; initiative, turn state, reaction DM,
+last action, waiting/forfeiture flags and prone update only its Situation
+membership. Current and maximum characteristics or Hits, stun points and
+duration remain editable through their underlying damage representation.
+Statuses such as stunned, unconscious and dead remain derived, so the editor
+cannot create a label that contradicts the stored damage.
+
+**Round flow.** "New round" is an explicit command. Before or during a round,
+Situation memberships and local party assignments may be changed. Initiative
+is either inherited from the previous round or set now, individually or for a
+whole local party in one operation. Then the actors with the highest Ini turn
+**green** and may act, unless stunned or otherwise incapable. Acting turns them
+**grey**; waiting leaves them green. The next Ini step then turns green as
+well, joining everyone still waiting. Grey until the next round.
 
 ## Persistence and undo
 
-`Situation` serialises to and from JSON on its own (`storage.py`), independent
-of NiceGUI, so it is testable with `tmp_path`. Situations are stored under
-`settings.data_dir() / 'rounds'`, one JSON file each, written after every
-mutation. A browser reload or a restart mid-fight loses nothing.
+The prototype keeps its active `Situation` in NiceGUI's tab-scoped memory. A GET
+or page refresh in the same browser tab must reconnect to that object rather
+than construct a new encounter. This deliberately volatile state is lost when
+the tab closes or the server restarts.
 
-Undo is a bounded stack of whole-situation snapshots taken before each mutation.
-With under 20 actors a snapshot is trivial, and snapshot-undo is far simpler and
-more reliable than inverse operations. Mis-entered damage is the single most
-likely referee error, so undo is v1, not a nicety.
+Phase 5 replaces that temporary boundary with validated local storage under
+`settings.data_dir() / 'rounds'`.
+
+Actor definitions, reusable Parties and prepared Situations are versioned
+Pydantic documents with a JSON representation and generated JSON Schema. The
+repository layer loads all documents, provides browse/search/get/save/copy and
+archive operations, and reports filename plus validation path without
+partially applying invalid input. Manual JSON, Python constructors, LLM output
+and source-system adapters all pass through the same validation boundary.
+
+Application-owned temporal state is stored separately from authored
+definitions:
+
+- Actor state holds persistent injury and stun across Situations.
+- Situation state holds local memberships, initiative, turns, reactions and
+  tactical conditions.
+
+All writes are atomic. A browser reload or server restart mid-fight loses
+nothing. Editing an actor definition does not silently discard its temporal
+state; reconciliation is an explicit validated operation.
+
+Undo is a bounded stack of transaction snapshots. Because an attack mutates
+both Situation state and the target Actor's persistent health, an undo entry
+contains the Situation plus every Actor state touched by that mutation. This is
+still small for the intended encounter sizes and is safer than inverse
+operations.
 
 ## TDD phases
 
@@ -336,24 +478,33 @@ be answered by using it.
      first-round adjustment that expires**, for the ambush ±6 (RIC-014);
    - optionally the *Battlefield Dev* shape — one nominated leader per side
      rolling each round, with Tactics levels as a DM on that check.
-5. **Persistence and undo.** JSON round-trip, snapshot stack.
-6. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
+5. **Persistent actor library and source boundary.** Refactor `Actor` into a
+   validated definition plus persistent health state; add typed IDs, the
+   character-source Protocol and adapter, versioned JSON models, and the local
+   actor repository with browse/search/get/save/copy/archive operations.
+6. **Reusable Parties and prepared Situations.** Persist Party definitions and
+   Situation memberships; implement copy-on-add Party composition and the
+   Actors, Parties and Situations pages with search and bulk selection.
+7. **Durable live state and undo.** Persist Actor health and Situation-local
+   round state independently, make mutations atomic across both, and add the
+   bounded transaction snapshot stack.
+8. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
    complete and move it to `docs/archive/`. The rule interpretations are already
    recorded — RIC-011 (stun and lethal share one END score), RIC-012 (stun can
    never complete a kill), RIC-013 (a reaction penalises the next unspent set of
    actions) and RIC-014 (the ambush DM applies to Initiative only, round one
    only).
 
-Rule tests go through the `Situation` / `Actor` / `DamageTrack` public API —
-that *is* the domain API, so no separate driver is needed, unlike
-`CharacterDriver` in `ceres.character`. If UI tests start reaching into domain
-internals, that is the signal to add one.
+Rule tests go through the `Situation` / `Actor` / `DamageTrack` public API.
+Repository contract tests run against an in-memory backend and the local JSON
+backend. UI tests use an application service rather than reaching into storage
+or domain internals directly.
 
 ## Phases 1–3 results
 
-Landed and committed: `ceres/rounds/domain/` (`tracks.py`, `damage.py`,
-`actor.py`, `situation.py`) and `ceres/rounds/ui/` (`app.py`, `table.py`), with
-**55 tests** in `tests/unit/rounds/`. Run the prototype with
+Implemented: `ceres/rounds/domain/` (`tracks.py`, `damage.py`,
+`actor.py`, `roster.py`, `situation.py`) and `ceres/rounds/ui/` (`app.py`,
+`table.py`), with **81 tests** in `tests/unit/rounds/`. Run the prototype with
 `uv run python -m ceres.rounds.ui.app` on port 8081.
 
 **Phase 1 — damage tracks.** The lethal cascade, unconscious and dead, live
@@ -374,6 +525,13 @@ not inventory movement, Minor actions, or the full action budget. **Other** is
 a non-actor damage source for falls, fire, vacuum, and similar hazards.
 Reaction penalties now attach to the current unfinished turn or carry to the
 next one; Dive follows the same boundary and forfeits the appropriate turn.
+It also records the lasting prone condition as a removable tag. Refreshing the
+page preserves the tab's active situation, and every actor has a general editor
+for correcting stored tracker facts without making derived statuses editable.
+An in-memory Roster experiment separated availability from active membership,
+but its modal authoring UI was rejected. The next phase replaces that
+experiment with persistent Actors, reusable Parties, Situation memberships and
+the full-page/file-first workflows above.
 
 **Two defects found by writing the rules down rather than by testing.** The
 combat handouts (`handouts/combat_cards.typ`) forced several rules to be pinned
@@ -382,10 +540,10 @@ scoping decision in this plan; see the Initiative section. The other, an actor
 with stun points and all characteristics at zero being unkillable, was found by
 the referee asking what that state meant in practice.
 
-**Still unrun at the table.** Phase 4 is "iterate on what the prototype
-teaches", and nobody has yet used it in a real fight. Its original action model
-was sketched before there was anything to try; the combat-only scope above is
-the first correction from reviewing the prototype.
+**Still unrun in a full game session.** Short interactive trials have already
+driven the combat-only action scope, consistent stun display, row colouring,
+refresh survival, prone tags and general correction editing described above.
+Phase 4 remains open until the tracker has supported a real fight.
 
 ## Explicitly deferred
 
@@ -399,11 +557,12 @@ the first correction from reviewing the prototype.
 - **Armour and Protection** — the referee enters damage after protection.
 - **Dice** — no initiative or damage rolls.
 - **Healing** beyond stun recovery — first aid, medical care, natural healing.
-- **Importing actors from the character store** — v1 actors are entered by hand.
-  The model should make a later import path a matter of populating the same
-  fields, nothing more.
-- **Robots as actors** — robots have Hits and their own damage rules from the
-  robot book; they will reuse `HitsTrack` only once those rules are read.
+- **Robot combat rules and robot-source adapter** — robots have Hits but their
+  own damage, stun, protection and critical-hit rules. Their discriminated
+  Actor-definition variant and source Protocol are added only after those rules
+  are read; they must not inherit animal `HitsTrack` semantics by convenience.
+- **Animal source adapter** — reserved for a future `ceres.make.animal`; manual
+  validated animal definitions remain supported meanwhile.
 - **The Companion's optional rules** — Natural Resilience, Knockout Blow, Random
   First Blood, alternative initiative, disabling wounds
   (`refs/companion/13_combat.md`). Noted as existing; not implemented.

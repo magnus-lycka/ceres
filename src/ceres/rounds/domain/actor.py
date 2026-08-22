@@ -13,7 +13,7 @@ from ceres.rounds.domain.actions import ReactionKind
 from ceres.rounds.domain.tracks import CharacteristicTrack, DamageTrack
 
 if TYPE_CHECKING:
-    from ceres.rounds.domain.situation import Party
+    from ceres.rounds.domain.roster import Party
 
 
 class TurnState(StrEnum):
@@ -22,6 +22,12 @@ class TurnState(StrEnum):
     PENDING = auto()  # their initiative step has not been reached
     READY = auto()  # green: may act now, including after waiting
     ACTED = auto()  # grey: done until the next round
+
+
+class ActorCondition(StrEnum):
+    """Lasting, explicitly cleared combat conditions shown as UI tags."""
+
+    PRONE = 'Prone'
 
 
 class Actor:
@@ -43,6 +49,7 @@ class Actor:
         self._reaction_dm = 0
         self._next_reaction_dm = 0
         self._forfeit_next_turn = False
+        self._conditions: set[ActorCondition] = set()
         self.last_action = ''
 
     @property
@@ -75,6 +82,14 @@ class Actor:
             return self._reaction_dm
         return self._next_reaction_dm
 
+    @property
+    def conditions(self) -> frozenset[ActorCondition]:
+        return frozenset(self._conditions)
+
+    @property
+    def forfeits_next_turn(self) -> bool:
+        return self._forfeit_next_turn
+
     def begin_round(self) -> None:
         self._round_started = True
         self._reaction_dm = self._next_reaction_dm
@@ -102,6 +117,7 @@ class Actor:
         """Attach a reaction to the next turn that has not been finished."""
         current_turn_is_unspent = self._round_started and self.turn_state is not TurnState.ACTED
         if reaction is ReactionKind.DIVE:
+            self._conditions.add(ActorCondition.PRONE)
             if current_turn_is_unspent:
                 self.finish_turn()
             else:
@@ -115,6 +131,33 @@ class Actor:
     def wait(self) -> None:
         """Delay the action until later in the turn (:32); stays green."""
         self.waited = True
+
+    def clear_condition(self, condition: ActorCondition) -> None:
+        """Clear a referee-managed condition without recording an action."""
+        self._conditions.discard(condition)
+
+    def correct_round_state(
+        self,
+        *,
+        turn_state: TurnState,
+        reaction_dm: int,
+        last_action: str,
+        conditions: set[ActorCondition],
+        forfeit_next_turn: bool,
+        waited: bool = False,
+    ) -> None:
+        """Correct stored round facts without manufacturing a combat action."""
+        self.turn_state = turn_state
+        self.waited = waited
+        self.last_action = last_action
+        self._conditions = conditions.copy()
+        self._forfeit_next_turn = forfeit_next_turn
+        if self._round_started and turn_state is not TurnState.ACTED:
+            self._reaction_dm = reaction_dm
+            self._next_reaction_dm = 0
+        else:
+            self._reaction_dm = 0
+            self._next_reaction_dm = reaction_dm
 
     @property
     def has_had_their_turn(self) -> bool:

@@ -1,11 +1,13 @@
 """Run the prototype: `uv run python -m ceres.rounds.ui.app`."""
 
-from nicegui import ui
+from nicegui import app, ui
 
 from ceres.rounds.domain.actor import Actor
 from ceres.rounds.domain.situation import Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
 from ceres.rounds.ui.table import RoundsTable
+
+ACTIVE_SITUATION_KEY = 'rounds.active_situation'
 
 
 def demo_situation() -> Situation:
@@ -36,8 +38,13 @@ def demo_situation() -> Situation:
 
 
 @ui.page('/')
-def index() -> None:
-    RoundsTable(demo_situation()).build()
+async def index() -> None:
+    await ui.context.client.connected()
+    stored = app.storage.tab.get(ACTIVE_SITUATION_KEY)
+    if not isinstance(stored, Situation):
+        stored = demo_situation()
+        app.storage.tab[ACTIVE_SITUATION_KEY] = stored
+    RoundsTable(stored).build()
 
 
 def main() -> None:

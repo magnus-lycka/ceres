@@ -5,30 +5,24 @@ decides who is currently green.
 """
 
 from ceres.rounds.domain.actions import AttackKind, ReactionKind
-from ceres.rounds.domain.actor import Actor, TurnState
+from ceres.rounds.domain.actor import Actor, ActorCondition, TurnState
 from ceres.rounds.domain.damage import DamageKind
+from ceres.rounds.domain.roster import Party, Roster
 
 ROUND_SECONDS = 6
 
 
-class Party:
-    """A side. May hold one shared initiative for all its members (:36)."""
-
-    def __init__(self, name: str, initiative: int | None = None):
-        self.name = name
-        self.initiative = initiative
-
-    def __repr__(self) -> str:
-        return f'Party({self.name!r})'
-
-
 class Situation:
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = '', *, roster: Roster | None = None):
         self.name = name
-        self.parties: list[Party] = []
+        self.roster = roster or Roster()
         self.actors: list[Actor] = []
         self.round_number = 0
         self._step: int | None = None
+
+    @property
+    def parties(self) -> list[Party]:
+        return self.roster.parties
 
     @property
     def elapsed_seconds(self) -> int:
@@ -36,22 +30,42 @@ class Situation:
         return self.round_number * ROUND_SECONDS
 
     def add_party(self, name: str, initiative: int | None = None) -> Party:
-        party = Party(name, initiative)
-        self.parties.append(party)
-        return party
+        return self.roster.add_party(name, initiative)
 
     def set_party_initiative(self, party: Party, initiative: int) -> None:
         """One check for a whole side, in one operation."""
         party.initiative = initiative
 
     def add_actor(self, actor: Actor) -> Actor:
+        """Register an actor and include them in this situation."""
+        self.roster.add_actor(actor)
+        self.include(actor)
+        return actor
+
+    def include(self, actor: Actor) -> None:
+        """Include a roster actor in the active situation."""
+        if actor not in self.roster.actors:
+            msg = 'actor must belong to the situation roster'
+            raise ValueError(msg)
+        if actor in self.actors:
+            return
         self.actors.append(actor)
         if self._step is not None and actor.initiative_value >= self._step:
             actor.make_ready()
-        return actor
 
     def withdraw(self, actor: Actor) -> None:
+        """Remove an actor from this situation but retain them on the roster."""
         self.actors.remove(actor)
+        self._advance_step_if_ready()
+
+    def remove_from_roster(self, actor: Actor) -> None:
+        """Remove an actor from both the situation and its reusable roster."""
+        if actor in self.actors:
+            self.withdraw(actor)
+        self.roster.remove_actor(actor)
+
+    def is_participating(self, actor: Actor) -> bool:
+        return actor in self.actors
 
     def turn_order(self) -> list[Actor]:
         """Highest initiative first, ties broken by DEX (:62)."""
@@ -104,6 +118,43 @@ class Situation:
 
     def wait(self, actor: Actor) -> None:
         actor.wait()
+        self._advance_step_if_ready()
+
+    def clear_condition(self, actor: Actor, condition: ActorCondition) -> None:
+        actor.clear_condition(condition)
+
+    def correct_actor(
+        self,
+        actor: Actor,
+        *,
+        name: str,
+        party: Party,
+        initiative: int | None,
+        turn_state: TurnState,
+        reaction_dm: int,
+        last_action: str,
+        conditions: set[ActorCondition],
+        forfeit_next_turn: bool,
+        waited: bool,
+    ) -> None:
+        """Correct an actor's editable facts without recording an action."""
+        if not name.strip():
+            msg = 'name cannot be empty'
+            raise ValueError(msg)
+        if party not in self.parties:
+            msg = 'party must belong to this situation'
+            raise ValueError(msg)
+        actor.name = name.strip()
+        actor.party = party
+        actor.initiative = initiative
+        actor.correct_round_state(
+            turn_state=turn_state,
+            reaction_dm=reaction_dm,
+            last_action=last_action,
+            conditions=conditions,
+            forfeit_next_turn=forfeit_next_turn,
+            waited=waited,
+        )
         self._advance_step_if_ready()
 
     def _open_highest_step(self) -> None:

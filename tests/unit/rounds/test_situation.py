@@ -13,7 +13,8 @@ import pytest
 
 from ceres.character.domain.characteristics import Chars
 from ceres.rounds.domain.actions import AttackKind, ReactionKind
-from ceres.rounds.domain.actor import Actor, TurnState
+from ceres.rounds.domain.actor import Actor, ActorCondition, TurnState
+from ceres.rounds.domain.roster import Roster
 from ceres.rounds.domain.situation import Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
 
@@ -28,6 +29,31 @@ def situation() -> Situation:
 
 
 class TestRoster:
+    def test_roster_membership_is_independent_of_situation_participation(self):
+        roster = Roster()
+        crew = roster.add_party('Crew')
+        rin = roster.add_actor(Actor(name='Rin', party=crew, track=character('Rin')))
+        situation = Situation(roster=roster)
+
+        assert rin in roster.actors
+        assert not situation.is_participating(rin)
+
+        situation.include(rin)
+        assert situation.is_participating(rin)
+
+        situation.withdraw(rin)
+        assert rin in roster.actors
+        assert not situation.is_participating(rin)
+
+    def test_removing_an_actor_from_the_roster_also_withdraws_them(self, situation):
+        crew = situation.add_party('Crew')
+        rin = situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin')))
+
+        situation.remove_from_roster(rin)
+
+        assert rin not in situation.actors
+        assert rin not in situation.roster.actors
+
     def test_actors_belong_to_a_party(self, situation):
         crew = situation.add_party('Crew')
 
@@ -258,16 +284,54 @@ class TestCombatActions:
         situation.react(actor, ReactionKind.DIVE)
 
         assert actor.turn_state is TurnState.ACTED
+        assert ActorCondition.PRONE in actor.conditions
 
     def test_diving_after_done_forfeits_the_next_turn(self, situation):
         actor = self.setup_actor(situation)
         situation.finish_turn(actor)
 
         situation.react(actor, ReactionKind.DIVE)
+        assert ActorCondition.PRONE in actor.conditions
         situation.new_round()
 
         assert actor.turn_state is TurnState.ACTED
         assert not actor.can_act
+
+    def test_prone_persists_across_rounds_until_explicitly_cleared(self, situation):
+        actor = self.setup_actor(situation)
+        situation.react(actor, ReactionKind.DIVE)
+
+        situation.new_round()
+
+        assert ActorCondition.PRONE in actor.conditions
+        situation.clear_condition(actor, ActorCondition.PRONE)
+        assert ActorCondition.PRONE not in actor.conditions
+
+    def test_actor_round_state_can_be_corrected(self, situation):
+        actor = self.setup_actor(situation)
+        raiders = situation.add_party('Raiders')
+
+        situation.correct_actor(
+            actor,
+            name='Corrected Rin',
+            party=raiders,
+            initiative=None,
+            turn_state=TurnState.ACTED,
+            reaction_dm=-2,
+            last_action='Ranged Thug',
+            conditions={ActorCondition.PRONE},
+            forfeit_next_turn=True,
+            waited=False,
+        )
+
+        assert actor.name == 'Corrected Rin'
+        assert actor.party is raiders
+        assert actor.initiative is None
+        assert actor.turn_state is TurnState.ACTED
+        assert actor.reaction_dm == -2
+        assert actor.last_action == 'Ranged Thug'
+        assert actor.conditions == {ActorCondition.PRONE}
+        assert actor.forfeits_next_turn
 
     @pytest.mark.parametrize(
         ('kind', 'description'),

@@ -123,6 +123,24 @@ class TestCharacteristicDms:
         assert track.maximum(Chars.STR) == 9
 
 
+def test_character_track_can_be_corrected_from_its_visible_values():
+    track = track_888()
+
+    track.correct_state(
+        maximum={Chars.STR: 9, Chars.DEX: 8, Chars.END: 7},
+        current={Chars.STR: 6, Chars.DEX: 4, Chars.END: 2},
+        stun_points=3,
+        incapacitated_rounds=5,
+    )
+
+    assert track.maximum(Chars.STR) == 9
+    assert track.current(Chars.STR) == 6
+    assert track.current(Chars.DEX) == 4
+    assert track.current(Chars.END) == 2
+    assert track.stun_points == 3
+    assert track.incapacitated_rounds == 5
+
+
 class TestStunDamage:
     def test_stun_reduces_end_without_incapacitating_while_end_remains(self):
         track = track_888()
@@ -155,6 +173,15 @@ class TestStunDamage:
         assert track.stun_points == 4
         assert track.incapacitated_rounds == 11
 
+    def test_exactly_reducing_end_to_zero_causes_zero_incapacitated_rounds(self):
+        track = track_888()
+
+        track.apply(8, DamageKind.STUN)
+
+        assert track.current(Chars.END) == 0
+        assert track.incapacitated_rounds == 0
+        assert not track.is_incapacitated
+
     def test_a_later_stun_extends_but_does_not_stack_the_countdown(self):
         track = track_888()
 
@@ -174,6 +201,18 @@ class TestStunDamage:
 
         assert track.incapacitated_rounds == 0
         assert track.current(Chars.END) == 0
+
+    def test_new_stun_after_countdown_expires_incapacitates_from_zero_end(self):
+        track = track_888()
+        track.apply(11, DamageKind.STUN)
+        for _ in range(3):
+            track.round_passed()
+
+        track.apply(2, DamageKind.STUN)
+
+        assert track.stun_points == 8
+        assert track.incapacitated_rounds == 2
+        assert track.is_incapacitated
 
     def test_an_hour_of_rest_heals_stun_but_not_lethal_damage(self):
         track = track_888()
@@ -297,19 +336,87 @@ class TestHitsTrack:
         assert track.is_dead
         assert track.is_destroyed
 
-    def test_stun_incapacitates_at_cumulative_half_hits(self):
-        track = HitsTrack(hits=20)
-
-        track.apply(4, DamageKind.STUN)
-        assert not track.is_incapacitated
-        track.apply(6, DamageKind.STUN)
-
-        assert track.is_incapacitated
-
-    def test_stun_does_not_reduce_hits(self):
+    def test_stun_suppresses_hits_to_half_and_excess_sets_the_countdown(self):
         track = HitsTrack(hits=20)
 
         track.apply(10, DamageKind.STUN)
+        assert track.current == 10
+        assert track.stun_points == 10
+        assert track.incapacitated_rounds == 0
+        assert not track.is_incapacitated
+        track.apply(4, DamageKind.STUN)
+
+        assert track.current == 10
+        assert track.stun_points == 10
+        assert track.incapacitated_rounds == 4
+        assert track.is_incapacitated
+
+    def test_stun_capacity_rounds_half_hits_up(self):
+        track = HitsTrack(hits=21)
+
+        track.apply(11, DamageKind.STUN)
+
+        assert track.current == 10
+        assert track.stun_points == 11
+        assert track.incapacitated_rounds == 0
+
+    def test_new_stun_after_the_countdown_expires_incapacitates_again(self):
+        track = HitsTrack(hits=20)
+        track.apply(12, DamageKind.STUN)
+        track.round_passed()
+        track.round_passed()
+
+        track.apply(3, DamageKind.STUN)
+
+        assert track.current == 10
+        assert track.stun_points == 10
+        assert track.incapacitated_rounds == 3
+        assert track.is_incapacitated
+
+    def test_stun_on_an_animal_already_below_half_hits_is_all_overflow(self):
+        track = HitsTrack(hits=20)
+        track.apply(19, DamageKind.LETHAL)
+
+        track.apply(4, DamageKind.STUN)
+
+        assert track.current == 1
+        assert track.stun_points == 0
+        assert track.incapacitated_rounds == 4
+        assert track.is_unconscious
+        assert track.is_incapacitated
+
+    def test_an_hour_of_rest_clears_stun_points_and_countdown(self):
+        track = HitsTrack(hits=20)
+        track.apply(14, DamageKind.STUN)
+
+        track.rest_one_hour()
 
         assert track.current == 20
+        assert track.stun_points == 0
+        assert track.incapacitated_rounds == 0
+        assert not track.is_incapacitated
+
+    def test_lethal_damage_displaces_stun_and_stun_cannot_cause_death(self):
+        track = HitsTrack(hits=20)
+        track.apply(10, DamageKind.STUN)
+
+        track.apply(19, DamageKind.LETHAL)
+
+        assert track.current == 1
+        assert track.stun_points == 0
         assert not track.is_dead
+
+        track.apply(1, DamageKind.LETHAL)
+
+        assert track.current == 0
+        assert track.is_dead
+
+    def test_track_can_be_corrected_from_its_visible_values(self):
+        track = HitsTrack(hits=20)
+
+        track.correct_state(maximum=24, current=9, stun_points=0, incapacitated_rounds=3)
+
+        assert track.maximum == 24
+        assert track.current == 9
+        assert track.stun_points == 0
+        assert track.incapacitated_rounds == 3
