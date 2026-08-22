@@ -1026,3 +1026,44 @@ reaction taken before the actor has acted this round penalises this round's
 actions, while one taken after they have acted penalises next round's. The
 penalty attaches to the next unspent action set rather than always to the
 following round.
+
+### RIS-025 The Ambush DM Applies To Initiative Only, And Only In Round One
+
+`refs/core/03_combat.md:44` states the ambush modifier in two sentences that are
+not parallel:
+
+> The side that is aware that combat is about to begin gains DM+6 to its
+> **Initiative check** for the first round only. The side that is not aware it is
+> about to be attacked suffers **DM-6** for the first round only.
+
+The first names the check; the second does not. Read literally, the penalty might
+apply to every check the ambushed side makes in the first round, not merely to
+Initiative. No official clarification exists, and community sources are split —
+most of them describing the older Mongoose system, in which prepared combatants
+instead receive an automatic 12.
+
+Ceres rules that **both modifiers apply to the Initiative check alone**, and
+adjust the standing Initiative score for round one only; from round two both
+sides revert to their unmodified scores.
+
+Reasons:
+
+- The paragraph's subject is established by the first sentence, and the second
+  continues it by ellipsis. That is the plainest reading of the two together.
+- A DM-6 on *every* check would remove the ambushed side from the round rather
+  than disadvantage it. In a 2D system an Average (8+) task is impossible at
+  DM-6 without a positive modifier, and a Traveller with +2 from skill and
+  characteristic succeeds 2.8% of the time against 72.2% unmodified. Had that
+  been intended, "may not act in the first round" would be the natural wording.
+- Reading it this way also removes the apparent conflict with `:81` ("Every
+  Traveller retains the same Initiative score for every combat round"): the
+  score is rolled once and kept, and the ambush modifier is a round-one
+  adjustment to it rather than a re-roll.
+
+The consequence for `ceres.rounds` is that surprise is **not** a status carrying
+a penalty to unrelated rolls. It is a one-round adjustment to initiative
+ordering, and needs no per-actor DM of its own.
+
+**Note:** *Traveller: Battlefield Dev* (Mongoose, 2024) replaces only the two
+initiative paragraphs on p.73 and leaves this ambush text standing, so the
+interpretation is required under either initiative system.

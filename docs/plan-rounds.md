@@ -198,9 +198,27 @@ ones do not. Every threshold uses the single derived value,
   referee-orderable. Any individual may override with their own value. PC and
   NPC parties are the same kind of thing — either may be shared or individual.
 
-*Out of scope, with reason:* the ambush DM+6/−6 (`:44`) and the Tactics Effect
-(`:48`) are modifiers to a check the app does not roll. By the time a value is
-typed in, they are already in it. Adding fields for them would be theatre.
+*Ambush and Tactics — in scope after all.* An earlier draft ruled these out on
+the grounds that they modify a check the app does not roll, so the referee's
+typed value already contains them. That was wrong on both counts:
+
+- The ambush ±6 applies to **round one only** (RIS-025), so the ordering differs
+  between round one and round two. That is a state change the tracker must
+  model, not a constant folded into a typed number. `InitiativeMode` needs a
+  third case beyond FIXED and PER_ROUND: fixed, with a first-round adjustment
+  that expires.
+- Under *Battlefield Dev* (Mongoose, 2024) the whole basis changes: one
+  nominated leader per side rolls **every round**, with **Tactics levels added
+  as a DM to that check**. Tactics stops being a separate one-off Effect and
+  becomes part of a per-round, per-side input.
+
+*Battlefield Dev also validates the requested variant.* Per-round, per-side
+shared initiative with arbitrary order inside the side is not a house rule — it
+is Mongoose's own official alternative, which is exactly what `PER_ROUND` plus
+shared party initiative implements. Its other three modules (opposed
+Dodge/Parry with glancing blows, no ranged attacks in close combat, all-or-
+nothing AP) are **not** adopted and would change `CharacteristicTrack` if they
+ever were.
 
 ### The round and the action budget (`03_combat.md:62-81, 117-192`)
 

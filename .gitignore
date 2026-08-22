@@ -27,3 +27,6 @@ graphify-out/
 # Don't commit claude settings
 .claude
 .aider*
+
+# Handout PDFs are generated from the .typ sources
+handouts/*.pdf
