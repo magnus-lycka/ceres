@@ -1,26 +1,16 @@
 # Rule Interpretations
 
-Ceres targets **Mongoose Traveller 2nd Edition (MgT2)**. The specific editions
-in scope are:
+Ceres targets **Mongoose Traveller 2nd Edition (MgT2)**, latest versions of each rule book unless otherwise stated.
 
-| Book | Edition |
-| ---- | ------- |
-| *Core Rulebook* | 2022 (2026 revision) |
-| *High Guard* | 2022 (2026 revision) |
-| *Central Supply Catalogue* | 2023 (2024 revision) |
-| *Traveller Companion* | 2024 |
+Where the *Core Rulebook* and *High Guard* conflict, High Guard takes precedence.
 
-Where the *Core Rulebook* and *High Guard* conflict, High Guard takes
-precedence.
+Material from earlier MgT2 printings (notably *High Guard* 2016) that was removed
+or replaced in later editions is treated as out of scope. See RIS-008.
 
-Material from earlier MgT2 printings (notably *High Guard* 2016) that was
-removed or replaced in later editions is treated as out of scope. See RIS-008.
+This document records deliberate rule interpretations, exclusions, and normalizations used in Ceres.
 
-This document records deliberate rule interpretations, exclusions, and
-normalizations used in Ceres.
-
-It is intentionally sparse to begin with. Entries should be added when we
-review source-derived ship test cases and need to distinguish between:
+It is intentionally sparse to begin with. Entries should be added when we review
+source-derived behaviour and need to distinguish between:
 
 - supported behavior
 - deliberately ignored source material
@@ -33,14 +23,20 @@ rules material differ from our implementation.
 
 ## Conventions
 
-- Use stable identifiers like `RIS-001`.
-- Prefer documenting cross-cutting decisions here.
-- Keep ship-specific source notes in the relevant test file unless the decision
-  applies more broadly.
-- Do not restate code that is already clear unless the reason for the behavior
-  would otherwise be ambiguous.
+- Organise all rule interpretations in the sections listed below.
+- Add new rule interpretations within their section in order with stable, ascending identifier numbers starting at 001.
+- If a rule interpretation doesn't fit in an existing section, consult repo owner.
 
-## Entries
+| Prefix | Section content       | Primary Ceres Module(s)         |
+| ------ | --------------------- | ------------------------------- |
+| RIS-   | Spacecraft            | make.ship                       |
+| RIC-   | Characters and Combat | character, rounds, make.sophont |
+| RIR-   | Robots                | make.robot                      |
+| RIG-   | Gear                  | gear                            |
+| RIV-   | Vehicles              | make.vehicle                    |
+| RIW-   | Worlds                | worlds, make.world, make.sector |
+
+## Rule Interpretations for spacecraft
 
 ### RIS-001 Stores And Spares Are Not Modelled As Reserved Design Tonnage
 
@@ -183,28 +179,9 @@ edition we target.
 in the relevant TCS entry and omit or remap accordingly. For ship-specific
 mappings, see `TEST_CASE_ASSEMBLIES.md`.
 
-### RIS-009 Broad Skills From The Traveller Companion Are Treated As Distinct Skills
+### RIS-009 DELETED
 
-The *Traveller Companion* (2024) introduced **broad skills**: what earlier
-editions called specialities of a single `Science` skill are now fully
-independent skills — `Space Science`, `Life Science`, `Physical Science`,
-`Social Science`, `Robotic Science` — each with their own specialities. The same applies to `Art` and `Profession`.
-
-Ceres follows this model. `Space Science` is a distinct skill,
-with `Space Science (Planetology)`  as a speciality.
-The old single `Science` skill with a `(Planetology)` speciality is not modelled.
-
-This is analogous with the Language skill family. Each Language skill,
-Language Galanglic, Language Zdatl etc are entirely separate skills.
-
-In practice this affects `Expert` software packages: the skill string passed
-to `Expert(N, skill='Space Science (Planetology)')` names a broad skill, not
-a flat speciality. The software table in `ceres.gear.software` lists broad
-science skills (and their specialities) as top-level entries accordingly.
-
-The same model applies to character creation: career tables that say "Science",
-"Art", or "Profession" are resolved as player choices from the appropriate broad
-skill group. See **RIC-001** for the character creation details.
+Miscategorised.
 
 ### RIS-010 Carried Craft — Displacement, Performance Sizing, and Crew
 
@@ -232,11 +209,11 @@ internal fitting.
 from craft merely being transported (e.g. a jump shuttle being ferried, or an
 empty clamp). Only craft under the host ship's care contribute to crew counts:
 
-| Crew role | What counts |
-| --- | --- |
-| Pilot | +1 per carried spacecraft that requires its own pilot |
-| Engineer | The craft's drive and power-plant tonnage adds to the total used to derive engineer count |
-| Maintenance | The craft's tonnage adds to the total used to derive maintenance count |
+| Crew role   | What counts                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| Pilot       | +1 per carried spacecraft that requires its own pilot                                     |
+| Engineer    | The craft's drive and power-plant tonnage adds to the total used to derive engineer count |
+| Maintenance | The craft's tonnage adds to the total used to derive maintenance count                    |
 
 **Reference note**: Google Sheet stat blocks sometimes embed the external
 craft tonnage inside the clamp entry (e.g. showing 45 dTon for a Type II clamp
@@ -473,26 +450,41 @@ rotating habitat. Those are layout and runtime concerns, not static
 construction costs. A non-gravity ship may therefore be a poor or inconvenient
 operational design without being an invalid Ceres build.
 
-## Character Interpretations
+## Rule Interpretations for characters and combat
 
-### RIC-001 "Science", "Art", and "Profession" in Career Tables Mean Player Chooses a Broad Skill
+### RIC-001 Science, Art, Profession, And Language Are Groups Of Distinct Broad Skills
 
-The *Core Rulebook* (2022) career skill tables list generic names such as
-**Science**, **Art**, and **Profession** — e.g. "Gain Science 1" or roll
-result "Science" on an assignment table. These entries do not refer to a flat
-speciality; they mean the player chooses any one of the available broad skills
-in that group.
+The *Traveller Companion* (2024) defines **Science**, **Art**, and
+**Profession** as groups of broad skills. Each broad skill is a distinct,
+top-level skill with its own specialisations; it is not a speciality of a
+generic parent skill. For example, Ceres models `Space Science (Planetology)`,
+not `Science (Planetology)`, and does not model a generic `Science` skill.
+**Language** follows the same model: each language is a distinct broad skill,
+not a speciality of one generic `Language` skill. A level in one language
+grants no level or familiarity in any other language.
 
-The broad skills themselves come from the *Traveller Companion* (2024) model
-(see RIS-009):
+The groups are:
 
-| Generic name | Available broad skills |
-| --- | --- |
-| Science | Life Science, Physical Science, Robotic Science, Social Science, Space Science |
-| Art | Performing Art, Creative Art, Presentation Art |
-| Profession | Colonist Profession, Freeloader Profession, Hostile Environment Profession, Spacer Profession, Sport Profession, Worker Profession |
+| Generic name | Available broad skills                                                                             |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| Science      | Life Science, Physical Science, Robotic Science, Social Science, Space Science                     |
+| Art          | Performing Art, Creative Art, Presentation Art                                                     |
+| Profession   | Colonist, Freeloader, Hostile Environment, Spacer, Sport, and Worker Profession                    |
+| Language     | One distinct skill per language, such as Language Galanglic, Language Bilanidin, or Language Zdetl |
+
+This model applies wherever Ceres names a skill, not only during character
+creation. Expert software names the concrete broad skill and its optional
+specialisation, and older robot or source labels such as `Science (Planetology)`
+are normalised to the corresponding concrete skill, `Space Science
+(Planetology)`.
 
 **Implications for character creation:**
+
+The *Core Rulebook* (2022) career tables use the generic group names — for
+example, “Gain Science 1” or a result of “Language” on a skill table. Such an
+entry means that the player chooses one of the available broad skills in that
+group; it never grants a flat skill or speciality named `Science`, `Art`,
+`Profession`, or `Language`.
 
 - Skill table entries that list "Science" (e.g. Scout advanced education row 5,
   Scholar service skill row 6) offer all five broad sciences as choices; the
@@ -506,9 +498,8 @@ The broad skills themselves come from the *Traveller Companion* (2024) model
   Scientist because the Core Rulebook lists different rank bonuses for it (rank 1
   = Medic 1 instead of Science 1).
 
-This interpretation is consistent with the *Traveller Companion* broad-skill
-model and avoids hard-coding a particular speciality where the source says
-"Science" generically. See also RIS-009.
+This avoids hard-coding a particular broad skill or speciality where the source
+only names the group.
 
 ### RIC-002 Colonial Upbringing Lasts Exactly 8 Years (Two Standard Terms)
 
@@ -691,7 +682,7 @@ No world constraints.
 
 No offers about homeworld change while serving in planetary army.
 
-#### Citizen:
+#### Citizen
 
 Corporate: Changing Homeworld allowed every term if starport
 Worker: Changing to Industrial (remark In) Homeworld allowed every term if starport
@@ -705,7 +696,7 @@ Wanderer: Changing Homeworld required every term
 
 Scavenger: Changing Homeworld allowed every term if starport
 
-#### Entertainer:
+#### Entertainer
 
 Changing Homeworld allowed every term if starport
 
@@ -713,7 +704,7 @@ Changing Homeworld allowed every term if starport
 
 Same as Scout service, but Navy Base (N) or Navy Depot (D)
 
-#### Merchant:
+#### Merchant
 
 Changing Homeworld allowed every term if starport
 
@@ -721,15 +712,15 @@ Changing Homeworld allowed every term if starport
 
 Same as Scout service, but Navy Base (N) or Navy Depot (D)
 
-#### Noble:
+#### Noble
 
 Changing Homeworld allowed every term
 
-#### Rogue:
+#### Rogue
 
 Changing Homeworld allowed every term if starport
 
-#### Scholar:
+#### Scholar
 
 Changing Homeworld allowed every term if starport
 
@@ -778,188 +769,7 @@ New assignments in the Agent, Citizen, Entertainer and Merchant careers are cons
 to be new careers, but not with regards to Basic Training. If you e.g. switch from
 Citizen Worker career to Citizen Corporate career, you don't get basic training again.
 
----
-
-## Robot Interpretations
-
-### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net
-
-The rule (*Robot Handbook*, p.25) states: "Removing a manipulator lowers the cost of the robot by Cr100 multiplied by the size of the robot but no more than 20% of the Base Chassis Cost."
-
-Ceres applies a single combined cap across all manipulator credit sources (removal and downsize). The net manipulator cost effect is:
-
-    net = sum(m.cost for m in manipulators) − 2 × std_cost
-    net = max(net, −0.20 × BCC)
-
-A negative `net` is a credit. The 20% cap limits the total credit from all manipulator changes combined, not per manipulator. For a Size 3 Wheels robot (BCC = Cr800), the cap is Cr160 regardless of how many manipulators are removed or downsized.
-
-This interpretation changes the Domestic Servant total from Cr420 (uncapped, former implementation) to Cr860 (capped). The source sheet that informed the original expected cost used an uncapped formula; Ceres now follows the explicit rule text.
-
-The same cap applies to resized standard manipulators: if both are downsized the combined credit is still bounded at 20% of BCC.
-
-### RIR-002 Robot Costs Reported Without Editorial Rounding
-
-The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures. Ceres reports the exact calculated cost from all rule components and does not apply editorial rounding.
-
-Where a source stat block differs from the Ceres-computed total, the source value is recorded in the test file's `_expected` SimpleNamespace and the Ceres value is set as an override immediately after, with a comment documenting the discrepancy.
-
-Known discrepancies following this pattern are recorded in the relevant test files. The Basic Lab Control Robot discrepancy is additionally explained in RIR-003. The cause of other discrepancies has not been traced to a specific rule or omission and is left as an open question in the test file comment.
-
-### RIR-003 Skill Package Costs And Default Suite Substitution Costs Are Included In Total Cost
-
-**Skill packages** (`refs/robot/35_skill_packages.md`): Standard skill packages installed in Advanced (or higher) brains carry an explicit cost: base cost × 10^level, where base cost comes from the Standard Skill Packages table. These costs are not included in the brain hardware cost and are added separately to the robot's total.
-
-**Default suite substitutions** (`refs/robot/10_default_suite.md`): The five standard default suite items are included in the Base Chassis Cost. Only three alternatives substitute at no additional cost: Drone Interface, Transceiver 5km (basic), and Video Screen (basic). Any other zero-slot item installed as a default suite substitution adds its own cost to the robot total.
-
-The *Basic Lab Control Robot* source stat block (Cr12000) omits both the Electronics (remote ops) 1 skill package (Cr1000) and the two non-free default suite substitutions (Transceiver 500km (improved) Cr1000, Video Screen (improved) Cr500). The Ceres-computed total is Cr14500. See the `_expected.cost` override in `tests/robots/test_lab_control_robot_basic.py`.
-
-### RIR-004 Zero-Slot Option Quota: Default Suite Items Are Not Counted Against Size + TL
-
-`refs/robot/11_zero_slot_options.md`: "In addition to the five Zero-Slot options of the robot's Default Suite, a robot design can incorporate additional Zero-Slot options equal to its size plus its Tech Level. Beyond Default (5) + Size + TL any additional Zero-Slot options require one Slot each."
-
-The five default suite items are free and entirely separate from the Size + TL quota. A robot therefore has up to Size + TL additional zero-slot options at no slot cost. Any further zero-slot options each consume one slot from the robot's available slots pool.
-
-Chassis modifications that happen to occupy no slots (e.g. Decreased Resiliency) are not counted against this quota; only options that appear in the Options row of the stat block are counted.
-
-### RIR-005 All Slot Calculations Use Ceiling Rounding
-
-The Robot Handbook states "round up" for every fractional slot result. Ceres applies `math.ceil` in all slot derivations:
-
-- available slots from None locomotion (+25% of base slots)
-- slots freed by removing a manipulator (10% of base slots per manipulator, minimum 1)
-- additional manipulator slot requirement (percentage of base slots, minimum 1)
-- vehicle speed modification slot requirement (25% of base slots)
-- external power slot requirement (5% of base slots)
-
-No slot calculation ever uses floor division or banker's rounding.
-
-### RIR-006 Resized Standard Manipulator Slot Formula
-
-The *Robot Handbook* (p.26) describes resizing a standard manipulator as "the equivalent of removing it and adding a different sized manipulator," then refers to the Additional Manipulator Slots table for the slot requirement of the new size.
-
-Ceres computes the net slot effect as:
-
-    new_slots = max(1, ceil(pct(Δsize) × base_slots))
-    std_slots = max(1, ceil(0.10 × base_slots))
-    delta = new_slots − std_slots
-
-A smaller manipulator frees `|delta|` slots (negative delta); a larger one consumes them. This is consistent with the "equivalent of removing and adding" language: you recover the standard slot budget and spend the new one.
-
-Worked example — Size 3 arm on a Size 5 robot (base_slots = 16):
-
-- std_slots = max(1, ceil(0.10 × 16)) = 2
-- Δsize = 3 − 5 = −2 → pct = 2% → new_slots = max(1, ceil(0.02 × 16)) = 1
-- delta = 1 − 2 = −1 → one slot freed
-
-### RIR-007 Walker Leg-Manipulators: Cost Only, No Slots
-
-  The *Robot Handbook* (p.27) states: "A robot designed as a walker may enhance a leg to operate as a manipulator by paying the base manipulator cost of a robot of its Size (Cr100 × Size per modified manipulator). … their size may not be altered."
-
-The rule mentions only cost, not slots. The size restriction is the counterpart to that: because the legs are not resized or fully added as extra components, they carry no slot expenditure. Ceres therefore treats converting a walker's default two legs into manipulators as costing Cr100 × robot_size each with no slot effect.
-
-The eight-limbed example (p.27) — "keeping the two original manipulators, adding four manipulators and altering the two default legs" — distinguishes *adding* (slots + cost) from *altering* (cost only). Extra limbs beyond the default two legs, if any, would be modelled as entries in `Robot.manipulators` (full additional-manipulator rules apply). `Robot.legs` covers only the default two converted legs.
-
-### RIR-008 Basic (locomotion) Vehicle Skill: Type From Locomotion, Level From Agility
-
-The *Robot Handbook* (p.69) states that `Basic (locomotion)` grants `Athletics (dexterity) X, Vehicle (type) X` where X equals the robot's agility enhancement modification value, and skill 0 if no agility enhancement is installed.
-
-Ceres interprets "agility enhancement modification value" as the robot's *effective agility*: the locomotion type's base agility plus any `AgilityEnhancement` option level. This matches the published Basic Courier design (GravLocomotion base agility 1, no explicit `AgilityEnhancement` → Flyer (grav) 1, Athletics (dexterity) 1 ✓) and the Gonzales design (WheelsATV base agility 0, `AgilityEnhancement(2)` → Drive (wheel) 2, Athletics (dexterity) 2 ✓).
-
-The vehicle skill type follows the locomotion type:
-
-| Locomotion | Vehicle skill |
-| --- | --- |
-| Wheels / Wheels ATV | Drive (wheel) |
-| Tracks | Drive (tracked) |
-| Grav | Flyer (grav) |
-| Aeroplane | Flyer (wing) |
-| VTOL | Flyer (rotor) |
-| Aquatic | Seafarer (personal) |
-| Hovercraft | Drive (hovercraft) |
-| Thruster | Pilot (small craft) |
-| Walker / None | — (no vehicle skill) |
-
-### RIR-009 Speed Label Convention
-
-A robot's speed display depends on whether Vehicle Speed Modification is installed:
-
-- **No VSM**: tactical speed in metres — `'{effective_speed + agility + speed_bonus}m'`, e.g. `'12m'`. Affected by Tactical Speed Enhancement and Tactical Speed Reduction (neither of which may be combined with VSM; see RIR-010).
-- **VSM present**: both modes are shown as `'{tactical}m ({band})'`, e.g. `'10m (high)'` or `'6m (slow)'`. The tactical part is the same formula as above; the band comes from the Vehicle Speed Locomotion table (refs/robot/08_locomotion_modifications.md). The Locomotion column in the stat block also shows `'Grav (VSM)'` etc. to make the installation visible at a glance.
-- **Thruster locomotion** (regardless of VSM): thrust expressed as `'{thrust_g:g}G'` (e.g. `'0.1G'`).
-
-Every locomotion type that can carry VSM must declare `_vehicle_speed_band` matching the Vehicle Speed Locomotion table.
-
-### RIR-010 Vehicle Speed Modification: Incompatibilities and Agility Enhancement
-
-**Incompatibilities.** The *Robot Handbook* (p.53) explicitly states that Vehicle Speed Modification cannot be combined with Tactical Speed Enhancement or Tactical Speed Reduction. These are direct rule prohibitions, not interpretations.
-
-**Agility Enhancement with VSM.** The rules place no restriction on combining Agility Enhancement with VSM. A robot with VSM can still move at its normal tactical speed (to conserve endurance, for instance), and Agility Enhancement increases that tactical speed as normal. The enhancement also grants `Athletics (dexterity) N` unconditionally and raises the robot's effective agility used in other calculations (e.g. the vehicle skill level from a `Basic (locomotion)` brain, see RIR-008). What Agility Enhancement does *not* do is change the vehicle speed band — that is fixed by locomotion type.
-
-Ceres reflects this correctly: `AgilityEnhancement.speed_bonus` contributes to the tactical portion of `speed_label` regardless of VSM (see RIR-009), and the Athletics skill grant is always emitted.
-
-### RIR-011 Robot Skill Package Characteristics May Follow Speciality Task
-
-The *Robot Handbook* Standard Skill Packages table assigns one characteristic to
-each skill row regardless of specialisation. Ceres uses that row characteristic as
-the default, but allows a speciality to use a different characteristic when the
-speciality's task clearly differs from the broad row's physical handling assumption.
-
-Current robot skill package characteristic interpretations:
-
-| Skill package | Table row | Ceres characteristic | Reason |
-| --- | --- | --- | --- |
-| Animals (handling) | DEX | DEX | physical handling/riding animals |
-| Animals (training) | DEX | INT | instruction and behavioural judgement |
-| Animals (veterinary) | DEX | INT | robot equivalent of EDU-based diagnosis/treatment |
-| Gunner (turret) | DEX | DEX | direct weapon operation |
-| Gunner (screen) | DEX | DEX | direct defensive system operation |
-| Gunner (ortillery) | DEX | INT | indirect orbital fire-control work |
-| Gunner (capital) | DEX | INT | large-ship weapon system coordination |
-| Pilot (small craft) | DEX | DEX | direct piloting |
-| Pilot (spacecraft) | DEX | DEX | direct piloting |
-| Pilot (capital ships) | DEX | INT | large-ship command/system piloting rather than manual dexterity |
-| Seafarer (personal) | DEX | DEX | direct craft handling |
-| Seafarer (sail) | DEX | DEX | direct craft handling |
-| Seafarer (ocean ships) | DEX | INT | vessel systems/navigation command rather than manual dexterity |
-| Seafarer (submarine) | DEX | INT | vessel systems/navigation command rather than manual dexterity |
-
-Robot brains do not model EDU for ordinary skill package DMs, so specialities
-that would be EDU-based for sophonts are treated as INT-based robot tasks.
-
-### RIR-012 Skill (All) is a pure display artifact, nothing you can buy.
-
-Robot Handbook says:
-
-"Finally, for skills with many specialities, the Referee
-may rule that selecting a given skill package four
-times at a certain level provides a broad enough
-exposure so that the skill can be in all specialities.
-Optionally, extremely broad skills such as Science
-may require eight packages for full coverage."
-
-Ceres gives no such concessions. Robot specifications can
-have listings like "Engineer (All) 2", but that's not because
-anyone bought an all-package. No such thing exists. It's just
-a compact way of writing that skill level including DM from
-impacting characteristic happened to cause all specialisations
-to land on the same level, in this case probably because it's
-an INT 12 brain and an Engineer 0 package.
-
-It is of course possible to buy as many specializations as
-one wants for skills with specializations, but note that this
-is rarely the case when we see e.g. "Electronics (All) 1" in
-a robot spec, and skill package APIs for skills with
-specialisations must explicitly list all awarded specialisations
-as soon as level is above 0. I.e. Something like Pilot() could
-award Pilot 0, but to get Pilot (All) 1 without INT and DEX DMs,
-the API call must look something like
-Pilot(small_craft=1, starships=1, capital_ships=1) with all awarded
-specialisations given. Note that the cost and bandwidth requirement
-for this is the same as for three entirely separate skills with
-the same price and bandwith, e.g. Admin(level=1), Mechanics(level=1)
-and Steward(level=1)
-
-### RIS-022 Stun And Lethal Damage Reduce One Shared END Score
+### RIC-011 Stun And Lethal Damage Reduce One Shared END Score
 
 The rules do not say whether a character softened up by a stunner is easier to
 knock out with lethal damage, or whether prior injury makes someone easier to
@@ -991,9 +801,9 @@ Reasons:
 **for healing only** — stun points are cleared by an hour of rest (`:366`),
 lethal ones are not. Every threshold uses the single derived value.
 
-### RIS-023 Stun Damage Can Never Complete A Kill
+### RIC-012 Stun Damage Can Never Complete A Kill
 
-Following RIS-022, an actor may reach 0 in all three physical characteristics
+Following RIC-011, an actor may reach 0 in all three physical characteristics
 while part of the END loss is stun damage. The Core Rulebook says a Traveller
 with all three physical characteristics at 0 has been killed (`:266`), but it
 also says Stun weapons "deal non-lethal damage, incapacitating a living target
@@ -1018,7 +828,7 @@ but never *how much lethal damage it takes to kill them*. An actor with
 STR 4/DEX 4/END 4 dies to 12 points of lethal damage whether or not they were
 stunned first.
 
-### RIS-024 A Reaction Penalises The Next Unspent Set Of Actions
+### RIC-013 A Reaction Penalises The Next Unspent Set Of Actions
 
 Every Reaction costs DM−1 "on their next set of actions"
 (`refs/core/03_combat.md:192`). Ceres reads "next" as *the next unspent set*: a
@@ -1027,7 +837,7 @@ actions, while one taken after they have acted penalises next round's. The
 penalty attaches to the next unspent action set rather than always to the
 following round.
 
-### RIS-025 The Ambush DM Applies To Initiative Only, And Only In Round One
+### RIC-014 The Ambush DM Applies To Initiative Only, And Only In Round One
 
 `refs/core/03_combat.md:44` states the ambush modifier in two sentences that are
 not parallel:
@@ -1067,3 +877,233 @@ ordering, and needs no per-actor DM of its own.
 **Note:** *Traveller: Battlefield Dev* (Mongoose, 2024) replaces only the two
 initiative paragraphs on p.73 and leaves this ambush text standing, so the
 interpretation is required under either initiative system.
+
+## Rule Interpretations for robots
+
+### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net
+
+The rule (*Robot Handbook*, p.25) states: "Removing a manipulator lowers the cost of the robot by Cr100 multiplied by
+the size of the robot but no more than 20% of the Base Chassis Cost."
+
+Ceres applies a single combined cap across all manipulator credit sources (removal and downsize). The net manipulator
+cost effect is:
+
+    net = sum(m.cost for m in manipulators) − 2 × std_cost
+    net = max(net, −0.20 × BCC)
+
+A negative `net` is a credit. The 20% cap limits the total credit from all manipulator changes combined, not per
+manipulator. For a Size 3 Wheels robot (BCC = Cr800), the cap is Cr160 regardless of how many manipulators are removed
+or downsized.
+
+This interpretation changes the Domestic Servant total from Cr420 (uncapped, former implementation) to Cr860 (capped).
+The source sheet that informed the original expected cost used an uncapped formula; Ceres now follows the explicit rule
+text.
+
+The same cap applies to resized standard manipulators: if both are downsized the combined credit is still bounded at 20%
+of BCC.
+
+### RIR-002 Robot Costs Reported Without Editorial Rounding
+
+The Robot Handbook presents final robot costs that are sometimes rounded to one or two significant figures. Ceres
+reports the exact calculated cost from all rule components and does not apply editorial rounding.
+
+Where a source stat block differs from the Ceres-computed total, the source value is recorded in the test file's
+`_expected` SimpleNamespace and the Ceres value is set as an override immediately after, with a comment documenting the
+discrepancy.
+
+Known discrepancies following this pattern are recorded in the relevant test files. The Basic Lab Control Robot
+discrepancy is additionally explained in RIR-003. The cause of other discrepancies has not been traced to a specific
+rule or omission and is left as an open question in the test file comment.
+
+### RIR-003 Skill Package Costs And Default Suite Substitution Costs Are Included In Total Cost
+
+**Skill packages** (`refs/robot/35_skill_packages.md`): Standard skill packages installed in Advanced (or higher) brains
+carry an explicit cost: base cost × 10^level, where base cost comes from the Standard Skill Packages table. These costs
+are not included in the brain hardware cost and are added separately to the robot's total.
+
+**Default suite substitutions** (`refs/robot/10_default_suite.md`): The five standard default suite items are included
+in the Base Chassis Cost. Only three alternatives substitute at no additional cost: Drone Interface, Transceiver 5km
+(basic), and Video Screen (basic). Any other zero-slot item installed as a default suite substitution adds its own cost
+to the robot total.
+
+The *Basic Lab Control Robot* source stat block (Cr12000) omits both the Electronics (remote ops) 1 skill package
+(Cr1000) and the two non-free default suite substitutions (Transceiver 500km (improved) Cr1000, Video Screen (improved)
+Cr500). The Ceres-computed total is Cr14500. See the `_expected.cost` override in
+`tests/robots/test_lab_control_robot_basic.py`.
+
+### RIR-004 Zero-Slot Option Quota: Default Suite Items Are Not Counted Against Size + TL
+
+`refs/robot/11_zero_slot_options.md`: "In addition to the five Zero-Slot options of the robot's Default Suite, a robot
+design can incorporate additional Zero-Slot options equal to its size plus its Tech Level. Beyond Default (5) + Size +
+TL any additional Zero-Slot options require one Slot each."
+
+The five default suite items are free and entirely separate from the Size + TL quota. A robot therefore has up to Size +
+TL additional zero-slot options at no slot cost. Any further zero-slot options each consume one slot from the robot's
+available slots pool.
+
+Chassis modifications that happen to occupy no slots (e.g. Decreased Resiliency) are not counted against this quota;
+only options that appear in the Options row of the stat block are counted.
+
+### RIR-005 All Slot Calculations Use Ceiling Rounding
+
+The Robot Handbook states "round up" for every fractional slot result. Ceres applies `math.ceil` in all slot
+derivations:
+
+- available slots from None locomotion (+25% of base slots)
+- slots freed by removing a manipulator (10% of base slots per manipulator, minimum 1)
+- additional manipulator slot requirement (percentage of base slots, minimum 1)
+- vehicle speed modification slot requirement (25% of base slots)
+- external power slot requirement (5% of base slots)
+
+No slot calculation ever uses floor division or banker's rounding.
+
+### RIR-006 Resized Standard Manipulator Slot Formula
+
+The *Robot Handbook* (p.26) describes resizing a standard manipulator as "the equivalent of removing it and adding a
+different sized manipulator," then refers to the Additional Manipulator Slots table for the slot requirement of the new
+size.
+
+Ceres computes the net slot effect as:
+
+    new_slots = max(1, ceil(pct(Δsize) × base_slots))
+    std_slots = max(1, ceil(0.10 × base_slots))
+    delta = new_slots − std_slots
+
+A smaller manipulator frees `|delta|` slots (negative delta); a larger one consumes them. This is consistent with the
+"equivalent of removing and adding" language: you recover the standard slot budget and spend the new one.
+
+Worked example — Size 3 arm on a Size 5 robot (base_slots = 16):
+
+- std_slots = max(1, ceil(0.10 × 16)) = 2
+- Δsize = 3 − 5 = −2 → pct = 2% → new_slots = max(1, ceil(0.02 × 16)) = 1
+- delta = 1 − 2 = −1 → one slot freed
+
+### RIR-007 Walker Leg-Manipulators: Cost Only, No Slots
+
+The *Robot Handbook* (p.27) states: "A robot designed as a walker may enhance a leg to operate as a manipulator by
+paying the base manipulator cost of a robot of its Size (Cr100 × Size per modified manipulator). … their size may not be
+altered."
+
+The rule mentions only cost, not slots. The size restriction is the counterpart to that: because the legs are not
+resized or fully added as extra components, they carry no slot expenditure. Ceres therefore treats converting a walker's
+default two legs into manipulators as costing Cr100 × robot_size each with no slot effect.
+
+The eight-limbed example (p.27) — "keeping the two original manipulators, adding four manipulators and altering the two
+default legs" — distinguishes *adding* (slots + cost) from *altering* (cost only). Extra limbs beyond the default two
+legs, if any, would be modelled as entries in `Robot.manipulators` (full additional-manipulator rules apply).
+`Robot.legs` covers only the default two converted legs.
+
+### RIR-008 Basic (locomotion) Vehicle Skill: Type From Locomotion, Level From Agility
+
+The *Robot Handbook* (p.69) states that `Basic (locomotion)` grants `Athletics (dexterity) X, Vehicle (type) X` where X
+equals the robot's agility enhancement modification value, and skill 0 if no agility enhancement is installed.
+
+Ceres interprets "agility enhancement modification value" as the robot's *effective agility*: the locomotion type's base
+agility plus any `AgilityEnhancement` option level. This matches the published Basic Courier design (GravLocomotion base
+agility 1, no explicit `AgilityEnhancement` → Flyer (grav) 1, Athletics (dexterity) 1 ✓) and the Gonzales design
+(WheelsATV base agility 0, `AgilityEnhancement(2)` → Drive (wheel) 2, Athletics (dexterity) 2 ✓).
+
+The vehicle skill type follows the locomotion type:
+
+| Locomotion          | Vehicle skill        |
+| ------------------- | -------------------- |
+| Wheels / Wheels ATV | Drive (wheel)        |
+| Tracks              | Drive (tracked)      |
+| Grav                | Flyer (grav)         |
+| Aeroplane           | Flyer (wing)         |
+| VTOL                | Flyer (rotor)        |
+| Aquatic             | Seafarer (personal)  |
+| Hovercraft          | Drive (hovercraft)   |
+| Thruster            | Pilot (small craft)  |
+| Walker / None       | — (no vehicle skill) |
+
+### RIR-009 Speed Label Convention
+
+A robot's speed display depends on whether Vehicle Speed Modification is installed:
+
+- **No VSM**: tactical speed in metres — `'{effective_speed + agility + speed_bonus}m'`, e.g. `'12m'`. Affected by
+  Tactical Speed Enhancement and Tactical Speed Reduction (neither of which may be combined with VSM; see RIR-010).
+- **VSM present**: both modes are shown as `'{tactical}m ({band})'`, e.g. `'10m (high)'` or `'6m (slow)'`. The tactical
+  part is the same formula as above; the band comes from the Vehicle Speed Locomotion table
+  (refs/robot/08_locomotion_modifications.md). The Locomotion column in the stat block also shows `'Grav (VSM)'` etc. to
+  make the installation visible at a glance.
+- **Thruster locomotion** (regardless of VSM): thrust expressed as `'{thrust_g:g}G'` (e.g. `'0.1G'`).
+
+Every locomotion type that can carry VSM must declare `_vehicle_speed_band` matching the Vehicle Speed Locomotion table.
+
+### RIR-010 Vehicle Speed Modification: Incompatibilities and Agility Enhancement
+
+**Incompatibilities.** The *Robot Handbook* (p.53) explicitly states that Vehicle Speed Modification cannot be combined
+with Tactical Speed Enhancement or Tactical Speed Reduction. These are direct rule prohibitions, not interpretations.
+
+**Agility Enhancement with VSM.** The rules place no restriction on combining Agility Enhancement with VSM. A robot with
+VSM can still move at its normal tactical speed (to conserve endurance, for instance), and Agility Enhancement increases
+that tactical speed as normal. The enhancement also grants `Athletics (dexterity) N` unconditionally and raises the
+robot's effective agility used in other calculations (e.g. the vehicle skill level from a `Basic (locomotion)` brain,
+see RIR-008). What Agility Enhancement does *not* do is change the vehicle speed band — that is fixed by locomotion
+type.
+
+Ceres reflects this correctly: `AgilityEnhancement.speed_bonus` contributes to the tactical portion of `speed_label`
+regardless of VSM (see RIR-009), and the Athletics skill grant is always emitted.
+
+### RIR-011 Robot Skill Package Characteristics May Follow Speciality Task
+
+The *Robot Handbook* Standard Skill Packages table assigns one characteristic to
+each skill row regardless of specialisation. Ceres uses that row characteristic as
+the default, but allows a speciality to use a different characteristic when the
+speciality's task clearly differs from the broad row's physical handling assumption.
+
+Current robot skill package characteristic interpretations:
+
+| Skill package          | Table row | Characteristic | Reason                                                   |
+| ---------------------- | --------- | -------------- | -------------------------------------------------------- |
+| Animals (handling)     | DEX       | DEX            | physical handling/riding animals                         |
+| Animals (training)     | DEX       | INT            | instruction and behavioural judgement                    |
+| Animals (veterinary)   | DEX       | INT            | robot equivalent of EDU-based diagnosis/treatment        |
+| Gunner (turret)        | DEX       | DEX            | direct weapon operation                                  |
+| Gunner (screen)        | DEX       | DEX            | direct defensive system operation                        |
+| Gunner (ortillery)     | DEX       | INT            | indirect orbital fire-control work                       |
+| Gunner (capital)       | DEX       | INT            | large-ship weapon system coordination                    |
+| Pilot (small craft)    | DEX       | DEX            | direct piloting                                          |
+| Pilot (spacecraft)     | DEX       | DEX            | direct piloting                                          |
+| Pilot (capital ships)  | DEX       | INT            | large-ship command/system piloting, not manual dexterity |
+| Seafarer (personal)    | DEX       | DEX            | direct craft handling                                    |
+| Seafarer (sail)        | DEX       | DEX            | direct craft handling                                    |
+| Seafarer (ocean ships) | DEX       | INT            | vessel systems/navigation command, not manual dexterity  |
+| Seafarer (submarine)   | DEX       | INT            | vessel systems/navigation command, not manual dexterity  |
+
+Robot brains do not model EDU for ordinary skill package DMs, so specialities
+that would be EDU-based for sophonts are treated as INT-based robot tasks.
+
+### RIR-012 Skill (All) is a pure display artifact, nothing you can buy
+
+Robot Handbook says:
+
+"Finally, for skills with many specialities, the Referee
+may rule that selecting a given skill package four
+times at a certain level provides a broad enough
+exposure so that the skill can be in all specialities.
+Optionally, extremely broad skills such as Science
+may require eight packages for full coverage."
+
+Ceres gives no such concessions. Robot specifications can
+have listings like "Engineer (All) 2", but that's not because
+anyone bought an all-package. No such thing exists. It's just
+a compact way of writing that skill level including DM from
+impacting characteristic happened to cause all specialisations
+to land on the same level, in this case probably because it's
+an INT 12 brain and an Engineer 0 package.
+
+It is of course possible to buy as many specializations as
+one wants for skills with specializations, but note that this
+is rarely the case when we see e.g. "Electronics (All) 1" in
+a robot spec, and skill package APIs for skills with
+specialisations must explicitly list all awarded specialisations
+as soon as level is above 0. I.e. Something like Pilot() could
+award Pilot 0, but to get Pilot (All) 1 without INT and DEX DMs,
+the API call must look something like
+Pilot(small_craft=1, starships=1, capital_ships=1) with all awarded
+specialisations given. Note that the cost and bandwidth requirement
+for this is the same as for three entirely separate skills with
+the same price and bandwith, e.g. Admin(level=1), Mechanics(level=1)
+and Steward(level=1)

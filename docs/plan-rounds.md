@@ -67,8 +67,7 @@ src/ceres/rounds/
     damage.py       — DamageKind (lethal / stun) and damage application
     actor.py        — Actor: name, party, initiative, turn state, damage track
     initiative.py   — InitiativeMode, initiative ordering and tie handling
-    turns.py        — per-round turn state, action budget, reaction carryover
-    actions.py      — the round log ("X attacks Y", damage applied, reactions)
+    actions.py      — Melee/Ranged attacks and Dodge/Parry/Dive reactions
     situation.py    — Situation: roster, parties, round counter, turn pointer
     storage.py      — Situation <-> JSON, undo stack
   ui/
@@ -202,7 +201,7 @@ ones do not. Every threshold uses the single derived value,
 the grounds that they modify a check the app does not roll, so the referee's
 typed value already contains them. That was wrong on both counts:
 
-- The ambush ±6 applies to **round one only** (RIS-025), so the ordering differs
+- The ambush ±6 applies to **round one only** (RIC-014), so the ordering differs
   between round one and round two. That is a state change the tracker must
   model, not a constant folded into a typed number. `InitiativeMode` needs a
   third case beyond FIXED and PER_ROUND: fixed, with a first-round adjustment
@@ -220,12 +219,14 @@ Dodge/Parry with glancing blows, no ranged attacks in close combat, all-or-
 nothing AP) are **not** adopted and would change `CharacteristicTrack` if they
 ever were.
 
-### The round and the action budget (`03_combat.md:62-81, 117-192`)
+### The round and tracked combat actions (`03_combat.md:62-81, 117-192`)
 
 - A round is six seconds. Elapsed time = rounds × 6s, which matters because
   unconsciousness recovery is checked per *minute* = every 10 rounds.
-- Per round each actor gets one Significant + one Minor action, **or** three
-  Minor actions. Free actions are unlimited and untracked.
+- The underlying rules grant one Significant + one Minor action, **or** three
+  Minor actions. The app deliberately does not inventory that budget, movement,
+  or other Minor actions. It records only Melee and Ranged attacks; **Done**
+  means the referee has finished the actor's turn.
 - Reactions are unlimited, but **each reaction costs DM−1 on the actor's next
   set of actions** (`:192`).
 - Diving for cover forfeits the next set of actions entirely (`:208`).
@@ -278,14 +279,16 @@ do not.
 **React** is its own column: −1 per Dodge or Parry, cleared after the actor's
 next set of actions.
 
-**Action** shows the last action taken — `Melee X`, `Ranged Y`, `Move 12` —
-rather than a bare target, since damage often has no attacker at all. Falls,
-fire and vacuum injure people too, so the source of damage is optional.
+**Action** shows the last tracked combat action — `Melee X` or `Ranged Y`.
+Movement and other Minor actions are not recorded. Damage often has no actor
+source, so **Other** can injure a target for falls, fire, vacuum and similar
+hazards without consuming anyone's turn.
 
 **A combat dialog is wanted after all**, kept simple: X attacks Y (X may be
-nobody), optional reaction of Dodge / Dive / Parry, net damage in lethal and
-stun points, and whether to pull from STR or DEX first. Dive greys the target
-out — it forfeits their next actions. Dodge and Parry each add −1 to React.
+**Other**), Melee or Ranged for actor sources, optional reaction of Dodge / Dive
+/ Parry, net damage in lethal and stun points, and whether to pull from STR or
+DEX first. Dive greys the target out — it forfeits their next turn. Dodge and
+Parry each add −1 to React.
 
 **Round flow.** "New round" is an explicit command. On a new round: actors may
 be added to a party, and initiative is either inherited from the previous round
@@ -325,25 +328,26 @@ be answered by using it.
    enough to run a fight at the table and find out what is wrong with it.
 4. **Iterate on what the prototype teaches**, then fill in:
    - reaction carryover — DM−1 per Reaction against the next *unspent* set of
-     actions (RIS-024), cleared once those actions are spent;
-   - the 1+1 / 3-minor action budget;
+     actions (RIC-013), cleared once those actions are spent;
+   - the combat-only action scope: Melee, Ranged, reactions, and Done; no
+     movement or Minor-action budget tracking;
    - the stun countdown and the 10-round unconsciousness check cadence;
    - a third `InitiativeMode` beyond FIXED and PER_ROUND: **fixed with a
-     first-round adjustment that expires**, for the ambush ±6 (RIS-025);
+     first-round adjustment that expires**, for the ambush ±6 (RIC-014);
    - optionally the *Battlefield Dev* shape — one nominated leader per side
      rolling each round, with Tactics levels as a DM on that check.
 5. **Persistence and undo.** JSON round-trip, snapshot stack.
 6. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
    complete and move it to `docs/archive/`. The rule interpretations are already
-   recorded — RIS-022 (stun and lethal share one END score), RIS-023 (stun can
-   never complete a kill), RIS-024 (a reaction penalises the next unspent set of
-   actions) and RIS-025 (the ambush DM applies to Initiative only, round one
+   recorded — RIC-011 (stun and lethal share one END score), RIC-012 (stun can
+   never complete a kill), RIC-013 (a reaction penalises the next unspent set of
+   actions) and RIC-014 (the ambush DM applies to Initiative only, round one
    only).
 
-Test modules mirror the domain modules one-for-one. Rule tests go through the
-`Situation` / `Actor` / `DamageTrack` public API — that *is* the domain API, so
-no separate driver is needed, unlike `CharacterDriver` in `ceres.character`. If
-UI tests start reaching into domain internals, that is the signal to add one.
+Rule tests go through the `Situation` / `Actor` / `DamageTrack` public API —
+that *is* the domain API, so no separate driver is needed, unlike
+`CharacterDriver` in `ceres.character`. If UI tests start reaching into domain
+internals, that is the signal to add one.
 
 ## Phases 1–3 results
 
@@ -362,8 +366,14 @@ individual override, DEX tie-break, the explicit new-round command, and the
 pending → ready → acted state machine where waiting keeps an actor ready while
 the next initiative step opens.
 
-**Phase 3 — prototype UI.** The NiceGUI table plus an attack/damage dialog
-where the attacker may be "nobody", since falls and fires injure people too.
+**Phase 3 — prototype UI.** The NiceGUI table plus an attack/damage dialog.
+
+**Phase 4 — in progress.** Table use narrowed the action model: the tracker
+records Melee and Ranged attacks and has an explicit Done operation, but does
+not inventory movement, Minor actions, or the full action budget. **Other** is
+a non-actor damage source for falls, fire, vacuum, and similar hazards.
+Reaction penalties now attach to the current unfinished turn or carry to the
+next one; Dive follows the same boundary and forfeits the appropriate turn.
 
 **Two defects found by writing the rules down rather than by testing.** The
 combat handouts (`handouts/combat_cards.typ`) forced several rules to be pinned
@@ -373,9 +383,9 @@ with stun points and all characteristics at zero being unkillable, was found by
 the referee asking what that state meant in practice.
 
 **Still unrun at the table.** Phase 4 is "iterate on what the prototype
-teaches", and nobody has yet used it in a real fight. Its action-budget and
-reaction design was sketched before there was anything to try, so expect it to
-move.
+teaches", and nobody has yet used it in a real fight. Its original action model
+was sketched before there was anything to try; the combat-only scope above is
+the first correction from reviewing the prototype.
 
 ## Explicitly deferred
 

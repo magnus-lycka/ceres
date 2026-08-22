@@ -9,6 +9,7 @@ from enum import StrEnum, auto
 from typing import TYPE_CHECKING
 
 from ceres.character.domain.characteristics import Chars
+from ceres.rounds.domain.actions import ReactionKind
 from ceres.rounds.domain.tracks import CharacteristicTrack, DamageTrack
 
 if TYPE_CHECKING:
@@ -38,7 +39,10 @@ class Actor:
         self.initiative = initiative
         self.turn_state = TurnState.PENDING
         self.waited = False
-        self.reaction_dm = 0
+        self._round_started = False
+        self._reaction_dm = 0
+        self._next_reaction_dm = 0
+        self._forfeit_next_turn = False
         self.last_action = ''
 
     @property
@@ -56,13 +60,30 @@ class Actor:
         return 0
 
     @property
-    def can_act(self) -> bool:
-        if self.turn_state is not TurnState.READY:
-            return False
+    def is_able_to_act(self) -> bool:
+        """Whether injury or stun permits this actor to take a turn."""
         return not (self.track.is_dead or self.track.is_unconscious or self.track.is_incapacitated)
 
+    @property
+    def can_act(self) -> bool:
+        return self.turn_state is TurnState.READY and self.is_able_to_act
+
+    @property
+    def reaction_dm(self) -> int:
+        """Penalty on the next turn that has not already been finished."""
+        if self._round_started and self.turn_state is not TurnState.ACTED:
+            return self._reaction_dm
+        return self._next_reaction_dm
+
     def begin_round(self) -> None:
-        self.turn_state = TurnState.PENDING
+        self._round_started = True
+        self._reaction_dm = self._next_reaction_dm
+        self._next_reaction_dm = 0
+        if self._forfeit_next_turn:
+            self.turn_state = TurnState.ACTED
+            self._forfeit_next_turn = False
+        else:
+            self.turn_state = TurnState.PENDING
         self.waited = False
         self.track.round_passed()
 
@@ -71,10 +92,25 @@ class Actor:
             self.turn_state = TurnState.READY
             self.waited = False
 
-    def act(self) -> None:
+    def finish_turn(self) -> None:
+        """Mark this actor done; the app does not inventory actions within a turn."""
         self.turn_state = TurnState.ACTED
         self.waited = False
-        self.reaction_dm = 0
+        self._reaction_dm = 0
+
+    def react(self, reaction: ReactionKind) -> None:
+        """Attach a reaction to the next turn that has not been finished."""
+        current_turn_is_unspent = self._round_started and self.turn_state is not TurnState.ACTED
+        if reaction is ReactionKind.DIVE:
+            if current_turn_is_unspent:
+                self.finish_turn()
+            else:
+                self._forfeit_next_turn = True
+            return
+        if current_turn_is_unspent:
+            self._reaction_dm -= 1
+        else:
+            self._next_reaction_dm -= 1
 
     def wait(self) -> None:
         """Delay the action until later in the turn (:32); stays green."""

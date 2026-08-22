@@ -112,7 +112,7 @@ class CharacteristicTrack(DamageTrack):
         put damage, yet stun may still be sitting on END capacity that lethal
         damage has never claimed. It claims it here: stun is allowed to bring
         unconsciousness forward, but it must never be the thing standing
-        between an actor and death (RIS-022, RIS-023).
+        between an actor and death (RIC-011, RIC-012).
         """
         self._lethal[characteristic] += points
         if characteristic is Chars.END:

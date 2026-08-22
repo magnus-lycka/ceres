@@ -7,8 +7,8 @@ UI questions get answered by use rather than by argument.
 from nicegui import ui
 
 from ceres.character.domain.characteristics import Chars
+from ceres.rounds.domain.actions import AttackKind, ReactionKind
 from ceres.rounds.domain.actor import Actor, TurnState
-from ceres.rounds.domain.damage import DamageKind
 from ceres.rounds.domain.situation import Party, Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, DamageTrack, HitsTrack
 
@@ -59,6 +59,13 @@ def status_text(actor: Actor) -> str:
     return ''
 
 
+def row_style(actor: Actor) -> str:
+    """Out-of-action actors stay grey regardless of their initiative state."""
+    if not actor.is_able_to_act:
+        return ROW_COLOURS[TurnState.ACTED]
+    return ROW_COLOURS[actor.turn_state]
+
+
 class RoundsTable:
     def __init__(self, situation: Situation):
         self.situation = situation
@@ -87,7 +94,7 @@ class RoundsTable:
                 self.render_row(actor)
 
     def render_row(self, actor: Actor) -> None:
-        style = ROW_COLOURS[actor.turn_state]
+        style = row_style(actor)
         track = actor.track
         ui.label(actor.name).style(style)
         ui.label(actor.party.name).style(style)
@@ -98,7 +105,9 @@ class RoundsTable:
         ui.label(str(actor.reaction_dm) if actor.reaction_dm else '').style(style)
         ui.label(actor.last_action or status_text(actor)).style(style)
         with ui.row().classes('gap-1').style(style):
-            ui.button('Act', on_click=lambda a=actor: self.act(a)).props('dense size=sm').set_enabled(actor.can_act)
+            ui.button('Done', on_click=lambda a=actor: self.finish_turn(a)).props('dense size=sm').set_enabled(
+                actor.can_act
+            )
             ui.button('Wait', on_click=lambda a=actor: self.wait(a)).props('dense size=sm flat').set_enabled(
                 actor.can_act
             )
@@ -109,8 +118,8 @@ class RoundsTable:
             actor.last_action = ''
         self.render()
 
-    def act(self, actor: Actor) -> None:
-        self.situation.act(actor)
+    def finish_turn(self, actor: Actor) -> None:
+        self.situation.finish_turn(actor)
         self.render()
 
     def wait(self, actor: Actor) -> None:
@@ -154,38 +163,41 @@ class RoundsTable:
         return self.situation.add_party(new_name or 'Party')
 
     def attack_dialog(self) -> None:
-        """X attacks Y. X may be nobody: falls and fires injure people too."""
+        """An actor attacks a target, or Other causes environmental injury."""
         names = [a.name for a in self.situation.actors]
+        attackers = [a.name for a in self.situation.actors if a.can_act]
         with ui.dialog() as dialog, ui.card():
             ui.label('Attack / damage').classes('text-lg font-bold')
-            attacker = ui.select(['(nobody)', *names], value='(nobody)', label='Attacker')
+            attacker = ui.select(['Other', *attackers], value='Other', label='Attacker')
             target = ui.select(names, label='Target')
-            description = ui.input('Action', placeholder='Melee, Ranged, Fall, Fire…')
-            reaction = ui.toggle(['None', 'Dodge', 'Parry', 'Dive'], value='None')
+            attack_kind = ui.toggle(
+                [AttackKind.MELEE.value, AttackKind.RANGED.value],
+                value=AttackKind.RANGED.value,
+            ).props('label="Attack kind (actor source only)"')
+            reaction = ui.toggle(['None', *ReactionKind], value='None')
             lethal = ui.number('Lethal points', value=0, format='%d')
             stun = ui.number('Stun points', value=0, format='%d')
             excess_to = ui.toggle(['DEX', 'STR'], value='DEX')
 
             def resolve() -> None:
                 victim = next(a for a in self.situation.actors if a.name == target.value)
-                self.apply_reaction(victim, reaction.value)
+                if reaction.value != 'None':
+                    self.situation.react(victim, ReactionKind(reaction.value))
                 if isinstance(victim.track, CharacteristicTrack):
                     victim.track.excess_to = Chars.DEX if excess_to.value == 'DEX' else Chars.STR
-                victim.track.apply(int(lethal.value), DamageKind.LETHAL)
-                victim.track.apply(int(stun.value), DamageKind.STUN)
-                if attacker.value != '(nobody)':
+                if attacker.value != 'Other':
                     assailant = next(a for a in self.situation.actors if a.name == attacker.value)
-                    assailant.last_action = f'{description.value or "Attack"} {victim.name}'
-                    self.situation.act(assailant)
+                    self.situation.attack(
+                        assailant,
+                        victim,
+                        AttackKind(attack_kind.value),
+                        lethal=int(lethal.value),
+                        stun=int(stun.value),
+                    )
+                else:
+                    self.situation.attack(None, victim, lethal=int(lethal.value), stun=int(stun.value))
                 dialog.close()
                 self.render()
 
             ui.button('Apply', on_click=resolve)
         dialog.open()
-
-    def apply_reaction(self, victim: Actor, reaction: str) -> None:
-        """Each reaction costs DM-1 on the next set of actions; Dive forfeits them (:192, :208)."""
-        if reaction in ('Dodge', 'Parry'):
-            victim.reaction_dm -= 1
-        elif reaction == 'Dive':
-            victim.act()

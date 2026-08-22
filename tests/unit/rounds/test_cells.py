@@ -5,9 +5,12 @@ Stun reads `points(rounds)` — 4(11).
 """
 
 from ceres.character.domain.characteristics import Chars
+from ceres.rounds.domain.actions import AttackKind
+from ceres.rounds.domain.actor import Actor, TurnState
 from ceres.rounds.domain.damage import DamageKind
+from ceres.rounds.domain.situation import Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
-from ceres.rounds.ui.table import characteristic_cell, stun_cell, vitality_cells
+from ceres.rounds.ui.table import characteristic_cell, row_style, stun_cell, vitality_cells
 
 
 def test_undamaged_characteristic_shows_a_bare_zero_dm():
@@ -61,3 +64,40 @@ def test_an_animal_shows_hits_in_the_endurance_column():
     track.apply(5, DamageKind.LETHAL)
 
     assert vitality_cells(track) == ('—', '—', '15/20')
+
+
+def test_a_stunned_actor_is_grey_while_the_next_actor_is_green():
+    situation = Situation()
+    party = situation.add_party('Actors')
+    attacker = situation.add_actor(
+        Actor(
+            name='Attacker',
+            party=party,
+            track=CharacteristicTrack(strength=8, dexterity=8, endurance=8),
+            initiative=6,
+        )
+    )
+    thug = situation.add_actor(
+        Actor(
+            name='Thug',
+            party=party,
+            track=CharacteristicTrack(strength=7, dexterity=7, endurance=7),
+            initiative=4,
+        )
+    )
+    beast = situation.add_actor(Actor(name='Beast', party=party, track=HitsTrack(hits=20), initiative=2))
+    situation.new_round()
+
+    situation.attack(attacker, thug, AttackKind.RANGED, stun=9)
+
+    assert thug.turn_state is TurnState.READY
+    assert not thug.can_act
+    assert row_style(thug) == 'background-color: #e5e7eb'
+    assert row_style(beast) == 'background-color: #dcfce7'
+
+    situation.new_round()
+    situation.new_round()
+    situation.finish_turn(attacker)
+
+    assert thug.can_act
+    assert row_style(thug) == 'background-color: #dcfce7'

@@ -11,6 +11,8 @@ Derived from refs/core/03_combat.md:
 
 import pytest
 
+from ceres.character.domain.characteristics import Chars
+from ceres.rounds.domain.actions import AttackKind, ReactionKind
 from ceres.rounds.domain.actor import Actor, TurnState
 from ceres.rounds.domain.situation import Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
@@ -114,7 +116,7 @@ class TestTurnStates:
     def test_acting_greys_an_actor_out_and_opens_the_next_step(self, situation):
         fast, middle, slow = self.setup_situation(situation)
 
-        situation.act(fast)
+        situation.finish_turn(fast)
 
         assert fast.turn_state is TurnState.ACTED
         assert middle.turn_state is TurnState.READY
@@ -131,9 +133,9 @@ class TestTurnStates:
     def test_an_actor_who_waited_may_still_act_later(self, situation):
         fast, middle, slow = self.setup_situation(situation)
         situation.wait(fast)
-        situation.act(middle)
+        situation.finish_turn(middle)
 
-        situation.act(fast)
+        situation.finish_turn(fast)
 
         assert fast.turn_state is TurnState.ACTED
         assert slow.turn_state is TurnState.READY
@@ -149,7 +151,7 @@ class TestTurnStates:
 
     def test_a_new_round_makes_everyone_pending_again(self, situation):
         fast, middle, _slow = self.setup_situation(situation)
-        situation.act(fast)
+        situation.finish_turn(fast)
 
         situation.new_round()
 
@@ -210,3 +212,92 @@ class TestWhoMayAct:
 
         assert rin.track.incapacitated_rounds == 0
         assert rin.can_act
+
+
+class TestCombatActions:
+    def setup_actor(self, situation: Situation) -> Actor:
+        crew = situation.add_party('Crew')
+        actor = situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin'), initiative=5))
+        situation.new_round()
+        return actor
+
+    def test_a_reaction_before_done_penalises_the_current_turn(self, situation):
+        actor = self.setup_actor(situation)
+
+        situation.react(actor, ReactionKind.DODGE)
+
+        assert actor.reaction_dm == -1
+        situation.finish_turn(actor)
+        assert actor.reaction_dm == 0
+
+    def test_a_reaction_after_acting_penalises_the_next_round(self, situation):
+        actor = self.setup_actor(situation)
+        situation.finish_turn(actor)
+
+        situation.react(actor, ReactionKind.PARRY)
+        situation.new_round()
+
+        assert actor.reaction_dm == -1
+        situation.finish_turn(actor)
+        assert actor.reaction_dm == 0
+
+    def test_reactions_on_both_sides_of_a_turn_attach_to_different_sets(self, situation):
+        actor = self.setup_actor(situation)
+        situation.react(actor, ReactionKind.DODGE)
+        situation.finish_turn(actor)
+
+        situation.react(actor, ReactionKind.PARRY)
+
+        assert actor.reaction_dm == -1
+        situation.new_round()
+        assert actor.reaction_dm == -1
+
+    def test_diving_before_done_forfeits_the_current_turn(self, situation):
+        actor = self.setup_actor(situation)
+
+        situation.react(actor, ReactionKind.DIVE)
+
+        assert actor.turn_state is TurnState.ACTED
+
+    def test_diving_after_done_forfeits_the_next_turn(self, situation):
+        actor = self.setup_actor(situation)
+        situation.finish_turn(actor)
+
+        situation.react(actor, ReactionKind.DIVE)
+        situation.new_round()
+
+        assert actor.turn_state is TurnState.ACTED
+        assert not actor.can_act
+
+    @pytest.mark.parametrize(
+        ('kind', 'description'),
+        [
+            (AttackKind.MELEE, 'Melee Beast'),
+            (AttackKind.RANGED, 'Ranged Beast'),
+        ],
+    )
+    def test_recording_an_attack_finishes_the_attackers_turn(self, situation, kind, description):
+        attacker = self.setup_actor(situation)
+        beast = situation.add_actor(Actor(name='Beast', party=attacker.party, track=HitsTrack(hits=20), initiative=2))
+
+        situation.attack(attacker, beast, kind)
+
+        assert attacker.last_action == description
+        assert attacker.turn_state is TurnState.ACTED
+
+    def test_done_finishes_a_turn_without_recording_an_attack(self, situation):
+        actor = self.setup_actor(situation)
+
+        situation.finish_turn(actor)
+
+        assert actor.last_action == ''
+        assert actor.turn_state is TurnState.ACTED
+
+    def test_other_damage_does_not_finish_the_targets_turn(self, situation):
+        target = self.setup_actor(situation)
+
+        situation.attack(None, target, lethal=3)
+
+        assert isinstance(target.track, CharacteristicTrack)
+        assert target.track.current(Chars.END) == 5
+        assert target.turn_state is TurnState.READY

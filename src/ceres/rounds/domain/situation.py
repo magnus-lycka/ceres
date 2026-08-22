@@ -4,7 +4,9 @@ Owns the roster, the parties, the round counter and the initiative step that
 decides who is currently green.
 """
 
+from ceres.rounds.domain.actions import AttackKind, ReactionKind
 from ceres.rounds.domain.actor import Actor, TurnState
+from ceres.rounds.domain.damage import DamageKind
 
 ROUND_SECONDS = 6
 
@@ -62,9 +64,43 @@ class Situation:
         self._step = None
         self._open_highest_step()
 
-    def act(self, actor: Actor) -> None:
-        actor.act()
+    def finish_turn(self, actor: Actor) -> None:
+        actor.finish_turn()
         self._advance_step_if_ready()
+
+    def attack(
+        self,
+        attacker: Actor | None,
+        target: Actor,
+        kind: AttackKind | None = None,
+        *,
+        lethal: int = 0,
+        stun: int = 0,
+    ) -> None:
+        """Apply net damage and finish an actor source's turn.
+
+        ``None`` represents Other: falls, fire, vacuum, and similar injury do
+        not consume the turn of any actor in the roster.
+        """
+        if attacker is None:
+            if kind is not None:
+                msg = 'Other has no attack kind'
+                raise ValueError(msg)
+            target.track.apply(lethal, DamageKind.LETHAL)
+            target.track.apply(stun, DamageKind.STUN)
+            return
+        if kind is None:
+            msg = 'an actor source needs Melee or Ranged'
+            raise ValueError(msg)
+        target.track.apply(lethal, DamageKind.LETHAL)
+        target.track.apply(stun, DamageKind.STUN)
+        attacker.last_action = f'{kind.value} {target.name}'
+        self.finish_turn(attacker)
+
+    def react(self, actor: Actor, reaction: ReactionKind) -> None:
+        actor.react(reaction)
+        if reaction is ReactionKind.DIVE:
+            self._advance_step_if_ready()
 
     def wait(self, actor: Actor) -> None:
         actor.wait()
