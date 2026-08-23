@@ -195,49 +195,99 @@ class TestTurnStates:
 
 
 class TestWhoMayAct:
-    def test_a_ready_actor_may_act(self, situation):
+    def actor_in(self, situation: Situation) -> Actor:
         crew = situation.add_party('Crew')
-        rin = situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin'), initiative=5))
+        return situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin'), initiative=5))
+
+    def test_a_ready_actor_may_act(self, situation):
+        rin = self.actor_in(situation)
         situation.new_round()
 
-        assert rin.can_act
+        assert rin.can_act(situation.round_number)
 
     def test_an_unconscious_actor_may_not_act(self, situation):
-        from ceres.rounds.domain.damage import DamageKind
-
-        crew = situation.add_party('Crew')
-        rin = situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin'), initiative=5))
+        rin = self.actor_in(situation)
         situation.new_round()
 
-        rin.track.apply(20, DamageKind.LETHAL)
+        situation.attack(None, rin, lethal=20)
 
-        assert not rin.can_act
+        assert not rin.can_act(situation.round_number)
 
     def test_a_stunned_actor_may_not_act(self, situation):
-        from ceres.rounds.domain.damage import DamageKind
+        rin = self.actor_in(situation)
+        situation.new_round()
 
+        situation.attack(None, rin, stun=12)
+
+        assert not rin.can_act(situation.round_number)
+
+    def test_incapacitation_lasts_until_the_round_it_ends(self, situation):
+        """END 8 hit by 10 stun is out for the two rounds of overflow (:366)."""
+        rin = self.actor_in(situation)
+        situation.new_round()
+
+        situation.attack(None, rin, stun=10)
+
+        assert rin.incapacitated_until == 3
+        situation.new_round()
+        assert not rin.can_act(situation.round_number)
+        situation.new_round()
+        assert rin.can_act(situation.round_number)
+
+    def test_a_second_stun_extends_the_incapacitation_without_stacking_it(self, situation):
+        rin = self.actor_in(situation)
+        situation.new_round()
+        situation.attack(None, rin, stun=10)
+
+        situation.new_round()
+        situation.attack(None, rin, stun=3)
+
+        assert rin.incapacitated_until == 5
+
+
+class TestInjuriesOutliveTheSituation:
+    """Injuries belong to the actor; anything counted in rounds does not."""
+
+    def actor_in(self, situation: Situation) -> tuple[Actor, CharacteristicTrack]:
         crew = situation.add_party('Crew')
-        rin = situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin'), initiative=5))
-        situation.new_round()
+        track = character('Rin')
+        return situation.add_actor(Actor(name='Rin', party=crew, track=track, initiative=5)), track
 
-        rin.track.apply(12, DamageKind.STUN)
-
-        assert not rin.can_act
-
-    def test_stun_countdown_runs_down_with_each_new_round(self, situation):
-        from ceres.rounds.domain.damage import DamageKind
-
-        crew = situation.add_party('Crew')
-        rin = situation.add_actor(Actor(name='Rin', party=crew, track=character('Rin'), initiative=5))
-        situation.new_round()
-        rin.track.apply(10, DamageKind.STUN)
-        assert rin.track.incapacitated_rounds == 2
-
+    def test_damage_records_the_round_it_landed_in(self, situation):
+        rin, track = self.actor_in(situation)
         situation.new_round()
         situation.new_round()
 
-        assert rin.track.incapacitated_rounds == 0
-        assert rin.can_act
+        situation.attack(None, rin, lethal=3)
+
+        (injury,) = track.injuries
+        assert injury.when == 2
+        assert injury.rounds_ago(situation.round_number) == 0
+
+    def test_ending_the_situation_keeps_the_wounds_and_drops_the_rounds(self, situation):
+        rin, track = self.actor_in(situation)
+        situation.new_round()
+        situation.attack(None, rin, lethal=3, stun=10)
+        assert rin.incapacitated_until == 6  # END was 5 when the 10 stun landed
+
+        situation.end()
+
+        assert track.current(Chars.END) == 0  # 3 lethal and 5 stun still stand
+        assert track.stun_points == 5
+        assert all(injury.is_earlier for injury in track.injuries)
+        assert rin.incapacitated_until is None
+
+    def test_only_clearing_stun_gives_the_suppressed_points_back(self, situation):
+        """An hour of rest is the referee's to apply, not the app's to infer."""
+        rin, track = self.actor_in(situation)
+        situation.new_round()
+        situation.attack(None, rin, lethal=3, stun=10)
+        situation.end()
+
+        rin.clear_stun()
+
+        assert track.current(Chars.END) == 5
+        assert track.stun_points == 0
 
 
 class TestCombatActions:
@@ -295,7 +345,7 @@ class TestCombatActions:
         situation.new_round()
 
         assert actor.turn_state is TurnState.ACTED
-        assert not actor.can_act
+        assert not actor.can_act(situation.round_number)
 
     def test_prone_persists_across_rounds_until_explicitly_cleared(self, situation):
         actor = self.setup_actor(situation)

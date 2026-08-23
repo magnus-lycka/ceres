@@ -13,6 +13,7 @@ from nicegui import ui
 from ceres.character.domain.characteristics import Chars
 from ceres.rounds.domain.actions import AttackKind, ReactionKind
 from ceres.rounds.domain.actor import Actor, ActorCondition, TurnState
+from ceres.rounds.domain.damage import CharacteristicInjury, Injury
 from ceres.rounds.domain.situation import ROUND_SECONDS, Situation
 from ceres.rounds.domain.tracks import PHYSICAL_CHARACTERISTICS, CharacteristicTrack, DamageTrack, HitsTrack
 
@@ -81,21 +82,95 @@ def vitality_cells(track: DamageTrack) -> tuple[str, str, str]:
     return '—', '—', '—'
 
 
-def stun_cell(track: DamageTrack) -> str:
+def incapacitated_rounds(actor: Actor, current_round: int) -> int:
+    """Rounds of stun the actor still has to sit out."""
+    if actor.incapacitated_until is None:
+        return 0
+    return max(actor.incapacitated_until - current_round, 0)
+
+
+def stun_cell(actor: Actor, current_round: int) -> str:
     """`points(rounds)`, with identical meaning for every damage track."""
-    if not track.stun_points and not track.incapacitated_rounds:
+    rounds = incapacitated_rounds(actor, current_round)
+    if not actor.track.stun_points and not rounds:
         return ''
-    return f'{track.stun_points}({track.incapacitated_rounds})'
+    return f'{actor.track.stun_points}({rounds})'
 
 
-def status_text(actor: Actor) -> str:
+NOT_TOUCHED = '—'
+
+
+def injury_headings(track: DamageTrack) -> tuple[str, ...]:
+    """The columns of the first-aid view, which differ by what can be hurt."""
+    if isinstance(track, CharacteristicTrack):
+        return ('Rounds ago', 'Kind', *(c.value for c in PHYSICAL_CHARACTERISTICS))
+    return 'Rounds ago', 'Kind', 'Hits'
+
+
+def injury_rows(actor: Actor, current_round: int) -> tuple[tuple[str, ...], ...]:
+    """One line per hit, oldest first: how long ago it landed and what it cost.
+
+    First aid must be applied within a minute — ten rounds — so the age of a
+    wound decides whether it can still be treated. Wounds carried out of an
+    earlier fight are past that window and read `earlier`.
+    """
+    return tuple(_injury_row(injury, current_round) for injury in actor.track.injuries)
+
+
+def injury_list_headings() -> tuple[str, ...]:
+    return ('Name', 'Party', 'Rounds ago', 'Kind', *(c.value for c in PHYSICAL_CHARACTERISTICS))
+
+
+def injury_list_rows(situation: Situation) -> tuple[tuple[str, ...], ...]:
+    """Every actor's injuries at once, for deciding whom to treat first."""
+    return tuple(row for _, row, _leads in injury_list_entries(situation))
+
+
+def injury_list_entries(situation: Situation) -> tuple[tuple[Actor, tuple[str, ...], bool], ...]:
+    """One line per hit under the actor who took it, in the table's own order.
+
+    Each entry carries its actor so the view can offer Done and Edit, and says
+    whether it leads that actor's lines — only the first one is labelled. An
+    animal's Hits sit in the END column, as they do in the round table.
+    """
+    entries: list[tuple[Actor, tuple[str, ...], bool]] = []
+    for actor in situation.turn_order():
+        injuries = actor.track.injuries
+        if not injuries:
+            entries.append((actor, (actor.name, actor.party.name, NOT_TOUCHED, 'unhurt', *(NOT_TOUCHED,) * 3), True))
+            continue
+        for position, injury in enumerate(injuries):
+            label = (actor.name, actor.party.name) if position == 0 else ('', '')
+            entries.append((actor, (*label, *_injury_line(injury, situation.round_number)), position == 0))
+    return tuple(entries)
+
+
+def _injury_row(injury: Injury, current_round: int) -> tuple[str, ...]:
+    """The per-actor view, where an animal has one Hits column rather than three."""
+    age, kind, *reductions = _injury_line(injury, current_round)
+    return (age, kind, *reductions) if isinstance(injury, CharacteristicInjury) else (age, kind, reductions[-1])
+
+
+def _injury_line(injury: Injury, current_round: int) -> tuple[str, ...]:
+    """Age, kind, and what it took off STR, DEX and END — Hits count as END."""
+    age = 'earlier' if injury.is_earlier else str(injury.rounds_ago(current_round))
+    if isinstance(injury, CharacteristicInjury):
+        return (age, injury.kind.value, *(_reduction(injury.reduction_to(c)) for c in PHYSICAL_CHARACTERISTICS))
+    return age, injury.kind.value, NOT_TOUCHED, NOT_TOUCHED, _reduction(injury.total)
+
+
+def _reduction(points: int) -> str:
+    return f'-{points}' if points else NOT_TOUCHED
+
+
+def status_text(actor: Actor, current_round: int) -> str:
     track = actor.track
     if track.is_dead:
         return 'destroyed' if isinstance(track, HitsTrack) and track.is_destroyed else 'dead'
     statuses: list[str] = []
     if track.is_unconscious:
         statuses.append('unconscious')
-    if track.is_incapacitated:
+    if actor.is_incapacitated(current_round):
         statuses.append('stunned')
     if isinstance(track, HitsTrack) and track.may_be_driven_off:
         statuses.append('may flee')
@@ -107,16 +182,21 @@ def condition_tags(actor: Actor) -> tuple[str, ...]:
     return tuple(condition.value for condition in sorted(actor.conditions, key=lambda condition: condition.value))
 
 
-def row_style(actor: Actor) -> str:
+def row_style(actor: Actor, current_round: int) -> str:
     """Out-of-action actors stay grey regardless of their initiative state."""
-    if not actor.is_able_to_act:
+    if not actor.is_able_to_act(current_round):
         return ROW_COLOURS[TurnState.ACTED]
     return ROW_COLOURS[actor.turn_state]
+
+
+ROUND_VIEW = 'Round'
+INJURY_VIEW = 'Injuries'
 
 
 class RoundsTable:
     def __init__(self, situation: Situation):
         self.situation = situation
+        self.view = ROUND_VIEW
 
     def build(self) -> None:
         self.header = ui.row().classes('items-center gap-4')
@@ -130,27 +210,62 @@ class RoundsTable:
             ui.label().bind_text_from(self.situation, 'round_number', round_time_text).classes('text-lg')
             ui.button('New round', on_click=self.new_round).props('color=primary')
             ui.button('Attack / damage', on_click=self.attack_dialog).props('outline')
+            ui.toggle([ROUND_VIEW, INJURY_VIEW], value=self.view, on_change=self.show_view).props('dense')
 
         self.body.clear()
-        with self.body, ui.grid(columns=11).classes('w-full gap-1 items-center'):
+        with self.body:
+            self.render_injury_list() if self.view == INJURY_VIEW else self.render_round_table()
+
+    def show_view(self, event: Any) -> None:
+        self.view = event.value
+        self.render()
+
+    def render_round_table(self) -> None:
+        with ui.grid(columns=11).classes('w-full gap-1 items-center'):
             for heading in ('Name', 'Party', 'Ini', 'STR', 'DEX', 'END', 'Stun', 'React', 'Action', 'Status', ''):
                 ui.label(heading).classes('font-bold text-sm')
             for actor in self.situation.turn_order():
                 self.render_row(actor)
 
+    def render_injury_list(self) -> None:
+        """Read-only triage: every wound, whose it is, and how old it is.
+
+        Rows carry the same colours as the round table, so acting from here
+        gives the same feedback: green may act, grey is done or out of it.
+        """
+        headings = injury_list_headings()
+        with ui.grid(columns=len(headings) + 1).classes('w-full gap-1 items-center'):
+            for heading in (*headings, ''):
+                ui.label(heading).classes('font-bold text-sm')
+            for actor, row, leads in injury_list_entries(self.situation):
+                style = row_style(actor, self.situation.round_number)
+                for value in row:
+                    ui.label(value).classes(ROW_CELL_CLASSES).style(style).mark(f'injury-{actor.name}')
+                self.render_injury_list_buttons(actor, leads, style)
+
+    def render_injury_list_buttons(self, actor: Actor, leads: bool, style: str) -> None:
+        with ui.row().classes('gap-1 self-stretch items-center').style(style):
+            if not leads:
+                return
+            ui.button('Done', on_click=lambda a=actor: self.finish_turn(a)).props('dense size=sm').set_enabled(
+                actor.can_act(self.situation.round_number)
+            )
+            ui.button('Edit', on_click=lambda a=actor: self.edit_actor_dialog(a)).props('dense size=sm flat')
+
     def render_row(self, actor: Actor) -> None:
-        style = row_style(actor)
+        current_round = self.situation.round_number
+        style = row_style(actor, current_round)
         track = actor.track
         ui.label(actor.name).classes(ROW_CELL_CLASSES).style(style)
         ui.label(actor.party.name).classes(ROW_CELL_CLASSES).style(style)
         ui.label(str(actor.initiative_value)).classes(ROW_CELL_CLASSES).style(style)
         for text in vitality_cells(track):
             ui.label(text).classes(ROW_CELL_CLASSES).style(style)
-        ui.label(stun_cell(track)).classes(ROW_CELL_CLASSES).style(style)
+        ui.label(stun_cell(actor, current_round)).classes(ROW_CELL_CLASSES).style(style)
         ui.label(str(actor.reaction_dm) if actor.reaction_dm else '').classes(ROW_CELL_CLASSES).style(style)
         ui.label(actor.last_action).classes(ROW_CELL_CLASSES).style(style)
         with ui.row().classes('self-stretch items-center gap-1').style(style):
-            ui.label(status_text(actor))
+            ui.label(status_text(actor, current_round))
             for condition in sorted(actor.conditions, key=lambda item: item.value):
                 ui.chip(
                     condition.value,
@@ -161,13 +276,12 @@ class RoundsTable:
                     ),
                 ).props('dense')
         with ui.row().classes('gap-1').style(style):
-            ui.button('Done', on_click=lambda a=actor: self.finish_turn(a)).props('dense size=sm').set_enabled(
-                actor.can_act
+            can_act = actor.can_act(current_round)
+            ui.button('Done', on_click=lambda a=actor: self.finish_turn(a)).props('dense size=sm').set_enabled(can_act)
+            ui.button('Wait', on_click=lambda a=actor: self.wait(a)).props('dense size=sm flat').set_enabled(can_act)
+            ui.button('Edit', on_click=lambda a=actor: self.edit_actor_dialog(a)).props('dense size=sm flat').mark(
+                f'edit-{actor.name}'
             )
-            ui.button('Wait', on_click=lambda a=actor: self.wait(a)).props('dense size=sm flat').set_enabled(
-                actor.can_act
-            )
-            ui.button('Edit', on_click=lambda a=actor: self.edit_actor_dialog(a)).props('dense size=sm flat')
 
     def new_round(self) -> None:
         self.situation.new_round()
@@ -193,14 +307,37 @@ class RoundsTable:
             ui.label(f'Edit {actor.name}').classes('text-lg font-bold')
             actor_inputs = self._build_actor_edit_inputs(actor)
             ui.separator()
-            damage_inputs = self._build_damage_edit_inputs(actor.track)
+            damage_inputs = self._build_damage_edit_inputs(actor)
+            self._show_injury_history(actor)
             with ui.row().classes('justify-end w-full'):
+                ui.button('Clear stun', on_click=lambda: self._clear_stun(actor, dialog)).props('flat')
+                ui.space()
                 ui.button('Cancel', on_click=dialog.close).props('flat')
                 ui.button(
                     'Save',
                     on_click=lambda: self._save_actor_edit(actor, actor_inputs, damage_inputs, dialog),
                 )
         dialog.open()
+
+    def _show_injury_history(self, actor: Actor) -> None:
+        """What each hit did and how long ago, for judging the first-aid window."""
+        rows = injury_rows(actor, self.situation.round_number)
+        if not rows:
+            return
+        headings = injury_headings(actor.track)
+        ui.label('Injuries').classes('font-bold')
+        with ui.grid(columns=len(headings)).classes('w-full gap-1'):
+            for heading in headings:
+                ui.label(heading).classes('text-sm font-bold')
+            for row in rows:
+                for value in row:
+                    ui.label(value).classes('text-sm')
+
+    def _clear_stun(self, actor: Actor, dialog: Any) -> None:
+        """An hour of rest, applied by the referee rather than inferred (:366)."""
+        actor.clear_stun()
+        dialog.close()
+        self.render()
 
     def _build_actor_edit_inputs(self, actor: Actor) -> _ActorEditInputs:
         with ui.grid(columns=2).classes('w-full gap-3'):
@@ -245,8 +382,8 @@ class RoundsTable:
             conditions,
         )
 
-    @staticmethod
-    def _build_damage_edit_inputs(track: DamageTrack) -> _DamageEditInputs:
+    def _build_damage_edit_inputs(self, actor: Actor) -> _DamageEditInputs:
+        track = actor.track
         if isinstance(track, CharacteristicTrack):
             ui.label('Characteristics').classes('font-bold')
             maximum: dict[Chars, Any] = {}
@@ -265,7 +402,7 @@ class RoundsTable:
                     value=track.excess_to.value,
                     label='Excess damage',
                 )
-            common = RoundsTable._build_stun_edit_inputs(track)
+            common = self._build_stun_edit_inputs(actor)
             return _CharacteristicEditInputs(maximum, current, excess_to, *common)
 
         if not isinstance(track, HitsTrack):
@@ -275,14 +412,14 @@ class RoundsTable:
         with ui.grid(columns=2).classes('w-full gap-3'):
             maximum_hits = ui.number('Max Hits', value=track.maximum, format='%d')
             current_hits = ui.number('Current Hits', value=track.current, format='%d')
-        common = RoundsTable._build_stun_edit_inputs(track)
+        common = self._build_stun_edit_inputs(actor)
         return _HitsEditInputs(maximum_hits, current_hits, *common)
 
-    @staticmethod
-    def _build_stun_edit_inputs(track: DamageTrack) -> tuple[Any, Any]:
+    def _build_stun_edit_inputs(self, actor: Actor) -> tuple[Any, Any]:
+        remaining = incapacitated_rounds(actor, self.situation.round_number)
         with ui.grid(columns=2).classes('w-full gap-3'):
-            stun_points = ui.number('Stun points', value=track.stun_points, format='%d')
-            stun_rounds = ui.number('Stun rounds', value=track.incapacitated_rounds, format='%d')
+            stun_points = ui.number('Stun points', value=actor.track.stun_points, format='%d')
+            stun_rounds = ui.number('Stun rounds', value=remaining, format='%d')
         return stun_points, stun_rounds
 
     def _save_actor_edit(
@@ -324,6 +461,7 @@ class RoundsTable:
             conditions={condition for condition, field in actor_inputs.conditions.items() if field.value},
             forfeit_next_turn=actor_inputs.forfeit.value,
             waited=actor_inputs.waited.value,
+            incapacitated_rounds=self._integer(damage_inputs.stun_rounds),
         )
 
     @staticmethod
@@ -333,7 +471,6 @@ class RoundsTable:
                 maximum={c: RoundsTable._integer(inputs.maximum[c]) for c in PHYSICAL_CHARACTERISTICS},
                 current={c: RoundsTable._integer(inputs.current[c]) for c in PHYSICAL_CHARACTERISTICS},
                 stun_points=RoundsTable._integer(inputs.stun_points),
-                incapacitated_rounds=RoundsTable._integer(inputs.stun_rounds),
             )
             track.excess_to = Chars(inputs.excess_to.value)
             return
@@ -342,7 +479,6 @@ class RoundsTable:
                 maximum=RoundsTable._integer(inputs.maximum),
                 current=RoundsTable._integer(inputs.current),
                 stun_points=RoundsTable._integer(inputs.stun_points),
-                incapacitated_rounds=RoundsTable._integer(inputs.stun_rounds),
             )
             return
         msg = 'damage editor does not match actor type'
@@ -358,7 +494,7 @@ class RoundsTable:
     def attack_dialog(self) -> None:
         """An actor attacks a target, or Other causes environmental injury."""
         names = [a.name for a in self.situation.actors]
-        attackers = [a.name for a in self.situation.actors if a.can_act]
+        attackers = [a.name for a in self.situation.actors if a.can_act(self.situation.round_number)]
         with ui.dialog() as dialog, ui.card():
             ui.label('Attack / damage').classes('text-lg font-bold')
             attacker = ui.select(['Other', *attackers], value='Other', label='Attacker')

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from ceres.character.domain.characteristics import Chars
 from ceres.rounds.domain.actions import ReactionKind
+from ceres.rounds.domain.damage import DamageKind
 from ceres.rounds.domain.tracks import CharacteristicTrack, DamageTrack
 
 if TYPE_CHECKING:
@@ -50,6 +51,7 @@ class Actor:
         self._next_reaction_dm = 0
         self._forfeit_next_turn = False
         self._conditions: set[ActorCondition] = set()
+        self._incapacitated_until: int | None = None
         self.last_action = ''
 
     @property
@@ -67,13 +69,40 @@ class Actor:
         return 0
 
     @property
-    def is_able_to_act(self) -> bool:
-        """Whether injury or stun permits this actor to take a turn."""
-        return not (self.track.is_dead or self.track.is_unconscious or self.track.is_incapacitated)
+    def incapacitated_until(self) -> int | None:
+        """The round stun wears off, counted by the situation this belongs to."""
+        return self._incapacitated_until
 
-    @property
-    def can_act(self) -> bool:
-        return self.turn_state is TurnState.READY and self.is_able_to_act
+    def take_damage(self, *, lethal: int = 0, stun: int = 0, at: int) -> None:
+        """Absorb a hit in round `at` and note how long stun puts them out for."""
+        self.track.apply(lethal, DamageKind.LETHAL, at=at)
+        self._extend_incapacitation(self.track.apply(stun, DamageKind.STUN, at=at), at)
+
+    def is_incapacitated(self, current_round: int) -> bool:
+        """Put out of action by stun rather than by injury (:366)."""
+        return self._incapacitated_until is not None and current_round < self._incapacitated_until
+
+    def is_able_to_act(self, current_round: int) -> bool:
+        """Whether injury or stun permits this actor to take a turn."""
+        return not (self.track.is_dead or self.track.is_unconscious or self.is_incapacitated(current_round))
+
+    def can_act(self, current_round: int) -> bool:
+        return self.turn_state is TurnState.READY and self.is_able_to_act(current_round)
+
+    def clear_stun(self) -> None:
+        """The referee's stand-in for an hour of rest (:366)."""
+        self.track.clear_stun()
+        self._incapacitated_until = None
+
+    def carry_over(self) -> None:
+        """Their fight ended: the wounds stay, everything counted in it goes."""
+        self.track.carry_over()
+        self._incapacitated_until = None
+
+    def _extend_incapacitation(self, rounds: int, at: int) -> None:
+        """A later hit extends the wait; it never stacks on top of it."""
+        if rounds > 0:
+            self._incapacitated_until = max(self._incapacitated_until or 0, at + rounds)
 
     @property
     def reaction_dm(self) -> int:
@@ -100,7 +129,6 @@ class Actor:
         else:
             self.turn_state = TurnState.PENDING
         self.waited = False
-        self.track.round_passed()
 
     def make_ready(self) -> None:
         if self.turn_state is TurnState.PENDING:
@@ -145,10 +173,12 @@ class Actor:
         conditions: set[ActorCondition],
         forfeit_next_turn: bool,
         waited: bool = False,
+        incapacitated_until: int | None = None,
     ) -> None:
         """Correct stored round facts without manufacturing a combat action."""
         self.turn_state = turn_state
         self.waited = waited
+        self._incapacitated_until = incapacitated_until
         self.last_action = last_action
         self._conditions = conditions.copy()
         self._forfeit_next_turn = forfeit_next_turn

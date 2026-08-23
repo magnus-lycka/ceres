@@ -12,6 +12,8 @@ Derived from refs/core/03_combat.md:
 and from docs/RULE_INTERPRETATIONS.md on stun sharing the END score.
 """
 
+import pytest
+
 from ceres.character.domain.characteristics import Chars
 from ceres.rounds.domain.damage import DamageKind
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
@@ -130,7 +132,6 @@ def test_character_track_can_be_corrected_from_its_visible_values():
         maximum={Chars.STR: 9, Chars.DEX: 8, Chars.END: 7},
         current={Chars.STR: 6, Chars.DEX: 4, Chars.END: 2},
         stun_points=3,
-        incapacitated_rounds=5,
     )
 
     assert track.maximum(Chars.STR) == 9
@@ -138,18 +139,23 @@ def test_character_track_can_be_corrected_from_its_visible_values():
     assert track.current(Chars.DEX) == 4
     assert track.current(Chars.END) == 2
     assert track.stun_points == 3
-    assert track.incapacitated_rounds == 5
 
 
 class TestStunDamage:
+    """How long the incapacitation lasts is returned, not stored.
+
+    The rounds belong to the fight that counts them, so the track reports what
+    the hit caused and the situation membership remembers when it wears off.
+    """
+
     def test_stun_reduces_end_without_incapacitating_while_end_remains(self):
         track = track_888()
 
-        track.apply(5, DamageKind.STUN)
+        rounds = track.apply(5, DamageKind.STUN)
 
         assert track.current(Chars.END) == 3
         assert track.stun_points == 5
-        assert track.incapacitated_rounds == 0
+        assert rounds == 0
 
     def test_stun_never_spills_into_str_or_dex_and_cannot_kill(self):
         track = track_888()
@@ -165,65 +171,41 @@ class TestStunDamage:
     def test_incapacitated_for_the_rounds_by_which_damage_exceeded_end(self):
         """The referee's worked example: 888, 4 lethal, then 15 stun."""
         track = track_888()
-
         track.apply(4, DamageKind.LETHAL)
-        track.apply(15, DamageKind.STUN)
+
+        rounds = track.apply(15, DamageKind.STUN)
 
         assert track.current(Chars.END) == 0
         assert track.stun_points == 4
-        assert track.incapacitated_rounds == 11
+        assert rounds == 11
 
     def test_exactly_reducing_end_to_zero_causes_zero_incapacitated_rounds(self):
         track = track_888()
 
-        track.apply(8, DamageKind.STUN)
+        rounds = track.apply(8, DamageKind.STUN)
 
         assert track.current(Chars.END) == 0
-        assert track.incapacitated_rounds == 0
-        assert not track.is_incapacitated
+        assert rounds == 0
 
-    def test_a_later_stun_extends_but_does_not_stack_the_countdown(self):
-        track = track_888()
-
-        track.apply(14, DamageKind.STUN)
-        assert track.incapacitated_rounds == 6
-        track.apply(3, DamageKind.STUN)
-
-        assert track.incapacitated_rounds == 6
-
-    def test_countdown_expires_as_rounds_pass(self):
+    def test_stun_against_exhausted_end_is_all_overflow(self):
+        """Every point of a later hit is excess once END is already zero."""
         track = track_888()
         track.apply(11, DamageKind.STUN)
-        assert track.incapacitated_rounds == 3
 
-        for _ in range(3):
-            track.round_passed()
-
-        assert track.incapacitated_rounds == 0
-        assert track.current(Chars.END) == 0
-
-    def test_new_stun_after_countdown_expires_incapacitates_from_zero_end(self):
-        track = track_888()
-        track.apply(11, DamageKind.STUN)
-        for _ in range(3):
-            track.round_passed()
-
-        track.apply(2, DamageKind.STUN)
+        rounds = track.apply(2, DamageKind.STUN)
 
         assert track.stun_points == 8
-        assert track.incapacitated_rounds == 2
-        assert track.is_incapacitated
+        assert rounds == 2
 
     def test_an_hour_of_rest_heals_stun_but_not_lethal_damage(self):
         track = track_888()
         track.apply(4, DamageKind.LETHAL)
         track.apply(15, DamageKind.STUN)
 
-        track.rest_one_hour()
+        track.clear_stun()
 
         assert track.current(Chars.END) == 4
         assert track.stun_points == 0
-        assert track.incapacitated_rounds == 0
 
 
 class TestStunAndLethalShareOneEndScore:
@@ -246,10 +228,10 @@ class TestStunAndLethalShareOneEndScore:
         track.apply(4, DamageKind.LETHAL)
         assert track.current(Chars.END) == 2
 
-        track.apply(5, DamageKind.STUN)
+        rounds = track.apply(5, DamageKind.STUN)
 
         assert track.current(Chars.END) == 0
-        assert track.incapacitated_rounds == 3
+        assert rounds == 3
 
     def test_stun_cannot_complete_a_kill(self):
         """All three at zero is only death when the END loss is lethal."""
@@ -336,65 +318,47 @@ class TestHitsTrack:
         assert track.is_dead
         assert track.is_destroyed
 
-    def test_stun_suppresses_hits_to_half_and_excess_sets_the_countdown(self):
+    def test_stun_suppresses_hits_to_half_and_excess_becomes_rounds(self):
         track = HitsTrack(hits=20)
 
-        track.apply(10, DamageKind.STUN)
+        assert track.apply(10, DamageKind.STUN) == 0
         assert track.current == 10
         assert track.stun_points == 10
-        assert track.incapacitated_rounds == 0
-        assert not track.is_incapacitated
-        track.apply(4, DamageKind.STUN)
+
+        rounds = track.apply(4, DamageKind.STUN)
 
         assert track.current == 10
         assert track.stun_points == 10
-        assert track.incapacitated_rounds == 4
-        assert track.is_incapacitated
+        assert rounds == 4
 
     def test_stun_capacity_rounds_half_hits_up(self):
         track = HitsTrack(hits=21)
 
-        track.apply(11, DamageKind.STUN)
+        rounds = track.apply(11, DamageKind.STUN)
 
         assert track.current == 10
         assert track.stun_points == 11
-        assert track.incapacitated_rounds == 0
-
-    def test_new_stun_after_the_countdown_expires_incapacitates_again(self):
-        track = HitsTrack(hits=20)
-        track.apply(12, DamageKind.STUN)
-        track.round_passed()
-        track.round_passed()
-
-        track.apply(3, DamageKind.STUN)
-
-        assert track.current == 10
-        assert track.stun_points == 10
-        assert track.incapacitated_rounds == 3
-        assert track.is_incapacitated
+        assert rounds == 0
 
     def test_stun_on_an_animal_already_below_half_hits_is_all_overflow(self):
         track = HitsTrack(hits=20)
         track.apply(19, DamageKind.LETHAL)
 
-        track.apply(4, DamageKind.STUN)
+        rounds = track.apply(4, DamageKind.STUN)
 
         assert track.current == 1
         assert track.stun_points == 0
-        assert track.incapacitated_rounds == 4
+        assert rounds == 4
         assert track.is_unconscious
-        assert track.is_incapacitated
 
-    def test_an_hour_of_rest_clears_stun_points_and_countdown(self):
+    def test_an_hour_of_rest_clears_the_stun_it_took(self):
         track = HitsTrack(hits=20)
         track.apply(14, DamageKind.STUN)
 
-        track.rest_one_hour()
+        track.clear_stun()
 
         assert track.current == 20
         assert track.stun_points == 0
-        assert track.incapacitated_rounds == 0
-        assert not track.is_incapacitated
 
     def test_lethal_damage_displaces_stun_and_stun_cannot_cause_death(self):
         track = HitsTrack(hits=20)
@@ -414,9 +378,182 @@ class TestHitsTrack:
     def test_track_can_be_corrected_from_its_visible_values(self):
         track = HitsTrack(hits=20)
 
-        track.correct_state(maximum=24, current=9, stun_points=0, incapacitated_rounds=3)
+        track.correct_state(maximum=24, current=9, stun_points=0)
 
         assert track.maximum == 24
         assert track.current == 9
         assert track.stun_points == 0
-        assert track.incapacitated_rounds == 3
+
+
+class TestCharacteristicInjuryHistory:
+    """Each hit is stored as what it actually did, so nothing is replayed.
+
+    Which characteristic absorbed how much is decided when the damage lands
+    (:259-268), so that is the fact worth keeping: it is what the first-aid
+    view reads, and what the referee corrects when a number was wrong.
+    """
+
+    def test_a_hit_records_the_round_and_what_it_reduced(self):
+        track = track_888()
+
+        track.apply(10, DamageKind.LETHAL, at=3)
+
+        (injury,) = track.injuries
+        assert injury.kind is DamageKind.LETHAL
+        assert injury.when == 3
+        assert injury.reductions == {Chars.END: 8, Chars.DEX: 2}
+
+    def test_the_choice_of_str_or_dex_is_resolved_when_the_damage_lands(self):
+        track = track_888(excess_to=Chars.STR)
+
+        track.apply(10, DamageKind.LETHAL, at=1)
+
+        (injury,) = track.injuries
+        assert injury.reductions == {Chars.END: 8, Chars.STR: 2}
+
+    def test_every_hit_is_its_own_line_in_order(self):
+        track = track_888()
+
+        track.apply(6, DamageKind.LETHAL, at=1)
+        track.apply(3, DamageKind.LETHAL, at=4)
+
+        first, second = track.injuries
+        assert (first.when, first.reductions) == (1, {Chars.END: 6})
+        assert (second.when, second.reductions) == (4, {Chars.END: 2, Chars.DEX: 1})
+
+    def test_a_hit_that_reduces_nothing_is_not_recorded(self):
+        track = track_888()
+        track.apply(24, DamageKind.LETHAL, at=1)
+
+        track.apply(5, DamageKind.LETHAL, at=2)
+
+        assert len(track.injuries) == 1
+
+    def test_stun_records_only_what_it_suppressed(self):
+        """The overflow becomes rounds of incapacitation, not stored damage."""
+        track = track_888()
+
+        overflow = track.apply(15, DamageKind.STUN, at=2)
+
+        (injury,) = track.injuries
+        assert injury.kind is DamageKind.STUN
+        assert overflow == 7
+        assert injury.reductions == {Chars.END: 8}
+
+    def test_current_values_are_the_maximum_less_the_recorded_reductions(self):
+        track = track_888()
+
+        track.apply(4, DamageKind.LETHAL, at=1)
+        track.apply(3, DamageKind.STUN, at=2)
+
+        assert track.current(Chars.END) == 1
+        assert track.stun_points == 3
+
+    def test_lethal_damage_erases_the_stun_line_it_displaces(self):
+        """Stun must never stand between an actor and death (RIC-012)."""
+        track = CharacteristicTrack(strength=4, dexterity=4, endurance=4)
+        track.apply(2, DamageKind.STUN, at=1)
+        track.apply(10, DamageKind.LETHAL, at=2)
+
+        track.apply(2, DamageKind.LETHAL, at=3)
+
+        assert [injury.kind for injury in track.injuries] == [DamageKind.LETHAL, DamageKind.LETHAL]
+        assert track.is_dead
+
+    def test_displacement_takes_the_oldest_stun_first(self):
+        """Lethal damage reaches END again once STR and DEX are exhausted."""
+        track = CharacteristicTrack(strength=2, dexterity=2, endurance=8)
+        track.apply(2, DamageKind.STUN, at=1)
+        track.apply(3, DamageKind.STUN, at=2)
+
+        track.apply(10, DamageKind.LETHAL, at=3)
+
+        stun = [injury for injury in track.injuries if injury.kind is DamageKind.STUN]
+        assert [(injury.when, injury.reductions) for injury in stun] == [(2, {Chars.END: 2})]
+        assert not track.is_dead
+
+    def test_clearing_stun_leaves_the_lethal_lines_alone(self):
+        track = track_888()
+        track.apply(4, DamageKind.LETHAL, at=1)
+        track.apply(15, DamageKind.STUN, at=2)
+
+        track.clear_stun()
+
+        assert [injury.kind for injury in track.injuries] == [DamageKind.LETHAL]
+        assert track.current(Chars.END) == 4
+
+    def test_carrying_over_stamps_surviving_injuries_as_earlier(self):
+        """A new fight counts from round 1, and old wounds are past first aid."""
+        track = track_888()
+        track.apply(4, DamageKind.LETHAL, at=3)
+
+        track.carry_over()
+
+        (injury,) = track.injuries
+        assert injury.when is None
+        assert injury.is_earlier
+        assert track.current(Chars.END) == 4
+
+    def test_a_hit_with_no_round_is_already_earlier(self):
+        track = track_888()
+
+        track.apply(4, DamageKind.LETHAL)
+
+        (injury,) = track.injuries
+        assert injury.is_earlier
+
+
+class TestHitsInjuryHistory:
+    def test_a_hit_records_the_round_and_the_hits_it_cost(self):
+        track = HitsTrack(hits=20)
+
+        track.apply(5, DamageKind.LETHAL, at=2)
+
+        (injury,) = track.injuries
+        assert (injury.kind, injury.when, injury.reduction) == (DamageKind.LETHAL, 2, 5)
+
+    def test_stun_records_only_the_hits_it_suppressed(self):
+        track = HitsTrack(hits=20)
+
+        overflow = track.apply(14, DamageKind.STUN, at=1)
+
+        (injury,) = track.injuries
+        assert injury.reduction == 10
+        assert overflow == 4
+
+    def test_lethal_damage_erases_the_stun_line_it_displaces(self):
+        track = HitsTrack(hits=20)
+        track.apply(10, DamageKind.STUN, at=1)
+
+        track.apply(19, DamageKind.LETHAL, at=2)
+
+        assert [injury.kind for injury in track.injuries] == [DamageKind.LETHAL]
+        assert track.current == 1
+
+    def test_clearing_stun_leaves_the_lethal_lines_alone(self):
+        track = HitsTrack(hits=20)
+        track.apply(5, DamageKind.LETHAL, at=1)
+        track.apply(14, DamageKind.STUN, at=2)
+
+        track.clear_stun()
+
+        assert [injury.reduction for injury in track.injuries] == [5]
+        assert track.current == 15
+
+    def test_carrying_over_stamps_surviving_injuries_as_earlier(self):
+        track = HitsTrack(hits=20)
+        track.apply(5, DamageKind.LETHAL, at=2)
+
+        track.carry_over()
+
+        (injury,) = track.injuries
+        assert injury.is_earlier
+
+
+class TestInjuriesAreReportedNotMutated:
+    def test_the_history_cannot_be_edited_by_its_reader(self):
+        track = track_888()
+        track.apply(4, DamageKind.LETHAL, at=1)
+
+        with pytest.raises((AttributeError, TypeError)):
+            track.injuries[0].when = 7  # ty: ignore[invalid-assignment]

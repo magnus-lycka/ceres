@@ -6,7 +6,6 @@ decides who is currently green.
 
 from ceres.rounds.domain.actions import AttackKind, ReactionKind
 from ceres.rounds.domain.actor import Actor, ActorCondition, TurnState
-from ceres.rounds.domain.damage import DamageKind
 from ceres.rounds.domain.roster import Party, Roster
 
 ROUND_SECONDS = 6
@@ -78,6 +77,16 @@ class Situation:
         self._step = None
         self._open_highest_step()
 
+    def end(self) -> None:
+        """Finish the fight: its actors keep their wounds and lose its rounds.
+
+        Injuries belong to the actor and outlive any one situation. Everything
+        counted in rounds — incapacitation, and the round each wound landed in —
+        only means something inside the fight that counted them.
+        """
+        for actor in self.actors:
+            actor.carry_over()
+
     def finish_turn(self, actor: Actor) -> None:
         actor.finish_turn()
         self._advance_step_if_ready()
@@ -100,14 +109,12 @@ class Situation:
             if kind is not None:
                 msg = 'Other has no attack kind'
                 raise ValueError(msg)
-            target.track.apply(lethal, DamageKind.LETHAL)
-            target.track.apply(stun, DamageKind.STUN)
+            target.take_damage(lethal=lethal, stun=stun, at=self.round_number)
             return
         if kind is None:
             msg = 'an actor source needs Melee or Ranged'
             raise ValueError(msg)
-        target.track.apply(lethal, DamageKind.LETHAL)
-        target.track.apply(stun, DamageKind.STUN)
+        target.take_damage(lethal=lethal, stun=stun, at=self.round_number)
         attacker.last_action = f'{kind.value} {target.name}'
         self.finish_turn(attacker)
 
@@ -136,8 +143,13 @@ class Situation:
         conditions: set[ActorCondition],
         forfeit_next_turn: bool,
         waited: bool,
+        incapacitated_rounds: int = 0,
     ) -> None:
-        """Correct an actor's editable facts without recording an action."""
+        """Correct an actor's editable facts without recording an action.
+
+        Incapacitation is entered as the rounds still to sit out, which this
+        situation turns into the round it ends — the form the row keeps.
+        """
         if not name.strip():
             msg = 'name cannot be empty'
             raise ValueError(msg)
@@ -154,6 +166,7 @@ class Situation:
             conditions=conditions,
             forfeit_next_turn=forfeit_next_turn,
             waited=waited,
+            incapacitated_until=self.round_number + incapacitated_rounds if incapacitated_rounds > 0 else None,
         )
         self._advance_step_if_ready()
 
@@ -187,7 +200,7 @@ class Situation:
 
     def _step_is_settled(self) -> bool:
         at_step = [a for a in self.actors if a.initiative_value == self._step]
-        return all(a.has_had_their_turn or not a.can_act for a in at_step)
+        return all(a.has_had_their_turn or not a.can_act(self.round_number) for a in at_step)
 
     @property
     def ready_actors(self) -> list[Actor]:
