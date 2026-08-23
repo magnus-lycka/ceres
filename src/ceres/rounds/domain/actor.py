@@ -31,6 +31,9 @@ class ActorCondition(StrEnum):
     PRONE = 'Prone'
 
 
+MINUTE_IN_ROUNDS = 10
+
+
 class Actor:
     def __init__(
         self,
@@ -52,6 +55,8 @@ class Actor:
         self._forfeit_next_turn = False
         self._conditions: set[ActorCondition] = set()
         self._incapacitated_until: int | None = None
+        self._unconscious_since: int | None = None
+        self._woke = False
         self.last_action = ''
 
     @property
@@ -77,6 +82,44 @@ class Actor:
         """Absorb a hit in round `at` and note how long stun puts them out for."""
         self.track.apply(lethal, DamageKind.LETHAL, at=at)
         self._extend_incapacitation(self.track.apply(stun, DamageKind.STUN, at=at), at)
+        self.note_consciousness(at)
+
+    def note_consciousness(self, current_round: int) -> None:
+        """Start the recovery clock when damage puts them out (:265, :539)."""
+        if self.track.is_unconscious and self.track.may_attempt_recovery:
+            self._unconscious_since = self._unconscious_since or current_round
+        elif not self.track.is_unconscious:
+            self._unconscious_since = None
+
+    @property
+    def is_unconscious(self) -> bool:
+        """Damage puts them out; only the referee says they have come round.
+
+        A passed END check restores consciousness without healing anything
+        (:539), so this cannot be derived from the damage alone.
+        """
+        return self.track.is_unconscious and not self._woke
+
+    def wake(self) -> None:
+        """They came to: the referee rolled the END check and it passed."""
+        self._woke = True
+
+    def recovery_check_due(self, current_round: int) -> bool:
+        """Whether a minute has passed since going down or since the last check."""
+        return self._minutes_down(current_round) > 0
+
+    def recovery_check_dm(self, current_round: int) -> int:
+        """DM+1 for every check already failed (:539).
+
+        Nothing records those failures, because nothing needs to: a check that
+        fell due while the referee left the marker standing is a check failed.
+        """
+        return max(self._minutes_down(current_round) - 1, 0)
+
+    def _minutes_down(self, current_round: int) -> int:
+        if not self.is_unconscious or self._unconscious_since is None:
+            return 0
+        return (current_round - self._unconscious_since) // MINUTE_IN_ROUNDS
 
     def is_incapacitated(self, current_round: int) -> bool:
         """Put out of action by stun rather than by injury (:366)."""
@@ -84,7 +127,7 @@ class Actor:
 
     def is_able_to_act(self, current_round: int) -> bool:
         """Whether injury or stun permits this actor to take a turn."""
-        return not (self.track.is_dead or self.track.is_unconscious or self.is_incapacitated(current_round))
+        return not (self.track.is_dead or self.is_unconscious or self.is_incapacitated(current_round))
 
     def can_act(self, current_round: int) -> bool:
         return self.turn_state is TurnState.READY and self.is_able_to_act(current_round)
@@ -98,6 +141,7 @@ class Actor:
         """Their fight ended: the wounds stay, everything counted in it goes."""
         self.track.carry_over()
         self._incapacitated_until = None
+        self._unconscious_since = None
 
     def _extend_incapacitation(self, rounds: int, at: int) -> None:
         """A later hit extends the wait; it never stacks on top of it."""

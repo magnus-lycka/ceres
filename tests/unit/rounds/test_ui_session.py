@@ -30,6 +30,9 @@ async def test_refresh_conditions_and_actor_corrections():
 
         await user.should_see('Prone')
         user.find('Prone').click()
+        await user.should_see('Prone')  # the tag itself is not a target
+        prone = next(iter(user.find(ui.chip).elements))
+        prone.value = False
         await user.should_not_see('Prone')
 
         user.find('Edit').click()
@@ -145,3 +148,34 @@ async def test_the_injury_view_greys_an_actor_who_is_done_for_the_round():
 
         await user.should_see('Rounds ago')
         assert all(GREY in element._style.values() for element in user.find(marker='injury-Rin').elements)
+
+
+@pytest.mark.anyio
+async def test_the_unconscious_marker_is_clicked_away_when_the_referee_says_so():
+    async with user_simulation(main_file=APP_FILE) as user:
+        await user.open('/')
+        await user.should_see('Round 1: 0–6s')
+        user.find('Attack / damage').click()
+        selects = {element.props.get('label'): element for element in user.find(ui.select).elements}
+        numbers = {element.props.get('label'): element for element in user.find(ui.number).elements}
+        selects['Attacker'].value = 'Rin'
+        selects['Target'].value = 'Sana'
+        numbers['Lethal points'].value = 16
+        user.find('Apply').click()
+
+        await user.should_see('Unconscious')
+
+        for _ in range(10):
+            user.find('New round').click()
+        await user.should_see('Unconscious (END check)')
+
+        user.find('Unconscious (END check)').click()
+        await user.should_see('Unconscious (END check)')  # only the x clears it
+
+        chip = next(element for element in user.find(ui.chip).elements if 'Unconscious' in element.text)
+        # Chips sit on coloured rows, so they must state their own contrast.
+        assert chip.props['color'] and chip.props['text-color']
+
+        chip.value = False
+
+        await user.should_not_see('Unconscious')

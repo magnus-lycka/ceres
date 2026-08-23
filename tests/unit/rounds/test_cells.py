@@ -19,7 +19,9 @@ from ceres.rounds.ui.table import (
     injury_rows,
     round_time_text,
     row_style,
+    status_text,
     stun_cell,
+    unconscious_tag,
     vitality_cells,
 )
 
@@ -274,3 +276,65 @@ class TestInjuryList:
         situation.end()
 
         assert [row[2] for row in injury_list_rows(situation)] == ['earlier', 'earlier', 'earlier']
+
+
+class TestUnconsciousMarker:
+    """A clickable marker, and a reminder when the END check falls due (:539).
+
+    The app never rolls and never records an outcome: the referee rolls, and
+    clicking the marker away is how they say the Traveller came round.
+    """
+
+    def knocked_out(self) -> tuple[Actor, Situation]:
+        situation = Situation()
+        crew = situation.add_party('Crew')
+        rin = situation.add_actor(
+            Actor(name='Rin', party=crew, track=CharacteristicTrack(strength=8, dexterity=8, endurance=8), initiative=5)
+        )
+        situation.new_round()
+        situation.attack(None, rin, lethal=16)
+        return rin, situation
+
+    def test_an_unhurt_actor_carries_no_marker(self):
+        situation = Situation()
+        crew = situation.add_party('Crew')
+        rin = situation.add_actor(
+            Actor(name='Rin', party=crew, track=CharacteristicTrack(strength=8, dexterity=8, endurance=8))
+        )
+
+        assert unconscious_tag(rin, situation.round_number) == ''
+
+    def test_the_marker_appears_as_soon_as_they_go_down(self):
+        rin, situation = self.knocked_out()
+
+        assert unconscious_tag(rin, situation.round_number) == 'Unconscious'
+
+    def test_the_marker_reminds_the_referee_when_a_check_falls_due(self):
+        rin, situation = self.knocked_out()
+
+        while situation.round_number < 11:
+            situation.new_round()
+
+        assert unconscious_tag(rin, situation.round_number) == 'Unconscious (END check)'
+
+    def test_the_reminder_carries_the_dm_earned_by_waiting(self):
+        rin, situation = self.knocked_out()
+
+        while situation.round_number < 31:
+            situation.new_round()
+
+        assert unconscious_tag(rin, situation.round_number) == 'Unconscious (END check DM+2)'
+
+    def test_clicking_the_marker_away_leaves_the_damage_alone(self):
+        rin, situation = self.knocked_out()
+
+        rin.wake()
+
+        assert unconscious_tag(rin, situation.round_number) == ''
+        assert status_text(rin, situation.round_number) == ''
+        assert rin.can_act(situation.round_number)
+
+    def test_the_status_column_leaves_unconsciousness_to_the_marker(self):
+        rin, situation = self.knocked_out()
+
+        assert status_text(rin, situation.round_number) == ''

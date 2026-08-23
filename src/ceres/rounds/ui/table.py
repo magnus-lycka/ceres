@@ -5,7 +5,6 @@ UI questions get answered by use rather than by argument.
 """
 
 from dataclasses import dataclass
-from functools import partial
 from typing import Any
 
 from nicegui import ui
@@ -23,6 +22,12 @@ ROW_COLOURS = {
     TurnState.PENDING: '',
 }
 ROW_CELL_CLASSES = 'self-stretch flex items-center'
+
+# Chips sit on coloured rows, so they state their own colours rather than
+# inheriting whatever the row is painted. A due check is the one that shouts.
+CONDITION_CHIP = 'color=blue-grey-8 text-color=white'
+UNCONSCIOUS_CHIP = 'color=grey-9 text-color=white'
+CHECK_DUE_CHIP = 'color=deep-orange-9 text-color=white'
 
 
 @dataclass
@@ -163,13 +168,27 @@ def _reduction(points: int) -> str:
     return f'-{points}' if points else NOT_TOUCHED
 
 
+def unconscious_tag(actor: Actor, current_round: int) -> str:
+    """The clickable marker, and the reminder that an END check is due (:539).
+
+    Clicking it away is how the referee says the Traveller came round, so the
+    app needs neither the roll nor a record of the checks that failed. The DM
+    is derived: a check that fell due while the marker still stood was failed.
+    """
+    if not actor.is_unconscious:
+        return ''
+    if not actor.recovery_check_due(current_round):
+        return 'Unconscious'
+    dm = actor.recovery_check_dm(current_round)
+    return f'Unconscious (END check DM+{dm})' if dm else 'Unconscious (END check)'
+
+
 def status_text(actor: Actor, current_round: int) -> str:
+    """Everything derived from damage. Unconsciousness has its own marker."""
     track = actor.track
     if track.is_dead:
         return 'destroyed' if isinstance(track, HitsTrack) and track.is_destroyed else 'dead'
     statuses: list[str] = []
-    if track.is_unconscious:
-        statuses.append('unconscious')
     if actor.is_incapacitated(current_round):
         statuses.append('stunned')
     if isinstance(track, HitsTrack) and track.may_be_driven_off:
@@ -252,6 +271,22 @@ class RoundsTable:
             )
             ui.button('Edit', on_click=lambda a=actor: self.edit_actor_dialog(a)).props('dense size=sm flat')
 
+    def render_unconscious_marker(self, actor: Actor, current_round: int) -> None:
+        """Cleared by its ×, when the referee's END check passes."""
+        label = unconscious_tag(actor, current_round)
+        if not label:
+            return
+        colour = CHECK_DUE_CHIP if actor.recovery_check_due(current_round) else UNCONSCIOUS_CHIP
+        ui.chip(
+            label,
+            removable=True,
+            on_value_change=lambda event, a=actor: self.wake(a) if not event.value else None,
+        ).props(f'dense {colour}').mark(f'unconscious-{actor.name}')
+
+    def wake(self, actor: Actor) -> None:
+        actor.wake()
+        self.render()
+
     def render_row(self, actor: Actor) -> None:
         current_round = self.situation.round_number
         style = row_style(actor, current_round)
@@ -266,15 +301,15 @@ class RoundsTable:
         ui.label(actor.last_action).classes(ROW_CELL_CLASSES).style(style)
         with ui.row().classes('self-stretch items-center gap-1').style(style):
             ui.label(status_text(actor, current_round))
+            self.render_unconscious_marker(actor, current_round)
             for condition in sorted(actor.conditions, key=lambda item: item.value):
                 ui.chip(
                     condition.value,
                     removable=True,
-                    on_click=partial(self.clear_condition, actor, condition),
                     on_value_change=lambda event, a=actor, c=condition: (
                         self.clear_condition(a, c) if not event.value else None
                     ),
-                ).props('dense')
+                ).props(f'dense {CONDITION_CHIP}')
         with ui.row().classes('gap-1').style(style):
             can_act = actor.can_act(current_round)
             ui.button('Done', on_click=lambda a=actor: self.finish_turn(a)).props('dense size=sm').set_enabled(can_act)

@@ -415,3 +415,94 @@ class TestCombatActions:
         assert isinstance(target.track, CharacteristicTrack)
         assert target.track.current(Chars.END) == 5
         assert target.turn_state is TurnState.READY
+
+
+class TestUnconsciousness:
+    """An unconscious Traveller may attempt an END check every minute (:539).
+
+    The app does not roll and does not record the outcome. It says when a check
+    is due, and the referee clicks the marker away when the Traveller comes to.
+    A minute is ten rounds, and the cumulative DM+1 per failed check needs no
+    bookkeeping: a check that was due while the marker still stands was failed.
+    """
+
+    def knocked_out(self, situation: Situation) -> tuple[Actor, CharacteristicTrack]:
+        crew = situation.add_party('Crew')
+        track = character('Rin')
+        rin = situation.add_actor(Actor(name='Rin', party=crew, track=track, initiative=5))
+        situation.new_round()
+        situation.attack(None, rin, lethal=16)  # END and DEX to zero
+        return rin, track
+
+    def advance_to(self, situation: Situation, round_number: int) -> None:
+        while situation.round_number < round_number:
+            situation.new_round()
+
+    def test_no_check_is_due_until_a_minute_has_passed(self, situation):
+        rin, _track = self.knocked_out(situation)
+
+        self.advance_to(situation, 10)
+
+        assert rin.is_unconscious
+        assert not rin.recovery_check_due(situation.round_number)
+
+    def test_a_check_falls_due_a_minute_after_going_down(self, situation):
+        rin, _track = self.knocked_out(situation)
+
+        self.advance_to(situation, 11)
+
+        assert rin.recovery_check_due(situation.round_number)
+        assert rin.recovery_check_dm(situation.round_number) == 0
+
+    def test_a_check_left_standing_was_failed_so_the_next_one_carries_dm_plus_one(self, situation):
+        rin, _track = self.knocked_out(situation)
+
+        self.advance_to(situation, 21)
+
+        assert rin.recovery_check_due(situation.round_number)
+        assert rin.recovery_check_dm(situation.round_number) == 1
+
+    def test_the_dm_grows_by_one_for_every_minute_they_stay_down(self, situation):
+        rin, _track = self.knocked_out(situation)
+
+        self.advance_to(situation, 41)
+
+        assert rin.recovery_check_dm(situation.round_number) == 3
+
+    def test_waking_them_clears_the_marker_without_healing_anything(self, situation):
+        rin, track = self.knocked_out(situation)
+        self.advance_to(situation, 11)
+
+        rin.wake()
+
+        assert not rin.is_unconscious
+        assert rin.track.is_unconscious  # the damage that felled them is untouched
+        assert track.current(Chars.DEX) == 0
+        assert not rin.recovery_check_due(situation.round_number)
+
+    def test_an_animal_gets_no_end_check(self, situation):
+        """The rule is a Traveller\'s END check; Hits do not offer one."""
+        raiders = situation.add_party('Raiders')
+        beast = situation.add_actor(Actor(name='Beast', party=raiders, track=HitsTrack(hits=20), initiative=2))
+        situation.new_round()
+        situation.attack(None, beast, lethal=19)
+        assert beast.is_unconscious
+
+        self.advance_to(situation, 30)
+
+        assert not beast.recovery_check_due(situation.round_number)
+
+    def test_a_new_fight_starts_the_clock_for_someone_already_out(self, situation):
+        """The wound crosses the boundary; the minute it is counted in does not."""
+        rin, _track = self.knocked_out(situation)
+        self.advance_to(situation, 11)
+        situation.end()
+
+        next_fight = Situation(name='Corridor', roster=situation.roster)
+        next_fight.include(rin)
+        next_fight.new_round()
+
+        assert rin.is_unconscious
+        assert not rin.recovery_check_due(next_fight.round_number)
+        self.advance_to(next_fight, 11)
+        assert rin.recovery_check_due(next_fight.round_number)

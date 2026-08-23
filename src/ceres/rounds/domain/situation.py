@@ -74,6 +74,7 @@ class Situation:
         self.round_number += 1
         for actor in self.actors:
             actor.begin_round()
+            actor.note_consciousness(self.round_number)
         self._step = None
         self._open_highest_step()
 

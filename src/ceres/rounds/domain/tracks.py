@@ -117,6 +117,11 @@ class DamageTrack[I: Injury](ABC):
 
     @property
     @abstractmethod
+    def may_attempt_recovery(self) -> bool:
+        """Whether an END check can bring this body round again (:539)."""
+
+    @property
+    @abstractmethod
     def is_dead(self) -> bool: ...
 
 
@@ -229,6 +234,11 @@ class CharacteristicTrack(DamageTrack[CharacteristicInjury]):
         return self.current(Chars.STR) == 0 or self.current(Chars.DEX) == 0
 
     @property
+    def may_attempt_recovery(self) -> bool:
+        """The rule is a Traveller's END check, and this is where END lives."""
+        return True
+
+    @property
     def is_dead(self) -> bool:
         """All three physical characteristics at 0 (:266), by lethal damage only.
 
@@ -317,6 +327,11 @@ class HitsTrack(DamageTrack[HitsInjury]):
     def is_unconscious(self) -> bool:
         """Reduced to a tenth of starting Hits or less (:658)."""
         return 0 < self._lethal_current * 10 <= self._maximum
+
+    @property
+    def may_attempt_recovery(self) -> bool:
+        """An animal has no END to check, and no rule offers it one."""
+        return False
 
     @property
     def may_be_driven_off(self) -> bool:
