@@ -206,9 +206,9 @@ row leaves the Actor and its injuries untouched.
 
 **Anything counted in rounds lives on the row, not on the Actor**, because a
 round number only means something inside the fight that is counting them: the
-round an actor's incapacitation ends, the round they fell unconscious and how
-many recovery checks they have failed. When the Situation ends, those facts end
-with it (see Time and Situation boundaries).
+round an actor's incapacitation ends, and the round they fell unconscious. When
+the Situation ends, those facts end with it (see Time and Situation
+boundaries).
 
 The party of a member is a **plain editable name on that row** — not a
 reference, and not a separate situation-party object. Rows can be reassigned to
@@ -414,11 +414,19 @@ Recorded as **RIC-013**.
 - Stun incapacitation ends at a round stored on the membership row, so it
   expires as rounds pass rather than being counted down by anyone.
 - An unconscious character may attempt an END check every minute (every 10
-  rounds), with a cumulative DM+1 per previously failed check. The row stores
-  the round unconsciousness began and the number of failed checks, so the next
-  check is due at `began + 10 × (failures + 1)`. The app prompts; the referee
-  rolls and reports pass or fail.
-- Both are round-relative, so both belong to the Situation and end with it.
+  rounds), with a cumulative DM+1 per previously failed check. **The app only
+  says when a check is due.** It does not roll, and it records no outcome: a
+  passed check is the referee clearing the Unconscious marker.
+- Nothing therefore counts the failures. The row stores one fact — the round
+  they went down — and both the cadence and the DM follow from it: a check that
+  fell due while the marker still stood is a check that was failed, so the DM is
+  `minutes down − 1`.
+- Clearing the marker restores consciousness without healing anything, which is
+  what the rule says. STR or DEX stays at 0 and the impaired DMs stand.
+- Animals get no END check. The rule is a Traveller's, and `HitsTrack` has no
+  END; the referee may still clear a beast's marker by their own ruling.
+- All of this is round-relative, so it belongs to the Situation and dies with
+  it.
 
 ### Time and Situation boundaries
 
@@ -559,18 +567,34 @@ Worked example, an actor at 888 who takes 4 lethal and then 15 stun:
 END absorbs 4 of the stun before hitting 0; the remaining 11 become rounds of
 incapacitation. Clear stun returns those 4 points; the 4 lethal ones stay.
 
-**The injury history is shown per actor**, oldest first, as what each hit
-actually did:
+**The injury history is shown as what each hit actually did**, oldest first:
 
-| Rounds ago | STR | DEX | END |
-| ---------- | --- | --- | --- |
-| 12 | – | – | −6 |
-| 5 | −4 | – | −3 |
+| Rounds ago | Kind | STR | DEX | END |
+| ---------- | ---- | --- | --- | --- |
+| 12 | lethal | — | — | -6 |
+| 5 | lethal | -4 | — | -3 |
 
-That is the first-aid view: it shows how much of the injury is still inside the
+That is the first-aid view: how much of the injury is still inside the
 one-minute window and therefore treatable, what is already past saving, and
-which wound is the urgent one. Entries from previous fights read `earlier`
-rather than a count of rounds. Animals show a single Hits column instead.
+which wound is the urgent one. Kind is a column because a stun line and a wound
+are not the same thing to a medic. Entries from previous fights read `earlier`
+rather than a count of rounds.
+
+**Triage is a view of its own, not something reached one actor at a time.**
+Deciding whom to treat first is a question about everybody, so the Run page
+switches between **Round** and **Injuries**: the same table of actors, but with
+each actor's wounds listed beneath them — Name | Party | Rounds ago | Kind |
+STR | DEX | END — and Done and Edit still to hand. An actor with several wounds
+occupies several lines, which is most of the signal at a glance; an unhurt one
+keeps a line reading `unhurt`, so absence is never ambiguous. Rows carry the
+same green and grey as the round table, because acting from here must give the
+same feedback. Animals show their Hits in the END column, as they do in the
+round table; the per-actor view inside Edit, which need not be uniform, labels
+that column Hits.
+
+Ordering is the round table's own, not worst-first. Sorting by severity needs a
+definition of severity — total points, most recent, or only what is still
+treatable — and that is a decision to make after using this, not before.
 
 **React** is its own column: −1 per Dodge or Parry, cleared after the actor's
 next set of actions.
@@ -585,8 +609,21 @@ hazards without consuming anyone's turn.
 / Parry, net damage in lethal and stun points, and whether to pull from STR or
 DEX first. Dive greys the target out — it forfeits their next turn. Dodge and
 Parry each add −1 to React. Dive also marks the target prone. Prone persists
-across rounds as a removable **Prone** tag. Clicking the tag or its × clears it
-without recording an action or introducing movement-action bookkeeping.
+across rounds as a removable **Prone** tag, cleared without recording an action
+or introducing movement-action bookkeeping.
+
+**Markers are cleared by their ×, never by clicking the label.** Prone,
+Unconscious and anything like them state a fact the referee will want to read
+several times before they retire it, and losing one to a stray click on the row
+costs more than the extra precision costs. Because a marker sits on a row whose
+background changes with turn state, each states its own colour rather than
+inheriting the row's: a due END check is the one that shouts.
+
+**Unconscious is a marker, not a status.** Damage puts it there; only the
+referee takes it away, because that is what a passed END check means. Until
+then it carries the reminder — `Unconscious`, then `Unconscious (END check)`
+once a minute has passed, then `Unconscious (END check DM+2)` as the failed
+checks pile up.
 
 Every actor row also has **Edit** as a correction surface, and with undo
 deferred it is the only way to take a mistake back — it must therefore reach
@@ -776,6 +813,14 @@ stores incapacitation as the round it ends, `Situation.end()` stamps surviving
 injuries as `earlier`, and `Actor.clear_stun` is the referee's hour of rest.
 The editor gained the first-aid view — `Rounds ago | Kind | STR | DEX | END`,
 or a single Hits column — and a Clear stun button.
+
+**Then three corrections from using it.** Reaching a pure read through an editor
+is wrong when the medic wants to compare everyone, so triage became its own
+**Injuries** view beside the round table. Tracking the END check's pass, fail
+and accumulated DM was more than the app should own: it says when a check is
+due, and clearing the marker is how the referee reports success — which leaves
+one stored fact, the round they went down. And markers now clear only by their
+×, in colours of their own, after a stray click lost one.
 
 **Two defects found by writing the rules down rather than by testing.** The
 combat handouts (`handouts/combat_cards.typ`) forced several rules to be pinned
