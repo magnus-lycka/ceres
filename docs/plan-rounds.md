@@ -1,7 +1,8 @@
 # Plan: `ceres.rounds` — round-by-round situation (combat) tracker
 
-Status: **in progress** — phases 1–3 complete, phase 4 open; see "Progress so
-far".
+Status: **in progress** — phases 1–5 complete, phase 4 open; see "Progress so
+far". **The NiceGUI/Python shape is under review**: a Svelte spike is exploring
+a browser front end with the rules alongside it — see "Under review" below.
 
 Tracking issue: [#56](https://github.com/magnus-lycka/ceres/issues/56)
 
@@ -39,16 +40,10 @@ The product goals are:
 - **Do not lose an active fight.** Reloading or reconnecting must not discard
   work. Durable storage must also survive closing the browser or restarting the
   application.
-- **Interoperate without coupling the applications together.** Actors may be
-  derived from richer `ceres.character`, `ceres.make.robot` and future
-  `ceres.make.animal` objects, but rounds must retain a sufficient validated
-  representation to work independently. Those source systems must not depend
-  on the rounds UI or its mutable combat state.
-- **Remain open to practical authoring workflows.** In-app pages, validated
-  local files, Python constructors, copying, LLM-generated data and possible
-  future external tools all operate on the same actor, party and situation
-  concepts. The plan does not require one of them to be the sole authoring
-  method.
+- **Remain open to practical authoring workflows.** In-app editing, copying,
+  and assistant-proposed bundles all operate on the same actor, party and
+  situation concepts, and all pass through the application's own service. The
+  plan does not require one of them to be the sole authoring method.
 
 The model and its names should make these different concepts and lifetimes
 obvious. Protocols, JSON schemas, repositories and UI widgets are means of
@@ -101,6 +96,42 @@ view over that domain. If NiceGUI disappoints, only the view is rewritten.
 
 New dependency: `nicegui`. `deptry` and `pre-commit.sh` must stay green.
 
+### Under review: a browser front end in Svelte
+
+**This decision is being reconsidered, and a spike is exploring the
+alternative.** Using the prototype produced evidence the original comparison did
+not have:
+
+- The library screens want a real data grid. Arrow-key cell navigation is what
+  makes a grid feel like a control rather than a styled table, and NiceGUI can
+  only reach it by driving AG Grid from Python.
+- That driving is blind. Grid event payloads are not what their own JavaScript
+  suggests, and three bugs in a row came from guessing at them.
+- It is also untestable. NiceGUI's in-process test user cannot see a single
+  grid cell, and anything read back from the grid is a JavaScript round trip
+  that times out in tests. The framework's testing advantage disappears exactly
+  where we lean on it hardest.
+- Getting what we want next — chips inside a cell — means writing JavaScript
+  inside Python strings, with no types, no linting and no tests. That is the
+  worst of both worlds rather than a compromise.
+
+**The spike:** one screen — Parties, with the in-cell tag chips — in Svelte 5
+with a native Svelte grid (SvGrid or SVAR; neither is AG Grid's equal in
+ecosystem depth, but a custom cell is an ordinary Svelte component rather than a
+string of JavaScript). Judge it by using it.
+
+**If the spike succeeds, the rules move to the browser with the UI.** The
+boundary worth having is domain versus UI, not client versus server, and a
+network hop is an expensive way to enforce a module boundary — especially
+between two halves that always change together. Every reason to split is absent
+here: one referee, no shared state, no trust boundary, no secrets, no
+computation a browser cannot do. So `rules/` would be a pure TypeScript module
+with no framework imports and its own tests, exactly as `domain/` is today; the
+discipline stops being enforced by the language boundary and has to be enforced
+deliberately. The one thing that would change this: an outside client needing to
+*play* rather than author — applying damage, advancing rounds — which would put
+the rules back where it can reach them.
+
 ## Module layout
 
 ```text
@@ -110,7 +141,6 @@ src/ceres/rounds/
     tracks.py       — DamageTrack over injury history; Characteristic, Hits
     damage.py       — DamageKind (lethal / stun) and applied-injury entries
     actor.py        — Actor definition variants and persistent health state
-    sources.py      — read-only source protocols and extraction adapters
     party.py        — standalone reusable Party: a name and a set of ActorIds
     initiative.py   — InitiativeMode, initiative ordering and tie handling
     actions.py      — Melee/Ranged attacks and Dodge/Parry/Dive reactions
@@ -130,10 +160,8 @@ src/ceres/rounds/
 tests/unit/rounds/   — mirrors domain/, one test module per domain module
 ```
 
-The discriminated union of Actor definition variants lives in `actor.py`
-alongside the health state it belongs to; `sources.py` holds only the read-only
-Protocols and the adapters that produce those definitions. `roster.py`, the
-phase-4 experiment, disappears when `party.py` and membership rows replace it.
+`roster.py`, the phase-4 experiment, disappears when `party.py` and the
+membership rows replace it.
 
 Nothing above the domain reaches into it: `app/service.py` owns repository
 wiring and is the only thing the NiceGUI pages — and the UI tests — call.
@@ -229,34 +257,6 @@ independent Actors from one, with numbered names (`Wolf 1 … Wolf 10`) and no
 health history, since a fresh copy has not been hurt yet. It is how identical
 opponents are created, and it belongs beside the definition it copies rather
 than in whatever page happens to call it. See Roster management for the surface.
-
-### Rich source objects and the JSON boundary
-
-`ceres.rounds` consumes projections of richer objects created by
-`ceres.character`, `ceres.make.robot` and a future `ceres.make.animal`. It owns
-read-only structural Protocols describing only what each extraction adapter
-needs. The source packages need not import `ceres.rounds`; real source objects
-must be checked for structural conformance by `ty`.
-
-The Protocol is not itself the serialisation format. An adapter converts a
-source object into a Pydantic Actor definition from a discriminated union such
-as `CharacterActorDefinition | AnimalActorDefinition |
-RobotActorDefinition`. These models are versioned, validate independently of
-the source system, generate JSON Schema and serialise to JSON. A stored source
-reference records provenance, while the projection is retained so rounds can
-operate without the richer source being available. Refreshing a definition
-from its source is explicit and must preserve or deliberately reconcile the
-Actor's persistent health state.
-
-Extraction creates or refreshes the Actor definition only. It does not import
-initiative, prone, damage, stun or other temporal state from a source object.
-A newly imported Actor starts with a separate healthy state; refreshing an
-existing Actor preserves its state unless the user explicitly changes it.
-
-Use one source Protocol per genuinely different source shape rather than one
-artificial umbrella. The character protocol and adapter are in scope now;
-robot and animal contracts are added only when their combat properties are
-known.
 
 ### Composition over subclassing
 
@@ -468,9 +468,8 @@ only the frame of reference for a stamp moves.
 ### Roster changes
 
 - Actor-library changes are independent of Party and Situation composition.
-- Actors support add, edit, copy ×N with numbered names, import, refresh from
-  source, and archive.
-- Reusable Parties support add, copy, edit, archive and bulk member changes.
+- Actors support add, edit, copy ×N with numbered names, and delete.
+- Reusable Parties support add, copy, edit, delete and bulk member changes.
 - Adding a Party to a Situation copies its name and its members at that moment
   into new membership rows, and keeps no tie to the Party afterwards.
 - Rows may be added, removed or reassigned to another party name without
@@ -478,9 +477,11 @@ only the frame of reference for a stamp moves.
 - An actor added mid-situation receives fresh situation-local state, while its
   existing persistent health state is used unchanged.
 - Withdrawing from a Situation removes only the membership row.
-- An Actor is **archived, not deleted**, while any Party or Situation still
-  references its `ActorId`. Archived actors stay resolvable and are marked as
-  archived wherever they appear, so an old Situation never loses a participant.
+- **Anything may be deleted, with no questions asked.** There is no archive
+  flag and no referential guard: this is a single-user tool and the referee is
+  an adult. Every reader instead copes with a stale reference — a membership
+  row whose Actor is gone shows dashes in the columns it can no longer fill,
+  and keeps the situation-local facts that were always its own.
 
 ## UI surfaces
 
@@ -497,14 +498,14 @@ form serves:
 
 | Job | Volume | Mechanism |
 | --- | --- | --- |
-| PCs | 4–6, rarely change | Import from `ceres.character`, refresh later |
+| PCs | 4–6, rarely change | Typed once: a name and three numbers |
 | A pack of identical creatures | 10 chickens, 5 wolves | Copy one actor ×N |
 | Similar-but-distinct NPCs | 7 pirates, varying stats | Edit side by side |
 | A one-off invented at the table | 1 | A small form — the form's real case |
 
 **The Actors page is an editable table**, not a list of things opened one at a
 time. Columns: name, kind, STR/DEX/END or Hits, tags, source, a read-only health
-summary, archived. Cells are edited in place; adding a row and tabbing across it
+summary. Cells are edited in place; adding a row and tabbing across it
 covers the one-off case without a dialog. Health details stay in the actor
 editor, which owns the injury history, Clear stun and Reset health.
 
@@ -513,11 +514,9 @@ Four operations over the selection carry the batch cases:
 - **Copy ×N** — select an actor, give a count, get N independent Actors named
   `Wolf 1 … Wolf 10`. Two clicks for the ten-chickens case, and the numbering is
   what keeps identically named rows apart.
-- **Import** — from the character store; creates or refreshes definitions and
-  never touches health.
 - **Add to party** and **add to situation** — the table-time operation, one
   click from a multi-select.
-- **Archive**.
+- **Delete**.
 
 Parties then need almost no page of their own: a list of Parties, with
 membership set by selecting rows in the same grid. Situations use the same
@@ -687,16 +686,75 @@ Consequences worth being explicit about:
   must not silently discard injuries; reconciliation between a changed
   definition and existing health is an explicit validated operation.
 
-Documents are versioned Pydantic models with generated JSON Schema. Plain files
-rather than a database because the authoring workflows depend on it: a file can
-be written by hand, generated by an LLM, produced by a Python constructor,
-copied, diffed and kept in version control. The repository layer offers
-browse/search/get/save/copy/archive, reporting filename plus JSON path on
-failure and never partially applying invalid input. Manual JSON, Python
-constructors, LLM output and source-system adapters all pass through that one
-validation boundary.
+Documents are versioned models with generated JSON Schema, kept as plain files
+rather than in a database because files diff, review and version-control
+cleanly. The repository layer offers browse/search/get/save/copy/delete,
+reporting filename plus JSON path on failure and never partially applying
+invalid input.
+
+**The application owns its persistence, and nothing else writes to it.** Files
+being readable is a convenience for inspection and history, not an interface.
+Every writer — the UI, an importer, an assistant — goes through the service, so
+validation, id allocation and every invariant apply once, in one place. An
+earlier draft of this plan invited an LLM to write store files directly; that
+was a backdoor around the boundary this section exists to draw.
 
 A browser reload or a server restart mid-fight loses nothing.
+
+### Where the data lives: a private data repo
+
+The store is a git working tree in a **private** repo, separate from the public
+`magnus-lycka/ceres` code repo, and pushed after each situation (per round is
+cheap enough if wanted). This answers a requirement local files alone cannot:
+next week's session may be run from a different laptop, or the same one may have
+died. Clone the data repo, run, and both the state and its history are there.
+
+Git rather than a synced folder because history is a feature here, not a
+side effect: the injury log already records what each hit did, and commits let
+the referee see what the state actually was when someone recorded it wrongly.
+It also needs no new credentials — the machine's existing git setup pushes it —
+and it reports a divergence instead of silently leaving a conflicted copy.
+
+The data repo is created directly rather than forked: a fork of a public repo
+cannot be made private under any owner. It holds the store, an `inbox/`, and a
+stub workflow that calls a reusable workflow living in this repo, so the import
+logic stays in the codebase where it is reviewed and tested.
+
+### Getting data in from outside: issues, not file writes
+
+The one wanted outside workflow is an assistant reading an adventure — often a
+PDF — and proposing the NPCs in it as ready-to-use actors and a party. It is
+authoring, done in preparation, and it must not reach around the service.
+
+So the assistant files an **issue on the data repo**, and CI does the writing:
+
+1. An issue form gives the proposal a shape to fill in rather than prose for a
+   parser to guess at.
+2. A workflow in the data repo — a stub calling a reusable workflow in this
+   repo — validates the payload against the schema generated from the
+   application's own types.
+3. Valid input is written to `inbox/` and the result reported on the issue.
+   Invalid input leaves the issue open with the validation errors, so the
+   assistant can read the failure and correct itself. That feedback loop is the
+   point; a silent file drop offers nothing to correct against.
+4. The application reads `inbox/`, imports on the referee's confirmation, and
+   removes what it consumed.
+
+**An inbox entry is a bundle, not a party.** A party of newly invented NPCs
+references actors that do not exist yet, so the proposal carries the actor
+definitions *and* the party grouping them; import creates the actors, then the
+party pointing at them. Designing for a bare party fails on the first real use,
+because inventing the actors is the use.
+
+**Ids are allocated by the application, never by CI.** Inbox entries carry no
+ids. Two allocators writing to one repo eventually make one id mean two things.
+It also keeps pushes trivial: CI only ever writes under `inbox/`, the
+application only ever writes under the store, so the paths never collide.
+
+The issue channel is deliberately the *whole* AI interface for now. It needs no
+service running, works from a laptop that has never been set up, and keeps a
+reviewable record of what was proposed. Anything synchronous — an assistant
+creating actors mid-session — is a different mechanism and is not wanted yet.
 
 ### Undo — deferred
 
@@ -742,27 +800,29 @@ expected to revisit each other's work.
    "earlier" once their Situation ends, with the per-actor first-aid view over
    it and Clear stun in the editor. Incapacitation moved onto the membership
    row as the round it ends. Every rule tested in phase 1 still holds.
-6. **Persistent actor library and source boundary.** Refactor `Actor` into a
-   validated definition plus its health; add typed IDs, the character-source
-   Protocol and adapter, versioned JSON models, the application service, and
-   the local actor repository with browse/search/get/save/copy/archive
-   operations, plus Clear stun and Reset health.
+6. **Persistent Parties, Actors and Situations.** Pydantic documents, one JSON
+   file each behind a service that does not leak its storage, plus the grids
+   over them. Built as a spike first and kept if it survives use.
 7. **Parties, Situation membership, and the roster grid.** Persist standalone
    Parties and Situation membership rows; implement party import as a copy that
    forgets its origin and the editable party-name column with its collective
    initiative operation. Then build the Actors grid — inline editing, quick
    filter, multi-select — with Copy ×N, import, add-to-party, add-to-situation,
-   archive, and Reload for files edited outside the app. Spike `ui.aggrid`
-   first. The test is twelve similar animals or seven related NPCs created
-   without filling in twelve or seven forms.
+   delete, and Reload for files edited outside the app. The test is twelve
+   similar animals or seven related NPCs created without filling in twelve or
+   seven forms.
 8. **Durable storage.** Persist actors, parties and situations as their three
-   document kinds, each written atomically.
-9. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
-   complete and move it to `docs/archive/`. The rule interpretations are already
-   recorded — RIC-011 (stun and lethal share one END score), RIC-012 (stun can
-   never complete a kill), RIC-013 (a reaction penalises the next unspent set of
-   actions) and RIC-014 (the ambush DM applies to Initiative only, round one
-   only).
+   document kinds, each written atomically, in a git working tree pushed to the
+   private data repo.
+9. **The issue import channel.** The issue form, the reusable validation
+   workflow, `inbox/`, and the application-side import that allocates ids and
+   turns a bundle into actors plus a party.
+10. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
+    complete and move it to `docs/archive/`. The rule interpretations are
+    already recorded — RIC-011 (stun and lethal share one END score), RIC-012
+    (stun can never complete a kill), RIC-013 (a reaction penalises the next
+    unspent set of actions) and RIC-014 (the ambush DM applies to Initiative
+    only, round one only).
 
 Rule tests go through the `Situation` / `Actor` / `DamageTrack` public API.
 Repository contract tests run against an in-memory backend and the local JSON
@@ -850,18 +910,19 @@ Phase 4 remains open until the tracker has supported a real fight.
 - **Dice** — no initiative or damage rolls.
 - **Undo** — the row and actor editors cover correction instead; see the
   Persistence section for the shape it would take if that proves insufficient.
+- **Any synchronous AI interface** — an MCP server or HTTP API letting an
+  assistant create or change entities on demand. The issue channel covers the
+  one wanted workflow, needs nothing running, and works from a machine that has
+  never been set up. Revisit only if preparation starts happening at the table.
 - **Healing as a rule the app applies** — first aid, medical care, natural
   healing. Clear stun and Reset health let the referee record the outcome;
   nothing computes it. Modelling natural healing would bring back the campaign
   clock, since it counts days.
 - **A campaign clock, and any tracking of time or rest between fights.**
   Considered and rejected: see Time and Situation boundaries.
-- **Robot combat rules and robot-source adapter** — robots have Hits but their
-  own damage, stun, protection and critical-hit rules. Their discriminated
-  Actor-definition variant and source Protocol are added only after those rules
-  are read; they must not inherit animal `HitsTrack` semantics by convenience.
-- **Animal source adapter** — reserved for a future `ceres.make.animal`; manual
-  validated animal definitions remain supported meanwhile.
+- **Robot combat rules** — robots have Hits but their own damage, stun,
+  protection and critical-hit rules. Their damage track waits until those rules
+  are read; it must not inherit animal `HitsTrack` semantics by convenience.
 - **The Companion's optional rules** — Natural Resilience, Knockout Blow, Random
   First Blood, alternative initiative, disabling wounds
   (`refs/companion/13_combat.md`). Noted as existing; not implemented.

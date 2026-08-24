@@ -2,12 +2,27 @@
 
 from nicegui import app, ui
 
+from ceres import settings
 from ceres.rounds.domain.actor import Actor
 from ceres.rounds.domain.situation import Situation
 from ceres.rounds.domain.tracks import CharacteristicTrack, HitsTrack
+from ceres.rounds.library.store import Library
+from ceres.rounds.ui.parties import PartiesPage
 from ceres.rounds.ui.table import RoundsTable
 
 ACTIVE_SITUATION_KEY = 'rounds.active_situation'
+
+
+def library() -> Library:
+    return Library(settings.data_dir() / 'rounds')
+
+
+def navigation(current: str) -> None:
+    with ui.row().classes('items-center gap-4 mb-2'):
+        for label, target in (('Run', '/'), ('Parties', '/parties')):
+            link = ui.link(label, target).classes('text-sm')
+            if label == current:
+                link.classes('font-bold')
 
 
 def demo_situation() -> Situation:
@@ -44,7 +59,14 @@ async def index() -> None:
     if not isinstance(stored, Situation):
         stored = demo_situation()
         app.storage.tab[ACTIVE_SITUATION_KEY] = stored
+    navigation('Run')
     RoundsTable(stored).build()
+
+
+@ui.page('/parties')
+def parties() -> None:
+    navigation('Parties')
+    PartiesPage(library()).build()
 
 
 def main() -> None:

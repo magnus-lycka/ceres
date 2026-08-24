@@ -1,0 +1,102 @@
+import { describe, expect, it } from 'vitest';
+import { type Actor, actorKinds, actorSchema } from '../../schema/actor';
+import { createIdSequence, duplicate, formatTags, highestId, newActor, parseTags } from './library';
+
+function actor(id: number, name: string, tags: string[] = []): Actor {
+  return { id, name, kind: 'sophont', note: '', tags, strength: 8, dexterity: 8, endurance: 8, hits: null, injuries: [] };
+}
+
+const roster = [
+  actor(1, 'Rin', ['pc', 'marduk']),
+  actor(2, 'Wolf', ['beasts']),
+  actor(3, 'Pirate', ['pirates', 'marduk']),
+];
+
+describe('id sequence', () => {
+  it('climbs, one at a time', () => {
+    const ids = createIdSequence(highestId(roster));
+    expect([ids.next(), ids.next()]).toEqual([4, 5]);
+  });
+
+  it('starts at one for an empty library', () => {
+    expect(createIdSequence(highestId([])).next()).toBe(1);
+  });
+
+  it('does not go backwards when the highest actor is deleted', () => {
+    const ids = createIdSequence(highestId(roster));
+    const issued = ids.next();
+    const survivors = roster.slice(0, 1);
+    // Re-deriving from what is left would hand out 2 again; the sequence must not.
+    expect(highestId(survivors)).toBeLessThan(issued);
+    expect(ids.next()).toBe(issued + 1);
+  });
+
+  it('never reissues an id, however many actors are deleted', () => {
+    const ids = createIdSequence(highestId(roster));
+    const issued = [ids.next(), ids.next(), ids.next()];
+    expect(new Set(issued).size).toBe(issued.length);
+    expect(ids.next()).toBeGreaterThan(Math.max(...issued));
+  });
+});
+
+describe('duplicate', () => {
+  it('numbers the copy so it is distinguishable from its original', () => {
+    expect(duplicate(actor(1, 'Wolf'), 2, [actor(1, 'Wolf')]).name).toBe('Wolf 1');
+  });
+
+  it('continues the series when pressed again', () => {
+    const first = duplicate(actor(1, 'Wolf'), 2, [actor(1, 'Wolf')]);
+    const second = duplicate(actor(1, 'Wolf'), 3, [actor(1, 'Wolf'), first]);
+    expect([first.name, second.name]).toEqual(['Wolf 1', 'Wolf 2']);
+  });
+
+  it('continues the series when duplicating a copy, not starting a new one', () => {
+    const roster = [actor(1, 'Wolf'), actor(2, 'Wolf 1')];
+    expect(duplicate(roster[1], 3, roster).name).toBe('Wolf 2');
+  });
+
+  it('takes its id from the sequence rather than from the roster', () => {
+    expect(duplicate(actor(1, 'Wolf'), 9, [actor(1, 'Wolf')]).id).toBe(9);
+  });
+
+  it('does not share the tag list with the original', () => {
+    const source = actor(1, 'Chicken', ['fowl']);
+    duplicate(source, 2, [source]).tags.push('extra');
+    expect(source.tags).toEqual(['fowl']);
+  });
+});
+
+describe('parseTags', () => {
+  it('keeps an array as it is', () => {
+    expect(parseTags(['pc', 'marduk'])).toEqual(['pc', 'marduk']);
+  });
+
+  it('splits pasted text rather than storing a string that renders per letter', () => {
+    expect(parseTags('pc marduk')).toEqual(['pc', 'marduk']);
+  });
+
+  it('accepts commas, since another tool may have written them', () => {
+    expect(parseTags('pc, marduk')).toEqual(['pc', 'marduk']);
+  });
+
+  it('treats an empty or missing cell as no tags', () => {
+    expect(parseTags('')).toEqual([]);
+    expect(parseTags(null)).toEqual([]);
+    expect(parseTags(undefined)).toEqual([]);
+  });
+
+  it('drops padding rather than making an empty tag', () => {
+    expect(parseTags('  pc   marduk  ')).toEqual(['pc', 'marduk']);
+    expect(parseTags([' pc ', ''])).toEqual(['pc']);
+  });
+});
+
+describe('formatTags', () => {
+  it('writes a tag list out as one clipboard cell', () => {
+    expect(formatTags(['pc', 'marduk'])).toBe('pc marduk');
+  });
+
+  it('round-trips through a paste', () => {
+    expect(parseTags(formatTags(['pc', 'marduk']))).toEqual(['pc', 'marduk']);
+  });
+});
