@@ -2,10 +2,9 @@
   /**
    * The actor library.
    *
-   * State is in memory for now: the open question this screen answers is
-   * whether the grid makes roster management pleasant, and persistence would
-   * add moving parts without informing that. The service is already written
-   * and tested on the Python side whenever this is worth wiring up.
+   * Backed by the data repository once one is connected, and by nothing at all
+   * before that: without a repository this is a scratch pad that forgets
+   * everything on reload, which is honest about what it is.
    *
    * Nothing here knows a grid is involved. `ActorGrid` takes actors and
    * reports which one the cursor is in; columns, cell contexts and row
@@ -13,119 +12,119 @@
    */
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
+  import Connection from '$lib/store/Connection.svelte';
+  import { GitHubFileStore } from '$lib/store/github';
+  import { Library } from '$lib/store/library';
+  import { loadConnection } from '$lib/store/connection';
   import { type Actor, type ActorKind, actorKinds, actorSchema } from '$lib/schema/actor';
-  import { createIdSequence, duplicate, highestId, newActor } from '$lib/rules/rounds/library';
+  import { duplicate, newActor } from '$lib/rules/rounds/library';
 
-  const seed: Actor[] = [
-    {
-      id: 1,
-      name: 'Rin',
-      kind: 'sophont',
-      note: '',
-      tags: ['pc'],
-      strength: 8,
-      dexterity: 8,
-      endurance: 8,
-      hits: null,
-      injuries: [],
-      criticals: {},
-    },
-    {
-      id: 2,
-      name: 'Sana',
-      kind: 'sophont',
-      note: '',
-      tags: ['pc', 'marduk'],
-      strength: 6,
-      dexterity: 9,
-      endurance: 7,
-      hits: null,
-      injuries: [],
-      criticals: {},
-    },
-    {
-      id: 3,
-      name: 'Kes',
-      kind: 'sophont',
-      note: 'medic',
-      tags: ['pc'],
-      strength: 7,
-      dexterity: 7,
-      endurance: 7,
-      hits: null,
-      injuries: [],
-      criticals: {},
-    },
-    {
-      id: 4,
-      name: 'Wolf',
-      kind: 'animal',
-      note: '',
-      tags: ['beasts'],
-      strength: null,
-      dexterity: null,
-      endurance: null,
-      hits: 12,
-      injuries: [],
-      criticals: {},
-    },
-    {
-      id: 5,
-      name: 'Pirate',
-      kind: 'sophont',
-      note: '',
-      tags: ['pirates', 'marduk'],
-      strength: 7,
-      dexterity: 8,
-      endurance: 6,
-      hits: null,
-      injuries: [],
-      criticals: {},
-    },
-    {
-      id: 6,
-      name: 'Warbot',
-      kind: 'robot',
-      note: 'guards the facility',
-      tags: ['marduk'],
-      strength: null,
-      dexterity: null,
-      endurance: null,
-      hits: 20,
-      injuries: [],
-      criticals: {},
-    },
-  ];
-
-  let actors = $state<Actor[]>(seed);
-  // Seeded once from what was loaded, then never re-derived from `actors`:
-  // deleting the highest-numbered actor must not free its id for reuse.
-  const ids = createIdSequence(highestId(seed));
-  let selected = $state<Actor | null>(null);
+  let actors = $state<Actor[]>([]);
+  let library = $state<Library | null>(null);
+  // The id rather than the actor: `actors` is replaced on every save, and an
+  // actor held directly would go stale the moment its row was rewritten.
+  let selectedId = $state<number | null>(null);
+  const selected = $derived(actors.find((actor) => actor.id === selectedId) ?? null);
   let problem = $state('');
+  // How many writes are in flight. The buttons stay disabled until the repo
+  // has answered, because pressing Add again while the first is still going is
+  // exactly what produced a screen full of duplicate ids.
+  let busy = $state(0);
 
-  function addActor(kind: ActorKind) {
-    actors = [...actors, newActor(kind, ids.next())];
+  // Reconnect from what this browser already knows, so a reload lands back on
+  // the same data rather than on an empty screen and a form.
+  $effect(() => {
+    const settings = loadConnection();
+    if (settings && !library) connected(new Library(new GitHubFileStore(settings)));
+  });
+
+  async function connected(next: Library | null) {
+    library = next;
+    actors = next ? await next.actors() : [];
+    selectedId = null;
   }
 
+  /**
+   * Every change goes through here, so the screen only ever shows what the
+   * repository accepted. A save that fails leaves the grid alone rather than
+   * seating an actor that does not exist anywhere.
+   */
+  async function keep(work: () => Promise<void>) {
+    busy += 1;
+    // One change at a time. Each of these reads `actors`, awaits the
+    // repository, and writes `actors` back — so two running at once both
+    // start from the same list and the second silently discards the first.
+    // That is what made the grid disagree with what had actually been stored.
+    const mine = gate.then(async () => {
+      try {
+        problem = '';
+        await work();
+      } catch (failure) {
+        problem = failure instanceof Error ? failure.message : String(failure);
+      }
+    });
+    gate = mine;
+    await mine;
+    busy -= 1;
+  }
+
+  let gate: Promise<void> = Promise.resolve();
+
+  /** Saved when there is a repository; otherwise it stays in this browser. */
+  async function store(actor: Actor): Promise<Actor> {
+    return library ? await library.saveActor(actor) : { ...actor, id: actor.id || nextScratchId() };
+  }
+
+  // Without a repository there is no counter to allocate from, so the scratch
+  // pad keeps its own. Ids still only climb.
+  let scratch = 0;
+  function nextScratchId(): number {
+    scratch = Math.max(scratch, ...actors.map((actor) => actor.id), 0) + 1;
+    return scratch;
+  }
+
+  function addActor(kind: ActorKind) {
+    return keep(async () => {
+      const saved = await store(newActor(kind, 0));
+      actors = [...actors, saved];
+    });
+  }
+
+  /** From the health panel, which hands back a new actor object. */
   function replace(updated: Actor) {
-    actors = actors.map((actor) => (actor.id === updated.id ? updated : actor));
-    selected = updated;
+    return keep(async () => {
+      const saved = await store(updated);
+      actors = actors.map((actor) => (actor.id === saved.id ? saved : actor));
+    });
+  }
+
+  /**
+   * From the grid, which has already applied the edit to the row in place.
+   * Only the repository needs telling — replacing `actors` here would re-render
+   * the grid out from under the cursor.
+   */
+  function edited(actor: Actor) {
+    return keep(async () => void (await store(actor)));
   }
 
   function duplicateSelected() {
     if (!selected) return void (problem = 'Click a row first.');
-    actors = [...actors, duplicate(selected, ids.next(), actors)];
-    problem = '';
+    const source = selected;
+    return keep(async () => {
+      const copy = await store({ ...duplicate(source, 0, actors), id: 0 });
+      actors = [...actors, copy];
+    });
   }
 
   function deleteSelected() {
     if (!selected) return void (problem = 'Click a row first.');
     const doomed = selected.id;
     // No confirmation: deleting is the referee's business, not the app's.
-    actors = actors.filter((actor) => actor.id !== doomed);
-    selected = null;
-    problem = '';
+    return keep(async () => {
+      await library?.deleteActor(doomed);
+      actors = actors.filter((actor) => actor.id !== doomed);
+      selectedId = null;
+    });
   }
 
   function validate() {
@@ -135,29 +134,33 @@
     problem = failures.length
       ? failures
           .map(({ actor, result }) => `${actor.name || '(unnamed)'}: ${result.error!.issues[0].message}`)
-          .join(' · ')
+          .join(' \u00b7 ')
       : `${actors.length} actors, all valid`;
   }
 </script>
 
 <h1>Actors</h1>
 
+<Connection onconnect={connected} />
+
 <div class="bar">
   {#each actorKinds as kind (kind)}
-    <button onclick={() => addActor(kind)}>Add {kind}</button>
+    <button onclick={() => addActor(kind)} disabled={busy > 0}>Add {kind}</button>
   {/each}
-  <button onclick={duplicateSelected}>Duplicate</button>
-  <button onclick={deleteSelected}>Delete</button>
+  <button onclick={duplicateSelected} disabled={busy > 0}>Duplicate</button>
+  <button onclick={deleteSelected} disabled={busy > 0}>Delete</button>
   <button onclick={validate}>Validate</button>
+  {#if busy > 0}<span class="busy">saving…</span>{/if}
 </div>
+
+{#if problem}<p class="problem">{problem}</p>{/if}
 
 <p class="hint">
   Duplicate and Delete act on the row your cursor is in. ⌘Z undoes a cell edit; it does not undo adding or
   deleting a row. Paste a block from a spreadsheet with ⌘V. Drag-select a range and ⌘C to copy one out.
-  {#if problem}<strong>{problem}</strong>{/if}
 </p>
 
-<ActorGrid {actors} onselect={(actor) => (selected = actor)} />
+<ActorGrid {actors} onselect={(actor) => (selectedId = actor?.id ?? null)} onedit={edited} />
 
 {#if selected}
   <ActorHealth actor={selected} onchange={replace} />
@@ -174,5 +177,15 @@
   }
   .hint {
     color: #555;
+  }
+  .busy {
+    color: #555;
+  }
+  .problem {
+    background: #fef2f2;
+    border-left: 3px solid #b91c1c;
+    color: #7c2c1a;
+    padding: 0.4rem 0.75rem;
+    margin: 0 0 0.5rem;
   }
 </style>

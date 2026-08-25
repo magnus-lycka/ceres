@@ -12,6 +12,12 @@ describe('actor schema', () => {
     expect(actor.tags).toEqual([]);
   });
 
+  // Add puts an unnamed row in the grid and you type the name into it, so an
+  // actor without one has to survive the round trip to storage.
+  it('accepts an actor that has not been named yet', () => {
+    expect(actorSchema.parse({ ...sophont, name: '' }).name).toBe('');
+  });
+
   it('accepts an animal with hits', () => {
     expect(actorSchema.parse(animal).hits).toBe(12);
   });

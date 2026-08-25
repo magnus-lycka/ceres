@@ -70,7 +70,13 @@ export const WORST_SEVERITY = 6;
 
 const base = z.object({
   id: z.number().int().nonnegative().default(UNSAVED),
-  name: z.string().min(1),
+  /**
+   * Empty until it is typed. An actor is added to the roster and named in the
+   * grid afterwards, so the unnamed moment is a normal state to be stored, not
+   * an error — requiring a name here meant Add wrote a row that could never be
+   * read back.
+   */
+  name: z.string().default(''),
   kind: z.enum(actorKinds),
   note: z.string().default(''),
   tags: z.array(z.string()).default([]),

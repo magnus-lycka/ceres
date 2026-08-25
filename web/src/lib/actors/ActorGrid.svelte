@@ -52,10 +52,20 @@
   let {
     actors,
     onselect,
+    onedit,
   }: {
     actors: Actor[];
     /** The actor whose row the cursor is in, or null when none is. */
     onselect: (actor: Actor | null) => void;
+    /**
+     * An actor after a cell edit, so the page can persist it.
+     *
+     * The grid has already applied the edit to the row in place. The page must
+     * store it *without* replacing `actors` — handing SvGrid a new array mid-
+     * edit re-renders the grid and throws away the cursor, which is what made
+     * keyboard editing feel broken.
+     */
+    onedit?: (actor: Actor) => void;
   } = $props();
 
   type Cell = CellContext<Actor>;
@@ -80,7 +90,9 @@
   }));
 
   const columns: GridColumns<Actor> = [
-    { field: 'id', header: 'Id', width: 60 },
+    // Not data to be typed but the row's marker, as a spreadsheet's row
+    // header is. Styled below to show which row the cursor is in.
+    { field: 'id', header: 'Id', width: 60, editable: false },
     { field: 'name', header: 'Name', editorType: 'text' },
     // Kind is fixed at creation: it decides how the actor absorbs damage, so
     // changing it would invalidate any injury recorded against it. Becoming a
@@ -106,38 +118,83 @@
     { id: 'health', header: 'Health', fieldFn: healthSummary, editable: false },
   ];
 
-  let api = $state<SvGridApi<TableFeatures, Actor> | null>(null);
-
   /**
    * Row index is SvGrid's currency and stops here. The page is told which
    * actor the cursor is in, never which row it sits in.
+   *
+   * Driven by the active cell rather than by clicks, so arrow keys move the
+   * selection exactly as the mouse does.
    */
-  function report() {
-    const cell = api?.getActiveCell();
-    onselect(cell ? (actors[cell.rowIndex] ?? null) : null);
+  function report(rowIndex: number) {
+    onselect(rowIndex >= 0 ? (actors[rowIndex] ?? null) : null);
   }
+
+  let container = $state<HTMLElement | null>(null);
+  let api = $state<SvGridApi<TableFeatures, Actor> | null>(null);
+  let claimedFocus = false;
+
+  /**
+   * Take the keyboard on arrival.
+   *
+   * Arrow keys are handled by `table.sv-grid-table`, which needs real DOM
+   * focus to receive them — so on a fresh load the grid looks ready and
+   * ignores every key until it has been tabbed or clicked into. Only claimed
+   * when nothing else has focus, so it never steals the caret from someone
+   * mid-way through typing.
+   */
+  $effect(() => {
+    if (claimedFocus || actors.length === 0) return;
+    const table = container?.querySelector<HTMLElement>('.sv-grid-table');
+    const idle = document.activeElement === null || document.activeElement === document.body;
+    if (!table || !idle) return;
+    claimedFocus = true;
+    api?.setActiveCell(0, 0);
+    table.focus({ preventScroll: true });
+  });
 </script>
 
 {#snippet pills(values: string[])}
   {#each values as tag (tag)}<span class="pill">{tag}</span>{/each}
 {/snippet}
 
-<SvGrid
-  data={actors}
-  {columns}
-  sortable
-  filterable
-  selectionMode="cell"
-  enableInlineEditing
-  contextMenu
-  containerHeight="auto"
-  enableRowSummaries={false}
-  processCellForClipboard={(p) => (p.columnId === 'tags' ? formatTags(p.value) : p.value)}
-  onApiReady={(ready) => (api = ready)}
-  onCellClick={report}
-/>
+<div class="grid" bind:this={container}>
+  <SvGrid
+    data={actors}
+    {columns}
+    sortable
+    filterable
+    selectionMode="cell"
+    enableInlineEditing
+    contextMenu
+    containerHeight="auto"
+    enableRowSummaries={false}
+    processCellForClipboard={(p) => (p.columnId === 'tags' ? formatTags(p.value) : p.value)}
+    onApiReady={(ready) => (api = ready)}
+    onActiveCellChange={(cell) => report(cell?.rowIndex ?? -1)}
+    onCellValueChange={(change) => onedit?.(change.row)}
+  />
+</div>
 
 <style>
+  /*
+   * Spreadsheet convention, as Google Sheets and Excel use it: the cell you
+   * are in gets a frame, and its row marker gets a fill. Row *background* is
+   * deliberately left alone — that channel belongs to what an actor is, not
+   * to where the cursor is, and the Situation grid needs it for green
+   * "can act" and grey "spent".
+   */
+  .grid {
+    /* The excel theme paints the active-cell ring Excel green (#107c41),
+       which is exactly the colour that has to mean "can act". */
+    --sg-accent: #1a73e8;
+  }
+
+  /* The Id column stands in for a spreadsheet's row header. */
+  .grid :global(tr:has(.sv-grid-cell-active) td[data-col-id='id']) {
+    background: #e8f0fe;
+    font-weight: 600;
+  }
+
   .pill {
     background: #e2e8f0;
     border-radius: 9999px;
