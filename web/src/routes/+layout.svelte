@@ -9,6 +9,7 @@
 <nav>
   <a href={resolve('/actors')}>Actors</a>
   <a href={resolve('/parties')}>Parties</a>
+  <a href={resolve('/sync')}>Sync</a>
 </nav>
 
 {@render children()}

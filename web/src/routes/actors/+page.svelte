@@ -10,9 +10,9 @@
    * reports which one the cursor is in; columns, cell contexts and row
    * indices stop at that boundary.
    */
+  import { resolve } from '$app/paths';
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
-  import Connection from '$lib/store/Connection.svelte';
   import { GitHubFileStore } from '$lib/store/github';
   import { Library } from '$lib/store/library';
   import { loadConnection } from '$lib/store/connection';
@@ -141,7 +141,12 @@
 
 <h1>Actors</h1>
 
-<Connection onconnect={connected} />
+{#if !library}
+  <p class="hint">
+    No data repository, so nothing is being saved. Set one up under
+    <a href={resolve('/sync')}>Sync</a>.
+  </p>
+{/if}
 
 <div class="bar">
   {#each actorKinds as kind (kind)}
