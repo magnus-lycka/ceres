@@ -182,13 +182,25 @@
    */
   $effect(() => {
     if (claimedFocus || actors.length === 0) return;
-    const table = container?.querySelector<HTMLElement>('.sv-grid-table');
     const idle = document.activeElement === null || document.activeElement === document.body;
-    if (!table || !idle) return;
-    claimedFocus = true;
-    api?.setActiveCell(0, 0);
-    table.focus({ preventScroll: true });
+    if (!idle) return;
+    claimedFocus = focus(0);
   });
+
+  /**
+   * Put the keyboard back in the grid, on a given row.
+   *
+   * Pressing a toolbar button moves focus to that button, and nothing hands it
+   * back — so after Add or Delete the arrow keys are dead until the grid is
+   * clicked. The page calls this when an action finishes.
+   */
+  export function focus(rowIndex: number): boolean {
+    const table = container?.querySelector<HTMLElement>('.sv-grid-table');
+    if (!table) return false;
+    api?.setActiveCell(Math.max(rowIndex, 0), 0);
+    table.focus({ preventScroll: true });
+    return true;
+  }
 </script>
 
 {#snippet pills(values: string[])}

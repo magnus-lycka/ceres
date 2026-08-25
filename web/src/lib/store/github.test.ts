@@ -127,3 +127,50 @@ describe('failures', () => {
     );
   });
 });
+
+describe('freshness', () => {
+  // GitHub allows authenticated reads to be cached for a minute. Replaying a
+  // stale listing after a delete brings the deleted actor back on reload,
+  // which looks exactly like the delete having been local only.
+  it('never reads through the browser cache', async () => {
+    const fetch = stubFetch(respond(200, { tree: [] }));
+    await new GitHubFileStore(repository).list('actors');
+    expect(fetch.mock.calls[0][1].cache).toBe('no-store');
+  });
+});
+
+describe('sha bookkeeping', () => {
+  // The tree endpoint lags for a moment after a commit, so it can report an
+  // older sha than a direct read of the same file just returned. Letting it
+  // overwrite what we know refuses the next write for no reason.
+  it('does not let a stale tree overwrite a sha read directly', async () => {
+    const fetch = stubFetch(
+      respond(200, { content: base64('{}'), sha: 'fresh' }),
+      respond(200, { tree: [{ path: 'counters.json', sha: 'stale', type: 'blob' }] }),
+      respond(200, { content: { sha: 'newer' } }),
+    );
+    const store = new GitHubFileStore(repository);
+    await store.read('counters.json');
+    await store.list('actors');
+    await store.write('counters.json', '{"actors":1}', 'Allocate');
+
+    expect(JSON.parse(fetch.mock.calls[2][1].body).sha).toBe('fresh');
+  });
+
+  // Four round trips per Add is most of why it feels slow. A write already
+  // knows the path and its new sha, so re-fetching the whole tree afterwards
+  // buys nothing but latency and a chance to read a stale sha.
+  it('keeps its listing current without re-fetching the tree after a write', async () => {
+    const fetch = stubFetch(
+      respond(200, { tree: [] }),
+      respond(200, { content: { sha: 'a' } }),
+      respond(200, { content: { sha: 'b' } }),
+    );
+    const store = new GitHubFileStore(repository);
+    await store.list('actors');
+    await store.write('actors/1.json', '{}', 'Save');
+
+    expect(await store.list('actors')).toEqual(['actors/1.json']);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});

@@ -26,6 +26,7 @@
   let selectedId = $state<number | null>(null);
   const selected = $derived(actors.find((actor) => actor.id === selectedId) ?? null);
   let problem = $state('');
+  let grid = $state<ReturnType<typeof ActorGrid> | null>(null);
   // How many writes are in flight. The buttons stay disabled until the repo
   // has answered, because pressing Add again while the first is still going is
   // exactly what produced a screen full of duplicate ids.
@@ -87,6 +88,8 @@
     return keep(async () => {
       const saved = await store(newActor(kind, 0));
       actors = [...actors, saved];
+      // On the new row, ready to type its name.
+      grid?.focus(actors.length - 1);
     });
   }
 
@@ -113,6 +116,7 @@
     return keep(async () => {
       const copy = await store({ ...duplicate(source, 0, actors), id: 0 });
       actors = [...actors, copy];
+      grid?.focus(actors.length - 1);
     });
   }
 
@@ -122,8 +126,10 @@
     // No confirmation: deleting is the referee's business, not the app's.
     return keep(async () => {
       await library?.deleteActor(doomed);
+      const gone = actors.findIndex((actor) => actor.id === doomed);
       actors = actors.filter((actor) => actor.id !== doomed);
       selectedId = null;
+      grid?.focus(Math.min(gone, actors.length - 1));
     });
   }
 
@@ -165,7 +171,7 @@
   deleting a row. Paste a block from a spreadsheet with ⌘V. Drag-select a range and ⌘C to copy one out.
 </p>
 
-<ActorGrid {actors} onselect={(actor) => (selectedId = actor?.id ?? null)} onedit={edited} />
+<ActorGrid bind:this={grid} {actors} onselect={(actor) => (selectedId = actor?.id ?? null)} onedit={edited} />
 
 {#if selected}
   <ActorHealth actor={selected} onchange={replace} />

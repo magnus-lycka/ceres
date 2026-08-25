@@ -164,3 +164,22 @@ describe('the column marker', () => {
     expect(getComputedStyle(active).backgroundColor).toBe('rgba(0, 0, 0, 0)');
   });
 });
+
+describe('handing the keyboard back', () => {
+  // Pressing a toolbar button takes focus away from the grid, and nothing
+  // returns it — so after Add or Delete the arrow keys are dead.
+  it('takes focus back on request, on the row asked for', async () => {
+    const onselect = vi.fn();
+    const screen = await render(ActorGrid, { actors, onselect });
+    const elsewhere = document.createElement('button');
+    document.body.append(elsewhere);
+    elsewhere.focus();
+    expect(document.activeElement).toBe(elsewhere);
+
+    screen.component.focus(1);
+
+    expect(document.activeElement).toBe(screen.container.querySelector('.sv-grid-table'));
+    await vi.waitFor(() => expect(onselect.mock.calls.at(-1)?.[0]).toMatchObject({ name: 'Warbot' }));
+    elsewhere.remove();
+  });
+});

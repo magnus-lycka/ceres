@@ -70,7 +70,7 @@ export class GitHubFileStore implements FileStore {
     if (response.status === 409 || response.status === 422) throw new ConflictError(path);
     const written = (await this.parse(response)) as { content: { sha: string } };
     this.shas.set(path, written.content.sha);
-    this.cachedTree = null;
+    this.remember(path, written.content.sha);
   }
 
   async remove(path: string, message: string): Promise<void> {
@@ -85,15 +85,33 @@ export class GitHubFileStore implements FileStore {
     if (response.status === 409 || response.status === 422) throw new ConflictError(path);
     await this.parse(response);
     this.shas.delete(path);
-    this.cachedTree = null;
+    this.forget(path);
   }
 
   /**
-   * One request for the whole layout, rather than one per directory. Reset
-   * whenever this store writes; a change made elsewhere is only noticed on the
-   * next reload, which is what the conflict on write is there to catch.
+   * One request for the whole layout, rather than one per directory.
+   *
+   * Kept current as this store writes rather than thrown away, for two
+   * reasons. It saves a full tree fetch per operation — most of why adding a
+   * row felt slow. And the tree endpoint lags for a moment after a commit, so
+   * re-fetching it straight after a write can report the *previous* sha for
+   * the file just written, which then gets that file's next write refused.
+   *
+   * A change made on another machine is still only noticed on reload; catching
+   * that is what the conflict on write is for.
    */
   private cachedTree: { path: string; sha: string }[] | null = null;
+
+  private remember(path: string, sha: string): void {
+    if (!this.cachedTree) return;
+    const existing = this.cachedTree.find((entry) => entry.path === path);
+    if (existing) existing.sha = sha;
+    else this.cachedTree.push({ path, sha });
+  }
+
+  private forget(path: string): void {
+    this.cachedTree = this.cachedTree?.filter((entry) => entry.path !== path) ?? null;
+  }
 
   private async tree(): Promise<{ path: string; sha: string }[]> {
     if (this.cachedTree) return this.cachedTree;
@@ -104,7 +122,9 @@ export class GitHubFileStore implements FileStore {
       tree: { path: string; sha: string; type: string }[];
     };
     const files = body.tree.filter((entry) => entry.type === 'blob');
-    for (const entry of files) this.shas.set(entry.path, entry.sha);
+    // Never overwrite a sha a direct read or write established: those are
+    // authoritative, and the tree may be a moment behind them.
+    for (const entry of files) if (!this.shas.has(entry.path)) this.shas.set(entry.path, entry.sha);
     return (this.cachedTree = files.map(({ path, sha }) => ({ path, sha })));
   }
 
@@ -117,6 +137,11 @@ export class GitHubFileStore implements FileStore {
     const { owner, repo, token } = this.repository;
     return fetch(`${API}/repos/${owner}/${repo}${route}`, {
       ...init,
+      // GitHub answers authenticated reads with `Cache-Control: private,
+      // max-age=60`, so the browser will happily replay a minute-old listing.
+      // After a delete that means the actor reappears on the next reload,
+      // having genuinely been removed from the repository.
+      cache: 'no-store',
       headers: {
         accept: 'application/vnd.github+json',
         authorization: `Bearer ${token}`,
