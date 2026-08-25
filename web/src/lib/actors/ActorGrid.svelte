@@ -1,3 +1,13 @@
+<script module lang="ts">
+  /** Distinguishes each grid's marker stylesheet from any other on the page. */
+  let instances = 0;
+
+  function nextGridId(): string {
+    instances += 1;
+    return `actor-grid-${instances}`;
+  }
+</script>
+
 <script lang="ts">
   /**
    * The actor roster as a spreadsheet.
@@ -70,6 +80,9 @@
 
   type Cell = CellContext<Actor>;
 
+  /** Fill for the row and column markers, as a spreadsheet tints them. */
+  const MARKER = '#e8f0fe';
+
   const hurtByHits = (ctx: Cell) => ctx.row.original.kind !== 'sophont';
   const hurtByCharacteristics = (ctx: Cell) => ctx.row.original.kind === 'sophont';
 
@@ -129,6 +142,31 @@
     onselect(rowIndex >= 0 ? (actors[rowIndex] ?? null) : null);
   }
 
+  /**
+   * The column the cursor is in, so its header can be marked.
+   *
+   * Which column that is only exists at runtime, and CSS cannot compare one
+   * element's attribute against another's — so the rule is written out for
+   * whichever column is active, into a stylesheet of our own scoped to this
+   * grid. A rule survives SvGrid re-rendering its header on scroll, where a
+   * class set on its elements would not.
+   */
+  let activeColumn = $state<string | null>(null);
+  const uid = nextGridId();
+  let sheet: HTMLStyleElement | null = null;
+
+  $effect(() => {
+    sheet ??= document.head.appendChild(document.createElement('style'));
+    sheet.textContent = activeColumn
+      ? `#${uid} th[data-svgrid-header-col="${activeColumn}"] { background: ${MARKER}; }`
+      : '';
+  });
+
+  $effect(() => () => {
+    sheet?.remove();
+    sheet = null;
+  });
+
   let container = $state<HTMLElement | null>(null);
   let api = $state<SvGridApi<TableFeatures, Actor> | null>(null);
   let claimedFocus = false;
@@ -157,7 +195,7 @@
   {#each values as tag (tag)}<span class="pill">{tag}</span>{/each}
 {/snippet}
 
-<div class="grid" bind:this={container}>
+<div class="grid" id={uid} bind:this={container}>
   <SvGrid
     data={actors}
     {columns}
@@ -170,7 +208,10 @@
     enableRowSummaries={false}
     processCellForClipboard={(p) => (p.columnId === 'tags' ? formatTags(p.value) : p.value)}
     onApiReady={(ready) => (api = ready)}
-    onActiveCellChange={(cell) => report(cell?.rowIndex ?? -1)}
+    onActiveCellChange={(cell) => {
+      activeColumn = cell?.columnId ?? null;
+      report(cell?.rowIndex ?? -1);
+    }}
     onCellValueChange={(change) => onedit?.(change.row)}
   />
 </div>
@@ -184,9 +225,17 @@
    * "can act" and grey "spent".
    */
   .grid {
-    /* The excel theme paints the active-cell ring Excel green (#107c41),
-       which is exactly the colour that has to mean "can act". */
+    /* The excel theme paints both of these Excel green — the ring #107c41 and
+       the range wash a 10% tint of it — which is exactly the colour that has
+       to mean "can act". */
     --sg-accent: #1a73e8;
+    --sg-selection-bg: rgba(26, 115, 232, 0.1);
+  }
+
+  /* The cell the cursor is in is framed, never filled: a spreadsheet tints the
+     rest of a dragged range but leaves the anchor cell plain. */
+  .grid :global(.sv-grid-cell-active[data-selected-range='true']) {
+    background: transparent;
   }
 
   /* The Id column stands in for a spreadsheet's row header. */

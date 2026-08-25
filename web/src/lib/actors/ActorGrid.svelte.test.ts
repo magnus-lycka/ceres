@@ -144,3 +144,23 @@ describe('arriving on the page', () => {
     expect(onselect.mock.calls.at(-1)?.[0]).toMatchObject({ name: 'Warbot' });
   });
 });
+
+describe('the column marker', () => {
+  it('fills the header of the column the cursor is in', async () => {
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn() });
+    await screen.getByText('Warbot').click();
+
+    const head = screen.container.querySelector('th[data-svgrid-header-col="name"]') as HTMLElement;
+    await vi.waitFor(() => expect(getComputedStyle(head).backgroundColor).toBe('rgb(232, 240, 254)'));
+  });
+
+  // A spreadsheet tints the rest of a dragged range but leaves the anchor
+  // cell plain, so the frame is what marks it.
+  it('leaves the active cell itself unfilled', async () => {
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn() });
+    await screen.getByText('Warbot').click();
+
+    const active = screen.container.querySelector('.sv-grid-cell-active') as HTMLElement;
+    expect(getComputedStyle(active).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  });
+});
