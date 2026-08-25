@@ -63,10 +63,15 @@ export function currentHits(actor: Actor): number | null {
 }
 
 /**
- * Unconscious once STR or DEX is exhausted; END alone does not do it. For an
- * actor hurt through Hits, at a tenth of starting Hits or less.
+ * Unconscious once STR or DEX is exhausted; END alone does not do it. For a
+ * living actor hurt through Hits, at a tenth of starting Hits or less.
+ *
+ * A robot has no such state. It is operational above 0 Hits and wrecked at or
+ * below, with nothing in between: low Hits carry no penalty of their own, and
+ * capacity falls only when a critical damages a system.
  */
 export function isUnconscious(actor: Actor): boolean {
+  if (actor.kind === 'robot') return false;
   if (hurtByCharacteristics(actor)) {
     return current(actor, 'strength') === 0 || current(actor, 'dexterity') === 0;
   }
@@ -93,12 +98,6 @@ export function isDead(actor: Actor): boolean {
   return hits !== null && hits <= 0;
 }
 
-/** Body destroyed at negative starting Hits or worse. */
-export function isDestroyed(actor: Actor): boolean {
-  const hits = lethalHits(actor);
-  return hits !== null && hits <= -(actor.hits ?? 0);
-}
-
 /**
  * Record an injury that happened outside any fight — last session, offscreen,
  * or a correction. It carries no round, because there is no round here.
@@ -108,7 +107,11 @@ export function isDestroyed(actor: Actor): boolean {
  * so there is nothing to check. Stun is different — it only ever touches one
  * stat, and allowing it anywhere else would let it kill.
  */
-export function recordInjury(actor: Actor, kind: Injury['kind'], reductions: Partial<Record<Stat, number>>): Actor {
+export function recordInjury(
+  actor: Actor,
+  kind: Injury['kind'],
+  reductions: Partial<Record<Stat, number>>,
+): Actor {
   if (kind === 'stun') {
     const allowed = stunStat(actor);
     const illegal = Object.entries(reductions).filter(([stat, points]) => stat !== allowed && points);
@@ -123,9 +126,15 @@ export function removeInjury(actor: Actor, index: number): Actor {
   return { ...actor, injuries: actor.injuries.filter((_, position) => position !== index) };
 }
 
-/** A short description of what is wrong with an actor, or '' when nothing is. */
+/**
+ * A short description of what is wrong with an actor, or '' when nothing is.
+ *
+ * Only states that decide whether an actor takes a turn appear here. How far
+ * past dead something is — beyond repair, beyond eating — changes nothing
+ * about the situation, and the damage total already says it.
+ */
 export function healthSummary(actor: Actor): string {
-  if (isDead(actor)) return isDestroyed(actor) ? 'destroyed' : 'dead';
+  if (isDead(actor)) return 'dead';
   const states: string[] = [];
   if (isUnconscious(actor)) states.push('unconscious');
   if (stunPoints(actor) > 0) states.push(`stunned ${stunPoints(actor)}`);

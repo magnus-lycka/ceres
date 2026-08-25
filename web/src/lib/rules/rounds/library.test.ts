@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { type Actor, actorKinds, actorSchema } from '../../schema/actor';
-import { createIdSequence, duplicate, formatTags, highestId, newActor, parseTags } from './library';
+import type { Actor } from '../../schema/actor';
+import { createIdSequence, duplicate, formatTags, highestId, parseTags } from './library';
 
 function actor(id: number, name: string, tags: string[] = []): Actor {
-  return { id, name, kind: 'sophont', note: '', tags, strength: 8, dexterity: 8, endurance: 8, hits: null, injuries: [] };
+  return {
+    id,
+    name,
+    kind: 'sophont',
+    note: '',
+    tags,
+    strength: 8,
+    dexterity: 8,
+    endurance: 8,
+    hits: null,
+    injuries: [],
+    criticals: {},
+  };
 }
 
 const roster = [
@@ -63,6 +75,24 @@ describe('duplicate', () => {
     const source = actor(1, 'Chicken', ['fowl']);
     duplicate(source, 2, [source]).tags.push('extra');
     expect(source.tags).toEqual(['fowl']);
+  });
+
+  // Ten chickens in a fight are ten actors precisely because each is hurt
+  // separately. A copy of a hurt one starts undamaged.
+  it('arrives unhurt, whatever state the original is in', () => {
+    const source: Actor = {
+      ...actor(1, 'Warbot'),
+      kind: 'robot',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 20,
+      injuries: [{ when: null, kind: 'lethal', reductions: { hits: 8 } }],
+      criticals: { power: { severity: 3, note: 'Speed −1 m/band' } },
+    };
+    const copy = duplicate(source, 2, [source]);
+    expect(copy.injuries).toEqual([]);
+    expect(copy.criticals).toEqual({});
   });
 });
 

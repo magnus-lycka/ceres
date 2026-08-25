@@ -3,6 +3,7 @@ import { actorJSONSchema, actorSchema } from './actor';
 
 const sophont = { name: 'Rin', kind: 'sophont', strength: 8, dexterity: 8, endurance: 8 };
 const animal = { name: 'Wolf', kind: 'animal', hits: 12 };
+const robot = { name: 'Warbot', kind: 'robot', hits: 20 };
 
 describe('actor schema', () => {
   it('accepts a sophont with all three physical characteristics', () => {
@@ -27,6 +28,34 @@ describe('actor schema', () => {
 
   it('rejects an animal with no hits', () => {
     expect(actorSchema.safeParse({ name: 'Wolf', kind: 'animal' }).success).toBe(false);
+  });
+
+  // System criticals are a robot rule. Nothing else on the table has a power
+  // supply to lose or a brain to disable.
+  it('accepts criticals on a robot', () => {
+    const hurt = actorSchema.parse({
+      ...robot,
+      criticals: { brain: { severity: 2, note: 'DM−2 to all skills' } },
+    });
+    expect(hurt.criticals.brain).toEqual({ severity: 2, note: 'DM−2 to all skills' });
+  });
+
+  it('defaults a critical to undamaged and unannotated', () => {
+    expect(actorSchema.parse({ ...robot, criticals: { brain: {} } }).criticals.brain).toEqual({
+      severity: 0,
+      note: '',
+    });
+  });
+
+  it('rejects criticals on anything that is not a robot', () => {
+    const result = actorSchema.safeParse({ ...animal, criticals: { brain: { severity: 2 } } });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toContain('critical');
+  });
+
+  it('rejects a severity outside 0–6', () => {
+    expect(actorSchema.safeParse({ ...robot, criticals: { brain: { severity: 7 } } }).success).toBe(false);
+    expect(actorSchema.safeParse({ ...robot, criticals: { brain: { severity: -1 } } }).success).toBe(false);
   });
 
   it('defaults an unsaved actor to id zero, so the service allocates it', () => {

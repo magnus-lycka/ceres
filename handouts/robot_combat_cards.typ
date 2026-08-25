@@ -83,16 +83,14 @@
 #grid(columns: (1fr, 1fr), gutter: 8mm, [
 
 #sect("Start with the robot record", first: true)[
-Before combat, mark these five lines:
+Before combat, mark these six lines:
 
 - *Hits* and *Armour (Protection)* — robot injury is not characteristic damage.
 - *Speed* and locomotion — use these instead of a humanoid's usual 6 m.
 - *Skills* — programmed skills and adjusted fire-control values.
 - *Attacks* — installed weapons and their already-recorded damage and traits.
 - *Manipulators* — each may have different STR and DEX.
-
-#v(3pt)
-Also note *Small/ Large*. Its value is a DM on attacks *against* the robot: Small (−2) gives attackers #dm("−2", kind: "m"); Large (+1) gives them #dm("+1", kind: "p").
+- *Small/Large* — in Traits, from chassis Size. Works as it does for any target.
 ]
 
 #sect("Initiative and actions")[

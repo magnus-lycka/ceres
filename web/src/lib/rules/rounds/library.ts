@@ -40,15 +40,24 @@ export function createIdSequence(seed = 0): { next: () => number } {
  * distinct: Wolf becomes Wolf 1, then Wolf 2, and duplicating Wolf 1 continues
  * the same series rather than starting a second one.
  *
- * The copy carries no injuries — a fresh copy has not been hurt yet. Ten
- * chickens in a fight are ten actors, because each is hurt separately.
+ * The copy arrives unhurt — no injuries and no criticals — because that is the
+ * whole point of copying: ten chickens in a fight are ten actors, and each is
+ * hurt separately. Duplicating the one that has already been shot should not
+ * hand you a second casualty.
  */
 export function duplicate(source: Actor, id: number, actors: readonly Actor[]): Actor {
   const base = source.name.replace(/\s+\d+$/, '').trim();
   const taken = new Set(actors.map((actor) => actor.name));
   let suffix = 1;
   while (taken.has(`${base} ${suffix}`)) suffix += 1;
-  return { ...source, id, name: `${base} ${suffix}`, tags: [...source.tags] };
+  return {
+    ...source,
+    id,
+    name: `${base} ${suffix}`,
+    tags: [...source.tags],
+    injuries: [],
+    criticals: {},
+  };
 }
 
 /**
@@ -72,6 +81,7 @@ export function newActor(kind: ActorKind, id: number): Actor {
     endurance: physical ? 7 : null,
     hits: physical ? null : 10,
     injuries: [],
+    criticals: {},
   };
 }
 
@@ -85,7 +95,11 @@ export function newActor(kind: ActorKind, id: number): Actor {
  * whichever the other tool used.
  */
 export function parseTags(input: unknown): string[] {
-  if (Array.isArray(input)) return input.map(String).map((tag) => tag.trim()).filter(Boolean);
+  if (Array.isArray(input))
+    return input
+      .map(String)
+      .map((tag) => tag.trim())
+      .filter(Boolean);
   if (input === null || input === undefined) return [];
   return String(input)
     .split(/[\s,]+/)

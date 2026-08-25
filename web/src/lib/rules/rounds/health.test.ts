@@ -12,7 +12,6 @@ import {
   currentHits,
   healthSummary,
   isDead,
-  isDestroyed,
   isUnconscious,
   recordInjury,
   removeInjury,
@@ -26,15 +25,49 @@ function hurt(kind: Injury['kind'], reductions: Partial<Record<Stat, number>>): 
 
 function sophont(injuries: Injury[] = []): Actor {
   return {
-    id: 1, name: 'Rin', kind: 'sophont', note: '', tags: [],
-    strength: 8, dexterity: 8, endurance: 8, hits: null, injuries,
+    id: 1,
+    name: 'Rin',
+    kind: 'sophont',
+    note: '',
+    tags: [],
+    strength: 8,
+    dexterity: 8,
+    endurance: 8,
+    hits: null,
+    injuries,
+    criticals: {},
   };
 }
 
 function beast(hits = 20, injuries: Injury[] = []): Actor {
   return {
-    id: 2, name: 'Wolf', kind: 'animal', note: '', tags: [],
-    strength: null, dexterity: null, endurance: null, hits, injuries,
+    id: 2,
+    name: 'Wolf',
+    kind: 'animal',
+    note: '',
+    tags: [],
+    strength: null,
+    dexterity: null,
+    endurance: null,
+    hits,
+    injuries,
+    criticals: {},
+  };
+}
+
+function warbot(hits = 20, injuries: Injury[] = []): Actor {
+  return {
+    id: 6,
+    name: 'Warbot',
+    kind: 'robot',
+    note: '',
+    tags: [],
+    strength: null,
+    dexterity: null,
+    endurance: null,
+    hits,
+    injuries,
+    criticals: {},
   };
 }
 
@@ -105,14 +138,33 @@ describe('actors hurt through Hits', () => {
     expect(isDead(beast(20, [hurt('lethal', { hits: 20 })]))).toBe(true);
   });
 
-  it('is destroyed at negative starting Hits', () => {
-    expect(isDestroyed(beast(20, [hurt('lethal', { hits: 40 })]))).toBe(true);
-  });
-
   it('stun suppresses Hits without killing', () => {
     const wolf = beast(20, [hurt('stun', { hits: 20 })]);
     expect(isDead(wolf)).toBe(false);
     expect(stunPoints(wolf)).toBe(20);
+  });
+});
+
+/**
+ * "Do not treat it like a sophont or animal... There is no animal-style
+ * driven-off, half-Hits or 10%-Hits unconscious state. A robot also takes no
+ * automatic general penalty merely for having few Hits left."
+ * — handouts/robot_combat_cards.typ, Card 2
+ *
+ * Hits work as they do for an animal; capacity falls only when a critical
+ * damages a system, which `criticals.ts` records.
+ */
+describe('a robot loses Hits like an animal, but not the states that go with them', () => {
+  it('has no unconscious state, however few Hits are left', () => {
+    expect(isUnconscious(warbot(20, [hurt('lethal', { hits: 19 })]))).toBe(false);
+  });
+
+  it('is out of action at zero Hits', () => {
+    expect(isDead(warbot(20, [hurt('lethal', { hits: 20 })]))).toBe(true);
+  });
+
+  it('is still operational above zero Hits', () => {
+    expect(isDead(warbot(20, [hurt('lethal', { hits: 19 })]))).toBe(false);
   });
 });
 

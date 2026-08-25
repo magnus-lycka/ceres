@@ -1,3 +1,8 @@
 node_modules/
 build/
 .svelte-kit/
+
+# Vitest browser-mode failure screenshots
+__screenshots__/
+coverage/
+.vitest-attachments/

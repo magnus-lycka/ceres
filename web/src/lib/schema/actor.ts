@@ -37,6 +37,37 @@ export const injurySchema = z.object({
 });
 export type Injury = z.infer<typeof injurySchema>;
 
+/**
+ * Where a robot critical landed, in the order the 2D location table rolls
+ * them (handouts/robot_combat_cards.typ, Card 2).
+ */
+export const criticalLocations = [
+  'power',
+  'weapon',
+  'armour',
+  'chassis',
+  'locomotion',
+  'options',
+  'brain',
+] as const;
+export type CriticalLocation = (typeof criticalLocations)[number];
+
+/**
+ * How badly one location is damaged: 0 for undamaged, up to 6.
+ *
+ * Severity comes from the attack's Effect (Effect − 5) or from a
+ * sustained-damage threshold (always 1). The note is the "Component / effect"
+ * column of the card's combat record — which weapon was hit, what the severity
+ * row said to reduce. Ceres does not encode the effects table, so the note is
+ * where its answer is kept.
+ */
+export const criticalSchema = z.object({
+  severity: z.number().int().min(0).max(6).default(0),
+  note: z.string().default(''),
+});
+export type Critical = z.infer<typeof criticalSchema>;
+export const WORST_SEVERITY = 6;
+
 const base = z.object({
   id: z.number().int().nonnegative().default(UNSAVED),
   name: z.string().min(1),
@@ -49,6 +80,15 @@ const base = z.object({
   hits: z.number().int().nullable().default(null),
   /** Persistent health: what has been done to this actor, oldest first. */
   injuries: z.array(injurySchema).default([]),
+  /**
+   * Robot system damage, as the card's combat record keeps it: the worst
+   * severity each location has reached, and a note.
+   *
+   * One entry per location is the whole of it. Severity only ever climbs
+   * (`max(rolled, old + 1)`), so a location has no history worth keeping.
+   * Undamaged locations are simply absent; `criticalRows` presents all seven.
+   */
+  criticals: z.partialRecord(z.enum(criticalLocations), criticalSchema).default({}),
 });
 
 const characteristics = ['strength', 'dexterity', 'endurance'] as const;
@@ -70,6 +110,9 @@ export const actorSchema = base.superRefine((actor, ctx) => {
   }
   if (!wantsCharacteristics && actor.hits === null) {
     ctx.addIssue({ code: 'custom', message: `a ${actor.kind} needs hits` });
+  }
+  if (actor.kind !== 'robot' && Object.values(actor.criticals).some((row) => row.severity > 0 || row.note)) {
+    ctx.addIssue({ code: 'custom', message: `a ${actor.kind} has no systems to take a critical` });
   }
 });
 

@@ -679,3 +679,84 @@ skill packages (collectively chosen after creation and distributed round-robin),
 and similar mechanics that operate across multiple characters are not planned
 for `ceres.character`. They require a group session concept that is outside the
 current single-character model.
+
+## The browser front end, `web/` (work in progress)
+
+Exploratory and expected to change. This section records the shape it has
+*now*, so that changing it is a decision rather than an excavation. Optimised
+for learning and for cheap reversal, not for stability.
+
+SvelteKit with `adapter-static`, TypeScript and zod, `ssr = false`.
+
+    schema/        entity definitions
+    rules/         domain rules, as pure functions
+    lib/<entity>/  Svelte components
+    routes/        pages, thin
+
+### What goes where
+
+The one structural rule: **a TypeScript module answers questions about data; a
+Svelte component renders and handles interaction.** Nothing else.
+
+Entity definitions, rules, derivations and anything that could be phrased as a
+question about the data belong in modules under `schema/` and `rules/`. These
+import nothing from Svelte and touch no DOM. That boundary replaces the one
+Python enforced for free, and it is what makes a screen rewrite survivable —
+the domain does not move when the UI does. It also makes those tests run in
+milliseconds, which is what keeps a large rules suite worth having.
+
+A component that computes a rule has put that rule somewhere it cannot be
+tested cheaply and cannot be reused by a second screen. Components hold markup,
+event wiring, and the vendor-specific vocabulary of whatever widget library
+they are built on — nothing more.
+
+### Entity definitions
+
+One zod definition per entity, in `schema/`. It produces the TypeScript types
+the app is written against, the runtime validation that imported data passes
+through, and — via `toJSONSchema` — the schema an external producer can be
+checked against. A second definition of the same entity anywhere else is drift
+waiting to happen.
+
+### Grids
+
+Grid libraries are not interchangeable: column vocabulary, editors, renderers,
+clipboard hooks and row semantics differ deeply, and that is where nearly all
+the coupling lives. A generic wrapper taking `columns: unknown[]` does not
+contain that coupling, it **conceals** it — the caller writes vendor-shaped
+objects with the type checking switched off. We had exactly that, and typing
+the columns properly immediately exposed three latent bugs it had hidden.
+
+So the dependency on **SvGrid** is open and typed, and lives in one component
+per entity. That component's interface is in application terms — entities in,
+selection and edits out — so pages above it never see a column definition, a
+cell context or a row index. Replacing SvGrid means rewriting those components
+and nothing else. A shared vendor-specific component is worth extracting when
+several grids need identical setup, for consistency and central configuration
+rather than for interchangeability.
+
+### Persistence (planned, not built)
+
+State is in memory today. The intended store is a **private GitHub data repo**,
+separate from this public code repo, which also gives the same data to whatever
+machine is to hand.
+
+**The application owns its persistence.** Every writer goes through the
+application's own service or API. Nothing — no external tool, no AI — writes
+into the store behind the owning application's back, because a store edited
+around its owner has no invariants left. Proposed data arriving from outside is
+input to be validated, not state to be installed.
+
+Deletion is unguarded and permanent: no confirmation, no archived state. Every
+reference is therefore treated as potentially stale, resolving to nothing
+rather than to a surprise.
+
+### Testing
+
+Two suites, split by what they need rather than what they cover. `rules` runs
+in Node in milliseconds and is the one to keep large. `components` renders in
+real Chromium, for what a type checker cannot see: layout, a widget library's
+actual DOM, and whether an interaction reaches its caller.
+
+Deliberately absent: persistence, the service boundary, the Situation screen,
+and any external-facing interface.

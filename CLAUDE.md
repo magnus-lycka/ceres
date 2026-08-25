@@ -113,6 +113,13 @@ lives in the test suite, and nothing is deployed. Therefore:
   new work to `docs/todo_maybe.md` — it is a read-only migration ledger being
   phased out. Every active `docs/plan-*.md` should have a tracking issue that
   links to it.
+- **Working agreement** - How we collaborate — scope discipline, the
+  change/review loop, and what keeps the code changeable — is in
+  [docs/WORKING_AGREEMENT.md](docs/WORKING_AGREEMENT.md). Read it before
+  starting work on `ceres.rounds` or `web/`.
+- **Scope** - Implement what was asked, not the neighbourhood around it. If
+  adjacent work looks necessary, name it in a sentence and let the user decide.
+  An unrequested feature is a defect.
 - **TDD** - Write tests first, then implement. Tests live in `tests/`.
 - **Test Design** - Tests should verify that the code under test does what it is supposed to do.
   Tests written to verify that the code under test does what it does are of much less value.

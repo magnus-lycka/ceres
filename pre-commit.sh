@@ -19,4 +19,20 @@ run "ty check"                      uvx ty check
 run "deptry"                        uv run deptry .
 run "bandit"                        uvx bandit -q -r src
 
+# The Svelte front end. Skipped rather than failed when its dependencies are
+# not installed, so a clone that only works on the Python side still gets a
+# usable gate; run `npm install` in web/ to switch these on.
+if [ -d web/node_modules ]; then
+    run "web: eslint --fix"         npm --prefix web run --silent lint:fix
+    run "web: prettier --check"     npm --prefix web run --silent format:check
+    run "web: svelte-check"         npm --prefix web run --silent check
+    run "web: vitest"               npm --prefix web run --silent test
+    run "web: build"                npm --prefix web run --silent build
+else
+    echo ""
+    echo "============================================================"
+    echo "  web: skipped (run 'npm install' in web/ to enable)"
+    echo "============================================================"
+fi
+
 exit $failures
