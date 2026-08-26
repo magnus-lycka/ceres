@@ -7,11 +7,11 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { describe, expect, it, vi } from 'vitest';
-import type { Actor } from '$lib/schema/actor';
+import { actorId, type Actor } from '$lib/schema/actor';
 import ActorHealth from './ActorHealth.svelte';
 
 const warbot: Actor = {
-  id: 6,
+  id: actorId(6),
   name: 'Warbot',
   kind: 'robot',
   note: '',
@@ -26,7 +26,7 @@ const warbot: Actor = {
 
 const rin: Actor = {
   ...warbot,
-  id: 1,
+  id: actorId(1),
   name: 'Rin',
   kind: 'sophont',
   strength: 8,

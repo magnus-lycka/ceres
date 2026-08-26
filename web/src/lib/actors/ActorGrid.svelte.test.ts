@@ -13,10 +13,10 @@
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from '@vitest/browser/context';
 import { describe, expect, it, vi } from 'vitest';
-import type { Actor } from '$lib/schema/actor';
+import { actorId, type Actor, type ActorId } from '$lib/schema/actor';
 import ActorGrid from './ActorGrid.svelte';
 
-function actor(id: number, name: string, extra: Partial<Actor> = {}): Actor {
+function actor(id: ActorId, name: string, extra: Partial<Actor> = {}): Actor {
   return {
     id,
     name,
@@ -34,8 +34,8 @@ function actor(id: number, name: string, extra: Partial<Actor> = {}): Actor {
 }
 
 const actors = [
-  actor(1, 'Rin', { tags: ['pc', 'marduk'] }),
-  actor(2, 'Warbot', { kind: 'robot', strength: null, dexterity: null, endurance: null, hits: 20 }),
+  actor(actorId(1), 'Rin', { tags: ['pc', 'marduk'] }),
+  actor(actorId(2), 'Warbot', { kind: 'robot', strength: null, dexterity: null, endurance: null, hits: 20 }),
 ];
 
 describe('ActorGrid', () => {
@@ -77,7 +77,7 @@ describe('ActorGrid', () => {
     await screen.getByText('Warbot').click();
 
     expect(onselect).toHaveBeenCalled();
-    expect(onselect.mock.calls.at(-1)![0]).toMatchObject({ id: 2, name: 'Warbot' });
+    expect(onselect.mock.calls.at(-1)![0]).toMatchObject({ id: actorId(2), name: 'Warbot' });
   });
 });
 

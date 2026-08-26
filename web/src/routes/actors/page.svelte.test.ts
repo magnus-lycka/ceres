@@ -11,11 +11,12 @@
  */
 import { render } from 'vitest-browser-svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { actorId } from '$lib/schema/actor';
 import { library, status } from '$lib/store/session.svelte';
 import ActorsPage from './+page.svelte';
 
 const rin = {
-  id: 1,
+  id: actorId(1),
   name: 'Rin',
   kind: 'sophont' as const,
   note: '',

@@ -13,10 +13,20 @@
  * What the library owes instead is that a stale reference resolves to nothing
  * rather than raising — the same bargain as ON DELETE SET NULL.
  */
-import { actorSchema, UNSAVED, type Actor } from '$lib/schema/actor';
+import {
+  actorId,
+  actorSchema,
+  partyId,
+  UNSAVED,
+  type Actor,
+  type ActorId,
+  type PartyId,
+} from '$lib/schema/actor';
+import { partySchema, type Party } from '$lib/schema/party';
 import type { FileStore } from './files';
 
 const ACTORS = 'actors';
+const PARTIES = 'parties';
 const COUNTERS = 'counters.json';
 
 /** Keyed by entity kind, as the Python store names them. */
@@ -53,14 +63,14 @@ export class Library {
   }
 
   /** Null when it has been deleted, which callers must expect. */
-  async actor(id: number): Promise<Actor | null> {
+  async actor(id: ActorId): Promise<Actor | null> {
     const raw = await this.files.read(path(ACTORS, id));
     return raw === null ? null : actorSchema.parse(JSON.parse(raw));
   }
 
   saveActor(actor: Actor): Promise<Actor> {
     return this.queued(async () => {
-      const saved = actor.id === UNSAVED ? { ...actor, id: await this.nextId(ACTORS) } : actor;
+      const saved = actor.id === UNSAVED ? { ...actor, id: actorId(await this.nextId(ACTORS)) } : actor;
       await this.files.write(
         path(ACTORS, saved.id),
         `${JSON.stringify(saved, null, 2)}\n`,
@@ -70,8 +80,50 @@ export class Library {
     });
   }
 
-  deleteActor(id: number): Promise<void> {
+  deleteActor(id: ActorId): Promise<void> {
     return this.queued(() => this.files.remove(path(ACTORS, id), `Delete actor ${id}`));
+  }
+
+  async parties(): Promise<Party[]> {
+    const paths = await this.files.list(PARTIES);
+    const parties = await Promise.all(paths.map((path) => this.parseParty(path)));
+    return parties.sort((left, right) => left.id - right.id);
+  }
+
+  /** Null when it has been deleted, which callers must expect. */
+  async party(id: PartyId): Promise<Party | null> {
+    const raw = await this.files.read(path(PARTIES, id));
+    return raw === null ? null : partySchema.parse(JSON.parse(raw));
+  }
+
+  saveParty(party: Party): Promise<Party> {
+    return this.queued(async () => {
+      const saved = party.id === UNSAVED ? { ...party, id: partyId(await this.nextId(PARTIES)) } : party;
+      await this.files.write(
+        path(PARTIES, saved.id),
+        `${JSON.stringify(saved, null, 2)}\n`,
+        `Save party ${saved.id}: ${saved.name || '(unnamed)'}`,
+      );
+      return saved;
+    });
+  }
+
+  deleteParty(id: PartyId): Promise<void> {
+    return this.queued(() => this.files.remove(path(PARTIES, id), `Delete party ${id}`));
+  }
+
+  /**
+   * The members in stored order, with a hole where one has been deleted.
+   *
+   * Deleting an actor is unguarded and nothing goes back to tidy the parties
+   * that referenced it, so a party may point at an actor that no longer
+   * exists. The hole is the honest answer: the party did have a member there,
+   * and something has to say so rather than quietly closing the gap.
+   */
+  async partyMembers(id: PartyId): Promise<(Actor | null)[]> {
+    const party = await this.party(id);
+    if (party === null) return [];
+    return Promise.all(party.actors.map((member) => this.actor(member)));
   }
 
   private async parse(file: string): Promise<Actor> {
@@ -79,6 +131,15 @@ export class Library {
     const result = actorSchema.safeParse(JSON.parse(raw ?? 'null'));
     if (!result.success) {
       throw new Error(`${file} is not a valid actor: ${result.error.issues[0].message}`);
+    }
+    return result.data;
+  }
+
+  private async parseParty(file: string): Promise<Party> {
+    const raw = await this.files.read(file);
+    const result = partySchema.safeParse(JSON.parse(raw ?? 'null'));
+    if (!result.success) {
+      throw new Error(`${file} is not a valid party: ${result.error.issues[0].message}`);
     }
     return result.data;
   }

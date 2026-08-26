@@ -12,7 +12,32 @@
  */
 import { z } from 'zod';
 
-/** Allocated by the service. Zero means "not saved yet"; ids start at 1. */
+/**
+ * Typed references to stored entities.
+ *
+ * Integers in JSON, distinct types here, so a `PartyId` can never be passed
+ * where an `ActorId` belongs — which is exactly the mistake available now that
+ * a party holds a list of actor ids. Mirrors `ceres.rounds.library.ids`.
+ *
+ * A reference may be stale: what it points at can be deleted at any time, and
+ * every reader has to cope with resolving to nothing.
+ */
+const id = z.number().int().nonnegative();
+export const actorIdSchema = id.brand<'ActorId'>();
+export const partyIdSchema = id.brand<'PartyId'>();
+export type ActorId = z.infer<typeof actorIdSchema>;
+export type PartyId = z.infer<typeof partyIdSchema>;
+
+/** Integers arrive from JSON and from the grid; this is where they become ids. */
+export const actorId = (value: number) => actorIdSchema.parse(value);
+export const partyId = (value: number) => partyIdSchema.parse(value);
+
+/**
+ * The id of an entity the store has not seen yet.
+ *
+ * Allocated ids start at 1, so this is unambiguous, and it keeps `id` a plain
+ * id everywhere rather than an optional one every caller has to narrow.
+ */
 export const UNSAVED = 0;
 
 export const actorKinds = ['sophont', 'animal', 'robot'] as const;
@@ -69,7 +94,7 @@ export type Critical = z.infer<typeof criticalSchema>;
 export const WORST_SEVERITY = 6;
 
 const base = z.object({
-  id: z.number().int().nonnegative().default(UNSAVED),
+  id: actorIdSchema.default(UNSAVED as ActorId),
   /**
    * Empty until it is typed. An actor is added to the roster and named in the
    * grid afterwards, so the unnamed moment is a normal state to be stored, not

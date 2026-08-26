@@ -6,7 +6,7 @@
  * table.
  */
 import { describe, expect, it } from 'vitest';
-import type { Actor, Injury, Stat } from '../../schema/actor';
+import { actorId, type Actor, type Injury, type Stat } from '../../schema/actor';
 import {
   current,
   currentHits,
@@ -25,7 +25,7 @@ function hurt(kind: Injury['kind'], reductions: Partial<Record<Stat, number>>): 
 
 function sophont(injuries: Injury[] = []): Actor {
   return {
-    id: 1,
+    id: actorId(1),
     name: 'Rin',
     kind: 'sophont',
     note: '',
@@ -41,7 +41,7 @@ function sophont(injuries: Injury[] = []): Actor {
 
 function beast(hits = 20, injuries: Injury[] = []): Actor {
   return {
-    id: 2,
+    id: actorId(2),
     name: 'Wolf',
     kind: 'animal',
     note: '',
@@ -57,7 +57,7 @@ function beast(hits = 20, injuries: Injury[] = []): Actor {
 
 function warbot(hits = 20, injuries: Injury[] = []): Actor {
   return {
-    id: 6,
+    id: actorId(6),
     name: 'Warbot',
     kind: 'robot',
     note: '',

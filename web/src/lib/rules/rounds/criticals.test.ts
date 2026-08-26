@@ -11,7 +11,7 @@
  * is the card's: seven locations, each with a severity and a note.
  */
 import { describe, expect, it } from 'vitest';
-import type { Actor } from '../../schema/actor';
+import { actorId, type Actor } from '../../schema/actor';
 import {
   applyCritical,
   attackCriticalSeverity,
@@ -24,7 +24,7 @@ import {
 
 function warbot(criticals: Actor['criticals'] = {}, hits = 20): Actor {
   return {
-    id: 6,
+    id: actorId(6),
     name: 'Warbot',
     kind: 'robot',
     note: '',

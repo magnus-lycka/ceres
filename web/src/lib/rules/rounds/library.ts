@@ -6,7 +6,7 @@
  * rules live beside the UI, the only thing keeping them separable is that this
  * directory refuses to know the UI exists.
  */
-import type { Actor, ActorKind } from '../../schema/actor';
+import type { Actor, ActorId, ActorKind } from '../../schema/actor';
 
 /** The highest id ever used in a set of actors, for seeding a sequence. */
 export function highestId(actors: readonly Actor[]): number {
@@ -45,7 +45,7 @@ export function createIdSequence(seed = 0): { next: () => number } {
  * hurt separately. Duplicating the one that has already been shot should not
  * hand you a second casualty.
  */
-export function duplicate(source: Actor, id: number, actors: readonly Actor[]): Actor {
+export function duplicate(source: Actor, id: ActorId, actors: readonly Actor[]): Actor {
   const base = source.name.replace(/\s+\d+$/, '').trim();
   const taken = new Set(actors.map((actor) => actor.name));
   let suffix = 1;
@@ -68,7 +68,7 @@ export function duplicate(source: Actor, id: number, actors: readonly Actor[]): 
  * recorded against a damage model it no longer has. A sophont that should have
  * been an animal is a new actor and a deleted one.
  */
-export function newActor(kind: ActorKind, id: number): Actor {
+export function newActor(kind: ActorKind, id: ActorId): Actor {
   const physical = kind === 'sophont';
   return {
     id,

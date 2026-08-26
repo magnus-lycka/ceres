@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Actor } from '../../schema/actor';
+import { actorId, type Actor, type ActorId } from '../../schema/actor';
 import { createIdSequence, duplicate, formatTags, highestId, parseTags } from './library';
 
-function actor(id: number, name: string, tags: string[] = []): Actor {
+function actor(id: ActorId, name: string, tags: string[] = []): Actor {
   return {
     id,
     name,
@@ -19,9 +19,9 @@ function actor(id: number, name: string, tags: string[] = []): Actor {
 }
 
 const roster = [
-  actor(1, 'Rin', ['pc', 'marduk']),
-  actor(2, 'Wolf', ['beasts']),
-  actor(3, 'Pirate', ['pirates', 'marduk']),
+  actor(actorId(1), 'Rin', ['pc', 'marduk']),
+  actor(actorId(2), 'Wolf', ['beasts']),
+  actor(actorId(3), 'Pirate', ['pirates', 'marduk']),
 ];
 
 describe('id sequence', () => {
@@ -53,27 +53,27 @@ describe('id sequence', () => {
 
 describe('duplicate', () => {
   it('numbers the copy so it is distinguishable from its original', () => {
-    expect(duplicate(actor(1, 'Wolf'), 2, [actor(1, 'Wolf')]).name).toBe('Wolf 1');
+    expect(duplicate(actor(actorId(1), 'Wolf'), actorId(2), [actor(actorId(1), 'Wolf')]).name).toBe('Wolf 1');
   });
 
   it('continues the series when pressed again', () => {
-    const first = duplicate(actor(1, 'Wolf'), 2, [actor(1, 'Wolf')]);
-    const second = duplicate(actor(1, 'Wolf'), 3, [actor(1, 'Wolf'), first]);
+    const first = duplicate(actor(actorId(1), 'Wolf'), actorId(2), [actor(actorId(1), 'Wolf')]);
+    const second = duplicate(actor(actorId(1), 'Wolf'), actorId(3), [actor(actorId(1), 'Wolf'), first]);
     expect([first.name, second.name]).toEqual(['Wolf 1', 'Wolf 2']);
   });
 
   it('continues the series when duplicating a copy, not starting a new one', () => {
-    const roster = [actor(1, 'Wolf'), actor(2, 'Wolf 1')];
-    expect(duplicate(roster[1], 3, roster).name).toBe('Wolf 2');
+    const roster = [actor(actorId(1), 'Wolf'), actor(actorId(2), 'Wolf 1')];
+    expect(duplicate(roster[1], actorId(3), roster).name).toBe('Wolf 2');
   });
 
   it('takes its id from the sequence rather than from the roster', () => {
-    expect(duplicate(actor(1, 'Wolf'), 9, [actor(1, 'Wolf')]).id).toBe(9);
+    expect(duplicate(actor(actorId(1), 'Wolf'), actorId(9), [actor(actorId(1), 'Wolf')]).id).toBe(9);
   });
 
   it('does not share the tag list with the original', () => {
-    const source = actor(1, 'Chicken', ['fowl']);
-    duplicate(source, 2, [source]).tags.push('extra');
+    const source = actor(actorId(1), 'Chicken', ['fowl']);
+    duplicate(source, actorId(2), [source]).tags.push('extra');
     expect(source.tags).toEqual(['fowl']);
   });
 
@@ -81,7 +81,7 @@ describe('duplicate', () => {
   // separately. A copy of a hurt one starts undamaged.
   it('arrives unhurt, whatever state the original is in', () => {
     const source: Actor = {
-      ...actor(1, 'Warbot'),
+      ...actor(actorId(1), 'Warbot'),
       kind: 'robot',
       strength: null,
       dexterity: null,
@@ -90,7 +90,7 @@ describe('duplicate', () => {
       injuries: [{ when: null, kind: 'lethal', reductions: { hits: 8 } }],
       criticals: { power: { severity: 3, note: 'Speed −1 m/band' } },
     };
-    const copy = duplicate(source, 2, [source]);
+    const copy = duplicate(source, actorId(2), [source]);
     expect(copy.injuries).toEqual([]);
     expect(copy.criticals).toEqual({});
   });

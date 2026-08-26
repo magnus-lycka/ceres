@@ -13,13 +13,21 @@
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
   import { library, refresh } from '$lib/store/session.svelte';
-  import { type Actor, type ActorKind, actorKinds, actorSchema } from '$lib/schema/actor';
+  import {
+    actorId,
+    actorKinds,
+    actorSchema,
+    UNSAVED,
+    type Actor,
+    type ActorId,
+    type ActorKind,
+  } from '$lib/schema/actor';
   import { duplicate, newActor } from '$lib/rules/rounds/library';
 
   let actors = $state<Actor[]>([]);
   // The id rather than the actor: `actors` is replaced on every save, and an
   // actor held directly would go stale the moment its row was rewritten.
-  let selectedId = $state<number | null>(null);
+  let selectedId = $state<ActorId | null>(null);
   const selected = $derived(actors.find((actor) => actor.id === selectedId) ?? null);
   let problem = $state('');
   let grid = $state<ReturnType<typeof ActorGrid> | null>(null);
@@ -70,7 +78,7 @@
 
   function addActor(kind: ActorKind) {
     return keep(async () => {
-      const saved = await store(newActor(kind, 0));
+      const saved = await store(newActor(kind, actorId(UNSAVED)));
       actors = [...actors, saved];
       // On the new row, ready to type its name.
       grid?.focus(actors.length - 1);
@@ -98,7 +106,7 @@
     if (!selected) return void (problem = 'Click a row first.');
     const source = selected;
     return keep(async () => {
-      const copy = await store({ ...duplicate(source, 0, actors), id: 0 });
+      const copy = await store({ ...duplicate(source, actorId(UNSAVED), actors), id: actorId(UNSAVED) });
       actors = [...actors, copy];
       grid?.focus(actors.length - 1);
     });
