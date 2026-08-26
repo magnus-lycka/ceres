@@ -25,8 +25,15 @@
     void load();
   });
 
+  // Files the library could not read. Shown rather than swallowed: a damaged
+  // file used to empty the whole list with nothing said about it.
+  let unreadable = $state<string[]>([]);
+
   async function load() {
-    [parties, actors] = await Promise.all([library.parties(), library.actors()]);
+    parties = await library.parties();
+    const listing = [...library.problems];
+    actors = await library.actors();
+    unreadable = [...listing, ...library.problems];
   }
 
   // Members are resolved through the library rather than held on the party,
@@ -109,6 +116,7 @@
 </div>
 
 {#if problem}<p class="problem">{problem}</p>{/if}
+{#each unreadable as trouble (trouble)}<p class="problem">{trouble}</p>{/each}
 
 <PartyGrid {parties} onselect={(party) => (selectedId = party?.id ?? null)} onedit={edited} />
 

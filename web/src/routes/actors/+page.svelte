@@ -40,8 +40,13 @@
     void load();
   });
 
+  // Files the library could not read. Shown rather than swallowed: a damaged
+  // file used to empty the whole list with nothing said about it.
+  let unreadable = $state<string[]>([]);
+
   async function load() {
     actors = await library.actors();
+    unreadable = [...library.problems];
   }
 
   /**
@@ -150,6 +155,7 @@
 </div>
 
 {#if problem}<p class="problem">{problem}</p>{/if}
+{#each unreadable as trouble (trouble)}<p class="problem">{trouble}</p>{/each}
 
 <p class="hint">
   Duplicate and Delete act on the row your cursor is in. ⌘Z undoes a cell edit; it does not undo adding or

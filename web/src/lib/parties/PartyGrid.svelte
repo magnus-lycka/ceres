@@ -17,9 +17,18 @@
    * would conceal the coupling rather than contain it. The boundary worth
    * having is this one — parties in, selected party out.
    */
-  import { SvGrid, renderSnippet, type CellContext, type GridColumns } from '@svgrid/grid';
+  import {
+    SvGrid,
+    renderSnippet,
+    type CellContext,
+    type GridColumns,
+    type SvGridApi,
+    type TableFeatures,
+    type ValueParserParams,
+  } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
-  import { formatTags, parseTags } from '$lib/rules/rounds/library';
+  import { afterPaste, isPasteKey } from '$lib/grid/pasted';
+  import { formatTags, parseTags } from '$lib/schema/tags';
   import type { Party } from '$lib/schema/party';
 
   let {
@@ -44,8 +53,13 @@
     {
       field: 'tags',
       header: 'Tags',
-      editorType: 'chips',
-      editorMultiple: true,
+      // Plain text, split on commit. The chips editor mis-places its popup
+      // over the row below and drops keystrokes; tags are short and a space
+      // separated string is a better thing to type than a widget.
+      editorType: 'text',
+      // Without this an edit stores the raw string, which the schema then
+      // refuses to read back — and one such file hid every party.
+      valueParser: (p: ValueParserParams<Party>) => parseTags(p.newValue),
       cell: (ctx: Cell) => renderSnippet(pills, parseTags(ctx.getValue())),
     },
     { field: 'note', header: 'Note', editorType: 'text' },
@@ -59,6 +73,21 @@
       fieldFn: (party: Party) => party.actors.length,
     },
   ];
+
+  let api = $state<SvGridApi<TableFeatures, Party> | null>(null);
+
+  /**
+   * Persist what a paste changed. SvGrid's paste writes into its own row data
+   * without firing `onCellValueChange`, so pasted values showed on screen and
+   * were never stored. See `ActorGrid` for the longer note.
+   */
+  function persistPaste() {
+    afterPaste(
+      () => parties,
+      () => api?.getData() ?? [],
+      (row) => onedit?.(row),
+    );
+  }
 
   let activeColumn = $state<string | null>(null);
   let sheet: HTMLStyleElement | null = null;
@@ -80,7 +109,12 @@
   {#each values as tag (tag)}<span class="pill">{tag}</span>{/each}
 {/snippet}
 
-<div class="grid" id={uid}>
+<div
+  class="grid"
+  id={uid}
+  onpastecapture={persistPaste}
+  onkeydowncapture={(event) => isPasteKey(event) && persistPaste()}
+>
   <SvGrid
     data={parties}
     {columns}
@@ -92,6 +126,7 @@
     containerHeight="auto"
     enableRowSummaries={false}
     processCellForClipboard={(p) => (p.columnId === 'tags' ? formatTags(p.value) : p.value)}
+    onApiReady={(ready) => (api = ready)}
     onActiveCellChange={(cell) => {
       activeColumn = cell?.columnId ?? null;
       onselect(cell && cell.rowIndex >= 0 ? (parties[cell.rowIndex] ?? null) : null);

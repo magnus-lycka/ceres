@@ -6,13 +6,13 @@
    * looked at again. The roster screens read the stored connection on arrival.
    */
   import Connection from '$lib/store/Connection.svelte';
-  import { now, status } from '$lib/store/session.svelte';
+  import { now, status, transient } from '$lib/store/session.svelte';
 
   const summary = $derived(
     !status.connected
       ? 'No data repository. Everything stays in this browser.'
       : status.state === 'blocked'
-        ? 'Stopped. The repository and this browser have both moved on.'
+        ? 'Syncing is paused: the repository and this browser have both moved on. Editing still works.'
         : status.changes > 0
           ? `${status.changes} change(s) waiting to go up.`
           : 'Everything here is in the repository.',
@@ -30,11 +30,16 @@
 </p>
 
 {#if status.detail}
-  <p class="problem">
+  <p class="problem" class:transient={transient()}>
     {status.detail}
-    <br />
-    Resolve it with git, then reload. To undo a push:
-    <code>git reset --hard &lt;sha&gt; &amp;&amp; git push --force-with-lease</code>
+    {#if transient()}
+      <br />
+      Nothing is lost — edits are kept here and will go up on the next attempt.
+    {:else}
+      <br />
+      Resolve it with git, then reload. To undo a push:
+      <code>git reset --hard &lt;sha&gt; &amp;&amp; git push --force-with-lease</code>
+    {/if}
   </p>
 {/if}
 
@@ -64,6 +69,11 @@
     border-left: 3px solid #b91c1c;
     padding: 0.5rem 0.75rem;
     max-width: 44rem;
+  }
+  /* Not reaching the repository is a delay, not a problem to solve. */
+  .problem.transient {
+    background: #fffbeb;
+    border-left-color: #b45309;
   }
   .hint {
     color: #555;

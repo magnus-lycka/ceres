@@ -11,6 +11,7 @@
  * that vary are the ones that decide how it absorbs damage.
  */
 import { z } from 'zod';
+import { tagsSchema } from './tags';
 
 /**
  * Typed references to stored entities.
@@ -104,7 +105,7 @@ const base = z.object({
   name: z.string().default(''),
   kind: z.enum(actorKinds),
   note: z.string().default(''),
-  tags: z.array(z.string()).default([]),
+  tags: tagsSchema,
   strength: z.number().int().nullable().default(null),
   dexterity: z.number().int().nullable().default(null),
   endurance: z.number().int().nullable().default(null),
@@ -149,7 +150,14 @@ export const actorSchema = base.superRefine((actor, ctx) => {
 
 export type Actor = z.infer<typeof actorSchema>;
 
-/** The JSON Schema CI validates proposed bundles against. */
+/**
+ * The JSON Schema CI validates proposed bundles against.
+ *
+ * The input side, because tags accept either a list or a string and the
+ * conversion between them is a transform, which JSON Schema cannot express.
+ * Input is also the right side to publish: it describes what a producer may
+ * send, not what we store afterwards.
+ */
 export function actorJSONSchema() {
-  return z.toJSONSchema(base);
+  return z.toJSONSchema(base, { io: 'input' });
 }

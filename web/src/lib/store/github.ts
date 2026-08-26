@@ -51,12 +51,23 @@ export class GitHubRepository {
 
   /** Every file in a commit, path to contents. */
   async files(commit: string): Promise<Map<string, string>> {
-    const listing = (await this.parse(await this.request(`/git/trees/${commit}?recursive=1`))) as {
-      tree: { path: string; sha: string; type: string }[];
-    };
-    const blobs = listing.tree.filter((entry) => entry.type === 'blob');
+    const blobs = (await this.listing(commit)).blobs;
     const contents = await Promise.all(blobs.map((entry) => this.blob(entry.sha)));
     return new Map(blobs.map((entry, index) => [entry.path, contents[index]]));
+  }
+
+  /**
+   * A commit's tree: its own sha, to build on, and the paths it holds.
+   *
+   * Asking for the tree of a *commit* resolves to its tree and reports that
+   * tree's sha, so this answers both questions in one request.
+   */
+  private async listing(commit: string): Promise<{ sha: string; blobs: { path: string; sha: string }[] }> {
+    const body = (await this.parse(await this.request(`/git/trees/${commit}?recursive=1`))) as {
+      sha: string;
+      tree: { path: string; sha: string; type: string }[];
+    };
+    return { sha: body.sha, blobs: body.tree.filter((entry) => entry.type === 'blob') };
   }
 
   /**
@@ -66,21 +77,34 @@ export class GitHubRepository {
    * checked is what keeps the push honest: GitHub refuses to move a ref onto a
    * commit that is not a descendant of where the ref is now.
    */
-  async commit(changes: Change[], message: string, parent: string | null): Promise<string> {
-    const base = parent ? await this.treeOf(parent) : null;
+  async commit(changes: Change[], message: string, parent: string | null): Promise<string | null> {
+    const base = parent ? await this.listing(parent) : null;
+    const present = new Set(base?.blobs.map((entry) => entry.path) ?? []);
+
+    /*
+     * A path created and deleted again between two syncs was never pushed, so
+     * the repository has nothing to remove. Asking a tree to delete a path it
+     * does not hold is answered with `422 GitRPC::BadObjectState`, which then
+     * blocks every later sync as well — so those are dropped here rather than
+     * sent and argued about.
+     */
+    const entries = changes
+      .filter(({ path, content }) => content !== null || present.has(path))
+      .map(({ path, content }) => ({
+        path,
+        mode: '100644',
+        type: 'blob',
+        // A null sha and no content is how a tree deletes a path.
+        ...(content === null ? { sha: null } : { content }),
+      }));
+
+    // Everything cancelled out. The repository is already as it should be.
+    if (entries.length === 0) return parent;
+
     const tree = (await this.parse(
       await this.request('/git/trees', {
         method: 'POST',
-        body: JSON.stringify({
-          ...(base ? { base_tree: base } : {}),
-          tree: changes.map(({ path, content }) => ({
-            path,
-            mode: '100644',
-            type: 'blob',
-            // A null sha and no content is how a tree deletes a path.
-            ...(content === null ? { sha: null } : { content }),
-          })),
-        }),
+        body: JSON.stringify({ ...(base ? { base_tree: base.sha } : {}), tree: entries }),
       }),
     )) as { sha: string };
 
@@ -109,13 +133,6 @@ export class GitHubRepository {
     await this.parse(
       await this.request(route, { method: exists ? 'PATCH' : 'POST', body: JSON.stringify(body) }),
     );
-  }
-
-  private async treeOf(commit: string): Promise<string> {
-    const body = (await this.parse(await this.request(`/git/commits/${commit}`))) as {
-      tree: { sha: string };
-    };
-    return body.tree.sha;
   }
 
   private async blob(sha: string): Promise<string> {

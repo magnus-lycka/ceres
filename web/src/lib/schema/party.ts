@@ -10,12 +10,13 @@
  */
 import { z } from 'zod';
 import { actorIdSchema, partyIdSchema, UNSAVED, type PartyId } from './actor';
+import { tagsSchema } from './tags';
 
 export const partySchema = z.object({
   id: partyIdSchema.default(UNSAVED as PartyId),
   name: z.string().default(''),
   note: z.string().default(''),
-  tags: z.array(z.string()).default([]),
+  tags: tagsSchema,
   /**
    * Members, in the order they were added. Held as references, so an actor
    * deleted from the library leaves a hole here rather than an error — the

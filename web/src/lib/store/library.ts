@@ -23,6 +23,7 @@ import {
   type PartyId,
 } from '$lib/schema/actor';
 import { partySchema, type Party } from '$lib/schema/party';
+import type { z } from 'zod';
 import type { FileStore } from './files';
 
 const ACTORS = 'actors';
@@ -56,16 +57,29 @@ export class Library {
     return result;
   }
 
+  /**
+   * Files that could not be read, from the most recent listing.
+   *
+   * A single unreadable file used to reject the whole listing, so one party
+   * with a malformed tag list hid every party there was. Reporting the file
+   * and returning the rest is the useful answer: the good entries are still
+   * good, and the bad one is named rather than silently dropped.
+   */
+  readonly problems: string[] = [];
+
   async actors(): Promise<Actor[]> {
-    const paths = await this.files.list(ACTORS);
-    const actors = await Promise.all(paths.map((path) => this.parse(path)));
-    return actors.sort((left, right) => left.id - right.id);
+    return this.readAll(ACTORS, actorSchema.safeParse.bind(actorSchema), 'actor');
   }
 
-  /** Null when it has been deleted, which callers must expect. */
+  /**
+   * Null when it has been deleted — or when what is stored cannot be read.
+   *
+   * Both are the same answer to a caller: there is nothing usable here. A
+   * throw would be worse than useless, because a single damaged file would
+   * take out every list that resolves references through this.
+   */
   async actor(id: ActorId): Promise<Actor | null> {
-    const raw = await this.files.read(path(ACTORS, id));
-    return raw === null ? null : actorSchema.parse(JSON.parse(raw));
+    return this.readOne(path(ACTORS, id), actorSchema.safeParse.bind(actorSchema), 'actor');
   }
 
   saveActor(actor: Actor): Promise<Actor> {
@@ -85,15 +99,44 @@ export class Library {
   }
 
   async parties(): Promise<Party[]> {
-    const paths = await this.files.list(PARTIES);
-    const parties = await Promise.all(paths.map((path) => this.parseParty(path)));
-    return parties.sort((left, right) => left.id - right.id);
+    return this.readAll(PARTIES, partySchema.safeParse.bind(partySchema), 'party');
   }
 
-  /** Null when it has been deleted, which callers must expect. */
+  private async readAll<T extends { id: number }>(
+    kind: string,
+    check: (value: unknown) => { success: true; data: T } | { success: false; error: z.ZodError },
+    what: string,
+  ): Promise<T[]> {
+    this.problems.length = 0;
+    const paths = await this.files.list(kind);
+    const read = await Promise.all(
+      paths.map(async (file) => {
+        const raw = await this.files.read(file);
+        const result = check(JSON.parse(raw ?? 'null'));
+        if (result.success) return result.data;
+        this.problems.push(`${file} is not a valid ${what}: ${result.error.issues[0].message}`);
+        return null;
+      }),
+    );
+    return read.filter((entry) => entry !== null).sort((left, right) => left.id - right.id);
+  }
+
+  /** Null when it has been deleted, or cannot be read. */
   async party(id: PartyId): Promise<Party | null> {
-    const raw = await this.files.read(path(PARTIES, id));
-    return raw === null ? null : partySchema.parse(JSON.parse(raw));
+    return this.readOne(path(PARTIES, id), partySchema.safeParse.bind(partySchema), 'party');
+  }
+
+  private async readOne<T>(
+    file: string,
+    check: (value: unknown) => { success: true; data: T } | { success: false; error: z.ZodError },
+    what: string,
+  ): Promise<T | null> {
+    const raw = await this.files.read(file);
+    if (raw === null) return null;
+    const result = check(JSON.parse(raw));
+    if (result.success) return result.data;
+    this.problems.push(`${file} is not a valid ${what}: ${result.error.issues[0].message}`);
+    return null;
   }
 
   saveParty(party: Party): Promise<Party> {
@@ -124,24 +167,6 @@ export class Library {
     const party = await this.party(id);
     if (party === null) return [];
     return Promise.all(party.actors.map((member) => this.actor(member)));
-  }
-
-  private async parse(file: string): Promise<Actor> {
-    const raw = await this.files.read(file);
-    const result = actorSchema.safeParse(JSON.parse(raw ?? 'null'));
-    if (!result.success) {
-      throw new Error(`${file} is not a valid actor: ${result.error.issues[0].message}`);
-    }
-    return result.data;
-  }
-
-  private async parseParty(file: string): Promise<Party> {
-    const raw = await this.files.read(file);
-    const result = partySchema.safeParse(JSON.parse(raw ?? 'null'));
-    if (!result.success) {
-      throw new Error(`${file} is not a valid party: ${result.error.issues[0].message}`);
-    }
-    return result.data;
   }
 
   /**

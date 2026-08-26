@@ -93,7 +93,9 @@ export class Sync {
     }));
 
     const head = await this.remote.commit(written, describe(changes), parent);
-    await this.local.setHead(head);
+    // Null only when there was nothing left worth committing, which leaves the
+    // branch where it was and this copy already in step with it.
+    if (head !== null) await this.local.setHead(head);
     await this.local.clearChanges();
     return { state: 'synced', changes: changes.size, at };
   }

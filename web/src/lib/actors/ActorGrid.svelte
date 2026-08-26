@@ -56,7 +56,8 @@
   } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
   import { healthSummary } from '$lib/rules/rounds/health';
-  import { formatTags, parseTags } from '$lib/rules/rounds/library';
+  import { afterPaste, isPasteKey } from '$lib/grid/pasted';
+  import { formatTags, parseTags } from '$lib/schema/tags';
   import type { Actor } from '$lib/schema/actor';
 
   let {
@@ -116,9 +117,10 @@
     {
       field: 'tags',
       header: 'Tags',
-      // Free-form chips: a tag is a whole value, not characters in a string.
-      editorType: 'chips',
-      editorMultiple: true,
+      // Plain text, split on commit. The chips editor mis-places its popup
+      // over the row below and drops keystrokes; tags are short and a space
+      // separated string is a better thing to type than a widget.
+      editorType: 'text',
       // A paste writes the raw clipboard text into the cell, so parse it back
       // into a tag list; copy the other way as one readable cell.
       valueParser: (p: ValueParserParams<Actor>) => parseTags(p.newValue),
@@ -167,6 +169,26 @@
     sheet = null;
   });
 
+  /**
+   * Persist what a paste changed.
+   *
+   * SvGrid's paste writes straight into its own row data and, unlike every
+   * other way of changing a cell, never fires `onCellValueChange` — so pasted
+   * values showed on screen and were never stored, reverting on the next
+   * reload. Nor does it run `valueParser`, so a tags cell arrives as raw text.
+   *
+   * The grid's own rows are the truth about what the paste produced, so after
+   * it settles they are compared against what we handed it and anything
+   * changed is reported as an edit.
+   */
+  function persistPaste() {
+    afterPaste(
+      () => actors,
+      () => api?.getData() ?? [],
+      (row) => onedit?.(row),
+    );
+  }
+
   let container = $state<HTMLElement | null>(null);
   let api = $state<SvGridApi<TableFeatures, Actor> | null>(null);
   let claimedFocus = false;
@@ -193,6 +215,17 @@
    * Pressing a toolbar button moves focus to that button, and nothing hands it
    * back — so after Add or Delete the arrow keys are dead until the grid is
    * clicked. The page calls this when an action finishes.
+   *
+   * Moving focus the other way — out of the grid and into a panel — is still
+   * to come, and the binding is decided: **Alt/Option plus a letter**, not F6.
+   * A MacBook needs fn+F6, which is two hands for what should be a flick.
+   *
+   * Two things to know when implementing it. SvGrid leaves Alt alone entirely
+   * (it only ever tests `altKey` to exclude itself), so those combinations are
+   * free, unlike arrows, Home/End, PageUp/Down, Enter, Tab, Space, F2, Delete,
+   * Ctrl+F and every printable character, which it has claimed. And on macOS
+   * Option+J yields `event.key === '∆'`, so match on `event.code === 'KeyJ'`
+   * with `altKey` — reading `event.key` will simply not work.
    */
   export function focus(rowIndex: number): boolean {
     const table = container?.querySelector<HTMLElement>('.sv-grid-table');
@@ -207,7 +240,13 @@
   {#each values as tag (tag)}<span class="pill">{tag}</span>{/each}
 {/snippet}
 
-<div class="grid" id={uid} bind:this={container}>
+<div
+  class="grid"
+  id={uid}
+  bind:this={container}
+  onpastecapture={persistPaste}
+  onkeydowncapture={(event) => isPasteKey(event) && persistPaste()}
+>
   <SvGrid
     data={actors}
     {columns}

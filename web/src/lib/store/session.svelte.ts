@@ -29,6 +29,11 @@ export const status = $state<{
   busy: boolean;
 }>({ state: 'synced', changes: 0, at: null, detail: '', connected: false, busy: false });
 
+/** Whether the last attempt failed for a reason that will likely pass. */
+export function transient(): boolean {
+  return status.detail !== '' && status.state !== 'blocked';
+}
+
 /** Every minute. Often enough to lose almost nothing, rare enough to ignore. */
 const INTERVAL = 60_000;
 
@@ -64,7 +69,12 @@ export async function now(): Promise<void> {
     status.at = outcome.at;
     status.detail = outcome.detail ?? '';
   } catch (failure) {
-    status.state = 'blocked';
+    /*
+     * Not being able to reach the repository is not a conflict, and must never
+     * stop the app: editing carries on locally and there is simply more to
+     * push next time. Only `Sync` itself declares a standoff, because only it
+     * knows both sides have moved.
+     */
     status.detail = failure instanceof Error ? failure.message : String(failure);
   } finally {
     status.busy = false;

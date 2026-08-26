@@ -90,9 +90,20 @@ describe('reading', () => {
     expect(await library.actor(actorId(99))).toBeNull();
   });
 
-  it('names the file when its contents are not a valid actor', async () => {
-    await files.write('actors/3.json', '{"name": "broken"}', 'x');
-    await expect(library.actors()).rejects.toThrow(/actors\/3\.json/);
+  // One unreadable file used to reject the whole listing, so a single party
+  // with a malformed tag list hid every party there was.
+  it('returns the readable ones and names the file that was not', async () => {
+    await library.saveActor(actor('Rin'));
+    await files.write('actors/3.json', '{"kind": "sophont"}', 'x');
+
+    expect((await library.actors()).map((a) => a.name)).toEqual(['Rin']);
+    expect(library.problems).toEqual([expect.stringContaining('actors/3.json')]);
+  });
+
+  it('has no problems to report about a sound library', async () => {
+    await library.saveActor(actor('Rin'));
+    await library.actors();
+    expect(library.problems).toEqual([]);
   });
 });
 

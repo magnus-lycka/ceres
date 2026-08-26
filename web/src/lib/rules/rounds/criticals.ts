@@ -7,6 +7,9 @@
  * The state behind the combat record on `handouts/robot_combat_cards.typ`
  * (Card 2, "Robot Damage").
  *
+ * Nothing calls these yet: there is no damage-entry flow, and the decision on
+ * what one should look like is recorded at the foot of this comment.
+ *
  * **Nothing here is random.** The two mechanisms that produce a critical are
  * both derived from numbers the referee already has:
  *
@@ -24,6 +27,27 @@
  * state plainly what severity the follow-on chassis critical takes. The record
  * names the row, the handout says what it does, and the note records the
  * answer.
+ *
+ * ## Where the numbers will come from
+ *
+ * Not from a grid row. An attack involves two actors, and the row of the one
+ * being shot at cannot express the other: which reaction the defender takes,
+ * and whether the impact lands on STR or DEX, are facts about a different row.
+ * A grid is the wrong shape for a two-sided exchange.
+ *
+ * So a captive popup, as the NiceGUI version had, which resolves one attack
+ * and then writes the outcome into the rows of both actors involved. What it
+ * needs to collect is small and known:
+ *
+ *  - the attack roll's Effect — `attackCriticalSeverity` turns it into a
+ *    severity, and it is the only reason Effect is worth tracking at all
+ *  - for a sophont defender, whether STR or DEX absorbed it
+ *  - the damage, as stun or lethal points
+ *  - for a robot, the hit location, which the referee rolls
+ *
+ * That is enough to resolve the whole exchange: the injury, any attack
+ * critical, and — through `sustainedCriticalCount` — any thresholds the damage
+ * crossed on the way.
  */
 import {
   criticalLocations,

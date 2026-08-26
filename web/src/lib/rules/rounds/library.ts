@@ -84,29 +84,3 @@ export function newActor(kind: ActorKind, id: ActorId): Actor {
     criticals: {},
   };
 }
-
-/**
- * A tag list from whatever a cell edit or a clipboard paste produced.
- *
- * Pasting writes the raw clipboard text into the cell, so a tags cell can
- * arrive as `"pc marduk"` where the model says `string[]`. Without this the
- * value is a string that merely looks right and renders one pill per letter.
- * Separators are spaces or commas, so a block pasted from a spreadsheet works
- * whichever the other tool used.
- */
-export function parseTags(input: unknown): string[] {
-  if (Array.isArray(input))
-    return input
-      .map(String)
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-  if (input === null || input === undefined) return [];
-  return String(input)
-    .split(/[\s,]+/)
-    .filter(Boolean);
-}
-
-/** Tags as one cell of text, for the clipboard and for spreadsheets. */
-export function formatTags(tags: unknown): string {
-  return parseTags(tags).join(' ');
-}

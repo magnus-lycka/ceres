@@ -8,8 +8,8 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write src *.json *.ts *.js",
+    "format:check": "prettier --check src *.json *.ts *.js",
     "test": "vitest run",
     "test:rules": "vitest run --project rules",
     "coverage": "vitest run --coverage"
