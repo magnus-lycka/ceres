@@ -45,5 +45,8 @@
     "zod": "^4.4.3"
   },
   "private": true,
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "cookie": "^0.7.0"
+  }
 }
