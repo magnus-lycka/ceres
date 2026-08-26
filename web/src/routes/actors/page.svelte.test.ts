@@ -1,18 +1,23 @@
 /**
- * The actors page against a stubbed GitHub.
+ * The actors page against the local library.
  *
  * The layer that kept slipping: the store is well covered and the grid is well
- * covered, but whether a button on this page actually reaches the repository
- * was only ever verified by hand.
+ * covered, but whether a button on this page actually reaches storage was only
+ * ever verified by hand — and it once did not.
+ *
+ * Nothing here touches GitHub. The page writes to IndexedDB and a sync pushes
+ * that later, so what this has to prove is that the button reaches the library
+ * and that the change is recorded as waiting to go up.
  */
 import { render } from 'vitest-browser-svelte';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { library, status } from '$lib/store/session.svelte';
 import ActorsPage from './+page.svelte';
 
 const rin = {
   id: 1,
   name: 'Rin',
-  kind: 'sophont',
+  kind: 'sophont' as const,
   note: '',
   tags: [],
   strength: 8,
@@ -23,60 +28,53 @@ const rin = {
   criticals: {},
 };
 
-function b64(text: string) {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(text)));
-}
-function respond(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), { status });
-}
-
-let fetched: ReturnType<typeof vi.fn>;
-
-beforeEach(() => {
-  localStorage.setItem(
-    'ceres.connection',
-    JSON.stringify({ owner: 'o', repo: 'r', branch: 'main', token: 't' }),
+/** The grid cell, not the health panel heading that also carries the name. */
+function names(container: HTMLElement): string[] {
+  return [...container.querySelectorAll("td[data-col-id='name']")].map((cell) =>
+    (cell.textContent ?? '').trim(),
   );
-  fetched = vi.fn(async (url: string, init?: RequestInit) => {
-    const method = init?.method ?? 'GET';
-    if (method === 'GET' && url.includes('/git/trees/')) {
-      return respond(200, { tree: [{ path: 'actors/1.json', sha: 'a', type: 'blob' }] });
-    }
-    if (method === 'GET') return respond(200, { content: b64(JSON.stringify(rin)), sha: 'a' });
-    return respond(200, { content: { sha: 'b' } });
-  });
-  vi.stubGlobal('fetch', fetched);
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  localStorage.clear();
-});
-
-function requests() {
-  return fetched.mock.calls.map(([url, init]) => `${init?.method ?? 'GET'} ${url}`);
 }
+
+beforeEach(async () => {
+  for (const actor of await library.actors()) await library.deleteActor(actor.id);
+  await library.saveActor(rin);
+});
 
 describe('the actors page', () => {
-  /** The grid cell, not the health panel heading that also says the name. */
-  function cell(screen: Awaited<ReturnType<typeof render>>, text: string) {
-    return screen.container.querySelector(`td[data-col-id='name']`)?.textContent?.trim() === text;
-  }
-
-  it('loads the roster from the repository', async () => {
+  it('shows what the library holds', async () => {
     const screen = await render(ActorsPage);
-    await vi.waitFor(() => expect(cell(screen, 'Rin')).toBe(true));
+    await vi.waitFor(() => expect(names(screen.container)).toContain('Rin'));
   });
 
   // The bug this guards: Delete removed the row from the grid and never told
-  // the repository, so a refresh brought the actor back.
-  it('deletes from the repository, not just from the screen', async () => {
+  // storage, so it came back on reload.
+  it('deletes from the library, not just from the screen', async () => {
     const screen = await render(ActorsPage);
-    await vi.waitFor(() => expect(cell(screen, 'Rin')).toBe(true));
+    await vi.waitFor(() => expect(names(screen.container)).toContain('Rin'));
 
-    (screen.container.querySelector(`td[data-col-id='name']`) as HTMLElement).click();
+    (screen.container.querySelector("td[data-col-id='name']") as HTMLElement).click();
     await screen.getByRole('button', { name: 'Delete' }).click();
 
-    await vi.waitFor(() => expect(requests().some((call) => call.startsWith('DELETE'))).toBe(true));
+    await vi.waitFor(async () => expect(await library.actors()).toHaveLength(0));
+  });
+
+  it('adds to the library', async () => {
+    const screen = await render(ActorsPage);
+    await vi.waitFor(() => expect(names(screen.container)).toContain('Rin'));
+
+    await screen.getByRole('button', { name: 'Add animal' }).click();
+
+    await vi.waitFor(async () => expect(await library.actors()).toHaveLength(2));
+  });
+
+  // The nav indicator is driven by this count, so an edit that does not raise
+  // it is an edit that can be lost without warning.
+  it('marks the change as waiting to be synced', async () => {
+    const screen = await render(ActorsPage);
+    await vi.waitFor(() => expect(names(screen.container)).toContain('Rin'));
+
+    await screen.getByRole('button', { name: 'Add robot' }).click();
+
+    await vi.waitFor(() => expect(status.changes).toBeGreaterThan(0));
   });
 });

@@ -64,13 +64,15 @@ describe('reading a repository out of what was pasted', () => {
 describe('keeping the connection between visits', () => {
   it('reads back what was saved', () => {
     const storage = fakeStorage();
-    saveConnection({ owner: 'magnus-lycka', repo: 'ceres-data', branch: 'main', token: 'x' }, storage);
-    expect(loadConnection(storage)).toEqual({
+    const settings = {
       owner: 'magnus-lycka',
       repo: 'ceres-data',
       branch: 'main',
       token: 'x',
-    });
+      device: 'thinkpad',
+    };
+    saveConnection(settings, storage);
+    expect(loadConnection(storage)).toEqual(settings);
   });
 
   it('has nothing to offer before anything is configured', () => {
@@ -88,6 +90,17 @@ describe('keeping the connection between visits', () => {
     const storage = fakeStorage();
     storage.setItem('ceres.connection', '{ this is not json');
     expect(loadConnection(storage)).toBeNull();
+  });
+
+  // Added after the first machines were already configured, and only used to
+  // label commits, so its absence is not a reason to refuse the settings.
+  it('accepts settings written before machines had names', () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      'ceres.connection',
+      JSON.stringify({ owner: 'a', repo: 'b', branch: 'main', token: 'x' }),
+    );
+    expect(loadConnection(storage)?.device).toBe('');
   });
 
   it('rejects stored settings that are missing a field', () => {

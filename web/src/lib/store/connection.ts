@@ -21,6 +21,12 @@ const connectionSchema = z.object({
   repo: z.string().min(1),
   branch: z.string().min(1).default('main'),
   token: z.string().min(1),
+  /**
+   * Which machine this is. Commits made through the API are stamped with the
+   * token's owner, so without this every laptop looks the same in the history
+   * and "I pressed that on the wrong one" has no answer.
+   */
+  device: z.string().default(''),
 });
 
 /**

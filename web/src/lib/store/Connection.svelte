@@ -7,15 +7,14 @@
    * storage and nowhere else — Forget removes it.
    */
   import { clearConnection, loadConnection, parseRepository, saveConnection } from './connection';
-  import { GitHubFileStore } from './github';
-  import { Library } from './library';
-
-  let { onconnect }: { onconnect?: (library: Library | null) => void } = $props();
+  import { GitHubRepository } from './github';
+  import { reconnect, now } from './session.svelte';
 
   const existing = loadConnection();
   let url = $state(existing ? `${existing.owner}/${existing.repo}` : '');
   let token = $state(existing?.token ?? '');
   let branch = $state(existing?.branch ?? 'main');
+  let device = $state(existing?.device ?? '');
   let status = $state(existing ? `Connected to ${existing.owner}/${existing.repo}.` : '');
   let busy = $state(false);
 
@@ -26,18 +25,22 @@
 
     busy = true;
     status = 'Checking…';
-    const settings = { ...repository, branch: branch.trim() || 'main', token: token.trim() };
+    const settings = {
+      ...repository,
+      branch: branch.trim() || 'main',
+      token: token.trim(),
+      device: device.trim(),
+    };
     try {
       // Prove it works before storing it: a token that cannot read is worse
       // than no token, because it looks configured.
-      const library = new Library(new GitHubFileStore(settings));
-      const actors = await library.actors();
+      await new GitHubRepository(settings).head();
       saveConnection(settings);
-      status = `Connected to ${settings.owner}/${settings.repo} — ${actors.length} actors.`;
-      onconnect?.(library);
+      reconnect();
+      status = `Connected to ${settings.owner}/${settings.repo}.`;
+      await now();
     } catch (failure) {
       status = failure instanceof Error ? failure.message : String(failure);
-      onconnect?.(null);
     } finally {
       busy = false;
     }
@@ -47,8 +50,8 @@
     clearConnection();
     url = '';
     token = '';
-    status = 'Forgotten. Nothing is stored in this browser.';
-    onconnect?.(null);
+    status = 'Forgotten. The local copy is untouched; nothing more is sent.';
+    reconnect();
   }
 </script>
 
@@ -66,6 +69,10 @@
     <label>
       Branch
       <input bind:value={branch} size="8" />
+    </label>
+    <label>
+      This machine
+      <input bind:value={device} placeholder="thinkpad" size="14" />
     </label>
     <button onclick={connect} disabled={busy}>Connect</button>
     <button onclick={forget} disabled={busy}>Forget</button>

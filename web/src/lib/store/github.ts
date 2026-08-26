@@ -1,20 +1,22 @@
 /**
- * A file store backed by a GitHub repository.
+ * A GitHub repository, reached through the Git Data API.
  *
- * The only module that knows GitHub exists. Everything above it works in
- * entities and paths, so moving to a different host means writing another
- * `FileStore` and changing nothing else.
+ * The only module that knows GitHub exists. It is not a file store and does
+ * not pretend to be one: the application reads and writes IndexedDB, and this
+ * is what `sync.ts` reconciles that against, now and then.
  *
- * The repo is a private one holding data only — never the code repo. Each
- * write is a commit, which makes the history of a campaign readable and gives
- * undo for free through git rather than through anything this app has to keep.
+ * The contents API — one request to read a file, two to write it, a commit per
+ * write — is what made the app slow, and it treated a history of commits as a
+ * key-value store. A whole session's changes go up here as **one commit in
+ * five requests**, whatever the number of files: read the ref, read its tree,
+ * build a new tree, commit it, move the ref. File contents go inline in the
+ * tree, so there is no per-file round trip.
  *
- * **The application still owns its persistence.** GitHub is storage, the way a
- * disk is storage. Nothing else writes into these directories: data proposed
- * from outside arrives as an issue or an `inbox/` file, and is validated and
- * installed by the application, not dropped into `actors/` behind its back.
+ * **The application still owns its persistence.** GitHub is storage. Nothing
+ * else writes into these directories: data proposed from outside arrives as an
+ * issue or an `inbox/` file and is validated and installed by the application,
+ * not dropped into `actors/` behind its back.
  */
-import type { FileStore } from './files';
 
 const API = 'https://api.github.com';
 
@@ -24,113 +26,101 @@ export type Repository = {
   branch: string;
   /** Fine-grained token with `contents: read and write` on this repo alone. */
   token: string;
+  /** Which machine this is, so a commit says where it came from. */
+  device?: string;
 };
 
-/** Raised when a write lands on a file that changed underneath it. */
-export class ConflictError extends Error {
-  constructor(path: string) {
-    super(`${path} changed in the repository since it was read — reload and try again`);
-    this.name = 'ConflictError';
-  }
-}
+/** A file to write, or a path to delete when `content` is null. */
+export type Change = { path: string; content: string | null };
 
-export class GitHubFileStore implements FileStore {
-  /**
-   * Blob sha per path, as GitHub last reported it. Updating a file requires
-   * the sha it is replacing; that is also what makes a stale write fail loudly
-   * rather than silently clobbering another machine's edit.
-   */
-  private shas = new Map<string, string>();
-
+export class GitHubRepository {
   constructor(private readonly repository: Repository) {}
 
-  async list(prefix: string): Promise<string[]> {
-    const tree = await this.tree();
-    return tree.filter((entry) => entry.path.startsWith(`${prefix}/`)).map((entry) => entry.path);
+  /**
+   * The commit the branch points at, or null when the repository has none.
+   *
+   * This one value is the whole of conflict detection: if it has not moved
+   * since we last synced, nobody else has written and a push is safe.
+   */
+  async head(): Promise<string | null> {
+    const response = await this.request(`/git/ref/heads/${this.repository.branch}`);
+    if (response.status === 404 || response.status === 409) return null;
+    const ref = (await this.parse(response)) as { object: { sha: string } };
+    return ref.object.sha;
   }
 
-  async read(path: string): Promise<string | null> {
-    const response = await this.request(`/contents/${path}?ref=${this.repository.branch}`);
-    if (response.status === 404) return null;
-    const file = (await this.parse(response)) as { content: string; sha: string };
-    this.shas.set(path, file.sha);
-    return decode(file.content);
-  }
-
-  async write(path: string, content: string, message: string): Promise<void> {
-    const response = await this.request(`/contents/${path}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message,
-        content: encode(content),
-        branch: this.repository.branch,
-        sha: this.shas.get(path),
-      }),
-    });
-    if (response.status === 409 || response.status === 422) throw new ConflictError(path);
-    const written = (await this.parse(response)) as { content: { sha: string } };
-    this.shas.set(path, written.content.sha);
-    this.remember(path, written.content.sha);
-  }
-
-  async remove(path: string, message: string): Promise<void> {
-    const sha = this.shas.get(path) ?? (await this.shaOf(path));
-    // Already gone. Deletion is unguarded and idempotent: asking twice is not
-    // an error, it is the same answer.
-    if (sha === null) return;
-    const response = await this.request(`/contents/${path}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ message, sha, branch: this.repository.branch }),
-    });
-    if (response.status === 409 || response.status === 422) throw new ConflictError(path);
-    await this.parse(response);
-    this.shas.delete(path);
-    this.forget(path);
+  /** Every file in a commit, path to contents. */
+  async files(commit: string): Promise<Map<string, string>> {
+    const listing = (await this.parse(await this.request(`/git/trees/${commit}?recursive=1`))) as {
+      tree: { path: string; sha: string; type: string }[];
+    };
+    const blobs = listing.tree.filter((entry) => entry.type === 'blob');
+    const contents = await Promise.all(blobs.map((entry) => this.blob(entry.sha)));
+    return new Map(blobs.map((entry, index) => [entry.path, contents[index]]));
   }
 
   /**
-   * One request for the whole layout, rather than one per directory.
+   * Write every change as a single commit and move the branch to it.
    *
-   * Kept current as this store writes rather than thrown away, for two
-   * reasons. It saves a full tree fetch per operation — most of why adding a
-   * row felt slow. And the tree endpoint lags for a moment after a commit, so
-   * re-fetching it straight after a write can report the *previous* sha for
-   * the file just written, which then gets that file's next write refused.
-   *
-   * A change made on another machine is still only noticed on reload; catching
-   * that is what the conflict on write is for.
+   * `parent` is the commit the changes were made against. Passing the head we
+   * checked is what keeps the push honest: GitHub refuses to move a ref onto a
+   * commit that is not a descendant of where the ref is now.
    */
-  private cachedTree: { path: string; sha: string }[] | null = null;
+  async commit(changes: Change[], message: string, parent: string | null): Promise<string> {
+    const base = parent ? await this.treeOf(parent) : null;
+    const tree = (await this.parse(
+      await this.request('/git/trees', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...(base ? { base_tree: base } : {}),
+          tree: changes.map(({ path, content }) => ({
+            path,
+            mode: '100644',
+            type: 'blob',
+            // A null sha and no content is how a tree deletes a path.
+            ...(content === null ? { sha: null } : { content }),
+          })),
+        }),
+      }),
+    )) as { sha: string };
 
-  private remember(path: string, sha: string): void {
-    if (!this.cachedTree) return;
-    const existing = this.cachedTree.find((entry) => entry.path === path);
-    if (existing) existing.sha = sha;
-    else this.cachedTree.push({ path, sha });
+    const device = this.repository.device?.trim();
+    const created = (await this.parse(
+      await this.request('/git/commits', {
+        method: 'POST',
+        body: JSON.stringify({
+          message,
+          tree: tree.sha,
+          parents: parent ? [parent] : [],
+          // Without this every machine's commits are stamped with the token
+          // owner, so "which laptop was that?" has no answer.
+          ...(device ? { author: { name: device, email: `${device}@ceres.local` } } : {}),
+        }),
+      }),
+    )) as { sha: string };
+
+    await this.moveBranch(created.sha, parent !== null);
+    return created.sha;
   }
 
-  private forget(path: string): void {
-    this.cachedTree = this.cachedTree?.filter((entry) => entry.path !== path) ?? null;
+  private async moveBranch(sha: string, exists: boolean): Promise<void> {
+    const route = `/git/refs${exists ? `/heads/${this.repository.branch}` : ''}`;
+    const body = exists ? { sha } : { ref: `refs/heads/${this.repository.branch}`, sha };
+    await this.parse(
+      await this.request(route, { method: exists ? 'PATCH' : 'POST', body: JSON.stringify(body) }),
+    );
   }
 
-  private async tree(): Promise<{ path: string; sha: string }[]> {
-    if (this.cachedTree) return this.cachedTree;
-    const response = await this.request(`/git/trees/${this.repository.branch}?recursive=1`);
-    // An empty repository has no tree at all, which is not an error here.
-    if (response.status === 404 || response.status === 409) return (this.cachedTree = []);
-    const body = (await this.parse(response)) as {
-      tree: { path: string; sha: string; type: string }[];
+  private async treeOf(commit: string): Promise<string> {
+    const body = (await this.parse(await this.request(`/git/commits/${commit}`))) as {
+      tree: { sha: string };
     };
-    const files = body.tree.filter((entry) => entry.type === 'blob');
-    // Never overwrite a sha a direct read or write established: those are
-    // authoritative, and the tree may be a moment behind them.
-    for (const entry of files) if (!this.shas.has(entry.path)) this.shas.set(entry.path, entry.sha);
-    return (this.cachedTree = files.map(({ path, sha }) => ({ path, sha })));
+    return body.tree.sha;
   }
 
-  private async shaOf(path: string): Promise<string | null> {
-    const tree = await this.tree();
-    return tree.find((entry) => entry.path === path)?.sha ?? null;
+  private async blob(sha: string): Promise<string> {
+    const body = (await this.parse(await this.request(`/git/blobs/${sha}`))) as { content: string };
+    return decode(body.content);
   }
 
   private request(route: string, init: RequestInit = {}): Promise<Response> {
@@ -138,9 +128,8 @@ export class GitHubFileStore implements FileStore {
     return fetch(`${API}/repos/${owner}/${repo}${route}`, {
       ...init,
       // GitHub answers authenticated reads with `Cache-Control: private,
-      // max-age=60`, so the browser will happily replay a minute-old listing.
-      // After a delete that means the actor reappears on the next reload,
-      // having genuinely been removed from the repository.
+      // max-age=60`, so the browser will happily replay a minute-old answer —
+      // which showed up as deleted actors walking back in after a reload.
       cache: 'no-store',
       headers: {
         accept: 'application/vnd.github+json',
@@ -159,15 +148,10 @@ export class GitHubFileStore implements FileStore {
 }
 
 /**
- * GitHub carries file contents as base64. `btoa` and `atob` speak bytes rather
- * than text, so anything outside Latin-1 — a Vargr name, an em dash in a note
- * — has to go through an explicit UTF-8 round trip.
+ * Blobs come back base64. `atob` speaks bytes rather than text, so anything
+ * outside Latin-1 — a Vargr name, an em dash in a note — needs an explicit
+ * UTF-8 round trip.
  */
-function encode(text: string): string {
-  const bytes = new TextEncoder().encode(text);
-  return btoa(String.fromCharCode(...bytes));
-}
-
 function decode(base64: string): string {
   const binary = atob(base64.replace(/\s/g, ''));
   return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));

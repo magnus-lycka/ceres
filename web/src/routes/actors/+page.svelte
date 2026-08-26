@@ -2,25 +2,21 @@
   /**
    * The actor library.
    *
-   * Backed by the data repository once one is connected, and by nothing at all
-   * before that: without a repository this is a scratch pad that forgets
-   * everything on reload, which is honest about what it is.
+   * Reads and writes the local library, which answers immediately. Whether
+   * those changes have reached the data repository is the nav bar's business,
+   * not this screen's.
    *
    * Nothing here knows a grid is involved. `ActorGrid` takes actors and
    * reports which one the cursor is in; columns, cell contexts and row
    * indices stop at that boundary.
    */
-  import { resolve } from '$app/paths';
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
-  import { GitHubFileStore } from '$lib/store/github';
-  import { Library } from '$lib/store/library';
-  import { loadConnection } from '$lib/store/connection';
+  import { library, refresh } from '$lib/store/session.svelte';
   import { type Actor, type ActorKind, actorKinds, actorSchema } from '$lib/schema/actor';
   import { duplicate, newActor } from '$lib/rules/rounds/library';
 
   let actors = $state<Actor[]>([]);
-  let library = $state<Library | null>(null);
   // The id rather than the actor: `actors` is replaced on every save, and an
   // actor held directly would go stale the moment its row was rewritten.
   let selectedId = $state<number | null>(null);
@@ -32,17 +28,12 @@
   // exactly what produced a screen full of duplicate ids.
   let busy = $state(0);
 
-  // Reconnect from what this browser already knows, so a reload lands back on
-  // the same data rather than on an empty screen and a form.
   $effect(() => {
-    const settings = loadConnection();
-    if (settings && !library) connected(new Library(new GitHubFileStore(settings)));
+    void load();
   });
 
-  async function connected(next: Library | null) {
-    library = next;
-    actors = next ? await next.actors() : [];
-    selectedId = null;
+  async function load() {
+    actors = await library.actors();
   }
 
   /**
@@ -63,6 +54,8 @@
       } catch (failure) {
         problem = failure instanceof Error ? failure.message : String(failure);
       }
+      // Keep the sync indicator honest about what is waiting.
+      await refresh();
     });
     gate = mine;
     await mine;
@@ -71,17 +64,8 @@
 
   let gate: Promise<void> = Promise.resolve();
 
-  /** Saved when there is a repository; otherwise it stays in this browser. */
   async function store(actor: Actor): Promise<Actor> {
-    return library ? await library.saveActor(actor) : { ...actor, id: actor.id || nextScratchId() };
-  }
-
-  // Without a repository there is no counter to allocate from, so the scratch
-  // pad keeps its own. Ids still only climb.
-  let scratch = 0;
-  function nextScratchId(): number {
-    scratch = Math.max(scratch, ...actors.map((actor) => actor.id), 0) + 1;
-    return scratch;
+    return library.saveActor(actor);
   }
 
   function addActor(kind: ActorKind) {
@@ -125,7 +109,7 @@
     const doomed = selected.id;
     // No confirmation: deleting is the referee's business, not the app's.
     return keep(async () => {
-      await library?.deleteActor(doomed);
+      await library.deleteActor(doomed);
       const gone = actors.findIndex((actor) => actor.id === doomed);
       actors = actors.filter((actor) => actor.id !== doomed);
       selectedId = null;
@@ -146,13 +130,6 @@
 </script>
 
 <h1>Actors</h1>
-
-{#if !library}
-  <p class="hint">
-    No data repository, so nothing is being saved. Set one up under
-    <a href={resolve('/sync')}>Sync</a>.
-  </p>
-{/if}
 
 <div class="bar">
   {#each actorKinds as kind (kind)}

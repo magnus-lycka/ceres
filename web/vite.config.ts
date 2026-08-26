@@ -26,7 +26,7 @@ export default defineConfig({
         test: {
           name: 'rules',
           include: ['src/**/*.test.ts'],
-          exclude: ['src/**/*.svelte.test.ts'],
+          exclude: ['src/**/*.svelte.test.ts', 'src/**/*.browser.test.ts'],
           environment: 'node',
         },
       },
@@ -34,7 +34,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'components',
-          include: ['src/**/*.svelte.test.ts'],
+          // `.browser.test.ts` is for code that needs a real browser API rather
+          // than a component — IndexedDB above all, which is worth testing
+          // against the real thing rather than a mock of it.
+          include: ['src/**/*.svelte.test.ts', 'src/**/*.browser.test.ts'],
           browser: {
             enabled: true,
             provider: playwright(),
