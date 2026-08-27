@@ -5,6 +5,7 @@
  * because SvGrid's paste does not report cell changes the way an edit does.
  */
 import { describe, expect, it, vi } from 'vitest';
+import { formatTags } from '$lib/schema/tags';
 import { afterPaste, isPasteKey, pastedChanges } from './pasted';
 
 const rin = { id: 1, name: 'Rin', tags: ['pc'] };
@@ -29,6 +30,14 @@ describe('pastedChanges', () => {
   it('splits tags that arrived as raw text', () => {
     const after = [{ ...rin, tags: 'bot marduk' as unknown as string[] }];
     expect(pastedChanges([rin], after)[0].tags).toEqual(['bot', 'marduk']);
+  });
+
+  // Copying tags out and pasting them back is the round trip that has to be
+  // exact, separators and all — this is the pair `formatTags` is written for.
+  it('takes back the tags a copy of our own put on the clipboard', () => {
+    const copied = formatTags(['player character', 'ex-navy, retired']);
+    const after = [{ ...rin, tags: copied as unknown as string[] }];
+    expect(pastedChanges([rin], after)[0].tags).toEqual(['player character', 'ex-navy, retired']);
   });
 
   it('matches by id, not by position', () => {

@@ -162,7 +162,13 @@
   deleting a row. Paste a block from a spreadsheet with ⌘V. Drag-select a range and ⌘C to copy one out.
 </p>
 
-<ActorGrid bind:this={grid} {actors} onselect={(actor) => (selectedId = actor?.id ?? null)} onedit={edited} />
+<ActorGrid
+  bind:this={grid}
+  {actors}
+  onselect={(actor) => (selectedId = actor?.id ?? null)}
+  onedit={edited}
+  ontags={replace}
+/>
 
 {#if selected}
   <ActorHealth actor={selected} onchange={replace} />

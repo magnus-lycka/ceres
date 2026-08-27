@@ -17,32 +17,39 @@
    * would conceal the coupling rather than contain it. The boundary worth
    * having is this one — parties in, selected party out.
    */
-  import {
-    SvGrid,
-    renderSnippet,
-    type CellContext,
-    type GridColumns,
-    type SvGridApi,
-    type TableFeatures,
-    type ValueParserParams,
-  } from '@svgrid/grid';
+  import { SvGrid, type GridColumns, type SvGridApi, type TableFeatures } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
   import { afterPaste, isPasteKey } from '$lib/grid/pasted';
-  import { formatTags, parseTags } from '$lib/schema/tags';
+  import { cellForClipboard, provideTagsForm, tagsColumn } from '$lib/tags/tagsColumn';
+  import TagPicker from '$lib/tags/TagPicker.svelte';
+  import { distinctTags } from '$lib/schema/tags';
   import type { Party } from '$lib/schema/party';
 
   let {
     parties,
     onselect,
     onedit,
+    ontags,
   }: {
     parties: Party[];
     onselect: (party: Party | null) => void;
     /** A party after a cell edit; the page persists it without redrawing. */
     onedit?: (party: Party) => void;
+    /**
+     * A party whose tags the form changed. Not already applied — the page
+     * stores it and seats it, as `ActorGrid` describes at more length.
+     */
+    ontags?: (party: Party) => void;
   } = $props();
 
-  type Cell = CellContext<Party>;
+  /** The party whose tags are being chosen, or null when no form is open. */
+  let tagging = $state<Party | null>(null);
+  /** The party the cursor is in, for the form opened by a keystroke. */
+  let activeRow = $state<Party | null>(null);
+
+  // A keystroke on a tags cell opens the same form the `+` does.
+  provideTagsForm(() => (tagging = activeRow));
+  const vocabulary = $derived(distinctTags(parties));
 
   const MARKER = '#e8f0fe';
   const uid = nextGridId();
@@ -50,18 +57,7 @@
   const columns: GridColumns<Party> = [
     { field: 'id', header: 'Id', width: 60, editable: false },
     { field: 'name', header: 'Name', editorType: 'text' },
-    {
-      field: 'tags',
-      header: 'Tags',
-      // Plain text, split on commit. The chips editor mis-places its popup
-      // over the row below and drops keystrokes; tags are short and a space
-      // separated string is a better thing to type than a widget.
-      editorType: 'text',
-      // Without this an edit stores the raw string, which the schema then
-      // refuses to read back — and one such file hid every party.
-      valueParser: (p: ValueParserParams<Party>) => parseTags(p.newValue),
-      cell: (ctx: Cell) => renderSnippet(pills, parseTags(ctx.getValue())),
-    },
+    tagsColumn<Party>((party) => (tagging = party)),
     { field: 'note', header: 'Note', editorType: 'text' },
     // Members as stored, including any whose actor has since been deleted:
     // a party that looks short is telling you something true.
@@ -105,10 +101,6 @@
   });
 </script>
 
-{#snippet pills(values: string[])}
-  {#each values as tag (tag)}<span class="pill">{tag}</span>{/each}
-{/snippet}
-
 <div
   class="grid"
   id={uid}
@@ -125,17 +117,44 @@
     contextMenu
     containerHeight="auto"
     enableRowSummaries={false}
-    processCellForClipboard={(p) => (p.columnId === 'tags' ? formatTags(p.value) : p.value)}
+    processCellForClipboard={cellForClipboard}
     onApiReady={(ready) => (api = ready)}
     onActiveCellChange={(cell) => {
       activeColumn = cell?.columnId ?? null;
-      onselect(cell && cell.rowIndex >= 0 ? (parties[cell.rowIndex] ?? null) : null);
+      activeRow = cell && cell.rowIndex >= 0 ? (parties[cell.rowIndex] ?? null) : null;
+      onselect(activeRow);
     }}
     onCellValueChange={(change) => onedit?.(change.row)}
   />
 </div>
 
+{#if tagging}
+  <!-- Over the page: the grid's container clips whatever a cell renders. -->
+  <div class="overlay">
+    <TagPicker
+      subject={tagging.name}
+      tags={tagging.tags}
+      {vocabulary}
+      onapply={(tags) => {
+        const party = tagging;
+        tagging = null;
+        if (party) ontags?.({ ...party, tags });
+      }}
+      oncancel={() => (tagging = null)}
+    />
+  </div>
+{/if}
+
 <style>
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: rgba(15, 23, 42, 0.3);
+  }
+
   /* Same channels as the actor grid: frame for the cursor, fill for the row
      and column markers, row background left alone. */
   .grid {
@@ -148,11 +167,5 @@
   .grid :global(tr:has(.sv-grid-cell-active) td[data-col-id='id']) {
     background: #e8f0fe;
     font-weight: 600;
-  }
-  .pill {
-    background: #e2e8f0;
-    border-radius: 9999px;
-    padding: 1px 8px;
-    margin-right: 4px;
   }
 </style>

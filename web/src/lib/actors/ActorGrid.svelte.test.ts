@@ -183,3 +183,55 @@ describe('handing the keyboard back', () => {
     elsewhere.remove();
   });
 });
+
+/**
+ * Tags are chosen in a form, not typed into the cell.
+ *
+ * These are the grid's half of that: the way in, and what comes back out. What
+ * the form itself does is `TagPicker`'s own test.
+ */
+describe('ActorGrid tags', () => {
+  it('opens the form for the row whose tags were clicked', async () => {
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn() });
+    await userEvent.click(screen.getByRole('button', { name: 'Edit tags' }).first());
+    await expect.element(screen.getByRole('dialog', { name: 'Tags for Rin' })).toBeVisible();
+  });
+
+  it('reports the actor with its new tags once the form is applied', async () => {
+    const ontags = vi.fn();
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn(), ontags });
+    await userEvent.click(screen.getByRole('button', { name: 'Edit tags' }).first());
+    await userEvent.click(screen.getByRole('button', { name: 'Remove tag pc' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(ontags).toHaveBeenCalledWith(expect.objectContaining({ id: 1, tags: ['marduk'] }));
+  });
+
+  it('offers the tags the rest of the roster already uses', async () => {
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn() });
+    // Warbot carries none, so every suggestion comes from the other actors.
+    await userEvent.click(screen.getByRole('button', { name: 'Edit tags' }).last());
+    await expect.element(screen.getByRole('button', { name: 'Add tag marduk' })).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: 'Add tag pc' })).toBeVisible();
+  });
+
+  it('leaves the actor alone when the form is abandoned', async () => {
+    const ontags = vi.fn();
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn(), ontags });
+    await userEvent.click(screen.getByRole('button', { name: 'Edit tags' }).first());
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(ontags).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The cell must stay editable or SvGrid's paste silently skips it — but an
+   * editable cell is one a keystroke opens an editor in, and a text editor
+   * over a tag list is the delimited-string trap this whole change removes.
+   */
+  it('never puts a text editor over a tag list', async () => {
+    const screen = await render(ActorGrid, { actors, onselect: vi.fn() });
+    const cell = screen.container.querySelector<HTMLElement>('td[data-col-id="tags"]');
+    await userEvent.dblClick(cell!);
+    expect(cell!.querySelector('input')).toBeNull();
+    await expect.element(screen.getByRole('dialog', { name: 'Tags for Rin' })).toBeVisible();
+  });
+});

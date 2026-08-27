@@ -47,23 +47,24 @@
    */
   import {
     SvGrid,
-    renderSnippet,
     type CellContext,
     type GridColumns,
     type SvGridApi,
     type TableFeatures,
-    type ValueParserParams,
   } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
   import { healthSummary } from '$lib/rules/rounds/health';
   import { afterPaste, isPasteKey } from '$lib/grid/pasted';
-  import { formatTags, parseTags } from '$lib/schema/tags';
+  import { cellForClipboard, provideTagsForm, tagsColumn } from '$lib/tags/tagsColumn';
+  import TagPicker from '$lib/tags/TagPicker.svelte';
+  import { distinctTags } from '$lib/schema/tags';
   import type { Actor } from '$lib/schema/actor';
 
   let {
     actors,
     onselect,
     onedit,
+    ontags,
   }: {
     actors: Actor[];
     /** The actor whose row the cursor is in, or null when none is. */
@@ -77,7 +78,24 @@
      * keyboard editing feel broken.
      */
     onedit?: (actor: Actor) => void;
+    /**
+     * An actor whose tags the referee has changed in the form.
+     *
+     * Unlike `onedit` this is *not* already applied: the form hands back a
+     * fresh actor for the page to store and seat, the way the health panel
+     * does. Replacing `actors` is safe here — the form has closed, so there is
+     * no cursor mid-edit to lose.
+     */
+    ontags?: (actor: Actor) => void;
   } = $props();
+
+  /** The actor whose tags are being chosen, or null when no form is open. */
+  let tagging = $state<Actor | null>(null);
+
+  // A keystroke on a tags cell opens the same form the `+` does. The launcher
+  // mounted by the grid has no way of naming its row, so it asks for the row
+  // the cursor is in — which is the one it was mounted for.
+  provideTagsForm(() => (tagging = activeRow));
 
   type Cell = CellContext<Actor>;
 
@@ -114,18 +132,7 @@
     { field: 'kind', header: 'Kind', editable: false },
     ...characteristicColumns,
     { field: 'hits', header: 'Hits', editorType: 'number', width: 80, editable: hurtByHits },
-    {
-      field: 'tags',
-      header: 'Tags',
-      // Plain text, split on commit. The chips editor mis-places its popup
-      // over the row below and drops keystrokes; tags are short and a space
-      // separated string is a better thing to type than a widget.
-      editorType: 'text',
-      // A paste writes the raw clipboard text into the cell, so parse it back
-      // into a tag list; copy the other way as one readable cell.
-      valueParser: (p: ValueParserParams<Actor>) => parseTags(p.newValue),
-      cell: (ctx: Cell) => renderSnippet(pills, parseTags(ctx.getValue())),
-    },
+    tagsColumn<Actor>((actor) => (tagging = actor)),
     { field: 'note', header: 'Note', editorType: 'text' },
     // Derived from the injury history, so never editable here: the health
     // panel edits the injuries that produce it. Computed, so it has no `field`
@@ -141,7 +148,28 @@
    * selection exactly as the mouse does.
    */
   function report(rowIndex: number) {
-    onselect(rowIndex >= 0 ? (actors[rowIndex] ?? null) : null);
+    activeRow = rowIndex >= 0 ? (actors[rowIndex] ?? null) : null;
+    onselect(activeRow);
+  }
+
+  /**
+   * The actor the cursor is in, kept because `TagsLauncher` cannot say which
+   * row it was mounted for without handing out a row id.
+   */
+  let activeRow = $state<Actor | null>(null);
+
+  /**
+   * Store the chosen tags, close the form, and put the keyboard back.
+   *
+   * The row is found again rather than remembered as an index: storing
+   * replaces `actors`, and a sorted or filtered grid may seat it elsewhere.
+   */
+  function applyTags(tags: string[]) {
+    const actor = tagging;
+    tagging = null;
+    if (!actor) return;
+    ontags?.({ ...actor, tags });
+    focus(actors.findIndex((each) => each.id === actor.id));
   }
 
   /**
@@ -188,6 +216,14 @@
       (row) => onedit?.(row),
     );
   }
+
+  /**
+   * The tags in use across the roster, offered by the form as suggestions.
+   *
+   * Derived from the actors themselves rather than stored anywhere: a tag
+   * exists because an actor carries it, so the two cannot drift apart.
+   */
+  const vocabulary = $derived(distinctTags(actors));
 
   let container = $state<HTMLElement | null>(null);
   let api = $state<SvGridApi<TableFeatures, Actor> | null>(null);
@@ -236,10 +272,6 @@
   }
 </script>
 
-{#snippet pills(values: string[])}
-  {#each values as tag (tag)}<span class="pill">{tag}</span>{/each}
-{/snippet}
-
 <div
   class="grid"
   id={uid}
@@ -257,7 +289,7 @@
     contextMenu
     containerHeight="auto"
     enableRowSummaries={false}
-    processCellForClipboard={(p) => (p.columnId === 'tags' ? formatTags(p.value) : p.value)}
+    processCellForClipboard={cellForClipboard}
     onApiReady={(ready) => (api = ready)}
     onActiveCellChange={(cell) => {
       activeColumn = cell?.columnId ?? null;
@@ -267,7 +299,33 @@
   />
 </div>
 
+{#if tagging}
+  <!--
+    Over the page rather than inside the cell. The grid's own container is the
+    scroll container and clips whatever a cell renders, which is what made
+    every in-cell popup unusable on the last visible row.
+  -->
+  <div class="overlay">
+    <TagPicker
+      subject={tagging.name}
+      tags={tagging.tags}
+      {vocabulary}
+      onapply={applyTags}
+      oncancel={() => (tagging = null)}
+    />
+  </div>
+{/if}
+
 <style>
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: rgba(15, 23, 42, 0.3);
+  }
+
   /*
    * Spreadsheet convention, as Google Sheets and Excel use it: the cell you
    * are in gets a frame, and its row marker gets a fill. Row *background* is
@@ -293,12 +351,5 @@
   .grid :global(tr:has(.sv-grid-cell-active) td[data-col-id='id']) {
     background: #e8f0fe;
     font-weight: 600;
-  }
-
-  .pill {
-    background: #e2e8f0;
-    border-radius: 9999px;
-    padding: 1px 8px;
-    margin-right: 4px;
   }
 </style>

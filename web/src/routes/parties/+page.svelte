@@ -76,7 +76,11 @@
     });
   }
 
-  /** From the member panel, which hands back a new party object. */
+  /**
+   * From the member panel and from the tags form, both of which hand back a
+   * new party object rather than editing one in place — so unlike `edited`,
+   * the list has to be reseated as well as stored.
+   */
   function replace(updated: Party) {
     return keep(async () => {
       const saved = await library.saveParty(updated);
@@ -118,7 +122,12 @@
 {#if problem}<p class="problem">{problem}</p>{/if}
 {#each unreadable as trouble (trouble)}<p class="problem">{trouble}</p>{/each}
 
-<PartyGrid {parties} onselect={(party) => (selectedId = party?.id ?? null)} onedit={edited} />
+<PartyGrid
+  {parties}
+  onselect={(party) => (selectedId = party?.id ?? null)}
+  onedit={edited}
+  ontags={replace}
+/>
 
 {#if selected}
   <PartyMembers party={selected} {members} {actors} onchange={replace} />
