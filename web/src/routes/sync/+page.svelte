@@ -43,6 +43,24 @@
   </p>
 {/if}
 
+{#if status.imported}
+  <p class="imported">{status.imported}</p>
+{/if}
+
+{#if status.problems.length > 0}
+  <!--
+    A proposal that could not be installed stays in the inbox, so it has to be
+    said out loud: its author is somewhere else and will otherwise be waiting
+    for a party that is never going to appear.
+  -->
+  <div class="problem">
+    <strong>Some proposals could not be imported:</strong>
+    <ul>
+      {#each status.problems as trouble (trouble)}<li>{trouble}</li>{/each}
+    </ul>
+  </div>
+{/if}
+
 <Connection />
 
 <p class="hint">
@@ -51,6 +69,17 @@
 </p>
 
 <style>
+  .imported {
+    background: #e6f4ea;
+    border-left: 3px solid #137333;
+    color: #0d652d;
+    padding: 0.4rem 0.75rem;
+  }
+  .problem ul {
+    margin: 0.25rem 0 0;
+    padding-left: 1.25rem;
+  }
+
   .state {
     display: flex;
     gap: 0.75rem;

@@ -21,6 +21,7 @@
 <nav>
   <a href={resolve('/actors')}>Actors</a>
   <a href={resolve('/parties')}>Parties</a>
+  <a href={resolve('/situation')}>Situation</a>
   <a
     href={resolve('/sync')}
     class:pending={status.changes > 0 && status.state !== 'blocked'}

@@ -27,7 +27,20 @@ export const status = $state<{
   detail: string;
   connected: boolean;
   busy: boolean;
-}>({ state: 'synced', changes: 0, at: null, detail: '', connected: false, busy: false });
+  /** What the last sync installed from the inbox, ready to read. */
+  imported: string;
+  /** Proposals that arrived but could not be installed, with the reason. */
+  problems: string[];
+}>({
+  state: 'synced',
+  changes: 0,
+  at: null,
+  detail: '',
+  connected: false,
+  busy: false,
+  imported: '',
+  problems: [],
+});
 
 /** Whether the last attempt failed for a reason that will likely pass. */
 export function transient(): boolean {
@@ -59,15 +72,44 @@ export async function refresh(): Promise<void> {
   if (status.state !== 'blocked') status.state = changes > 0 ? 'pending' : 'synced';
 }
 
+/**
+ * Install whatever the sync just brought down, and push the result.
+ *
+ * A proposal arrives as a file in `inbox/`, so it is already here by the time
+ * sync reports success — installing it is a local operation, and the second
+ * sync is only to send the actors, party, receipt and the inbox deletion back.
+ * That second run happens against the head we have just pulled, so it is an
+ * ordinary push rather than another reconciliation.
+ *
+ * Nothing here runs when sync is blocked: a standoff means the local copy was
+ * not advanced, so any inbox file present is one we have already seen.
+ */
+async function consumeInbox(): Promise<void> {
+  const { installed, problems } = await library.importInbox();
+  status.problems = problems;
+  if (installed.length === 0) return;
+
+  const actors = installed.reduce((count, receipt) => count + receipt.actors.length, 0);
+  const issues = installed.map((receipt) => `#${receipt.issue}`).join(', ');
+  status.imported = `Imported ${actors} actor${actors === 1 ? '' : 's'} and ${installed.length} part${installed.length === 1 ? 'y' : 'ies'} from ${issues}.`;
+
+  const outcome = await sync!.run();
+  status.state = outcome.state;
+  status.changes = outcome.state === 'blocked' ? outcome.changes : 0;
+  status.detail = outcome.detail ?? '';
+}
+
 export async function now(): Promise<void> {
   if (!sync || status.busy) return void (await refresh());
   status.busy = true;
+  status.imported = '';
   try {
     const outcome = await sync.run();
     status.state = outcome.state;
     status.changes = outcome.state === 'blocked' ? outcome.changes : 0;
     status.at = outcome.at;
     status.detail = outcome.detail ?? '';
+    if (outcome.state !== 'blocked') await consumeInbox();
   } catch (failure) {
     /*
      * Not being able to reach the repository is not a conflict, and must never

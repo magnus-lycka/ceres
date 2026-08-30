@@ -11,7 +11,8 @@
  */
 import type { Actor, Injury, Stat } from '../../schema/actor';
 
-const CHARACTERISTICS = ['strength', 'dexterity', 'endurance'] as const;
+/** The three physical characteristics, in UCP order. */
+export const CHARACTERISTICS = ['strength', 'dexterity', 'endurance'] as const;
 export type Characteristic = (typeof CHARACTERISTICS)[number];
 
 /** Whether this actor is hurt through characteristics or through Hits. */

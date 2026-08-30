@@ -722,39 +722,16 @@ logic stays in the codebase where it is reviewed and tested.
 
 ### Getting data in from outside: issues, not file writes
 
-The one wanted outside workflow is an assistant reading an adventure — often a
-PDF — and proposing the NPCs in it as ready-to-use actors and a party. It is
-authoring, done in preparation, and it must not reach around the service.
+An assistant or person may propose new reusable library content — one Party
+containing any supported kind of Actor — by filing an issue on the private data
+repository. CI validates the proposal and writes only an id-free bundle under
+`inbox/`; the application allocates ids and installs it during the next sync.
 
-So the assistant files an **issue on the data repo**, and CI does the writing:
-
-1. An issue form gives the proposal a shape to fill in rather than prose for a
-   parser to guess at.
-2. A workflow in the data repo — a stub calling a reusable workflow in this
-   repo — validates the payload against the schema generated from the
-   application's own types.
-3. Valid input is written to `inbox/` and the result reported on the issue.
-   Invalid input leaves the issue open with the validation errors, so the
-   assistant can read the failure and correct itself. That feedback loop is the
-   point; a silent file drop offers nothing to correct against.
-4. The application reads `inbox/`, imports on the referee's confirmation, and
-   removes what it consumed.
-
-**An inbox entry is a bundle, not a party.** A party of newly invented NPCs
-references actors that do not exist yet, so the proposal carries the actor
-definitions *and* the party grouping them; import creates the actors, then the
-party pointing at them. Designing for a bare party fails on the first real use,
-because inventing the actors is the use.
-
-**Ids are allocated by the application, never by CI.** Inbox entries carry no
-ids. Two allocators writing to one repo eventually make one id mean two things.
-It also keeps pushes trivial: CI only ever writes under `inbox/`, the
-application only ever writes under the store, so the paths never collide.
-
-The issue channel is deliberately the *whole* AI interface for now. It needs no
-service running, works from a laptop that has never been set up, and keeps a
-reviewable record of what was proposed. Anything synchronous — an assistant
-creating actors mid-session — is a different mechanism and is not wanted yet.
+This is deliberately the whole outside interface for now. It needs no running
+service, works from a machine that has never run Ceres, and leaves a reviewable
+record. The bundle contract, GitHub workflow, replay-safe installation and the
+narrow rule for pulling an inbox-only commit while local changes wait are
+specified in [plan-library-import.md](plan-library-import.md).
 
 ### Undo — deferred
 
@@ -814,9 +791,11 @@ expected to revisit each other's work.
 8. **Durable storage.** Persist actors, parties and situations as their three
    document kinds, each written atomically, in a git working tree pushed to the
    private data repo.
-9. **The issue import channel.** The issue form, the reusable validation
-   workflow, `inbox/`, and the application-side import that allocates ids and
-   turns a bundle into actors plus a party.
+9. **The issue-driven library import channel
+   ([#61](https://github.com/magnus-lycka/ceres/issues/61)).** Implement
+   [plan-library-import.md](plan-library-import.md): the generic issue form,
+   reusable validation workflow, `inbox/`, inbox-aware sync and replay-safe
+   installation into the Actor and Party libraries.
 10. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
     complete and move it to `docs/archive/`. The rule interpretations are
     already recorded — RIC-011 (stun and lethal share one END score), RIC-012
