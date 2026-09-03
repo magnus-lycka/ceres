@@ -735,11 +735,19 @@ and nothing else. A shared vendor-specific component is worth extracting when
 several grids need identical setup, for consistency and central configuration
 rather than for interchangeability.
 
-### Persistence (planned, not built)
+### Persistence
 
-State is in memory today. The intended store is a **private GitHub data repo**,
-separate from this public code repo, which also gives the same data to whatever
-machine is to hand.
+Entities live in **IndexedDB** in the browser and are synced to a **private
+GitHub data repo**, separate from this public code repo, which gives the same
+data to whatever machine is to hand. One JSON file per entity, under a
+directory named for its kind.
+
+The abstraction between them is a `FileStore` — list, read, write, remove —
+implemented over IndexedDB, over the GitHub contents API, and in memory for
+tests. `Library` depends on that interface and never learns which it has. Sync
+compares the commit the local copy was last known to match against what the
+branch points at now: unchanged is the fast path, behind is taken wholesale,
+and both-moved **blocks** rather than merging.
 
 **The application owns its persistence.** Every writer goes through the
 application's own service or API. Nothing — no external tool, no AI — writes

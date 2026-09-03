@@ -1,8 +1,10 @@
 # Plan: `ceres.rounds` — round-by-round situation (combat) tracker
 
-Status: **in progress** — phases 1–5 complete, phase 4 open; see "Progress so
-far". **The NiceGUI/Python shape is under review**: a Svelte spike is exploring
-a browser front end with the rules alongside it — see "Under review" below.
+Status: **in progress**. The tracker is a **browser application in `web/`**,
+built in Svelte with its rules in TypeScript beside it. The NiceGUI prototype
+under `src/ceres/rounds/domain/` and `src/ceres/rounds/ui/` is superseded and
+kept only until nothing wants it; see "Architecture decision" and "Progress so
+far".
 
 Tracking issue: [#56](https://github.com/magnus-lycka/ceres/issues/56)
 
@@ -55,116 +57,117 @@ Rules reference: `refs/core/03_combat.md` (pages 73–96), plus
 Typical live Situation: under 20 actors, a handful of rounds. The reusable
 Actor library may be much larger.
 
-## Architecture decision: NiceGUI, single Python codebase
+## Architecture decision: a browser application in Svelte
 
-The UI question was explored across three shapes: a REST/HTMX split like
+The tracker is a **static SvelteKit application in `web/`** — Svelte 5,
+TypeScript, zod, `adapter-static`, `ssr = false` — with the Traveller rules
+beside it as a pure TypeScript module under `src/lib/rules/`. There is no
+server and no API: the browser holds the rules, the state and the store client.
+
+The boundary worth having is **domain versus UI, not client versus server**. A
+network hop is an expensive way to enforce a module boundary, especially
+between two halves that always change together, and every usual reason to split
+is absent here — one referee, no shared state, no trust boundary, no secrets,
+no computation a browser cannot do. So `rules/` imports nothing from Svelte and
+touches no DOM, exactly as the Python `domain/` package did; the difference is
+that the discipline is now enforced deliberately rather than by the language
+boundary. See [ARCHITECTURE.md](ARCHITECTURE.md) ("The browser front end") and
+[WORKING_AGREEMENT.md](WORKING_AGREEMENT.md) for how that boundary is kept.
+
+The one thing that would change this: an outside client needing to *play*
+rather than author — applying damage, advancing rounds — which would put the
+rules back where it can reach them.
+
+### How this decision was reached
+
+The UI question was first explored across three shapes: a REST/HTMX split like
 `ceres.character.web`, a pure client-side page (vanilla JS / Svelte / Pyodide),
-and a Python UI framework. The chosen shape is a **Python UI framework —
-NiceGUI**, because this remains a local, single-process application. Actor,
-Party and Situation repositories are real application boundaries, but exposing
-them through a separate network API would invent work that does not exist.
+and a Python UI framework. **NiceGUI was chosen**, on the reasoning that this is
+a local single-process application and that a separate network API would invent
+work that did not exist. Client-side JavaScript was rejected for putting the
+rules outside pytest and adding an npm toolchain to a repo that had none.
+Streamlit (whole-script rerun), Gradio (ML demo I/O), Dash (callback ceremony),
+Anvil (a platform dependency) and notebooks (poor to drive mid-fight) were
+rejected on their own terms and remain so.
 
-Why NiceGUI over the alternatives considered:
-
-- **NiceGUI 3.16 — chosen.** Event-driven callbacks (`on_click` → application
-  service → refresh) match both the live tracker and local library pages. Built
-  on FastAPI/Starlette, which Ceres already depends on. Installs clean on 3.14
-  (~20 transitive deps). Ships a pytest plugin (`nicegui.testing`) for
-  in-process UI tests.
-- *Streamlit* — rejected. The whole-script-rerun model fights a stateful turn
-  tracker, per-row buttons need unique-key loops, and persistence is hand-rolled
-  anyway. `st.data_editor` is its one genuine advantage here.
-- *Gradio* — rejected. Built for ML demo I/O, not stateful tables with per-row
-  actions.
-- *Plotly Dash* — rejected. Input/Output/State callback ceremony is heavy, and
-  per-row buttons need pattern-matching callbacks.
-- *Anvil* — rejected. Adds a platform/runtime dependency for a local
-  single-user tool.
-- *Jupyter / Marimo* — rejected for the app itself. A notebook is a fine
-  scratchpad but a poor thing to drive at the table mid-fight.
-- *FastAPI + HTMX*, like `ceres.character.web` — rejected per the above: there
-  is no backend worth the split.
-- *Client-side JS* (Svelte, vanilla, or Pyodide) — rejected. Svelte and vanilla
-  put the rules outside pytest and add an npm toolchain to a repo that has
-  none; Pyodide keeps them in Python but pays ~8MB of wasm and a bundling step
-  for no gain over a local Python process.
-
-**The framework choice is deliberately reversible.** All rules and state live in
-`ceres/rounds/domain/`, a pure-Python package that imports nothing from the UI
-layer and nothing heavy from the rest of Ceres. The NiceGUI module is a thin
-view over that domain. If NiceGUI disappoints, only the view is rewritten.
-
-New dependency: `nicegui`. `deptry` and `pre-commit.sh` must stay green.
-
-### Under review: a browser front end in Svelte
-
-**This decision is being reconsidered, and a spike is exploring the
-alternative.** Using the prototype produced evidence the original comparison did
-not have:
+**Using the prototype overturned that choice.** The evidence the original
+comparison did not have:
 
 - The library screens want a real data grid. Arrow-key cell navigation is what
-  makes a grid feel like a control rather than a styled table, and NiceGUI can
+  makes a grid feel like a control rather than a styled table, and NiceGUI could
   only reach it by driving AG Grid from Python.
 - That driving is blind. Grid event payloads are not what their own JavaScript
   suggests, and three bugs in a row came from guessing at them.
 - It is also untestable. NiceGUI's in-process test user cannot see a single
   grid cell, and anything read back from the grid is a JavaScript round trip
-  that times out in tests. The framework's testing advantage disappears exactly
-  where we lean on it hardest.
-- Getting what we want next — chips inside a cell — means writing JavaScript
-  inside Python strings, with no types, no linting and no tests. That is the
-  worst of both worlds rather than a compromise.
+  that times out in tests. The framework's testing advantage disappeared exactly
+  where we leaned on it hardest.
+- What was wanted next — chips inside a cell — meant writing JavaScript inside
+  Python strings, with no types, no linting and no tests: the worst of both
+  worlds rather than a compromise.
 
-**The spike:** one screen — Parties, with the in-cell tag chips — in Svelte 5
-with a native Svelte grid (SvGrid or SVAR; neither is AG Grid's equal in
-ecosystem depth, but a custom cell is an ordinary Svelte component rather than a
-string of JavaScript). Judge it by using it.
+A spike built one screen — Parties, with the in-cell tag chips — in Svelte 5
+over a native Svelte grid, to be judged by use. It succeeded, and the rules
+moved to the browser with the UI. The cost the original comparison correctly
+predicted was paid: the rules are no longer in pytest, and the repo now has an
+npm toolchain. What was bought is a grid whose custom cells are ordinary
+components, and component tests that run in a real browser and can see them.
 
-**If the spike succeeds, the rules move to the browser with the UI.** The
-boundary worth having is domain versus UI, not client versus server, and a
-network hop is an expensive way to enforce a module boundary — especially
-between two halves that always change together. Every reason to split is absent
-here: one referee, no shared state, no trust boundary, no secrets, no
-computation a browser cannot do. So `rules/` would be a pure TypeScript module
-with no framework imports and its own tests, exactly as `domain/` is today; the
-discipline stops being enforced by the language boundary and has to be enforced
-deliberately. The one thing that would change this: an outside client needing to
-*play* rather than author — applying damage, advancing rounds — which would put
-the rules back where it can reach them.
+**The framework choice remains reversible in the same way it always was.** The
+rules and the entity schemas are framework-free modules with their own Node-run
+test suite; the Svelte components are a view over them. Replacing the UI, or
+the grid library under it, does not move the domain.
+
+Dependencies: `svelte`, `@sveltejs/kit`, `zod`, `@svgrid/grid`, `idb-keyval`,
+and `vitest` with a Playwright browser provider. `./pre-commit.sh` runs the web
+gate — `eslint --fix`, `prettier --check`, `svelte-check`, `vitest`, `vite
+build` — alongside the Python one.
 
 ## Module layout
 
 ```text
-src/ceres/rounds/
-  domain/
-    ids.py          — ActorId, PartyId, SituationId (never bare str)
-    tracks.py       — DamageTrack over injury history; Characteristic, Hits
-    damage.py       — DamageKind (lethal / stun) and applied-injury entries
-    actor.py        — Actor definition variants and persistent health state
-    party.py        — standalone reusable Party: a name and a set of ActorIds
-    initiative.py   — InitiativeMode, initiative ordering and tie handling
-    actions.py      — Melee/Ranged attacks and Dodge/Parry/Dive reactions
-    situation.py    — membership rows, round counter, turn pointer
-    repository.py   — actor, party and situation repository protocols
-  app/
-    service.py      — the application service the UI and UI tests call
-  storage/
-    json_store.py   — the three JSON document kinds, written atomically
-  ui/
-    app.py          — ui.run entry point
-    actors.py       — the roster grid and its selection operations
-    parties.py      — reusable party composition
-    situations.py   — situation composition
-    table.py        — the live Run table and correction controls
-
-tests/unit/rounds/   — mirrors domain/, one test module per domain module
+web/src/
+  lib/
+    schema/         — one zod definition per entity: the TypeScript types, the
+                      runtime validation, and the published JSON Schema
+      actor.ts      — Actor definition variants, ids, injury history
+      party.ts      — standalone reusable Party
+      situation.ts  — membership rows, round counter, turn state
+      import.ts     — the id-free proposal bundle and its receipt
+      tags.ts       — the tag vocabulary shared by actors and parties
+    rules/          — the domain, as pure functions over plain data
+      rounds/
+        vitality.ts  — the lethal cascade, stun, unconscious, dead, live DMs
+        health.ts    — how a track reads: current/max, DMs, stun points
+        lifecycle.ts — joining, withdrawing, ending a situation
+        situation.ts — initiative ordering, turn state, the round counter
+        criticals.ts — severity from an attack's Effect
+        library.ts   — questions asked of a roster
+      ehex.ts        — the shared notation
+    store/          — where entities live and how they travel
+      files.ts      — the FileStore interface every backend implements
+      idb.ts        — the local copy, in IndexedDB, with its change log
+      github.ts     — the data repository, over the GitHub contents API
+      sync.ts       — reconciliation, and what blocks it
+      library.ts    — the only way in and out of stored entities
+      session.svelte.ts — the app-wide session: sync timer, import results
+    actors/ parties/ situations/ tags/ grid/
+                    — Svelte components, one grid per entity kind
+  routes/           — pages, thin: actors, parties, situation, sync
 ```
 
-`roster.py`, the phase-4 experiment, disappears when `party.py` and the
-membership rows replace it.
+Tests sit beside what they test: `*.test.ts` runs in Node, `*.svelte.test.ts`
+and `*.browser.test.ts` in Chromium.
 
-Nothing above the domain reaches into it: `app/service.py` owns repository
-wiring and is the only thing the NiceGUI pages — and the UI tests — call.
+Nothing above the rules reaches into storage and nothing below the components
+knows about them: pages call `Library` and the rules modules, and the grids take
+entities and report edits.
+
+**Superseded:** `src/ceres/rounds/domain/` and `src/ceres/rounds/ui/` are the
+NiceGUI prototype, kept for reference until nothing wants them.
+`src/ceres/rounds/library/` is a Python reader of the same store layout — one
+JSON file per entity under a directory named for its kind, plus
+`counters.json` — and the two implementations must keep agreeing about it.
 
 ### Naming: Situation and Actor
 
@@ -522,28 +525,25 @@ Parties then need almost no page of their own: a list of Parties, with
 membership set by selecting rows in the same grid. Situations use the same
 selection plus the party import already described.
 
-**The files remain a first-class entry point.** Editing `actors/*.json` in a
-text editor and pressing Reload must work, with validation failures reported by
-filename and JSON path. Python constructors, LLM-generated documents and future
-external adapters all write the same validated models — no authoring surface
-gets its own domain representation.
+**The files remain a first-class entry point**, now via the data repository
+rather than a local working copy: `actors/*.json` can be edited in the repo and
+arrives on the next sync, with validation failures reported by path and JSON
+path. Python constructors, LLM-generated documents and future external adapters
+all write the same validated models — no authoring surface gets its own domain
+representation, and none of them is a way around `Library`.
 
 *Deliberately not added:* a template or archetype concept. An Actor is the
 template and copy is the mechanism.
 
-*Deferred until batch entry actually hurts:* a **paste box** taking TSV with a
-header row, showing a validated preview with per-line errors before committing.
-It is the natural path for a spreadsheet or generated document, and costs no new
-syntax, but grid plus Copy ×N may well be enough. Adding it later changes no
-model.
-
-**One thing to verify first.** NiceGUI wraps AG Grid (`ui.aggrid`), which is
-what makes an editable grid cheap — the single genuine advantage this plan
-credited to Streamlit's `st.data_editor`. Whether its inline editing and
-selection are pleasant enough to be the primary surface is worth a half-day
-spike before phase 7 commits. If they are not, the fallback is the paste box and
-files for batches with a per-row form for one-offs, which still meets the
-twelve-animals test.
+**The grid question is answered.** Whether an editable grid could be the primary
+surface was the open risk here, and it is what the NiceGUI/AG Grid combination
+failed at. The grids are now **SvGrid** components — one per entity kind, typed,
+with cell navigation, in-place editing, multi-select and range paste. The
+**paste box** this plan held in reserve for batch entry turned out to be
+unnecessary: pasting TSV into a range is the same gesture without a second
+surface. **Copy ×N** with automatic numbering is not built — there is a
+Duplicate button that makes one copy at a time — and remains the wanted answer
+for ten identical chickens.
 
 **Table columns:** Name | Party | Ini | STR | DEX | END | Stun | React | Action
 | Status. ("Ini", not "Init".) Party is the row's own editable name and Ini its
@@ -649,21 +649,24 @@ well, joining everyone still waiting. Grey until the next round.
 
 ## Persistence
 
-The prototype keeps its active `Situation` in NiceGUI's tab-scoped memory. A GET
-or page refresh in the same browser tab must reconnect to that object rather
-than construct a new encounter. This deliberately volatile state is lost when
-the tab closes or the server restarts.
-
-Phases 6–8 replace that temporary boundary with local storage under
-`settings.data_dir() / 'rounds'`. **Three kinds of document, one file each, and
-no separate state store:**
+Entities live in **IndexedDB in the browser**, and are pushed to and pulled from
+the data repository by an explicit sync. Edits land locally and immediately;
+nothing waits for the network, and closing the tab or losing connectivity loses
+no work. **Three kinds of document, one file each, and no separate state
+store:**
 
 ```text
-rounds/
-  actors/<actor-id>.json          — definition and health
-  parties/<party-id>.json         — name and member ActorIds
-  situations/<situation-id>.json  — membership rows and round state
+actors/<actor-id>.json          — definition and health
+parties/<party-id>.json         — name and member ActorIds
+situations/<situation-id>.json  — membership rows and round state
+counters.json                   — the id allocator
+imports/<bundle>.json           — what installing a proposal allocated
+inbox/<bundle>.json             — proposals waiting to be installed
 ```
+
+The same paths are what the repository holds, so a file store is the whole
+storage abstraction: `IdbFileStore` locally, `GitHubRepository` remotely, and a
+memory one for tests. Nothing above `Library` learns which it is talking to.
 
 An earlier draft split application-owned temporal state into a single
 `state.json`, to make a mutation touching both a Situation and an Actor atomic.
@@ -678,42 +681,51 @@ Consequences worth being explicit about:
   its rows before round 1; playing it edits the same rows. Reopening or
   refreshing loads the one document, so it is idempotent by construction.
 - **A mutation may write two files** — an attack writes the target's health and
-  the Situation's rows. Each write is atomic on its own (temp file plus
-  rename), but the pair is not. A crash in the gap leaves a fight that recorded
-  an attack whose damage did not land, which the editor repairs. That is an
-  acceptable trade for one local single-user app, and it is not corruption.
+  the Situation's rows. Each write lands on its own; the pair is not one
+  transaction. A crash in the gap leaves a fight that recorded an attack whose
+  damage did not land, which the editor repairs. That is an acceptable trade
+  for one local single-user app, and it is not corruption.
 - **Health lives beside the definition, not inside it.** Editing a definition
   must not silently discard injuries; reconciliation between a changed
   definition and existing health is an explicit validated operation.
 
-Documents are versioned models with generated JSON Schema, kept as plain files
+Documents are zod-defined models with generated JSON Schema, kept as plain files
 rather than in a database because files diff, review and version-control
-cleanly. The repository layer offers browse/search/get/save/copy/delete,
-reporting filename plus JSON path on failure and never partially applying
-invalid input.
+cleanly. `Library` offers list/get/save/copy/delete, reporting the path plus the
+JSON path on failure and never partially applying invalid input.
 
 **The application owns its persistence, and nothing else writes to it.** Files
 being readable is a convenience for inspection and history, not an interface.
-Every writer — the UI, an importer, an assistant — goes through the service, so
+Every writer — the UI, an importer, an assistant — goes through `Library`, so
 validation, id allocation and every invariant apply once, in one place. An
 earlier draft of this plan invited an LLM to write store files directly; that
 was a backdoor around the boundary this section exists to draw.
 
-A browser reload or a server restart mid-fight loses nothing.
+A browser reload mid-fight loses nothing.
 
 ### Where the data lives: a private data repo
 
-The store is a git working tree in a **private** repo, separate from the public
-`magnus-lycka/ceres` code repo, and pushed after each situation (per round is
-cheap enough if wanted). This answers a requirement local files alone cannot:
-next week's session may be run from a different laptop, or the same one may have
-died. Clone the data repo, run, and both the state and its history are there.
+The durable store is a **private** repo — `magnus-lycka/ceres-data`, separate
+from the public `magnus-lycka/ceres` code repo — reached over the GitHub
+contents API rather than as a git working tree, because the application is a
+page in a browser and has no filesystem to keep a clone in. Sync runs on a
+timer, on demand, and when the page is being left.
+
+This answers a requirement local storage alone cannot: next week's session may
+be run from a different laptop, or the same one may have died. Point the app at
+the repo, sync, and both the state and its history are there.
 
 Git rather than a synced folder because history is a feature here, not a
 side effect: the injury log already records what each hit did, and commits let
 the referee see what the state actually was when someone recorded it wrongly.
-It also needs no new credentials — the machine's existing git setup pushes it —
-and it reports a divergence instead of silently leaving a conflicted copy.
+It also reports a divergence instead of silently leaving a conflicted copy —
+when both sides have moved, sync **blocks** rather than merging, because losing
+a session's play to a clever automatic resolution would be worse than being
+asked to sort it out.
+
+The credential is a fine-grained personal access token scoped to that one repo
+with `Contents: Read and write` and nothing else, entered in the app. The code
+repo is public, so it carries neither the token nor the data repo's name.
 
 The data repo is created directly rather than forked: a fork of a public repo
 cannot be made private under any owner. It holds the store, an `inbox/`, and a
@@ -745,14 +757,20 @@ of transaction snapshots holding every document the transaction wrote.
 
 ## TDD phases
 
-Each phase is red → green → refactor, tests first, `uvx ruff check --fix` after
-each edit, `./pre-commit.sh` green before the phase is called done.
+Each phase is red → green → refactor, tests first, `./pre-commit.sh` green
+before the phase is called done.
 
 The aim is a clickable walking skeleton early, because the UI questions can only
 be answered by using it. A phase is done when its behaviour can be exercised at
 the table, not when it is finished for good: getting a feature into the
 prototype early outranks landing it in its final shape, and phases 5–8 are
 expected to revisit each other's work.
+
+**Phases 1–5 were done in Python and are being re-earned in TypeScript.** The
+rules they settled did not change when the language did — the reasoning behind
+each is still the record — but a ✅ below means "decided and tested in the
+prototype", not "shipped in `web/`". What is built where is in "Progress so
+far".
 
 1. ✅ **Damage tracks.** `CharacteristicTrack` cascade, unconscious, dead, live
    DMs, the shared-END stun ruling and its incapacitation countdown;
@@ -777,25 +795,29 @@ expected to revisit each other's work.
    "earlier" once their Situation ends, with the per-actor first-aid view over
    it and Clear stun in the editor. Incapacitation moved onto the membership
    row as the round it ends. Every rule tested in phase 1 still holds.
-6. **Persistent Parties, Actors and Situations.** Pydantic documents, one JSON
-   file each behind a service that does not leak its storage, plus the grids
-   over them. Built as a spike first and kept if it survives use.
-7. **Parties, Situation membership, and the roster grid.** Persist standalone
-   Parties and Situation membership rows; implement party import as a copy that
-   forgets its origin and the editable party-name column with its collective
-   initiative operation. Then build the Actors grid — inline editing, quick
-   filter, multi-select — with Copy ×N, import, add-to-party, add-to-situation,
-   delete, and Reload for files edited outside the app. The test is twelve
-   similar animals or seven related NPCs created without filling in twelve or
-   seven forms.
-8. **Durable storage.** Persist actors, parties and situations as their three
-   document kinds, each written atomically, in a git working tree pushed to the
-   private data repo.
+6. ✅ **Persistent Parties, Actors and Situations.** One zod definition per
+   entity, one JSON file each behind a `Library` that does not leak its
+   storage, plus the grids over them.
+7. ✅ **Parties, Situation membership, and the roster grid.** Standalone
+   Parties and Situation membership rows; party import as a copy that forgets
+   its origin, and the editable party column with its collective initiative
+   operation by range paste. The Actors grid has inline editing, keyboard cell
+   navigation, multi-select, tags, paste and Duplicate. The twelve-animals test
+   is met by pasting and duplicating one at a time; Copy ×N with automatic
+   numbering is not built.
+8. ✅ **Durable storage.** Actors, parties and situations in IndexedDB, synced
+   to the private data repo over the GitHub contents API, with a change log,
+   commit-based conflict detection, and a sync page that reports what is
+   waiting and what is blocked.
 9. **The issue-driven library import channel
    ([#61](https://github.com/magnus-lycka/ceres/issues/61)).** Implement
    [plan-library-import.md](plan-library-import.md): the generic issue form,
    reusable validation workflow, `inbox/`, inbox-aware sync and replay-safe
-   installation into the Actor and Party libraries.
+   installation into the Actor and Party libraries. **Milestone 1 is done** —
+   the bundle and receipt schemas, the replay-safe installer, and installation
+   after a clean sync. Milestones 2 and 3 — the issue form, the validating
+   workflow, inbox-only reconciliation and feedback on the issue — are not
+   started, so a bundle reaches the inbox only by being committed by hand.
 10. **Docs.** Note the package in `docs/ARCHITECTURE.md`; mark this plan
     complete and move it to `docs/archive/`. The rule interpretations are
     already recorded — RIC-011 (stun and lethal share one END score), RIC-012
@@ -803,17 +825,37 @@ expected to revisit each other's work.
     unspent set of actions) and RIC-014 (the ambush DM applies to Initiative
     only, round one only).
 
-Rule tests go through the `Situation` / `Actor` / `DamageTrack` public API.
-Repository contract tests run against an in-memory backend and the local JSON
-backend. UI tests use an application service rather than reaching into storage
-or domain internals directly.
+Rule tests go through the `$lib/rules` functions and the schemas, in Node.
+Store tests run against `MemoryFileStore`, with the IndexedDB and sync
+behaviour tested in a real browser. Component tests render in Chromium and
+assert what a referee can see and reach, not how a grid is configured.
 
 ## Progress so far
 
-Implemented: `ceres/rounds/domain/` (`tracks.py`, `damage.py`,
-`actor.py`, `roster.py`, `situation.py`) and `ceres/rounds/ui/` (`app.py`,
-`table.py`), with **105 tests** in `tests/unit/rounds/`. Run the prototype with
-`uv run python -m ceres.rounds.ui.app` on port 8081.
+**The application is `web/`.** Run it with `npm run dev`; the pages are Actors,
+Parties, Situation and Sync. Its suites are `npm test` — the `rules` project in
+Node, the `components` project in Chromium.
+
+Built there: the entity schemas with their generated JSON Schema; the rules
+modules for vitality, health display, criticals, situation membership,
+initiative and turn state, and the situation lifecycle; the Actors, Parties and
+Situation grids with keyboard navigation, in-place editing, multi-select, tag
+chips and range paste; a `Library` over a `FileStore`, with IndexedDB locally
+and the private data repo over the GitHub contents API, a change log, sync with
+commit-based conflict detection, and installation of inbox proposals after a
+clean sync.
+
+Not yet in `web/`: the combat dialog and applying damage, the injury and triage
+views, the round-by-round markers, and the correction editors. Those rules are
+settled — phases 1–5 below are their record — but they are not on a screen yet,
+so **the browser app cannot yet run a fight**.
+
+**The Python prototype**, `ceres/rounds/domain/` and `ceres/rounds/ui/`, still
+runs with `uv run python -m ceres.rounds.ui.app` on port 8081, with **105
+tests** in `tests/unit/rounds/`. It is superseded; it is kept because the
+phase 4–5 behaviour above lives only there for now.
+`ceres/rounds/library/` is a separate thing: a Python reader of the same store,
+still current.
 
 **Phase 1 — damage tracks.** The lethal cascade, unconscious and dead, live
 impaired DMs, stun on a shared END score with its countdown and one-hour rest,
@@ -872,6 +914,23 @@ the referee asking what that state meant in practice.
 driven the combat-only action scope, consistent stun display, row colouring,
 refresh survival, prone tags and general correction editing described above.
 Phase 4 remains open until the tracker has supported a real fight.
+
+**The move to the browser.** The grid was what forced it — see "How this
+decision was reached" — and the rewrite went library-first rather than
+tracker-first, because the library screens were both the reason for the move
+and the part with no working implementation to lose. So `web/` now has the
+entity schemas, the Actors, Parties and Situation grids with tags and paste,
+IndexedDB with a change log, and sync with the private data repo; the round
+table's rules are ported (vitality, initiative, turn state, criticals,
+lifecycle) but the play surfaces over them are not built yet.
+
+**Phase 9, milestone 1 — proposals install themselves.** A bundle in `inbox/`
+is validated against the same zod schema CI will use, installed as one
+replay-safe operation that allocates ids and writes a receipt before the
+entities, and the sync page reports what was imported and what could not be.
+Interruption at any step resumes to exactly one result; a bundle that reappears
+after being consumed installs nothing. What is missing is everything that puts
+a file in the inbox: no issue form, no workflow, no repository automation.
 
 ## Explicitly deferred
 
