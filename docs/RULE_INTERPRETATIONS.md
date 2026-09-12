@@ -1280,16 +1280,31 @@ features and structural reinforcement, never less than 1. Structure is what the
 catalogue stat block prints and what play uses as the damage threshold. Ceres models
 both, since the modifiers apply to Hull and rounding to Structure happens once, last.
 
-Worked against the catalogue, taking Ground Vehicle at Hull 2 per Space and Grav
-Vehicle at Hull 2 per Space:
+**Hull is not rounded.** The quoted sentence licenses exactly one rounding, at
+Structure. Rounding Hull as well is an invented second step. No published design
+distinguishes the two — every catalogue entry with a fractional Hull (Dracoflame
+1.5, Palanquin 8.8, Sky Dirge 28.16, Paladin 224.4) yields the same Structure
+either way — so this is settled by what the rule says rather than by example, and
+a rounded Hull would be an unnoticed divergence waiting for the case that differs.
 
-| Vehicle   | Spaces | Modifiers                | Hull | Structure |
-| --------- | ------ | ------------------------ | ---- | --------- |
-| ATV       | 20     | —                        | 40   | 4         |
-| Gecko     | 9      | —                        | 18   | 2         |
-| Gunskiff  | 20     | Light Hull -25%          | 30   | 3         |
-| Brutus    | 80     | Reinforced Hull +10%     | 176  | 18        |
-| G/Carrier | 20     | AFV +50%, Reinforced +10%| 66   | 7         |
+The derivation was checked against every catalogue design that prints both a Spaces
+count and a Structure — 29 of them, spanning all the per-Space rates in use (Ground,
+Grav, Watercraft and Walker at 2; Rotorcraft and Hovercraft at 0.5; Airship at 0.2;
+Submersible at 3) and sizes from 2 Spaces to 20,000,000. All 29 agree. A
+representative sample:
+
+| Vehicle             | Type        | Spaces | Modifiers                 | Hull   | Structure |
+| ------------------- | ----------- | ------ | ------------------------- | ------ | --------- |
+| ATV                 | Ground      | 20     | —                         | 40     | 4         |
+| Gecko               | Ground      | 9      | —                         | 18     | 2         |
+| Gunskiff            | Grav        | 20     | Light Hull -25%           | 30     | 3         |
+| Brutus              | Ground      | 80     | Reinforced Hull +10%      | 176    | 18        |
+| G/Carrier           | Grav        | 20     | AFV +50%, Reinforced +10% | 66     | 7         |
+| Paladin Grav Tank   | Grav        | 68     | AFV +50%, Reinforced +10% | 224.4  | 23        |
+| Dracoflame          | Rotorcraft  | 3      | —                         | 1.5    | 1         |
+| Sky Dirge           | Airship     | 128    | Reinforced Hull +10%      | 28.16  | 3         |
+| Horizon Hover Ferry | Hovercraft  | 5,000  | Light Hull -25%           | 1,875  | 188       |
+| Nautilus            | Submersible | 370    | —                         | 1,110  | 111       |
 
 Note the *Core Rulebook* prints a single `HULL` figure for the same vehicles on a
 different scale — its ATV shows Hull 60 where the Vehicle Handbook gives Hull 40 and
@@ -1297,24 +1312,35 @@ Structure 4. The Vehicle Handbook is the construction source and is internally
 consistent; the Core figure is not reproduced.
 
 **Naming.** `Hull` already means something else in Ceres: in `make.ship` it is a
-*part*, with configuration, armour and cost. A vehicle's Hull is a plain integer.
-The two are unrelated and must not be conflated because they share a word — which
-matters because `make.ship` will eventually import `make.vehicle` (see ADR-0001).
+*part*, with configuration, armour and cost. A vehicle's Hull is a bare quantity,
+and not necessarily a whole one. The two are unrelated and must not be conflated
+because they share a word — which matters because `make.ship` will eventually import
+`make.vehicle` (see ADR-0001).
 
-### RIV-002 Structural Reinforcement Is Applied After Feature Hull Modifiers
+### RIV-002 Hull Modifiers Compound; They Are Not Summed Against The Base
 
 The rules give AFV as "+50% Hull" and structural reinforcement as Reinforced Hull
 "+10%" or Light Hull "-25%", without stating whether several such modifiers compound
-or are summed against the base.
+or are summed against the base. Note this is the opposite of how feature *Cost*
+percentages behave, which the Features chapter states explicitly are additive against
+the base Cost.
 
-Ceres applies them sequentially: base Hull, then feature modifiers, then structural
-reinforcement. The published designs do not settle this — the only catalogue entry
-carrying both an AFV and a reinforcement, the G/Carrier, gives Structure 7 either way
-(66 sequential, 64 summed, both rounding to 7) — so this is an interpretation rather
-than a derived rule, chosen because the reinforcement text describes modifying "a
-vehicle's Hull", which reads as the value arrived at so far.
+Modifiers compound: base Hull, then feature modifiers, then structural reinforcement,
+each applied to the value arrived at so far. This is derived from the published
+designs, not interpreted. The **Paladin Laser Grav Tank** decides it — 68 Spaces of
+Grav Vehicle at Hull 2 per Space, carrying both AFV and a Reinforced Hull:
 
-Revisit if a published design is found that distinguishes the two.
+- compounding: 136 x 1.5 x 1.1 = 224.4, Structure 23 — the printed value
+- summed: 136 x (1 + 0.5 + 0.1) = 217.6, Structure 22
+
+It is the only design in the catalogue that separates the two readings. Every other
+entry carrying both an AFV and a reinforcement, such as the G/Carrier at 66 against
+64, rounds to the same Structure either way. Checked across all 29 catalogue designs
+that print a Structure, compounding matches 29 and summing 28.
+
+This entry previously recorded the sequential reading as an unevidenced
+interpretation on the strength of the G/Carrier alone. That was a generalisation from
+a single non-discriminating design; the Paladin settles it.
 
 ### RIV-003 Armour `6 (18)` Notation Is Derived At Render Time
 
@@ -1331,3 +1357,18 @@ The Tech Level bonus applies only while the face is not reduced below the base
 Protection for the vehicle's Tech Level — the open-topped dorsal face being the
 case where it is. A face in that state prints its Protection without the
 parenthesised figure.
+
+### RIV-004 Round-To-Nearest Means Half Up, Never Python's `round`
+
+*Vehicle Handbook* p.27 sets the convention: "When rounding to the nearest value,
+whether positive or negative, a remainder of exactly 0.5 always rounds up."
+
+Python's built-in `round` does not do this. It rounds half to even — `round(4.5)` is
+4 and `round(5.5)` is 6 — so it disagrees with the rules on exactly the values the
+rule exists to settle. Vehicle design must not use it where the rules say round to
+the nearest value; use an explicit half-up helper.
+
+This applies only to round-to-nearest. The rules also call for rounding up (Structure
+from Hull, armour Spaces, mounted weapons consuming a Space) and rounding down
+(available Spaces on an airship's gas envelope, a submersible's hours submerged),
+which are ordinary ceilings and floors and are unaffected.
