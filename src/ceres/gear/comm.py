@@ -9,6 +9,13 @@ INTEGRATED_COMPUTER_0_MIN_TL = 10
 INTEGRATED_COMPUTER_0_MAX_TL = 12
 INTEGRATED_COMPUTER_1_MIN_TL = 13
 SATELLITE_UPLINK_MIN_RANGE_KM = 500
+# refs/csc/02_equipment_availability.md — Retrotech: electronics halve in cost
+# and mass for each TL past their model, for at most three TLs (RIG-001).
+RETROTECH_MAX_ELECTRONICS_LEVELS = 3
+# refs/csc/05_communications.md — planetary and longer-range transceivers do not
+# decrease in size past TL12.
+PLANETARY_RANGE_KM = 50_000
+PLANETARY_MIN_SIZE_TL = 12
 
 
 def _format_range(range_km: int) -> str:
@@ -151,6 +158,70 @@ class TransceiverEquipment(Equipment):
             raise ValueError("satellite_uplink must be one of: 'none', 'standard', 'static'")
         return value
 
+    _medium_name: ClassVar[str]
+    _part_cls: ClassVar[type[TransceiverPart]]
+
+    @model_validator(mode='before')
+    @classmethod
+    def _resolve_range(cls, data: Any) -> Any:
+        if not isinstance(data, dict) or cls is TransceiverEquipment:
+            return data
+        range_km = data.get('range_km')
+        if range_km is None or 'parts' in data:
+            return data
+        tl = data.get('tl')
+        model_tl = cls._resolve_spec_tl(int(range_km), int(tl) if tl is not None else None)
+        built_tl = model_tl if tl is None else int(tl)
+        spec = cls._retrotech_spec(cls._specs[(model_tl, int(range_km))], model_tl, built_tl, int(range_km))
+        part = cls._part_cls(
+            tl=built_tl,
+            cost=float(spec['cost']),
+            range_km=int(range_km),
+            mass_kg=float(spec['mass_kg']),
+        )
+        return cls.resolve_transceiver_data(data, part, spec)
+
+    @staticmethod
+    def _retrotech_spec(spec: dict[str, int | float], model_tl: int, built_tl: int, range_km: int) -> dict[str, float]:
+        """The model's figures, as built some TLs after its introduction.
+
+        Cost and mass halve for each TL past the model, for no more than three
+        TLs. A planetary or longer-range transceiver keeps getting cheaper but
+        stops getting smaller past TL12.
+        """
+        levels = min(built_tl - model_tl, RETROTECH_MAX_ELECTRONICS_LEVELS)
+        size_levels = levels
+        if range_km >= PLANETARY_RANGE_KM:
+            size_levels = min(levels, max(PLANETARY_MIN_SIZE_TL - model_tl, 0))
+        return {
+            'cost': float(spec['cost']) / 2**levels,
+            'mass_kg': float(spec['mass_kg']) / 2**size_levels,
+        }
+
+    @classmethod
+    def _resolve_spec_tl(cls, range_km: int, tl: int | None) -> int:
+        """The TL of the model a transceiver of this range is built from.
+
+        With no TL given, the earliest model. With one given, the latest model
+        already introduced by then, which retrotech then carries forward.
+        """
+        supported = cls.supported_tls(range_km)
+        if not supported:
+            raise ValueError(f'Unsupported {cls._medium_name} transceiver range {_format_range(range_km)}')
+        if tl is None:
+            return supported[0]
+        introduced = [model_tl for model_tl in supported if model_tl <= tl]
+        if not introduced:
+            raise ValueError(
+                f'Unsupported {cls._medium_name} transceiver {_format_range(range_km)} at TL{tl}; '
+                f'the earliest is TL{supported[0]}'
+            )
+        return introduced[-1]
+
+    @classmethod
+    def supported_tls(cls, range_km: int) -> list[int]:
+        return sorted(spec_tl for spec_tl, spec_range in cls._specs if spec_range == range_km)
+
 
 class RadioTransceiverEquipment(TransceiverEquipment):
     """CSC radio transceiver equipment.
@@ -159,6 +230,9 @@ class RadioTransceiverEquipment(TransceiverEquipment):
     Catalogue. Context-specific installations, such as robot zero-slot
     transceivers, should combine or wrap `RadioTransceiverPart` separately.
     """
+
+    _medium_name: ClassVar[str] = 'radio'
+    _part_cls: ClassVar[type[TransceiverPart]] = RadioTransceiverPart
 
     _specs: ClassVar[dict[tuple[int, int], dict[str, int | float]]] = {
         (5, 5): {'mass_kg': 20.0, 'cost': 225.0},
@@ -181,48 +255,12 @@ class RadioTransceiverEquipment(TransceiverEquipment):
         (12, 500_000): {'mass_kg': 5.0, 'cost': 5_000.0},
     }
 
-    @model_validator(mode='before')
-    @classmethod
-    def _resolve_range(cls, data: Any) -> Any:
-        if not isinstance(data, dict):
-            return data
-        range_km = data.get('range_km')
-        if range_km is None or 'parts' in data:
-            return data
-        tl = data.get('tl')
-        spec_tl = cls._resolve_spec_tl(int(range_km), int(tl) if tl is not None else None)
-        spec = cls._specs[(spec_tl, int(range_km))]
-        part = RadioTransceiverPart(
-            tl=spec_tl,
-            cost=float(spec['cost']),
-            range_km=int(range_km),
-            mass_kg=float(spec['mass_kg']),
-        )
-        return cls.resolve_transceiver_data(data, part, spec)
-
-    @classmethod
-    def _resolve_spec_tl(cls, range_km: int, tl: int | None) -> int:
-        if tl is not None:
-            if (tl, range_km) in cls._specs:
-                return tl
-            supported = ', '.join(f'TL{spec_tl}' for spec_tl in cls.supported_tls(range_km))
-            if supported:
-                raise ValueError(
-                    f'Unsupported radio transceiver {_format_range(range_km)} at TL{tl}; expected {supported}'
-                )
-            raise ValueError(f'Unsupported radio transceiver range {_format_range(range_km)}')
-        supported_tls = cls.supported_tls(range_km)
-        if not supported_tls:
-            raise ValueError(f'Unsupported radio transceiver range {_format_range(range_km)}')
-        return supported_tls[0]
-
-    @classmethod
-    def supported_tls(cls, range_km: int) -> list[int]:
-        return sorted(spec_tl for spec_tl, spec_range in cls._specs if spec_range == range_km)
-
 
 class LaserTransceiverEquipment(TransceiverEquipment):
     """CSC laser transceiver equipment."""
+
+    _medium_name: ClassVar[str] = 'laser'
+    _part_cls: ClassVar[type[TransceiverPart]] = LaserTransceiverPart
 
     _specs: ClassVar[dict[tuple[int, int], dict[str, int | float]]] = {
         (9, 500): {'mass_kg': 1.5, 'cost': 2_500.0},
@@ -230,48 +268,12 @@ class LaserTransceiverEquipment(TransceiverEquipment):
         (13, 500): {'mass_kg': 0.0, 'cost': 500.0},
     }
 
-    @model_validator(mode='before')
-    @classmethod
-    def _resolve_range(cls, data: Any) -> Any:
-        if not isinstance(data, dict):
-            return data
-        range_km = data.get('range_km')
-        if range_km is None or 'parts' in data:
-            return data
-        tl = data.get('tl')
-        spec_tl = cls._resolve_spec_tl(int(range_km), int(tl) if tl is not None else None)
-        spec = cls._specs[(spec_tl, int(range_km))]
-        part = LaserTransceiverPart(
-            tl=spec_tl,
-            cost=float(spec['cost']),
-            range_km=int(range_km),
-            mass_kg=float(spec['mass_kg']),
-        )
-        return cls.resolve_transceiver_data(data, part, spec)
-
-    @classmethod
-    def _resolve_spec_tl(cls, range_km: int, tl: int | None) -> int:
-        if tl is not None:
-            if (tl, range_km) in cls._specs:
-                return tl
-            supported = ', '.join(f'TL{spec_tl}' for spec_tl in cls.supported_tls(range_km))
-            if supported:
-                raise ValueError(
-                    f'Unsupported laser transceiver {_format_range(range_km)} at TL{tl}; expected {supported}'
-                )
-            raise ValueError(f'Unsupported laser transceiver range {_format_range(range_km)}')
-        supported_tls = cls.supported_tls(range_km)
-        if not supported_tls:
-            raise ValueError(f'Unsupported laser transceiver range {_format_range(range_km)}')
-        return supported_tls[0]
-
-    @classmethod
-    def supported_tls(cls, range_km: int) -> list[int]:
-        return sorted(spec_tl for spec_tl, spec_range in cls._specs if spec_range == range_km)
-
 
 class MesonTransceiverEquipment(TransceiverEquipment):
     """CSC meson transceiver equipment."""
+
+    _medium_name: ClassVar[str] = 'meson'
+    _part_cls: ClassVar[type[TransceiverPart]] = MesonTransceiverPart
 
     _specs: ClassVar[dict[tuple[int, int], dict[str, int | float]]] = {
         (12, 50_000): {'mass_kg': 200.0, 'cost': 50_000.0},
@@ -279,45 +281,6 @@ class MesonTransceiverEquipment(TransceiverEquipment):
         (14, 50_000): {'mass_kg': 100.0, 'cost': 25_000.0},
         (14, 500_000): {'mass_kg': 200.0, 'cost': 50_000.0},
     }
-
-    @model_validator(mode='before')
-    @classmethod
-    def _resolve_range(cls, data: Any) -> Any:
-        if not isinstance(data, dict):
-            return data
-        range_km = data.get('range_km')
-        if range_km is None or 'parts' in data:
-            return data
-        tl = data.get('tl')
-        spec_tl = cls._resolve_spec_tl(int(range_km), int(tl) if tl is not None else None)
-        spec = cls._specs[(spec_tl, int(range_km))]
-        part = MesonTransceiverPart(
-            tl=spec_tl,
-            cost=float(spec['cost']),
-            range_km=int(range_km),
-            mass_kg=float(spec['mass_kg']),
-        )
-        return cls.resolve_transceiver_data(data, part, spec)
-
-    @classmethod
-    def _resolve_spec_tl(cls, range_km: int, tl: int | None) -> int:
-        if tl is not None:
-            if (tl, range_km) in cls._specs:
-                return tl
-            supported = ', '.join(f'TL{spec_tl}' for spec_tl in cls.supported_tls(range_km))
-            if supported:
-                raise ValueError(
-                    f'Unsupported meson transceiver {_format_range(range_km)} at TL{tl}; expected {supported}'
-                )
-            raise ValueError(f'Unsupported meson transceiver range {_format_range(range_km)}')
-        supported_tls = cls.supported_tls(range_km)
-        if not supported_tls:
-            raise ValueError(f'Unsupported meson transceiver range {_format_range(range_km)}')
-        return supported_tls[0]
-
-    @classmethod
-    def supported_tls(cls, range_km: int) -> list[int]:
-        return sorted(spec_tl for spec_tl, spec_range in cls._specs if spec_range == range_km)
 
 
 class BugWiredAudio(Equipment):

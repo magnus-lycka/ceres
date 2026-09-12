@@ -41,22 +41,35 @@ def test_transceiver_resolver_accepts_supported_explicit_tl(equipment_cls, range
 
 
 @pytest.mark.parametrize(
-    ('equipment_cls', 'medium', 'range_km', 'tl', 'expected_tls'),
+    ('equipment_cls', 'medium', 'range_km', 'tl', 'earliest'),
     [
-        (RadioTransceiverEquipment, 'radio', 500, 8, ('TL7', 'TL9')),
-        (LaserTransceiverEquipment, 'laser', 500, 10, ('TL9', 'TL11', 'TL13')),
-        (MesonTransceiverEquipment, 'meson', 50_000, 13, ('TL12', 'TL14')),
+        (RadioTransceiverEquipment, 'radio', 500, 6, 'TL7'),
+        (LaserTransceiverEquipment, 'laser', 500, 8, 'TL9'),
+        (MesonTransceiverEquipment, 'meson', 50_000, 11, 'TL12'),
     ],
 )
-def test_transceiver_resolver_rejects_unsupported_explicit_tl(equipment_cls, medium, range_km, tl, expected_tls):
+def test_transceiver_resolver_rejects_a_tl_before_any_model_exists(equipment_cls, medium, range_km, tl, earliest):
+    # Before its earliest listed model there is nothing to build, retrotech
+    # only ever working forward from a model that exists.
     with pytest.raises(ValueError) as exc_info:
         equipment_cls._resolve_spec_tl(range_km, tl)
 
     message = str(exc_info.value)
     assert f'Unsupported {medium} transceiver' in message
     assert f'at TL{tl}' in message
-    for expected_tl in expected_tls:
-        assert expected_tl in message
+    assert earliest in message
+
+
+@pytest.mark.parametrize(
+    ('equipment_cls', 'range_km', 'tl', 'model_tl'),
+    [
+        (RadioTransceiverEquipment, 500, 8, 7),
+        (LaserTransceiverEquipment, 500, 10, 9),
+        (MesonTransceiverEquipment, 50_000, 13, 12),
+    ],
+)
+def test_transceiver_resolver_uses_the_latest_model_between_listed_tls(equipment_cls, range_km, tl, model_tl):
+    assert equipment_cls._resolve_spec_tl(range_km, tl) == model_tl
 
 
 @pytest.mark.parametrize(
@@ -283,11 +296,10 @@ def test_tl9_interplanetary_radio_transceiver_matches_csc_values():
 
 def test_radio_transceiver_rejects_unsupported_tl_for_range():
     try:
-        RadioTransceiverEquipment(range_km=500, tl=8)
+        RadioTransceiverEquipment(range_km=500, tl=6)
     except ValueError as exc:
-        assert 'Unsupported radio transceiver 500km at TL8' in str(exc)
+        assert 'Unsupported radio transceiver 500km at TL6' in str(exc)
         assert 'TL7' in str(exc)
-        assert 'TL9' in str(exc)
     else:
         raise AssertionError('Expected unsupported transceiver TL to raise ValueError')
 
@@ -303,23 +315,20 @@ def test_radio_transceiver_rejects_unsupported_range():
 
 def test_laser_transceiver_rejects_unsupported_tl_for_range():
     try:
-        LaserTransceiverEquipment(range_km=500, tl=10)
+        LaserTransceiverEquipment(range_km=500, tl=8)
     except ValueError as exc:
-        assert 'Unsupported laser transceiver 500km at TL10' in str(exc)
+        assert 'Unsupported laser transceiver 500km at TL8' in str(exc)
         assert 'TL9' in str(exc)
-        assert 'TL11' in str(exc)
-        assert 'TL13' in str(exc)
     else:
         raise AssertionError('Expected unsupported laser transceiver TL to raise ValueError')
 
 
 def test_meson_transceiver_rejects_unsupported_tl_for_range():
     try:
-        MesonTransceiverEquipment(range_km=50_000, tl=13)
+        MesonTransceiverEquipment(range_km=50_000, tl=11)
     except ValueError as exc:
-        assert 'Unsupported meson transceiver 50,000km at TL13' in str(exc)
+        assert 'Unsupported meson transceiver 50,000km at TL11' in str(exc)
         assert 'TL12' in str(exc)
-        assert 'TL14' in str(exc)
     else:
         raise AssertionError('Expected unsupported meson transceiver TL to raise ValueError')
 
@@ -361,3 +370,57 @@ def test_meson_transceiver_with_explicit_parts_skips_resolver():
     part = MesonTransceiverPart(tl=12, cost=50_000, range_km=50_000, mass_kg=200.0)
     t = MesonTransceiverEquipment.model_validate({'tl': 12, 'cost': 50_000, 'mass_kg': 200.0, 'parts': [part]})
     assert t.tl == 12
+
+
+class TestRetrotech:
+    """refs/csc/02_equipment_availability.md — Retrotech (RIG-001).
+
+    "At each Tech Level above the listed optimal Tech Level, computers and
+    electronic devices are available at half the cost and mass of the basic
+    model. This reduction is unlimited for computers but limited to three Tech
+    Levels for electronic equipment."
+    """
+
+    def test_one_tl_past_a_model_halves_its_cost_and_mass(self):
+        # The TL7 regional radio is 10kg and Cr500; there is no TL8 model.
+        radio = RadioTransceiverEquipment(range_km=500, tl=8)
+        assert radio.cost == 250
+        assert radio.mass_kg == 5
+
+    def test_a_listed_model_is_bought_at_its_listed_price(self):
+        radio = RadioTransceiverEquipment(range_km=500, tl=9)
+        assert radio.cost == 500
+
+    def test_it_is_produced_at_the_tl_it_was_built(self):
+        # "the retrotech item is considered to have been produced at its actual
+        # Tech Level", so a TL8 build is a TL8 item, not a cheap TL7 one.
+        assert RadioTransceiverEquipment(range_km=500, tl=8).transceiver_part.tl == 8
+
+    def test_electronics_stop_getting_cheaper_after_three_tls(self):
+        # The latest regional model is TL9 at Cr500. Five TLs on, only three
+        # halvings apply.
+        assert RadioTransceiverEquipment(range_km=500, tl=14).cost == 500 / 8
+
+    def test_a_later_build_gains_the_integral_computer_of_its_own_tl(self):
+        # refs/csc/05_communications.md — "all at TL13+ have Computer/1
+        # functionality". A TL13 build of the TL9 model is a TL13 transceiver.
+        radio = RadioTransceiverEquipment(range_km=500, tl=13)
+        computers = [part for part in radio.parts if isinstance(part, ComputerPart)]
+        assert [computer.processing for computer in computers] == [1]
+
+    def test_planetary_transceivers_stop_shrinking_past_tl12(self):
+        # refs/csc/05_communications.md — "powerful transceivers capable of
+        # planetary or greater range do not decrease in size past TL12". The TL12
+        # planetary radio is 2kg and Cr2000; two TLs on it is cheaper, not lighter.
+        radio = RadioTransceiverEquipment(range_km=50_000, tl=14)
+        assert radio.cost == 500
+        assert radio.mass_kg == 2
+
+    def test_a_satellite_uplink_is_priced_from_the_retrotech_transceiver(self):
+        # A static uplink adds half the transceiver's price, with no minimum.
+        radio = RadioTransceiverEquipment(range_km=500, tl=8, satellite_uplink='static')
+        assert radio.cost == 250 + 125
+
+    def test_it_applies_to_laser_and_meson_transceivers_too(self):
+        assert LaserTransceiverEquipment(range_km=500, tl=10).cost == 1_250
+        assert MesonTransceiverEquipment(range_km=50_000, tl=13).cost == 25_000

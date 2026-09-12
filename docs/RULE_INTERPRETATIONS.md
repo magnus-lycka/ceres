@@ -1266,6 +1266,53 @@ This notation is a display artifact in the same sense as `(All)` (RIR-012): noth
 in the design buys a "3/2", it is a statement that two DMs are available and the
 choice is a table decision.
 
+## Rule Interpretations for gear
+
+### RIG-001 Electronics Retrotech Works Forward From The Latest Model
+
+The *Central Supply Catalogue* lists electronics as graded models, each at the
+Tech Level it is introduced — radio transceivers at TL5, TL7, TL9 and TL12, for
+instance. Its Retrotech rule (p.11) then says that "at each Tech Level above the
+listed optimal Tech Level, computers and electronic devices are available at half
+the cost and mass of the basic model", and that this "is unlimited for computers
+but limited to three Tech Levels for electronic equipment". Transceivers are
+named explicitly as subject to it (p.52).
+
+The rule does not say which model a Tech Level between two gradations should use.
+Ceres takes the latest model already introduced at that Tech Level and applies
+retrotech to it. A regional radio built at TL8 is the TL7 model one TL on, at half
+its cost and mass; at TL9 it is the TL9 model at list price; at TL14 it is the TL9
+model with its three halvings used up.
+
+Such an item is a TL8 or TL14 item, not a cheap older one. The CSC is explicit
+that "the retrotech item is considered to have been produced at its actual Tech
+Level", so a transceiver built at TL13 has the integral Computer/1 that TL13
+transceivers have, whichever model it started from.
+
+Two further rules from the Communications chapter are applied with it: a
+transceiver of planetary range or more "does not decrease in size past TL12",
+so it keeps getting cheaper while its mass stops falling; and an option priced
+from the transceiver, such as a satellite uplink, is priced from the retrotech
+figure.
+
+A Tech Level before the earliest model is not supported. The CSC's prototech rule
+would allow electronics up to two Tech Levels early at ten times the cost per
+level, but no design yet needs it.
+
+This rule belongs to the item, so a domain installing electronics takes their
+Tech Level pricing from `ceres.gear` rather than from its own tables (ADR-0002).
+
+### RIG-002 Computer Retrotech Stops At A Thousandfold
+
+The same Retrotech rule makes the discount for computers unlimited: each Tech
+Level past the model halves cost and mass again, without end.
+
+Ceres stops the discount at a factor of 1,000, reached ten Tech Levels on. Past
+that, the arithmetic produces computers worth fractions of a Credit and weighing
+fractions of a gram, which the rules never meant to describe and which say
+nothing useful at the table. This is a deliberate departure from the letter of
+the CSC.
+
 ## Rule Interpretations for vehicles
 
 ### RIV-001 Vehicle Hull And Structure Are Both Modelled; Vehicle Hull Is Not Ship Hull
