@@ -13,11 +13,11 @@
     "brain": {
       "display_label": null,
       "brain_tl": 12,
+      "hardened": false,
       "installed_skills": [],
       "int_upgrade": 0,
       "bandwidth": 2,
-      "kind": "ADVANCED",
-      "hardened": false
+      "kind": "ADVANCED"
     },
     "options": [
       {
@@ -53,7 +53,7 @@
         "is_default_suite": true
       }
     ],
-    "manipulators": [
+    "base_manipulators": [
       {
         "display_label": null,
         "tl": 0,
@@ -73,6 +73,7 @@
         "dex_bonus": 0
       }
     ],
+    "additional_manipulators": [],
     "legs": [],
     "attacks": []
   },

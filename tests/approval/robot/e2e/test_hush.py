@@ -35,7 +35,7 @@ def build_hush() -> Robot:
         size=RobotSize.SIZE_2,
         locomotion=WalkerLocomotion(),
         brain=BasicBrain(function='recon'),
-        manipulators=[Manipulator(), Manipulator()],
+        base_manipulators=[Manipulator(), Manipulator()],
         options=[
             PrisSensor(),
             AuditorySensor(quality='broad_spectrum'),

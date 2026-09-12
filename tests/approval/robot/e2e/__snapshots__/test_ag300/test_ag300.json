@@ -2,7 +2,12 @@
   "data": {
     "name": "AG300 Agricultural Worker",
     "tl": 10,
-    "robot_notes": [],
+    "robot_notes": [
+      {
+        "category": "info",
+        "message": "Some skills show more than one level, depending on which manipulator performs the task. The highest is listed first. The Referee determines which applies."
+      }
+    ],
     "detail_sections": [
       {
         "title": "Chassis",

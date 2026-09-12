@@ -76,7 +76,7 @@ def build_mimer() -> Robot:
                 Navigation(),
             ),
         ),
-        manipulators=[],
+        base_manipulators=[],
         options=[
             *default_suite(),
             AvatarController(quality='enhanced'),

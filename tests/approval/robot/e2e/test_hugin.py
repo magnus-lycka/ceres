@@ -45,7 +45,7 @@ def build_hugin() -> Robot:
         tl=15,
         size=RobotSize.SIZE_1,
         locomotion=GravLocomotion(),
-        manipulators=[],
+        base_manipulators=[],
         brain=AdvancedBrain(
             brain_tl=15,
             hardened=True,

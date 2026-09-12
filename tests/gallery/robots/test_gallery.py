@@ -6,6 +6,7 @@ from ceres.make.robot.report import render_robot_typst
 from ceres.report import render_pdf_source
 from tests.approval.robot.e2e.test_ag300 import build_ag300
 from tests.approval.robot.e2e.test_basic_courier import build_basic_courier
+from tests.approval.robot.e2e.test_deputy import build_deputy
 from tests.approval.robot.e2e.test_domestic_servant import build_domestic_servant
 from tests.approval.robot.e2e.test_gardener_servant import build_gardener_servant
 from tests.approval.robot.e2e.test_gonzales import build_gonzales
@@ -14,6 +15,7 @@ from tests.approval.robot.e2e.test_hugin import build_hugin
 from tests.approval.robot.e2e.test_hush import build_hush
 from tests.approval.robot.e2e.test_lab_control_robot_advanced import build_advanced_lab_control_robot
 from tests.approval.robot.e2e.test_lab_control_robot_basic import build_basic_lab_control_robot
+from tests.approval.robot.e2e.test_marshal import build_marshal
 from tests.approval.robot.e2e.test_mimer import build_mimer
 from tests.approval.robot.e2e.test_munin import build_munin
 from tests.approval.robot.e2e.test_rhino import build_rhino
@@ -29,6 +31,7 @@ _ROBOTS = sorted(
     [
         ('test_ag300', build_ag300),
         ('test_basic_courier', build_basic_courier),
+        ('test_deputy', build_deputy),
         ('test_domestic_servant', build_domestic_servant),
         ('test_gardener_servant', build_gardener_servant),
         ('test_gonzales', build_gonzales),
@@ -37,6 +40,7 @@ _ROBOTS = sorted(
         ('test_hush', build_hush),
         ('test_lab_control_robot_advanced', build_advanced_lab_control_robot),
         ('test_lab_control_robot_basic', build_basic_lab_control_robot),
+        ('test_marshal', build_marshal),
         ('test_mimer', build_mimer),
         ('test_munin', build_munin),
         ('test_rhino', build_rhino),

@@ -6,6 +6,7 @@ from pydantic import Field
 from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.shared import _Note
 
+from ._robot_skill_base import _format_readings
 from .base import RobotBase
 from .brain import AdvancedBrain, BasicBrain, PrimitiveBrain, RobotBrainUnion, SelfAwareBrain, VeryAdvancedBrain
 from .chassis import (
@@ -26,6 +27,9 @@ from .skills import skill_name
 from .spec import RobotDetailRow, RobotDetailSection, RobotSpec, RobotSpecRow, RobotSpecSection
 from .text import format_credits, format_traits
 
+# Two distinct DM profiles are the minimum for the Referee to have a choice to make.
+_DISTINCT_ARMS_FOR_CHOICE = 2
+
 
 def _robot_dex(tl: int) -> int:
     return ceil(tl / 2) + 1
@@ -33,6 +37,36 @@ def _robot_dex(tl: int) -> int:
 
 def _robot_str(size: int) -> int:
     return 2 * size - 1
+
+
+_RESIDUAL_SPECIALITY = 'Other'
+
+
+def _skills_row_order(entry: tuple[str, str]) -> tuple:
+    """Order the skills row: by skill, then speciality, with '(Other)' last.
+
+    '(Other)' stands for whatever specialities were not named, so it reads as a
+    trailing remainder rather than an entry in its own right — which alphabetical
+    order would not give, since specialities like 'Unarmed' sort after it.
+    """
+    label = entry[0]
+    if not label.endswith(')'):
+        return ((label, ''), False, '')
+    skill, _, inner = label[:-1].rpartition(' (')
+    characteristic, _, speciality = inner.rpartition(', ')
+    return ((skill, characteristic), speciality == _RESIDUAL_SPECIALITY, speciality)
+
+
+def _raise_readings(current: str | None, floor: int) -> str:
+    """Raise every reading in a display value to at least `floor`.
+
+    Hardware skill grants do not depend on which manipulator is used, so the floor
+    applies to both readings of a paired DEX skill.
+    """
+    if current is None:
+        return str(floor)
+    readings = [max(int(part), floor) for part in current.split('/')]
+    return _format_readings(tuple(readings))
 
 
 def _collapse(labels: list[str]) -> list[str]:
@@ -54,7 +88,13 @@ class Robot(RobotBase):
     locomotion: LocomotionUnion
     brain: RobotBrainUnion
     options: list[Any] = Field(default_factory=default_suite)
-    manipulators: list[Manipulator] = Field(default_factory=lambda: [Manipulator(), Manipulator()])
+    # refs/robot/09_manipulators.md — a base design includes two manipulators of the
+    # chassis size, included in the Base Chassis Cost. They may be altered (resized,
+    # strengthened, weakened) or removed, and remain the robot's general-purpose arms.
+    base_manipulators: list[Manipulator] = Field(default_factory=lambda: [Manipulator(), Manipulator()], max_length=2)
+    # Additional manipulators are bought on top, cost Cr100 × their own size, and are
+    # where a design puts specialised arms.
+    additional_manipulators: list[Manipulator] = Field(default_factory=list)
     legs: list[LegOrManipulator] = Field(default_factory=list)
     attacks: list[str] = Field(default_factory=list)
 
@@ -69,6 +109,30 @@ class Robot(RobotBase):
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 opt.bind(self)
+        self._note_mixed_manipulator_dex()
+
+    def _note_mixed_manipulator_dex(self) -> None:
+        """Flag that some skill levels vary with the manipulator used.
+
+        refs/robot/09_manipulators.md leaves the choice of manipulator to the Referee,
+        so the spec states every level available rather than picking one.
+        """
+        if len(self._manipulator_dm_profiles()) < _DISTINCT_ARMS_FOR_CHOICE:
+            return
+        self.info(
+            'Some skills show more than one level, depending on which manipulator performs '
+            'the task. The highest is listed first. The Referee determines which applies.'
+        )
+
+    @property
+    def manipulators(self) -> list[Manipulator]:
+        """Every arm: base manipulators first, then additional ones."""
+        return [*self.base_manipulators, *self.additional_manipulators]
+
+    @property
+    def all_manipulators(self) -> list[Manipulator]:
+        """Every manipulator that can perform a task, walker leg-manipulators included."""
+        return [*self.manipulators, *self._leg_manipulators]
 
     def parts_of_type(self, part_cls: type) -> list:
         return [o for o in self.options if isinstance(o, part_cls)]
@@ -230,18 +294,82 @@ class Robot(RobotBase):
         return f'{base} hours'
 
     @property
+    def _general_manipulators(self) -> list[Manipulator]:
+        """The base manipulators — the robot's general-purpose arms, however altered.
+
+        refs/robot/09_manipulators.md, RIR-013 — an *additional* manipulator is bought
+        for a purpose and is limited to its own actions, so it does not raise the
+        robot's general recorded level. An altered base manipulator is still a base
+        manipulator, whatever size it was resized to.
+        """
+        return list(self.base_manipulators)
+
+    @property
+    def _str_for_dm(self) -> int:
+        """The base manipulators' STR — the robot's general figure.
+
+        The chassis value 2 x Size - 1 is the fallback for a robot with no base
+        manipulators at all: refs/robot/54_robots_as_travellers.md gives it for
+        "tasks such as smashing down a door", not as a floor under real arms. An
+        altered base manipulator is weaker or stronger than default and says so.
+        """
+        arms = self._general_manipulators
+        return max(m.effective_str(self.size) for m in arms) if arms else _robot_str(int(self.size))
+
+    @property
+    def _dex_for_dm(self) -> int:
+        """The base manipulators' DEX — the robot's general figure.
+
+        refs/robot/09_manipulators.md — enhanced manipulator DEX raises the recorded
+        Athletics (dexterity) level exactly as enhanced STR raises Athletics (strength).
+        """
+        arms = self._general_manipulators
+        return max(m.effective_dex(self.tl) for m in arms) if arms else _robot_dex(self.tl)
+
+    @property
+    def _peak_dex_for_dm(self) -> int:
+        """Highest DEX over every manipulator, specialised arms included."""
+        base = _robot_dex(self.tl)
+        arms = self.manipulators
+        return max(base, *(m.effective_dex(self.tl) for m in arms)) if arms else base
+
+    def _manipulator_dm_profiles(self) -> list[dict[Chars, int]]:
+        """One set of characteristic DMs per way the robot can perform a task.
+
+        refs/robot/09_manipulators.md: "checks are based on the STR of the
+        manipulator(s) actually performing each task". So every distinct arm is a
+        reading, not just two — the base arms taken together give the robot's general
+        figure, and each additional or leg manipulator its own. Profiles are collected
+        into a set, so the result does not depend on the order arms were declared in.
+        """
+        general = {
+            Chars.STR: characteristic_dm(self._str_for_dm),
+            Chars.DEX: characteristic_dm(self._dex_for_dm),
+        }
+        profiles = [general]
+        seen = {(general[Chars.STR], general[Chars.DEX])}
+        for arm in self.all_manipulators:
+            dms = {
+                Chars.STR: characteristic_dm(arm.effective_str(self.size)),
+                Chars.DEX: characteristic_dm(arm.effective_dex(self.tl)),
+            }
+            key = (dms[Chars.STR], dms[Chars.DEX])
+            if key not in seen:
+                seen.add(key)
+                profiles.append(dms)
+        return profiles
+
+    @property
     def skills_display(self) -> str:
-        base_str = _robot_str(int(self.size))
-        str_for_dm = max(
-            base_str,
-            max((m.effective_str(self.size) for m in self.manipulators), default=base_str),
-        )
-        dms = {Chars.DEX: characteristic_dm(_robot_dex(self.tl)), Chars.STR: characteristic_dm(str_for_dm)}
-        merged = self.brain.display_labels(dms)
+        profiles = self._manipulator_dm_profiles()
+        if len(profiles) > 1:
+            merged = self.brain.display_labels_multi(profiles)
+        else:
+            merged = {name: str(lvl) for name, lvl in self.brain.display_labels(profiles[0]).items()}
         for opt in self.options:
             if isinstance(opt, RobotPartMixin):
                 for name, lvl in opt.skill_grants.items():
-                    merged[name] = max(merged.get(name, 0), lvl)
+                    merged[name] = _raise_readings(merged.get(name), lvl)
         # Basic/Primitive (locomotion) grants Vehicle (type) X where X = agility (locomotion base + enhancement).
         # refs/robot/35_skill_packages.md — Basic (locomotion) skill table.
         if isinstance(self.brain, (BasicBrain, PrimitiveBrain)) and self.brain.function == 'locomotion':
@@ -250,8 +378,8 @@ class Robot(RobotBase):
             vehicle_skill = self.locomotion.vehicle_skill
             if vehicle_skill is not None:
                 vehicle_name = skill_name(vehicle_skill)
-                merged[vehicle_name] = max(merged.get(vehicle_name, 0), effective_agility)
-        parts = sorted(f'{name} {level}' for name, level in merged.items())
+                merged[vehicle_name] = _raise_readings(merged.get(vehicle_name), effective_agility)
+        parts = [f'{name} {level}' for name, level in sorted(merged.items(), key=_skills_row_order)]
         rem = self.brain.remaining_bandwidth
         if rem is not None and rem > 0:
             parts.append(f'+{rem} Bandwidth available')
@@ -366,6 +494,15 @@ class Robot(RobotBase):
                         cost=format_credits(self.brain._int_upgrade_cost),
                     )
                 )
+            # The rows above are the unhardened components, so the surcharge needs its own
+            # line or the breakdown will not sum to the brain's contribution to the total.
+            if self.brain.hardened:
+                bs.rows.append(
+                    RobotDetailRow(
+                        name='Brain Hardening (/fib)',
+                        cost=format_credits(self.brain.hardening_surcharge),
+                    )
+                )
         else:
             bs.rows.append(
                 RobotDetailRow(
@@ -382,7 +519,7 @@ class Robot(RobotBase):
         if has_skills and (self.brain.installed_skills or has_software):
             ss = RobotDetailSection(title='Skills')
             for pkg in self.brain.installed_skills:
-                entries = pkg.display_entries({})
+                entries = pkg.package_entries()
                 pkg_name = ', '.join(f'{k} {v}' for k, v in entries.items()) or type(pkg).skill_name()
                 ss.rows.append(
                     RobotDetailRow(

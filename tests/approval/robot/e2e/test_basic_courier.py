@@ -22,7 +22,7 @@ def build_basic_courier() -> Robot:
         size=RobotSize.SIZE_3,
         locomotion=GravLocomotion(),
         brain=BasicBrain(function='locomotion'),
-        manipulators=[],
+        base_manipulators=[],
         options=[
             *default_suite(improved_transceiver=False, drone=True),
             RobotTransceiver(range_km=500, quality='improved'),

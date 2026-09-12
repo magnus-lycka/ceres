@@ -44,7 +44,7 @@ def build_munin() -> Robot:
         tl=15,
         size=RobotSize.SIZE_1,
         locomotion=GravLocomotion(speed_increase=2),
-        manipulators=[],
+        base_manipulators=[],
         brain=AdvancedBrain(
             brain_tl=15,
             hardened=True,

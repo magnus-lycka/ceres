@@ -1144,3 +1144,124 @@ specialisations given. Note that the cost and bandwidth requirement
 for this is the same as for three entirely separate skills with
 the same price and bandwith, e.g. Admin(level=1), Mechanics(level=1)
 and Steward(level=1)
+
+### RIR-013 Manipulator STR/DEX Athletics DM: General-Purpose Arms Only
+
+The *Robot Handbook* (p.26) ties the recorded Athletics level to manipulator
+characteristics:
+
+"Increased DEX and STR values do not directly grant a skill equivalence of
+Athletics (dexterity) or Athletics (strength) to the robot unless it has a skill
+package of Athletics installed in its brain. If such a package is installed, even
+at skill level zero, then DMs for high STR or DEX are applied to simulate that
+skill level, although in situations where different manipulators have different
+DMs, the Referee should determine whether a DM applies. Note that a robot with
+DEX 15 manipulators and Athletics 0 would be considered to have Athletics
+(dexterity) 3 for skill recording purposes…"
+
+The rule defers the mixed-manipulator case to the Referee, and the handbook's own
+StarTek example (p.26) shows how that call is expected to go: the third, Size 3
+arm with DEX 12 "does not gain a general Athletics (dexterity) DM even if the
+robot has an Athletics skill package because the Referee determines that the DEX
+modifier is limited to the specific actions of the small arm."
+
+The distinction Ceres draws is the one the rules draw, by **role** rather than size.
+*Robot Handbook* p.25–26 names four kinds: **Base Manipulators** (the two included in
+the Base Chassis Cost), **Altered Base Manipulators** (those two removed, resized or
+with STR/DEX changed), **Additional Manipulators** (bought on top, costing Cr100 ×
+their own size), and walker legs enhanced to act as manipulators.
+
+The robot's *general* figure comes from its base manipulators, however they have been
+altered:
+
+    dex_for_dm = max(m.effective_dex for m in base_manipulators)
+    str_for_dm = max(m.effective_str for m in base_manipulators)
+
+An **additional** manipulator is bought for a purpose, so it does not replace the
+general figure — that is what StarTek's delicate third arm demonstrates. Size does not
+decide this: a Size 5 robot whose two base arms were resized to Size 4 genuinely has
+STR 7 arms, and reporting the chassis default STR 9 would invent a capability it does
+not have. The chassis value 2 × Size − 1 is the fallback for a robot with **no** base
+manipulators, which is the case refs/robot/54_robots_as_travellers.md gives it for
+("tasks such as smashing down a door").
+
+STR and DEX are governed by one paragraph and are treated identically. Note that
+this affects only the *recorded* Athletics level; per the same passage, the robot
+does not receive an additional DM on top of that level when making Athletics
+checks.
+
+#### Two readings when manipulators differ in DEX
+
+Discarding the additional arm entirely would lose real information: StarTek's
+stunner genuinely does get DM+2 from the small arm, as the handbook's own text says
+even though its printed skill line shows a bare `Gun Combat 0`. Since the rule hands
+the choice of manipulator to the Referee, Ceres does not choose. It states **one
+reading per distinct DM profile** — the base arms taken together, plus each additional
+and leg manipulator that differs from them — **highest first**:
+
+    Gun Combat (Energy) 3/2
+    Gun Combat (Other) 2/1
+
+The leading figure is the best the robot can manage, which is also the typical case —
+a ranged weapon is normally mounted on the arm bought to aim it. Readings are
+deduplicated, and where they all agree a single figure is shown, so robots with
+uniform manipulators are unaffected.
+
+Readings are collected into a set before ordering, so the result does not depend on
+the order the arms were declared in, and a robot with three distinct profiles shows
+three readings rather than losing the middle one.
+
+Position deliberately carries no fixed meaning: the readings are ordered by value,
+not by arm, so nothing may be inferred from which slot a figure occupies. A robot
+with mixed manipulator DEX carries an informational note saying only that some skills
+show several levels depending on the manipulator used and that the highest leads. The
+manipulator row already lists the arms; pairing figures to arms is a table decision,
+not a design-time fact.
+
+Pairing happens before speciality compaction. Compacting each reading separately and
+matching the results afterwards would misalign them, since the zero-level exclusion
+can give the two readings different shapes — `Gun Combat 0` against
+`Gun Combat (All) 2` for StarTek.
+
+#### Skills that may use more than one characteristic
+
+For nearly every skill one characteristic applies, but the melee attack in *Traveller*
+core is `2D + Melee (appropriate speciality) + STR or DEX DM` — the attacker's choice —
+and the grapple rules repeat it. Melee is the only such skill for a robot: the other
+multi-characteristic checks in the core rules choose among INT, EDU and SOC, and the
+*Robot Handbook* collapses all three to INT, since skill packages take "INT or DEX" DMs
+and "the robot's effective SOC or EDU is considered equivalent to its INT".
+
+Ceres does not resolve the choice by taking the better characteristic. It gives each
+one its own row, labelled with the characteristic:
+
+    Melee (STR, Unarmed) 5/1
+    Melee (DEX, Unarmed) 4/3
+
+Collapsing to a single best-of row would hide the two facts a table actually needs.
+The choice is not always free — a Referee may rule that a particular task turns on
+STR — and the characteristics rank the arms *differently*: above, STR favours the
+strong general arms and DEX the nimble gun arms, so a best-of row would silently pick
+a different arm depending on which characteristic won. Splitting states the whole
+matrix and leaves both choices where the rules put them, with the table.
+
+Rows are named `Skill (CHAR, Speciality)`, and the `(All)` and `(Other)` compaction
+applies within each characteristic independently.
+
+In the skills row a `(Other)` entry is placed after the named specialities of the same
+skill rather than in alphabetical position, since it stands for the remainder and reads
+as a trailing catch-all — `Melee (STR, Unarmed) 5/1, Melee (STR, Other) 3`, not the
+reverse that alphabetical order would give.
+
+Readings below zero are left out. A negative reading means the manipulator is worse
+than useless for that task, and the alternatives are all bad: printing `2/-1` puts a
+number that is not a skill level in a skill column, and clamping to `2/0` would claim
+a trained competence the robot does not have. Where every reading of an entry is
+negative the entry is omitted entirely. This loses nothing that matters, because
+unlike a published stat block a Ceres design also lists the skill packages it actually
+bought — the Skills section of the build shows `Melee (Unarmed) 2` whatever the
+manipulators do to it, so the skills row is a convenience, not the record.
+
+This notation is a display artifact in the same sense as `(All)` (RIR-012): nothing
+in the design buys a "3/2", it is a statement that two DMs are available and the
+choice is a table decision.

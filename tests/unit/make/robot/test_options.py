@@ -1835,3 +1835,135 @@ class TestVideoScreen:
         robot_base = _robot(options=[])
         robot_with = _robot(options=[VideoScreen(quality='improved')])
         assert robot_with.total_cost == robot_base.total_cost + 500.0
+
+
+class TestFireExtinguisher:
+    """refs/robot/32_fire_extinguisher.md — Fire Extinguisher, TL5, 1 Slot, Cr100."""
+
+    def test_table_values(self):
+        from ceres.make.robot.options import FireExtinguisher
+
+        fe = FireExtinguisher()
+        assert fe.tl == 5
+        assert fe.slots == 1
+        assert fe.cost == 100.0
+
+    def test_cost_and_slot_added_to_robot(self):
+        from ceres.make.robot.options import FireExtinguisher
+
+        robot_base = _robot(options=[])
+        robot_with = _robot(options=[FireExtinguisher()])
+        assert robot_with.total_cost == robot_base.total_cost + 100.0
+        assert robot_with.used_slots == robot_base.used_slots + 1
+
+
+class TestForensicToolkit:
+    """refs/robot/31_neural_activity_sensor.md — Forensic Toolkit table."""
+
+    @pytest.mark.parametrize(
+        'quality, tl, slots, max_skill, cost',
+        [
+            ('basic', 8, 5, 0, 2000.0),
+            ('improved', 10, 4, 1, 4000.0),
+            ('enhanced', 12, 4, 2, 8000.0),
+            ('advanced', 14, 3, 3, 10000.0),
+        ],
+    )
+    def test_table_values(self, quality, tl, slots, max_skill, cost):
+        from ceres.make.robot.options import ForensicToolkit
+
+        kit = ForensicToolkit(quality=quality)
+        assert (kit.tl, kit.slots, kit.max_skill, kit.cost) == (tl, slots, max_skill, cost)
+
+    def test_grants_no_skill(self):
+        # Toolkits cap a skill, they never grant one (refs/robot/31_neural_activity_sensor.md).
+        from ceres.make.robot.options import ForensicToolkit
+
+        assert ForensicToolkit(quality='enhanced').skill_grants == {}
+
+
+class TestCuttingTorch:
+    """refs/robot/31_neural_activity_sensor.md — Cutting Torch table."""
+
+    @pytest.mark.parametrize(
+        'quality, tl, slots, cost',
+        [('basic', 5, 2, 500.0), ('improved', 9, 2, 5000.0), ('advanced', 13, 1, 5000.0)],
+    )
+    def test_table_values(self, quality, tl, slots, cost):
+        from ceres.make.robot.options import CuttingTorch
+
+        torch = CuttingTorch(quality=quality)
+        assert (torch.tl, torch.slots, torch.cost) == (tl, slots, cost)
+
+
+class TestPowerPack:
+    """refs/robot/07_chassis_options.md — additional power packs, TL8+, up to three.
+
+    'Each power pack consumes 10% of the robot's Base Slots (round up) and increases
+    endurance by 100%. This value is calculated after any efficiency increase. A power
+    pack costs Cr500 per Slot consumed.' Packs also grant the equivalent of
+    Athletics (endurance) at a level equal to the number of packs.
+    """
+
+    def test_tech_level(self):
+        from ceres.make.robot.options import PowerPack
+
+        assert PowerPack().tl == 8
+
+    @pytest.mark.parametrize(
+        'size, base_slots, slots_per_pack',
+        [
+            (RobotSize.SIZE_3, 4, 1),  # ceil(0.4) = 1
+            (RobotSize.SIZE_5, 16, 2),  # ceil(1.6) = 2
+            (RobotSize.SIZE_6, 32, 4),  # ceil(3.2) = 4
+            (RobotSize.SIZE_8, 128, 13),  # ceil(12.8) = 13
+        ],
+    )
+    def test_slots_are_ten_percent_of_base_slots_per_pack(self, size, base_slots, slots_per_pack):
+        from ceres.make.robot.options import PowerPack
+
+        pack = PowerPack()
+        _robot(size=size, options=[pack])
+        assert pack.slots == slots_per_pack
+
+        pair = PowerPack(count=2)
+        _robot(size=size, options=[pair])
+        assert pair.slots == 2 * slots_per_pack
+
+    def test_cost_is_500_per_slot_consumed(self):
+        from ceres.make.robot.options import PowerPack
+
+        pack = PowerPack()
+        _robot(size=RobotSize.SIZE_6, options=[pack])
+        assert pack.cost == 500.0 * 4
+
+    def test_each_pack_adds_one_hundred_percent_endurance(self):
+        from ceres.make.robot.options import PowerPack
+
+        plain = _robot(size=RobotSize.SIZE_6)
+        one = _robot(size=RobotSize.SIZE_6, options=[PowerPack()])
+        two = _robot(size=RobotSize.SIZE_6, options=[PowerPack(count=2)])
+        assert one.base_endurance == 2 * plain.base_endurance
+        assert two.base_endurance == 4 * plain.base_endurance
+
+    def test_endurance_compounds_with_efficiency(self):
+        from ceres.make.robot.options import PowerPack
+
+        plain = _robot(size=RobotSize.SIZE_6)
+        both = _robot(size=RobotSize.SIZE_6, options=[Efficiency(), PowerPack()])
+        assert both.base_endurance == 4 * plain.base_endurance
+
+    def test_grants_athletics_endurance_equal_to_pack_count(self):
+        from ceres.make.robot.options import PowerPack
+
+        assert PowerPack().skill_grants == {'Athletics (Endurance)': 1}
+        assert PowerPack(count=3).skill_grants == {'Athletics (Endurance)': 3}
+
+    @pytest.mark.parametrize('count', [0, 4])
+    def test_rejects_counts_outside_one_to_three(self, count):
+        from pydantic import ValidationError
+
+        from ceres.make.robot.options import PowerPack
+
+        with pytest.raises(ValidationError):
+            PowerPack(count=count)

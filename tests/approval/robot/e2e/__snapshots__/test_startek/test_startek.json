@@ -2,7 +2,12 @@
   "data": {
     "name": "StarTek",
     "tl": 14,
-    "robot_notes": [],
+    "robot_notes": [
+      {
+        "category": "info",
+        "message": "Some skills show more than one level, depending on which manipulator performs the task. The highest is listed first. The Referee determines which applies."
+      }
+    ],
     "detail_sections": [
       {
         "title": "Chassis",
@@ -261,7 +266,7 @@
       {
         "section": "Skills",
         "label": "Skills",
-        "value": "Athletics (Strength) 2, Electronics (All) 3, Engineer (All) 3, Explosives 2, Gun Combat 0, Mechanic 3, Medic 2, +1 Bandwidth available",
+        "value": "Athletics (Dexterity) 2/0, Athletics (Strength) 2, Electronics (All) 3, Engineer (All) 3, Explosives 2, Gun Combat (All) 2/0, Mechanic 3, Medic 2, +1 Bandwidth available",
         "columns": [],
         "notes": []
       },
@@ -308,5 +313,8 @@
         "notes": []
       }
     ]
+  },
+  "annotations": {
+    "skills": "Gun Combat reads 2/0 where the published sheet shows 'Gun Combat 0'. Deliberate (RIR-013): the handbook text for this very robot says the stunner is installed in the Size 3 manipulator 'to take advantage of the small manipulator's DEX DM+2', which the printed skill line omits. Readings are ordered highest first and position names no particular arm, so the published figure is the 0 — what the DEX 8 base arms give."
   }
 }

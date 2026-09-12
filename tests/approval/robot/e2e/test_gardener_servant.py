@@ -44,7 +44,8 @@ def build_gardener_servant() -> Robot:
                 Steward(level=1),
             ),
         ),
-        manipulators=[Manipulator(), Manipulator(), Manipulator(), Manipulator()],
+        base_manipulators=[Manipulator(), Manipulator()],
+        additional_manipulators=[Manipulator(), Manipulator()],
         legs=[Manipulator(), Manipulator()],
         options=[
             *default_suite(speak=False, hear=False, drone=True),

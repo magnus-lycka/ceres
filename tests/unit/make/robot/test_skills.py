@@ -12,6 +12,7 @@ import pytest
 from ceres.character.domain import skills as character_skills
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Level, level_fields, speciality_label
+from ceres.make.robot._robot_skill_base import _field_characteristics
 from ceres.make.robot.skills import (
     Animals,
     AnyRobotSkill,
@@ -148,7 +149,13 @@ class TestStandardSkills:
                 if spec_char is None:
                     continue
                 pkg = facade_cls(**{field: 1})
-                assert pkg.display_entries(_DM0) == {f'{skill_cls.name()} ({speci})': 1}
+                # A skill the rules allow more than one characteristic for gets a row each.
+                characteristics = _field_characteristics(skill_cls, field)
+                if len(characteristics) > 1:
+                    expected = {f'{skill_cls.name()} ({c.value}, {speci})': 1 for c in characteristics}
+                else:
+                    expected = {f'{skill_cls.name()} ({speci})': 1}
+                assert pkg.display_entries(_DM0) == expected
 
     def test_broad_skills_no_specialisation_2(self):
         tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[character_skills.LanguageSkill]
@@ -177,13 +184,11 @@ class TestStandardSkills:
         assert pkg.display_entries({Chars.INT: 1}) == {'Engineer (All)': 1}
 
     def test_smart_power_engineer_specs_differ(self):
-        # Power at 1 + INT DM+1 = 2; others at 0+1=1 → not all equal → list individually
+        # Power at 1 + INT DM+1 = 2; the other three share the baseline 1 → (Other) 1
         pkg = Engineer(power=1)
         assert pkg.display_entries({Chars.INT: 1}) == {
             'Engineer (Power)': 2,
-            'Engineer (J-Drive)': 1,
-            'Engineer (M-Drive)': 1,
-            'Engineer (Life Support)': 1,
+            'Engineer (Other)': 1,
         }
 
     def test_animals_all_implied_familiarity_neutral_dm(self):
@@ -196,8 +201,7 @@ class TestStandardSkills:
         pkg = Animals()
         assert pkg.display_entries({Chars.DEX: 2, Chars.INT: 1}) == {
             'Animals (Handling)': 2,
-            'Animals (Training)': 1,
-            'Animals (Veterinary)': 1,
+            'Animals (Other)': 1,
         }
 
 

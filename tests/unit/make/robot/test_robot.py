@@ -590,7 +590,7 @@ class TestBuildSpec:
     def test_spec_manipulators_row_empty(self):
         from ceres.make.robot.spec import RobotSpecSection
 
-        robot = make_robot(manipulators=[])
+        robot = make_robot(base_manipulators=[])
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         assert rows[0].value == '—'
 
@@ -599,7 +599,7 @@ class TestBuildSpec:
         from ceres.make.robot.spec import RobotSpecSection
 
         # make_robot default: SIZE_3, TL8 → STR = 2×3−1=5, DEX = ceil(8/2)+1=5
-        robot = make_robot(manipulators=[Manipulator()])
+        robot = make_robot(base_manipulators=[Manipulator()])
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         assert rows[0].value == '(STR 5 DEX 5)'
 
@@ -779,10 +779,9 @@ class TestSkillsDisplay:
         robot = make_robot(brain=brain)
         display = robot.skills_display
         assert 'Electronics (All)' not in display
-        assert 'Electronics (Comms) 1' in display
-        assert 'Electronics (Computers) 1' in display
+        # Comms, Computers and Sensors share the baseline of 1 and compact to (Other).
+        assert 'Electronics (Other) 1' in display
         assert 'Electronics (Remote Ops) 3' in display
-        assert 'Electronics (Sensors) 1' in display
 
     # ── Compaction to (All) ────────────────────────────────────────────────────
     # tl=10: DEX=ceil(10/2)+1=6 → DM 0. AdvancedBrain(brain_tl=12): INT DM 0.
@@ -853,5 +852,99 @@ class TestSkillsDisplay:
         robot = make_robot(tl=10, brain=brain)
         display = robot.skills_display
         assert 'Pilot (All)' not in display
-        assert 'Pilot (Spacecraft) 1' in display
-        assert 'Pilot (Capital Ships) 1' in display
+        # Both named specialities sit at 1 and the set is complete: compacts to (Other).
+        assert 'Pilot (Other) 1' in display
+
+
+class TestManipulatorReadings:
+    """refs/robot/09_manipulators.md — a skill level is read from the manipulator(s)
+    performing the task, so a robot whose arms differ has more than one reading.
+
+    RIR-013: the *base* manipulators give the robot's general figure however they have
+    been altered; each additional or leg manipulator contributes its own reading.
+    """
+
+    @staticmethod
+    def _robot(*, base=None, additional=None, skills=None, tl=12, size=None):
+        from ceres.make.robot import AdvancedBrain, Manipulator, RobotSize
+        from ceres.make.robot.skills import Athletics
+
+        return make_robot(
+            tl=tl,
+            size=size or RobotSize.SIZE_6,
+            brain=AdvancedBrain(
+                brain_tl=12,
+                bandwidth=6,
+                installed_skills=skills or (Athletics(strength=0), Athletics(dexterity=0)),
+            ),
+            base_manipulators=base if base is not None else [Manipulator(), Manipulator()],
+            additional_manipulators=additional or [],
+        )
+
+    def test_altered_base_manipulators_still_give_the_general_figure(self):
+        """A resized base arm is a base arm — size does not decide purpose."""
+        from ceres.make.robot import Manipulator, RobotSize
+
+        robot = self._robot(
+            size=RobotSize.SIZE_5,
+            base=[Manipulator(size=RobotSize.SIZE_4), Manipulator(size=RobotSize.SIZE_4)],
+        )
+        # Size 4 base arms really have STR 7 (DM+0), not the chassis default STR 9.
+        assert 'Athletics (Strength)' not in robot.skills_display
+
+    def test_additional_manipulator_adds_a_reading_without_replacing_the_general_one(self):
+        from ceres.make.robot import Manipulator, RobotSize
+
+        robot = self._robot(
+            size=RobotSize.SIZE_5,
+            additional=[Manipulator(size=RobotSize.SIZE_3, dex_bonus=5)],
+        )
+        # General arms DEX 7 (DM+0); the additional arm DEX 12 (DM+2).
+        assert 'Athletics (Dexterity) 2/0' in robot.skills_display
+
+    def test_every_distinct_profile_produces_a_reading(self):
+        from ceres.make.robot import Manipulator, RobotSize
+        from ceres.make.robot.skills import Melee
+
+        robot = self._robot(
+            size=RobotSize.SIZE_5,
+            base=[Manipulator(str_bonus=6), Manipulator(str_bonus=6)],
+            additional=[Manipulator(), Manipulator(size=RobotSize.SIZE_3, dex_bonus=5)],
+            skills=(Melee(unarmed=1),),
+        )
+        # STR readings: base 15 (+3) -> 4, additional STR 9 (+1) -> 2, Size 3 STR 5 (-1)
+        # -> dropped. Three profiles, so the middle reading must not disappear.
+        assert 'Melee (STR, Unarmed) 4/2' in robot.skills_display
+
+    def test_readings_do_not_depend_on_declaration_order(self):
+        from ceres.make.robot import Manipulator
+        from ceres.make.robot.skills import Melee
+
+        strong, weak = Manipulator(str_bonus=6), Manipulator()
+        first = self._robot(base=[strong, weak], skills=(Melee(unarmed=1),))
+        second = self._robot(base=[weak, strong], skills=(Melee(unarmed=1),))
+        assert first.skills_display == second.skills_display
+
+    def test_walker_leg_manipulators_contribute_a_reading(self):
+        from ceres.make.robot import Manipulator, RobotSize, WalkerLocomotion
+        from ceres.make.robot.skills import Melee
+
+        robot = make_robot(
+            tl=12,
+            size=RobotSize.SIZE_5,
+            locomotion=WalkerLocomotion(),
+            brain=__import__('ceres.make.robot', fromlist=['AdvancedBrain']).AdvancedBrain(
+                brain_tl=12, bandwidth=6, installed_skills=(Melee(unarmed=1),)
+            ),
+            base_manipulators=[Manipulator(), Manipulator()],
+            legs=[Manipulator(str_bonus=6), Manipulator(str_bonus=6)],
+        )
+        # Base arms STR 9 (+1) -> 2; leg-manipulators STR 15 (+3) -> 4.
+        assert 'Melee (STR, Unarmed) 4/2' in robot.skills_display
+
+    def test_uniform_arms_give_a_single_reading(self):
+        from ceres.make.robot.skills import GunCombat
+
+        robot = self._robot(skills=(GunCombat(energy=1),))
+        display = robot.skills_display
+        assert '/' not in display

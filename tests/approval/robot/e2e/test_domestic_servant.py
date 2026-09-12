@@ -22,7 +22,7 @@ def build_domestic_servant() -> Robot:
         size=RobotSize.SIZE_3,
         locomotion=WheelsLocomotion(speed_reduction=1),
         brain=PrimitiveBrain(function='clean'),
-        manipulators=[],
+        base_manipulators=[],
         options=[
             *default_suite(),
             DomesticCleaningEquipment(size='small'),

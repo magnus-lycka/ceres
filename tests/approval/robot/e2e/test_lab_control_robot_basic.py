@@ -28,7 +28,7 @@ def build_basic_lab_control_robot() -> Robot:
             brain_tl=12,
             installed_skills=(Electronics(remote_ops=1),),
         ),
-        manipulators=[],
+        base_manipulators=[],
         options=[
             *default_suite(see=False, improved_transceiver=False),
             VideoScreen(quality='improved'),

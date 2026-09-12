@@ -19,7 +19,7 @@ def build_wush() -> Robot:
         size=RobotSize.SIZE_2,
         locomotion=WheelsAtvLocomotion(),
         brain=PrimitiveBrain(function='clean'),
-        manipulators=[Manipulator(), Manipulator()],
+        base_manipulators=[Manipulator(), Manipulator()],
         options=[
             *default_suite(
                 see=True,

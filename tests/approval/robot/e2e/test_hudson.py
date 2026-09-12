@@ -34,7 +34,7 @@ def build_hudson() -> Robot:
                 Steward(level=1),
             ),
         ),
-        manipulators=[Manipulator(), Manipulator()],
+        base_manipulators=[Manipulator(), Manipulator()],
         options=[
             *default_suite(see=True, hear=True, improved_transceiver=True, drone=True, speak=False, wireless=False),
             OlfactorySensor(quality='improved'),

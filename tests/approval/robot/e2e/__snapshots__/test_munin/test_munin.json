@@ -51,6 +51,12 @@
             "col2": "—",
             "col3": "+2",
             "cost": "Cr10,000"
+          },
+          {
+            "name": "Brain Hardening (/fib)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr5,000"
           }
         ]
       },

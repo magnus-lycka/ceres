@@ -28,6 +28,8 @@ Rule sources:
 from math import ceil
 from typing import Any
 
+from pydantic import Field
+
 from ceres.gear.comm import RadioTransceiverPart
 
 from .chassis import Trait, chassis_entry
@@ -923,6 +925,19 @@ _SOLAR_COATING_TABLE: dict[str, dict[str, int | float]] = {
     'advanced': {'tl': 12, 'cost_per_base_slot': 500.0},
 }
 
+_FORENSIC_TOOLKIT_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 8, 'slots': 5, 'max_skill': 0, 'cost': 2000.0},
+    'improved': {'tl': 10, 'slots': 4, 'max_skill': 1, 'cost': 4000.0},
+    'enhanced': {'tl': 12, 'slots': 4, 'max_skill': 2, 'cost': 8000.0},
+    'advanced': {'tl': 14, 'slots': 3, 'max_skill': 3, 'cost': 10000.0},
+}
+
+_CUTTING_TORCH_TABLE: dict[str, dict[str, int | float]] = {
+    'basic': {'tl': 5, 'slots': 2, 'cost': 500.0},
+    'improved': {'tl': 9, 'slots': 2, 'cost': 5000.0},
+    'advanced': {'tl': 13, 'slots': 1, 'cost': 5000.0},
+}
+
 _SCIENTIFIC_TOOLKIT_TABLE: dict[str, dict[str, int | float]] = {
     'basic': {'tl': 5, 'slots': 4, 'cost': 2000.0},
     'improved': {'tl': 8, 'slots': 3, 'cost': 4000.0},
@@ -993,6 +1008,27 @@ class DensitometerSensor(RobotPartBase):
 
     def item_description(self) -> str:
         return 'Densitometer Sensor'
+
+
+class FireExtinguisher(RobotPartBase):
+    """refs/robot/32_fire_extinguisher.md — Fire Extinguisher, TL5, 1 slot, Cr100.
+
+    Extinguishes most chemical and electrical fires. Used on a burning Traveller it
+    halves damage in the first round and eliminates it in subsequent rounds.
+    """
+
+    tl: int = 5
+
+    @property
+    def slots(self) -> int:
+        return 1
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        object.__setattr__(self, 'cost', 100.0)
+
+    def item_description(self) -> str:
+        return 'Fire Extinguisher'
 
 
 class NeuralActivitySensor(RobotPartBase):
@@ -1083,6 +1119,64 @@ class ScientificToolkit(RobotPartBase):
         if self.speciality:
             return f'Scientific Toolkit ({self.quality}, {self.speciality})'
         return f'Scientific Toolkit ({self.quality})'
+
+
+class ForensicToolkit(RobotPartBase):
+    """refs/robot/31_neural_activity_sensor.md — Forensic Toolkit.
+
+    Quality: basic (TL8, 5 slots, max skill 0, Cr2000) / improved (TL10, 4 slots, 1,
+             Cr4000) / enhanced (TL12, 4 slots, 2, Cr8000) /
+             advanced (TL14, 3 slots, 3, Cr10000).
+
+    Used in conjunction with the Investigate skill to work crime or accident scenes.
+    Maximum Skill caps how far the toolkit supports a check; like every toolkit it
+    caps rather than grants, so a robot with no Investigate package gains nothing.
+    """
+
+    quality: str = 'basic'
+
+    @property
+    def slots(self) -> int:
+        return int(_FORENSIC_TOOLKIT_TABLE[self.quality]['slots'])
+
+    @property
+    def max_skill(self) -> int:
+        return int(_FORENSIC_TOOLKIT_TABLE[self.quality]['max_skill'])
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _FORENSIC_TOOLKIT_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def item_description(self) -> str:
+        return f'Forensic Toolkit ({self.quality})'
+
+
+class CuttingTorch(RobotPartBase):
+    """refs/robot/31_neural_activity_sensor.md — Cutting Torch.
+
+    Quality: basic (TL5, 2 slots, Cr500) / improved (TL9, 2 slots, Cr5000) /
+             advanced (TL13, 1 slot, Cr5000).
+
+    Can be improvised as a melee weapon for 3D damage with the AP 4 trait. Included
+    in the starship engineering toolkit option.
+    """
+
+    quality: str = 'basic'
+
+    @property
+    def slots(self) -> int:
+        return int(_CUTTING_TORCH_TABLE[self.quality]['slots'])
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        entry = _CUTTING_TORCH_TABLE[self.quality]
+        object.__setattr__(self, 'tl', int(entry['tl']))
+        object.__setattr__(self, 'cost', float(entry['cost']))
+
+    def item_description(self) -> str:
+        return f'Cutting Torch ({self.quality})'
 
 
 class FabricationChamber(RobotPartBase):
@@ -1299,6 +1393,50 @@ class Efficiency(RobotPartBase):
 
     def item_description(self) -> str:
         return 'Efficiency'
+
+
+# refs/robot/07_chassis_options.md — "up to three additional power packs".
+MAX_POWER_PACKS = 3
+_POWER_PACK_SLOT_FRACTION = 0.10
+_POWER_PACK_COST_PER_SLOT = 500.0
+
+
+class PowerPack(RobotPartBase):
+    """refs/robot/07_chassis_options.md — additional power packs, TL8+, up to three.
+
+    Each pack consumes 10% of the robot's Base Slots (round up), costs Cr500 per Slot
+    consumed and increases endurance by 100%, calculated after any efficiency increase.
+    Packs grant the equivalent of Athletics (endurance) at a level equal to their number.
+
+    One part carries the whole battery: the rules scale slots, cost, endurance and the
+    granted skill level by the number of packs together, and separate parts would not
+    compose — skill grants merge by highest, so three single packs would read as one.
+    """
+
+    tl: int = 8
+    count: int = Field(default=1, ge=1, le=MAX_POWER_PACKS)
+
+    @property
+    def slots(self) -> int:
+        if self._assembly is None:
+            return 0
+        base_slots = chassis_entry(self.assembly.size).base_slots
+        return self.count * ceil(_POWER_PACK_SLOT_FRACTION * base_slots)
+
+    @property
+    def endurance_multiplier(self) -> float:
+        return float(2**self.count)
+
+    @property
+    def skill_grants(self) -> dict[str, int]:
+        return {'Athletics (Endurance)': self.count}
+
+    def bind(self, assembly: RobotBase) -> None:
+        super().bind(assembly)
+        object.__setattr__(self, 'cost', _POWER_PACK_COST_PER_SLOT * self.slots)
+
+    def item_description(self) -> str:
+        return f'Power Pack × {self.count}' if self.count > 1 else 'Power Pack'
 
 
 class RadiationEnvironmentProtection(RobotPartBase):

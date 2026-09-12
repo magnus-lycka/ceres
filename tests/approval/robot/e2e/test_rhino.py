@@ -87,9 +87,11 @@ def build_rhino() -> Robot:
                 BrainSoftware(name='Translator/0', bandwidth=0, tl=9, cost=50.0),
             ),
         ),
-        manipulators=[
+        base_manipulators=[
             Manipulator(),
             Manipulator(),
+        ],
+        additional_manipulators=[
             Manipulator(size=RobotSize.SIZE_3, str_bonus=1, dex_bonus=6),
             Manipulator(size=RobotSize.SIZE_3, str_bonus=1, dex_bonus=6),
         ],
@@ -124,4 +126,12 @@ def build_rhino() -> Robot:
 @pytest.mark.approval
 def test_rhino(snapshot):
     snap = AnnotatedSnapshot(build_rhino().build_spec().model_dump(mode='json'))
+    snap.annotate(
+        'skills',
+        'Skills whose characteristic varies by manipulator carry one reading per arm '
+        'profile (RIR-013), highest first: the STR 15 DEX 9 base arms and the STR 6 '
+        'DEX 15 additional fine-manipulation arms. Melee may use STR or DEX '
+        '(refs/core/03_combat.md) so it gets a row per characteristic — the STR rows '
+        'peak on the base arms, the DEX rows on the additional ones.',
+    )
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

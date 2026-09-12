@@ -3,6 +3,8 @@
 All values derived from refs/robot/33_brain.md (Robot Brains table).
 """
 
+from typing import ClassVar
+
 from pydantic import TypeAdapter, ValidationError
 import pytest
 
@@ -577,6 +579,65 @@ class TestSelfAwareBrainHardened:
         restored = adapter.validate_json(brain.model_dump_json())
         assert isinstance(restored, SelfAwareBrain)
         assert restored.hardened is True
+
+
+class TestBrainHardeningAppliesToEveryBrain:
+    """refs/robot/34_retrotech.md — 'A brain can be protected from radiation and ion
+    weapons ... costs 50% more than a comparable brain.'
+
+    The rule names no brain tier, and the design worksheets print the Brain Hardening
+    (/fib) checkbox for both the Steward Droid (Advanced) and StarTek (Very Advanced).
+    Base costs at default TL: Primitive TL8 Cr100; Basic TL10 Cr4,000;
+    Advanced TL12 Cr10,000; Very Advanced TL12 Cr500,000; Self-Aware TL15 MCr1.
+    """
+
+    BRAINS: ClassVar[list[tuple[type, float]]] = [
+        (PrimitiveBrain, 100.0),
+        (BasicBrain, 4_000.0),
+        (AdvancedBrain, 10_000.0),
+        (VeryAdvancedBrain, 500_000.0),
+        (SelfAwareBrain, 1_000_000.0),
+    ]
+
+    @pytest.mark.parametrize('brain_cls, base_cost', BRAINS)
+    def test_not_hardened_by_default(self, brain_cls, base_cost):
+        assert brain_cls().hardened is False
+        assert brain_cls().brain_traits == ()
+        assert brain_cls().brain_cost == base_cost
+
+    @pytest.mark.parametrize('brain_cls, base_cost', BRAINS)
+    def test_hardened_costs_50_percent_more(self, brain_cls, base_cost):
+        assert brain_cls(hardened=True).brain_cost == base_cost * 1.5
+        assert brain_cls(hardened=True).hardware_cost == base_cost * 1.5
+
+    @pytest.mark.parametrize('brain_cls, _base_cost', BRAINS)
+    def test_hardened_grants_hardened_trait(self, brain_cls, _base_cost):
+        traits = brain_cls(hardened=True).brain_traits
+        assert [t.name for t in traits] == ['Hardened']
+
+    @pytest.mark.parametrize('brain_cls, _base_cost', BRAINS)
+    def test_hardened_is_a_real_field_not_silently_dropped(self, brain_cls, _base_cost):
+        # Pydantic ignores unknown kwargs, so a missing field would silently discard
+        # hardened=True and quietly under-cost the robot.
+        assert 'hardened' in brain_cls(hardened=True).model_dump()
+
+    @pytest.mark.parametrize('brain_cls, _base_cost', BRAINS)
+    def test_hardened_survives_a_round_trip(self, brain_cls, _base_cost):
+        adapter: TypeAdapter[RobotBrainUnion] = TypeAdapter(RobotBrainUnion)
+        restored = adapter.validate_json(brain_cls(hardened=True).model_dump_json())
+        assert isinstance(restored, brain_cls)
+        assert restored.hardened is True
+
+    def test_very_advanced_bandwidth_upgrade_is_also_hardened(self):
+        # 'any Bandwidth upgrade package must also be hardened at a 50% cost increase.'
+        # TL12 Very Advanced: base Cr500,000, BW +6 upgrade Cr50,000.
+        brain = VeryAdvancedBrain(brain_tl=12, bandwidth=9, hardened=True)
+        assert brain.brain_cost == (500_000.0 + 50_000.0) * 1.5
+
+    def test_very_advanced_skill_packages_are_not_hardened(self):
+        # Skill packages are software; the surcharge applies to hardware only.
+        brain = VeryAdvancedBrain(brain_tl=12, hardened=True, installed_skills=(Admin(level=1),))
+        assert brain.brain_cost == 500_000.0 * 1.5 + 1_000.0
 
 
 class TestSelfAwareBrainBandwidthUpgrade:

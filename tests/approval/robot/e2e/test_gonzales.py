@@ -35,7 +35,7 @@ def build_gonzales() -> Robot:
         size=RobotSize.SIZE_4,
         locomotion=WheelsAtvLocomotion(),
         brain=BasicBrain(function='locomotion'),
-        manipulators=[Manipulator(size=RobotSize.SIZE_3), Manipulator(size=RobotSize.SIZE_3)],
+        base_manipulators=[Manipulator(size=RobotSize.SIZE_3), Manipulator(size=RobotSize.SIZE_3)],
         options=[
             IncreasedArmour(additional=4),
             AgilityEnhancement(level=2),

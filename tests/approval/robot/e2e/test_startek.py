@@ -47,9 +47,11 @@ def build_startek() -> Robot:
                 Medic(),
             ),
         ),
-        manipulators=[
+        base_manipulators=[
             Manipulator(str_bonus=3),
             Manipulator(str_bonus=3),
+        ],
+        additional_manipulators=[
             Manipulator(size=RobotSize.SIZE_3, dex_bonus=4),
         ],
         options=[
@@ -70,4 +72,13 @@ def build_startek() -> Robot:
 @pytest.mark.approval
 def test_startek(snapshot):
     snap = AnnotatedSnapshot(build_startek().build_spec().model_dump(mode='json'))
+    snap.annotate(
+        'skills',
+        "Gun Combat reads 2/0 where the published sheet shows 'Gun Combat 0'. "
+        'Deliberate (RIR-013): the handbook text for this very robot says the stunner '
+        "is installed in the Size 3 manipulator 'to take advantage of the small "
+        "manipulator's DEX DM+2', which the printed skill line omits. Readings are "
+        'ordered highest first and position names no particular arm, so the published '
+        'figure is the 0 — what the DEX 8 base arms give.',
+    )
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

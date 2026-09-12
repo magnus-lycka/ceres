@@ -6,6 +6,10 @@
       {
         "category": "error",
         "message": "Slot overload: 154 used, 128 available"
+      },
+      {
+        "category": "info",
+        "message": "Some skills show more than one level, depending on which manipulator performs the task. The highest is listed first. The Referee determines which applies."
       }
     ],
     "detail_sections": [
@@ -374,7 +378,7 @@
       {
         "section": "Skills",
         "label": "Skills",
-        "value": "Athletics (Dexterity) 1, Athletics (Strength) 3, Electronics (All) 2, Engineer (All) 2, Investigate 4, Life Science (Biology) 4, Life Science (Genetics) 2, Life Science (Psionicology) 2, Life Science (Xenology) 2, Mechanic 2, Medic 4, Melee (All) 1, Physical Science (Chemistry) 4, Physical Science (Jumpspace Physics) 2, Physical Science (Physics) 2, Profession (Fabricator) 4, Profession (Robotics) 4, Recon 2, Robotic Science (Cybernetics) 2, Robotic Science (Robotics) 4, Spacer Profession (All) 2, Survival 2, Tactics (All) 2",
+        "value": "Athletics (Dexterity) 3/1, Athletics (Strength) 3/0, Electronics (All) 2, Engineer (All) 2, Investigate 4, Life Science (Biology) 4, Life Science (Other) 2, Mechanic 2, Medic 4, Melee (DEX, All) 3/1, Melee (STR, All) 3/0, Physical Science (Chemistry) 4, Physical Science (Other) 2, Profession (Fabricator) 4, Profession (Robotics) 4, Recon 2, Robotic Science (Cybernetics) 2, Robotic Science (Robotics) 4, Spacer Profession (All) 2, Survival 2, Tactics (All) 2",
         "columns": [],
         "notes": []
       },
@@ -421,5 +425,8 @@
         "notes": []
       }
     ]
+  },
+  "annotations": {
+    "skills": "Skills whose characteristic varies by manipulator carry one reading per arm profile (RIR-013), highest first: the STR 15 DEX 9 base arms and the STR 6 DEX 15 additional fine-manipulation arms. Melee may use STR or DEX (refs/core/03_combat.md) so it gets a row per characteristic — the STR rows peak on the base arms, the DEX rows on the additional ones."
   }
 }

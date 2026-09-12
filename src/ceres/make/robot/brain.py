@@ -11,7 +11,7 @@ from pydantic import ConfigDict, Field, model_validator
 from ceres.character.domain.characteristics import Chars
 from ceres.shared import CeresModel
 
-from ._robot_skill_base import _specs_to_display_dict
+from ._robot_skill_base import _format_readings, _specs_to_display_dict, _specs_to_multi_display_dict
 from .chassis import Trait
 from .skills import (
     AnyRobotSkill,
@@ -20,6 +20,9 @@ from .skills import (
 )
 
 RETROTECH_INT_SURCHARGE_THRESHOLD = 12
+
+# refs/robot/34_retrotech.md — a hardened brain 'costs 50% more than a comparable brain'.
+_HARDENING_MULTIPLIER = 1.5
 
 
 @dataclass(frozen=True)
@@ -100,6 +103,10 @@ class _BrainBase(CeresModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     brain_tl: int = 0  # subclasses override with their default
+    # refs/robot/34_retrotech.md — Brain Hardening (/fib), TL8: +50% on the brain and any
+    # bandwidth upgrade, against radiation and ion weapons. 'A brain can be protected' —
+    # the rule names no tier, so every brain carries the field.
+    hardened: bool = False
 
     def _entry(self) -> _BrainEntry:
         raise NotImplementedError
@@ -119,6 +126,10 @@ class _BrainBase(CeresModel):
     def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
         return {}
 
+    def display_labels_multi(self, dms_profiles: list[dict[Chars, int]]) -> dict[str, str]:
+        """Default: a brain with no characteristic-sensitive packages reads the same throughout."""
+        return {name: str(lvl) for name, lvl in self.display_labels(dms_profiles[0]).items()}
+
     @property
     def hardware_cost(self) -> float:
         return self.brain_cost
@@ -129,7 +140,7 @@ class _BrainBase(CeresModel):
 
     @property
     def brain_traits(self) -> tuple:
-        return ()
+        return (Trait('Hardened'),) if self.hardened else ()
 
     def brain_slots(self, robot_tl: int, robot_size: int) -> int:
         raise NotImplementedError
@@ -159,7 +170,8 @@ class _SimpleBrain(_BrainBase):
 
     @property
     def brain_cost(self) -> float:
-        return self._entry().cost
+        cost = self._entry().cost
+        return cost * _HARDENING_MULTIPLIER if self.hardened else cost
 
     @property
     def skill_dm(self) -> int:
@@ -273,21 +285,41 @@ class _AdvancedBrainBase(_BrainBase):
     def skill_dm(self) -> int:
         return self._entry().skill_dm + self.int_upgrade
 
-    def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
+    def _raw_labels(self, dms: dict[Chars, int]) -> tuple[dict[tuple, int], dict[str, int]]:
+        """Per-speciality levels, split into compactable entries and preformatted ones."""
         effective_dms = {**dms, Chars.INT: self.skill_dm}
         typed: dict[tuple, int] = {}
         preformatted: dict[str, int] = {}
         for pkg in self.installed_skills:
             raw = pkg._per_spec_raw(effective_dms)
+            # Merge by highest, but never against a 0 default — that would floor a
+            # negative reading instead of keeping it for the display layer to drop.
             if raw is None:
                 for name, lvl in pkg.display_entries(effective_dms).items():
-                    preformatted[name] = max(preformatted.get(name, 0), lvl)
+                    preformatted[name] = max(preformatted[name], lvl) if name in preformatted else lvl
             else:
                 for key, lvl in raw.items():
-                    typed[key] = max(typed.get(key, 0), lvl)
+                    typed[key] = max(typed[key], lvl) if key in typed else lvl
+        return typed, preformatted
+
+    def display_labels(self, dms: dict[Chars, int]) -> dict[str, int]:
+        typed, preformatted = self._raw_labels(dms)
         result = _specs_to_display_dict(typed)
         for name, lvl in preformatted.items():
             result[name] = max(result.get(name, 0), lvl)
+        return result
+
+    def display_labels_multi(self, dms_profiles: list[dict[Chars, int]]) -> dict[str, str]:
+        """Labels carrying one reading per manipulator profile, highest first.
+
+        Used when a robot's manipulators differ, so a characteristic-keyed skill has no
+        single level — refs/robot/09_manipulators.md leaves the choice of manipulator to
+        the Referee, and Ceres states every reading rather than picking one.
+        """
+        raws = [self._raw_labels(dms) for dms in dms_profiles]
+        result = _specs_to_multi_display_dict([typed for typed, _ in raws])
+        for name, lvl in raws[0][1].items():
+            result[name] = _format_readings(tuple(pre.get(name, lvl) for _, pre in raws))
         return result
 
     @property
@@ -304,10 +336,33 @@ class _AdvancedBrainBase(_BrainBase):
         base = 1 if robot_size < min_free else 0
         return base + (1 if self._bw_upgrade_delta > 0 else 0)
 
-    def _harden_cost(self, base: float, bw_cost: float) -> float:
-        """Apply +50% surcharge to brain hardware and BW upgrade costs."""
-        brain_hardware = self._entry().cost + self._int_upgrade_cost
-        return base - bw_cost + brain_hardware * 0.5 + bw_cost * 1.5
+    @property
+    def _software_cost(self) -> float:
+        """Cost of brain software, which hardening never surcharges."""
+        return sum(pkg.cost for pkg in self.installed_skills)
+
+    @property
+    def unhardened_hardware_cost(self) -> float:
+        return self._entry().cost + self._int_upgrade_cost + self._bw_upgrade_cost
+
+    @property
+    def hardening_surcharge(self) -> float:
+        """The /fib surcharge alone, so a cost breakdown can show it as its own line."""
+        return self.hardware_cost - self.unhardened_hardware_cost
+
+    @property
+    def hardware_cost(self) -> float:
+        """Brain and bandwidth upgrade, +50% when hardened."""
+        cost = self.unhardened_hardware_cost
+        return cost * _HARDENING_MULTIPLIER if self.hardened else cost
+
+    @property
+    def brain_cost(self) -> float:
+        return self.hardware_cost + self._software_cost
+
+    @property
+    def brain_traits(self) -> tuple:
+        return (Trait('Hardened'),) if self.hardened else ()
 
 
 class AdvancedBrain(_AdvancedBrainBase):
@@ -315,30 +370,6 @@ class AdvancedBrain(_AdvancedBrainBase):
     brain_tl: int = 12
     _table: ClassVar[tuple[_BrainEntry, ...]] = _ADVANCED_TABLE
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]] = _ADVANCED_BW_UPGRADES
-    # refs/robot/34_retrotech.md — Brain Hardening: +50% cost on brain hardware and BW upgrade.
-    hardened: bool = False
-
-    @property
-    def brain_cost(self) -> float:
-        bw_cost = self._bw_upgrade_cost
-        base = self._entry().cost + self._int_upgrade_cost + bw_cost + sum(pkg.cost for pkg in self.installed_skills)
-        if self.hardened:
-            base = self._harden_cost(base, bw_cost)
-        return base
-
-    @property
-    def hardware_cost(self) -> float:
-        bw_cost = self._bw_upgrade_cost
-        base = self._entry().cost + self._int_upgrade_cost + bw_cost
-        if self.hardened:
-            base = self._harden_cost(base, bw_cost)
-        return base
-
-    @property
-    def brain_traits(self) -> tuple:
-        if self.hardened:
-            return (Trait('Hardened'),)
-        return ()
 
     def programming_label(self) -> str:
         return f'Advanced (INT {self.base_int})'
@@ -350,19 +381,6 @@ class VeryAdvancedBrain(_AdvancedBrainBase):
     _table: ClassVar[tuple[_BrainEntry, ...]] = _VERY_ADVANCED_TABLE
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]] = _VERY_ADVANCED_BW_UPGRADES
 
-    @property
-    def brain_cost(self) -> float:
-        return (
-            self._entry().cost
-            + self._int_upgrade_cost
-            + self._bw_upgrade_cost
-            + sum(pkg.cost for pkg in self.installed_skills)
-        )
-
-    @property
-    def hardware_cost(self) -> float:
-        return self._entry().cost + self._int_upgrade_cost + self._bw_upgrade_cost
-
     def programming_label(self) -> str:
         return f'Very Advanced (INT {self.base_int})'
 
@@ -373,36 +391,10 @@ class SelfAwareBrain(_AdvancedBrainBase):
     _table: ClassVar[tuple[_BrainEntry, ...]] = _SELF_AWARE_TABLE
     _bw_upgrades: ClassVar[tuple[_BwUpgradeEntry, ...]] = _SELF_AWARE_BW_UPGRADES
     installed_software: tuple[BrainSoftware, ...] = ()
-    # refs/robot/34_retrotech.md — Brain Hardening: +50% cost on brain hardware and BW upgrade.
-    hardened: bool = False
 
     @property
-    def brain_cost(self) -> float:
-        bw_cost = self._bw_upgrade_cost
-        base = (
-            self._entry().cost
-            + self._int_upgrade_cost
-            + bw_cost
-            + sum(pkg.cost for pkg in self.installed_skills)
-            + sum(sw.cost for sw in self.installed_software)
-        )
-        if self.hardened:
-            base = self._harden_cost(base, bw_cost)
-        return base
-
-    @property
-    def hardware_cost(self) -> float:
-        bw_cost = self._bw_upgrade_cost
-        base = self._entry().cost + self._int_upgrade_cost + bw_cost
-        if self.hardened:
-            base = self._harden_cost(base, bw_cost)
-        return base
-
-    @property
-    def brain_traits(self) -> tuple:
-        if self.hardened:
-            return (Trait('Hardened'),)
-        return ()
+    def _software_cost(self) -> float:
+        return super()._software_cost + sum(sw.cost for sw in self.installed_software)
 
     @property
     def used_bandwidth(self) -> int:

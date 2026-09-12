@@ -237,7 +237,7 @@ class TestRobotManipulatorCostEffect:
         # 1 removed: net = 500 − 2 × 500 = −500; BCC = 1600 (wheels ×2); cap = −320
         # SIZE_5 basic=1000, wheels multiplier=2 → BCC=2000; cap = −400
         # net = 500 − 1000 = −500; capped at −0.20 × 2000 = −400
-        robot = make_robot(size=RobotSize.SIZE_5, manipulators=[Manipulator()])
+        robot = make_robot(size=RobotSize.SIZE_5, base_manipulators=[Manipulator()])
         bcc = robot.base_chassis_cost  # 2000
         net = robot._manipulator_cost_effect
         assert net == max(500 - 2 * 500, -0.20 * bcc)
@@ -245,7 +245,7 @@ class TestRobotManipulatorCostEffect:
     def test_both_removed_capped_at_20pct(self):
         # 0 manipulators: net = 0 − 2 × std; must be capped at -20% BCC
         # SIZE_3 wheels: BCC = 400 × 2 = 800; std = 300; net = -600; cap = -160
-        robot = make_robot(size=RobotSize.SIZE_3, manipulators=[])
+        robot = make_robot(size=RobotSize.SIZE_3, base_manipulators=[])
         bcc = robot.base_chassis_cost  # 800
         assert robot._manipulator_cost_effect == pytest.approx(-0.20 * bcc)
 
@@ -253,7 +253,8 @@ class TestRobotManipulatorCostEffect:
         # Three SIZE_5 manipulators: 3×500 = 1500; std=1000; net=+500
         robot = make_robot(
             size=RobotSize.SIZE_5,
-            manipulators=[Manipulator(), Manipulator(), Manipulator()],
+            base_manipulators=[Manipulator(), Manipulator()],
+            additional_manipulators=[Manipulator()],
         )
         assert robot._manipulator_cost_effect == pytest.approx(500.0)
 
@@ -268,14 +269,15 @@ class TestRobotManipulatorSlotEffect:
     def test_both_removed_frees_slots(self):
         # SIZE_5: base_slots=16; std_slots = max(1, ceil(0.1 × 16)) = 2
         # effect = 0 − 2×2 = −4 (negative means freed)
-        robot = make_robot(size=RobotSize.SIZE_5, manipulators=[])
+        robot = make_robot(size=RobotSize.SIZE_5, base_manipulators=[])
         assert robot._manipulator_slot_effect == -4
 
     def test_additional_manipulator_uses_slots(self):
         # SIZE_5, 3 default manips: 3×2 − 2×2 = +2
         robot = make_robot(
             size=RobotSize.SIZE_5,
-            manipulators=[Manipulator(), Manipulator(), Manipulator()],
+            base_manipulators=[Manipulator(), Manipulator()],
+            additional_manipulators=[Manipulator()],
         )
         assert robot._manipulator_slot_effect == 2
 
@@ -284,7 +286,8 @@ class TestRobotManipulatorSlotEffect:
         # sum=5, std=2×2=4, effect=+1
         robot = make_robot(
             size=RobotSize.SIZE_5,
-            manipulators=[Manipulator(), Manipulator(), Manipulator(size=RobotSize.SIZE_3)],
+            base_manipulators=[Manipulator(), Manipulator()],
+            additional_manipulators=[Manipulator(size=RobotSize.SIZE_3)],
         )
         assert robot._manipulator_slot_effect == 1
 
@@ -294,17 +297,17 @@ class TestRobotAvailableSlots:
 
     def test_default_pair_no_change(self):
         # SIZE_3, wheels: base=4; default pair → no change
-        robot = make_robot(size=RobotSize.SIZE_3, manipulators=[Manipulator(), Manipulator()])
+        robot = make_robot(size=RobotSize.SIZE_3, base_manipulators=[Manipulator(), Manipulator()])
         assert robot.available_slots == 4
 
     def test_both_removed_adds_freed_slots(self):
         # SIZE_5, wheels: base=16; std_slots=2; both removed → +4 → 20
-        robot = make_robot(size=RobotSize.SIZE_5, manipulators=[])
+        robot = make_robot(size=RobotSize.SIZE_5, base_manipulators=[])
         assert robot.available_slots == 16 + 4
 
     def test_one_removed_adds_one_std_slot(self):
         # SIZE_5: std_slots=2; one removed → +2 → 18
-        robot = make_robot(size=RobotSize.SIZE_5, manipulators=[Manipulator()])
+        robot = make_robot(size=RobotSize.SIZE_5, base_manipulators=[Manipulator()])
         assert robot.available_slots == 16 + 2
 
 
@@ -316,7 +319,8 @@ class TestRobotUsedSlots:
         robot_default = make_robot(size=RobotSize.SIZE_5)
         robot_extra = make_robot(
             size=RobotSize.SIZE_5,
-            manipulators=[Manipulator(), Manipulator(), Manipulator()],
+            base_manipulators=[Manipulator(), Manipulator()],
+            additional_manipulators=[Manipulator()],
         )
         assert robot_extra.used_slots == robot_default.used_slots + 2
 
@@ -325,7 +329,7 @@ class TestRobotTotalCost:
     """Total cost reflects _manipulator_cost_effect."""
 
     def test_default_pair_no_cost_change(self):
-        robot_explicit = make_robot(manipulators=[Manipulator(), Manipulator()])
+        robot_explicit = make_robot(base_manipulators=[Manipulator(), Manipulator()])
         robot_default = make_robot()
         assert robot_explicit.total_cost == robot_default.total_cost
 
@@ -334,7 +338,8 @@ class TestRobotTotalCost:
         robot_default = make_robot(size=RobotSize.SIZE_3)
         robot_extra = make_robot(
             size=RobotSize.SIZE_3,
-            manipulators=[Manipulator(), Manipulator(), Manipulator()],
+            base_manipulators=[Manipulator(), Manipulator()],
+            additional_manipulators=[Manipulator()],
         )
         assert robot_extra.total_cost == robot_default.total_cost + 300.0
 
@@ -344,9 +349,11 @@ class TestRobotTotalCost:
         robot = make_robot(
             size=RobotSize.SIZE_5,
             tl=14,
-            manipulators=[
+            base_manipulators=[
                 Manipulator(str_bonus=3),
                 Manipulator(str_bonus=3),
+            ],
+            additional_manipulators=[
                 Manipulator(size=RobotSize.SIZE_3, dex_bonus=4),
             ],
         )
@@ -374,7 +381,7 @@ class TestManipulatorSpecDisplay:
     def test_no_manipulators_shows_dash(self):
         from ceres.make.robot.spec import RobotSpecSection
 
-        robot = make_robot(manipulators=[])
+        robot = make_robot(base_manipulators=[])
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         assert rows[0].value == '—'
 
@@ -385,7 +392,8 @@ class TestManipulatorSpecDisplay:
         robot = make_robot(
             size=RobotSize.SIZE_5,
             tl=10,
-            manipulators=[Manipulator(), Manipulator(), Manipulator(size=RobotSize.SIZE_3)],
+            base_manipulators=[Manipulator(), Manipulator()],
+            additional_manipulators=[Manipulator(size=RobotSize.SIZE_3)],
         )
         rows = robot.build_spec().rows_for_section(RobotSpecSection.MANIPULATORS)
         value = rows[0].value
@@ -400,9 +408,11 @@ class TestManipulatorSpecDisplay:
         robot = make_robot(
             size=RobotSize.SIZE_5,
             tl=14,
-            manipulators=[
+            base_manipulators=[
                 Manipulator(str_bonus=3),
                 Manipulator(str_bonus=3),
+            ],
+            additional_manipulators=[
                 Manipulator(size=RobotSize.SIZE_3, dex_bonus=4),
             ],
         )

@@ -32,7 +32,7 @@ def build_advanced_lab_control_robot() -> Robot:
                 RoboticScience(robotics=1),
             ),
         ),
-        manipulators=[],
+        base_manipulators=[],
         options=[
             *default_suite(see=False, improved_transceiver=False),
             VideoScreen(quality='improved'),

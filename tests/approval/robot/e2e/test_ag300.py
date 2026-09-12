@@ -25,9 +25,11 @@ def build_ag300() -> Robot:
         size=RobotSize.SIZE_5,
         locomotion=WalkerLocomotion(speed_increase=1),
         brain=BasicBrain(function='labourer'),
-        manipulators=[
+        base_manipulators=[
             Manipulator(),
             Manipulator(),
+        ],
+        additional_manipulators=[
             Manipulator(size=RobotSize.SIZE_4),
             Manipulator(size=RobotSize.SIZE_4),
         ],
