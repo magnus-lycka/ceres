@@ -57,6 +57,21 @@ class TestStatRows:
         assert rows(a_vehicle(spaces=3))['SHIPPING'] == '1.5 tons'
 
 
+class TestArmourTable:
+    def test_each_face_pairs_protection_with_the_small_arms_figure(self):
+        # The ATV at TL12 prints 6 (18) on every face.
+        armour = _build_context(a_vehicle().build_spec())['armour']
+
+        assert [row['face'] for row in armour] == ['Forward', 'Port', 'Dorsal', 'Aft', 'Starboard', 'Ventral']
+        assert {row['value'] for row in armour} == {'6 (18)'}
+
+    def test_a_lower_tech_design_prints_its_own_figures(self):
+        # The Air/Raft at TL8 prints 3 (11).
+        armour = _build_context(a_vehicle(vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=8).build_spec())['armour']
+
+        assert {row['value'] for row in armour} == {'3 (11)'}
+
+
 class TestTypstOutput:
     def test_it_renders_the_design(self):
         source = render_vehicle_typst(a_vehicle(name='Test ATV', features=[Feature.ATV]))

@@ -53,6 +53,17 @@ def _km(distance: int | None) -> str | None:
     return None if distance is None else f'{distance:,}'
 
 
+def _armour_rows(spec: VehicleSpec) -> list[dict]:
+    """Each face's Protection, with the small-arms figure in parentheses.
+
+    The parenthesised figure is composed here and stored nowhere (RIV-003).
+    """
+    return [
+        {'face': face.value, 'value': f'{protection} ({protection + spec.tl})'}
+        for face, protection in spec.armour.items()
+    ]
+
+
 def render_vehicle_typst(vehicle: Vehicle, *, page_size: str = 'a4', image: str | None = None) -> str:
     return render_vehicle_spec_typst(vehicle.build_spec(), page_size=page_size, image=image)
 
@@ -81,6 +92,7 @@ def _build_context(spec: VehicleSpec, *, page_size: str = 'a4', image: str | Non
         'type_line': _type_line(spec),
         'features_and_traits': ', '.join(spec.features_and_traits) or 'None',
         'stats': _stat_rows(spec),
+        'armour': _armour_rows(spec),
         'notes': _notes_for_display(spec.notes),
         'image': image,
         'page_size': page_size,

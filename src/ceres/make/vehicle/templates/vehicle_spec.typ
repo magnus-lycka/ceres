@@ -45,6 +45,20 @@
     *TYPE:* #report_data.type_line
     #linebreak()
     *FEATURES AND TRAITS:* #report_data.features_and_traits
+
+    #if report_data.armour.len() > 0 [
+      #v(6pt)
+      *Armour*
+      #v(2pt)
+      #table(
+        columns: (auto, auto),
+        inset: (x: 5pt, y: 3pt),
+        ..report_data.armour.map(row => (
+          [#row.at("face")],
+          [#row.at("value")],
+        )).flatten(),
+      )
+    ]
   ],
   [
     #table(

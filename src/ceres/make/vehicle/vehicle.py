@@ -14,6 +14,7 @@ from pydantic import Field, field_validator
 
 from ceres.shared import Assembly
 
+from .armour import Armour, Face
 from .customisations import CustomisationUnion
 from .features import Feature
 from .size import VehicleSize, target_size_dm
@@ -160,6 +161,12 @@ class Vehicle(Assembly):
         return round(distance * (1 + fuel))
 
     @property
+    def armour(self) -> Armour:
+        """Protection on each face. Nothing buys armour yet, so this is the
+        Base Protection the Tech Level provides."""
+        return Armour.unarmoured(self.tl)
+
+    @property
     def target_size_dm(self) -> int:
         """How much easier this vehicle is to hit for being the size it is."""
         return target_size_dm(self.spaces)
@@ -194,6 +201,7 @@ class Vehicle(Assembly):
             structure=self.structure,
             shipping_tons=self.shipping_tons,
             cost=self.cost,
+            armour={face: self.armour.protection(face) for face in Face},
             notes=self.notes,
         )
 

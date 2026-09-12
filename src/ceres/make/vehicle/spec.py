@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from ceres.shared import NoteList
 
+from .armour import Face
 from .size import VehicleSize
 from .speed import SpeedBand
 from .types import VehicleType
@@ -39,5 +40,6 @@ class VehicleSpec(BaseModel):
     structure: int
     shipping_tons: float
     cost: float
+    armour: dict[Face, int] = Field(default_factory=dict)
 
     notes: NoteList = Field(default_factory=NoteList)
