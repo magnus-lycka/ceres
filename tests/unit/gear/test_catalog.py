@@ -143,3 +143,15 @@ def test_gear_catalog_typst_includes_radio_transceivers(gear_catalog_typst):
     assert 'Meson Transceiver' in source
     assert 'Radio Transceiver' in source
     assert 'Computer/0' in source
+
+
+def test_gear_catalog_html_includes_survival_gear(gear_catalog_html):
+    # Every kind of gear Ceres models belongs in the gear catalogue, not only
+    # the computers and communications it started with.
+    assert 'Survival Gear' in gear_catalog_html
+    assert 'Fire Extinguisher' in gear_catalog_html
+
+
+def test_gear_catalog_typst_includes_survival_gear(gear_catalog_typst):
+    assert 'Survival Gear' in gear_catalog_typst
+    assert 'Fire Extinguisher' in gear_catalog_typst

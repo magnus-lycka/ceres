@@ -34,6 +34,7 @@ from .computer import (
     SpecialisedTablet,
     Tablet,
 )
+from .safety import FireExtinguisherPart
 from .software import Expert
 
 ReportTheme = Literal['light', 'dark']
@@ -294,6 +295,32 @@ def _transceiver_options_section() -> dict:
     }
 
 
+def _survival_section() -> dict:
+    """refs/csc/10_survival_gear.md"""
+    extinguisher = FireExtinguisherPart()
+    return {
+        'heading': 'Survival Gear',
+        'headers': ['Item', 'TL', 'Effect', 'Mass (kg)', 'Cost'],
+        'alignments': ['left', 'right', 'left', 'right', 'right'],
+        'rows': [
+            {
+                'cells': [
+                    extinguisher.description,
+                    str(extinguisher.tl),
+                    'Single use handheld fire extinguisher',
+                    _fmt_mass(extinguisher.mass_kg),
+                    _fmt_cost(extinguisher.cost),
+                ],
+                'notes': [],
+            },
+        ],
+    }
+
+
+def _survival_sections() -> list[dict]:
+    return [_survival_section()]
+
+
 def _communication_sections() -> list[dict]:
     return [
         _laser_transceiver_section(),
@@ -328,7 +355,7 @@ def _build_gear_context(*, theme: ReportTheme = 'light', page_size: str = 'a4') 
         'eyebrow': 'Central Supply Catalogue',
         'theme': theme,
         'page_size': page_size,
-        'sections': [*_computer_sections(), *_communication_sections()],
+        'sections': [*_computer_sections(), *_communication_sections(), *_survival_sections()],
     }
 
 
