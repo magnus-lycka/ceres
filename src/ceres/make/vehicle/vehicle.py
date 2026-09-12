@@ -17,6 +17,7 @@ from ceres.shared import Assembly
 from .armour import Armour, Face
 from .customisations import CustomisationUnion
 from .features import Feature
+from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem
 from .size import VehicleSize, target_size_dm
 from .spec import VehicleSpec
 from .speed import SpeedBand
@@ -43,6 +44,7 @@ class Vehicle(Assembly):
     tl: int
     features: list[Feature] = Field(default_factory=list)
     customisations: list[CustomisationUnion] = Field(default_factory=list)
+    options: list[OptionUnion] = Field(default_factory=list)
 
     @field_validator('spaces')
     @classmethod
@@ -111,24 +113,50 @@ class Vehicle(Assembly):
         fractions = sum(feature.added_cost for feature in self.features) + sum(
             customisation.added_cost for customisation in self.customisations
         )
-        absolute = sum(customisation.cost(self.spaces) for customisation in self.customisations)
+        absolute = sum(customisation.cost(self.spaces) for customisation in self.customisations) + sum(
+            option.cost(self.spaces) for option in self.options
+        )
         return self.base_cost * (1 + fractions) + absolute
 
     @property
     def available_spaces(self) -> int:
         """Spaces left to install into, after customisations take or free some."""
-        return self.spaces + sum(c.spaces_delta(self.spaces) for c in self.customisations)
+        taken = sum(option.spaces(self.spaces) for option in self.options)
+        return self.spaces + sum(c.spaces_delta(self.spaces) for c in self.customisations) - taken
 
     @property
     def agility(self) -> int:
-        """Type and size and features.
-
-        Not the design's final Agility: the Control System option contributes
-        too, so this is incomplete until options are modelled (RIV-007).
-        """
+        """Type, size, features and the control system (RIV-007)."""
         return (
-            self.vehicle_type.agility + self.size.agility_modifier + sum(feature.agility for feature in self.features)
+            self.vehicle_type.agility
+            + self.size.agility_modifier
+            + sum(feature.agility for feature in self.features)
+            + sum(option.agility for option in self.options)
         )
+
+    def _first_option(self, option_cls: type):
+        return next((option for option in self.options if isinstance(option, option_cls)), None)
+
+    @property
+    def autopilot_skill(self) -> int | None:
+        """The skill level the vehicle can pilot itself at, if it can."""
+        autopilot = self._first_option(Autopilot)
+        return None if autopilot is None else autopilot.skill_level
+
+    @property
+    def navigation_dm(self) -> int | None:
+        navigation = self._first_option(NavigationSystem)
+        return None if navigation is None else navigation.navigation_dm
+
+    @property
+    def sensors_dm(self) -> int | None:
+        sensors = self._first_option(SensorSystem)
+        return None if sensors is None else sensors.sensors_dm
+
+    @property
+    def sensors_range_km(self) -> int | None:
+        sensors = self._first_option(SensorSystem)
+        return None if sensors is None else sensors.range_km
 
     @property
     def speed(self) -> SpeedBand:

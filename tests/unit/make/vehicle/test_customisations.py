@@ -5,7 +5,13 @@ Rules: refs/vehicle/06_customisation.md
 
 from typing import Any
 
-from ceres.make.vehicle.customisations import DecreasedFuel, FusionPlusPlant, IncreasedEfficiency, SlowerSpeed
+from ceres.make.vehicle.customisations import (
+    DecreasedFuel,
+    FusionPlusPlant,
+    IncreasedEfficiency,
+    IncreasedFuel,
+    SlowerSpeed,
+)
 from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.types import VehicleType
@@ -60,6 +66,17 @@ class TestRangeModification:
     def test_increased_efficiency_adds_half_again_each_time(self):
         assert a_vehicle(customisations=[IncreasedEfficiency(steps=2)]).range_km == 2000
 
+    def test_increased_efficiency_costs_a_quarter_of_base_each_time(self):
+        assert a_vehicle(customisations=[IncreasedEfficiency(steps=2)]).cost == 15_000 * 1.50
+
+    def test_increased_fuel_buys_range_with_spaces_not_money(self):
+        # refs/vehicle/06_customisation.md — fuel capacity "does not change the
+        # Cost of the vehicle but will affect the number of Spaces available".
+        vehicle = a_vehicle(customisations=[IncreasedFuel(steps=2)])
+        assert vehicle.range_km == 1500
+        assert vehicle.cost == 15_000
+        assert vehicle.available_spaces == 16
+
     def test_decreased_fuel_cuts_range_and_frees_spaces(self):
         vehicle = a_vehicle(customisations=[DecreasedFuel(steps=2)])
         assert vehicle.range_km == 500
@@ -92,7 +109,10 @@ class TestThePublishedDesigns:
             spaces=8,
             tl=8,
             features=[Feature.OPEN_TOPPED],
-            customisations=[IncreasedEfficiency(steps=2)],
+            # Four steps of increased fuel, which the Air/Raft's Cost requires:
+            # efficiency would add 25% of base each time, putting it far above
+            # the published Cr250,000.
+            customisations=[IncreasedFuel(steps=4)],
         )
         assert air_raft.range_km == 2000
         assert air_raft.cruise_range_km == 3000

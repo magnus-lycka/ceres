@@ -106,6 +106,20 @@ class IncreasedEfficiency(_Customisation):
         return 0.25 * self.steps
 
 
+class IncreasedFuel(_Customisation):
+    """Larger tanks: more range for Spaces, at no change in Cost."""
+
+    kind: Literal['INCREASED_FUEL'] = 'INCREASED_FUEL'
+    steps: int = 1
+
+    def spaces_delta(self, spaces: int) -> int:
+        return -ceil(spaces * _FUEL_STEP_SPACE_FRACTION) * self.steps
+
+    @property
+    def range_fraction(self) -> float:
+        return 0.25 * self.steps
+
+
 class DecreasedFuel(_Customisation):
     """Smaller tanks: range given up for Spaces, at no change in Cost."""
 
@@ -121,6 +135,6 @@ class DecreasedFuel(_Customisation):
 
 
 CustomisationUnion = Annotated[
-    FusionPlusPlant | SlowerSpeed | IncreasedEfficiency | DecreasedFuel,
+    FusionPlusPlant | SlowerSpeed | IncreasedEfficiency | IncreasedFuel | DecreasedFuel,
     Field(discriminator='kind'),
 ]
