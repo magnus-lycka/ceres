@@ -14,6 +14,7 @@ from pydantic import Field, field_validator
 
 from ceres.shared import Assembly
 
+from .customisations import CustomisationUnion
 from .features import Feature
 from .size import VehicleSize, target_size_dm
 from .spec import VehicleSpec
@@ -40,6 +41,7 @@ class Vehicle(Assembly):
     spaces: int
     tl: int
     features: list[Feature] = Field(default_factory=list)
+    customisations: list[CustomisationUnion] = Field(default_factory=list)
 
     @field_validator('spaces')
     @classmethod
@@ -96,12 +98,25 @@ class Vehicle(Assembly):
 
     @property
     def cost(self) -> float:
-        """Base Cost plus each feature's share of it.
+        """Base Cost plus each feature's and customisation's share of it.
 
-        Feature percentages are added against the base rather than compounding,
-        as refs/vehicle/05_features.md states under Multiple Features.
+        Percentages are added against the base rather than compounding, as
+        refs/vehicle/05_features.md states under Multiple Features, and
+        refs/vehicle/06_customisation.md is explicit that a customisation's
+        addition is computed from the initial base Cost and not from the base as
+        already modified by features. Costs that are not fractions of the base,
+        such as a power plant's, are added on top.
         """
-        return self.base_cost * (1 + sum(feature.added_cost for feature in self.features))
+        fractions = sum(feature.added_cost for feature in self.features) + sum(
+            customisation.added_cost for customisation in self.customisations
+        )
+        absolute = sum(customisation.cost(self.spaces) for customisation in self.customisations)
+        return self.base_cost * (1 + fractions) + absolute
+
+    @property
+    def available_spaces(self) -> int:
+        """Spaces left to install into, after customisations take or free some."""
+        return self.spaces + sum(c.spaces_delta(self.spaces) for c in self.customisations)
 
     @property
     def agility(self) -> int:
@@ -117,7 +132,11 @@ class Vehicle(Assembly):
     @property
     def speed(self) -> SpeedBand:
         """Maximum Speed Band: the type's at this Tech Level, less the size penalty."""
-        bands = self.size.speed_band_modifier + sum(feature.speed_bands for feature in self.features)
+        bands = (
+            self.size.speed_band_modifier
+            + sum(feature.speed_bands for feature in self.features)
+            + sum(customisation.speed_bands for customisation in self.customisations)
+        )
         return self.vehicle_type.speed_at(self.tl).shifted(bands)
 
     @property
@@ -127,12 +146,18 @@ class Vehicle(Assembly):
     @property
     def range_km(self) -> int | None:
         """Range in kilometres, or None where the type states none at this TL."""
-        base = self.vehicle_type.range_at(self.tl)
-        if base is None:
+        stated = self.vehicle_type.range_at(self.tl)
+        if stated is None:
             return None
+        distance = float(stated)
         for feature in self.features:
-            base *= feature.range_multiplier
-        return round(base)
+            distance *= feature.range_multiplier
+        for customisation in self.customisations:
+            distance *= customisation.range_multiplier
+        # Fuel percentages are pooled and applied to the Range already adjusted
+        # by features and power plants, as the Range Modifications section says.
+        fuel = sum(customisation.range_fraction for customisation in self.customisations)
+        return round(distance * (1 + fuel))
 
     @property
     def target_size_dm(self) -> int:

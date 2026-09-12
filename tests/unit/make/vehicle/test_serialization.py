@@ -5,6 +5,8 @@ back to a functionally identical" design: same structure, same types, same field
 values. Designs are stored, transferred and rendered from their JSON.
 """
 
+from ceres.make.vehicle.customisations import DecreasedFuel, FusionPlusPlant, SlowerSpeed
+from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
@@ -34,3 +36,22 @@ def test_the_type_is_named_in_the_json_not_inlined():
     payload = Vehicle(name='Air/Raft', vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=10).model_dump()
 
     assert payload['vehicle_type'] == 'Grav Vehicle'
+
+
+def test_features_and_customisations_survive_the_trip():
+    original = Vehicle(
+        name='ATV',
+        vehicle_type=VehicleType.GROUND_VEHICLE,
+        spaces=20,
+        tl=12,
+        features=[Feature.ATV, Feature.FAST],
+        customisations=[FusionPlusPlant(), DecreasedFuel(steps=2), SlowerSpeed()],
+    )
+
+    restored = Vehicle.model_validate_json(original.model_dump_json())
+
+    assert restored == original
+    assert restored.range_km == original.range_km
+    assert restored.available_spaces == original.available_spaces
+    # The union resolves back to the concrete customisation types, not the base.
+    assert isinstance(restored.customisations[0], FusionPlusPlant)
