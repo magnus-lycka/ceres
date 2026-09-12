@@ -72,3 +72,21 @@ _SIZES: dict[VehicleSize, _SizeEntry] = {
         min_spaces=2000, speed_band_modifier=-1, agility_modifier=-4, armour_volume=0.5, traits=(Trait.UNRESPONSIVE,)
     ),
 }
+
+
+# refs/vehicle/02_new_rules.md — Target Size. Deliberately finer than the size
+# bands: Heavy and Huge each split in two.
+_TARGET_SIZE_DM: tuple[tuple[int, int], ...] = (
+    (1, 0),
+    (4, 1),
+    (20, 2),
+    (100, 3),
+    (200, 4),
+    (1000, 5),
+    (2000, 6),
+)
+
+
+def target_size_dm(spaces: int) -> int:
+    """The DM an attacker gets for the size of the vehicle they are shooting at."""
+    return next(dm for threshold, dm in reversed(_TARGET_SIZE_DM) if spaces >= threshold)

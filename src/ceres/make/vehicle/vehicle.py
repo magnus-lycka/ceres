@@ -15,12 +15,16 @@ from pydantic import Field, field_validator
 from ceres.shared import Assembly
 
 from .features import Feature
-from .size import VehicleSize
+from .size import VehicleSize, target_size_dm
+from .spec import VehicleSpec
 from .speed import SpeedBand
 from .traits import Trait
 from .types import VehicleType
 
 _HULL_PER_STRUCTURE = 10
+
+# refs/vehicle/02_new_rules.md — cruising increases Range by 50%.
+_CRUISE_RANGE_BONUS = 1.5
 
 
 class Vehicle(Assembly):
@@ -129,6 +133,44 @@ class Vehicle(Assembly):
         for feature in self.features:
             base *= feature.range_multiplier
         return round(base)
+
+    @property
+    def target_size_dm(self) -> int:
+        """How much easier this vehicle is to hit for being the size it is."""
+        return target_size_dm(self.spaces)
+
+    @property
+    def cruise_range_km(self) -> int | None:
+        """Range while cruising, which the rules put at half again."""
+        if self.range_km is None:
+            return None
+        return round(self.range_km * _CRUISE_RANGE_BONUS)
+
+    @property
+    def features_and_traits(self) -> list[str]:
+        """What the catalogue prints on one line, features and traits together."""
+        return sorted({feature.value for feature in self.features} | {trait.value for trait in self.traits})
+
+    def build_spec(self) -> VehicleSpec:
+        return VehicleSpec(
+            name=self.name,
+            vehicle_type=self.vehicle_type,
+            size=self.size,
+            spaces=self.spaces,
+            target_size_dm=self.target_size_dm,
+            features_and_traits=self.features_and_traits,
+            tl=self.tl,
+            skill=self.vehicle_type.skill,
+            agility=self.agility,
+            speed=self.speed,
+            cruise_speed=self.cruise_speed,
+            range_km=self.range_km,
+            cruise_range_km=self.cruise_range_km,
+            structure=self.structure,
+            shipping_tons=self.shipping_tons,
+            cost=self.cost,
+            notes=self.notes,
+        )
 
     @property
     def traits(self) -> tuple[Trait, ...]:

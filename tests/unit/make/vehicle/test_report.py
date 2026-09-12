@@ -1,0 +1,73 @@
+"""Rendering a design: the context that reaches the template.
+
+The stat block's paired figures — 'High (Medium)' — and its formatted Cost are
+composed here, not carried by the spec.
+"""
+
+from typing import Any
+
+from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.report import _build_context, render_vehicle_pdf, render_vehicle_typst
+from ceres.make.vehicle.types import VehicleType
+from ceres.make.vehicle.vehicle import Vehicle
+
+
+def a_vehicle(**kwargs) -> Vehicle:
+    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
+    return Vehicle(**(defaults | kwargs))
+
+
+def rows(vehicle: Vehicle) -> dict[str, str]:
+    return {row['label']: row['value'] for row in _build_context(vehicle.build_spec())['stats']}
+
+
+class TestTypeLine:
+    def test_it_reads_as_the_catalogue_prints_it(self):
+        context = _build_context(a_vehicle().build_spec())
+        assert context['type_line'] == 'Heavy Ground Vehicle (20 Spaces, DM+2 to hit)'
+
+    def test_features_and_traits_are_one_line(self):
+        context = _build_context(a_vehicle(features=[Feature.ATV, Feature.FAST]).build_spec())
+        assert context['features_and_traits'] == 'ATV, Fast'
+
+    def test_a_design_with_neither_says_so(self):
+        context = _build_context(a_vehicle(spaces=6, tl=7).build_spec())
+        assert context['features_and_traits'] == 'None'
+
+
+class TestStatRows:
+    def test_speed_pairs_maximum_with_cruise(self):
+        assert rows(a_vehicle())['SPEED (CRUISE)'] == 'High (Medium)'
+
+    def test_range_pairs_and_is_grouped(self):
+        assert rows(a_vehicle())['RANGE (CRUISE)'] == '1,000 (1,500)'
+
+    def test_a_design_with_no_range_shows_a_dash(self):
+        assert rows(a_vehicle(spaces=6, tl=2))['RANGE (CRUISE)'] == '—'
+
+    def test_agility_is_signed(self):
+        assert rows(a_vehicle())['AGILITY'] == '-1'
+        assert rows(a_vehicle(spaces=6))['AGILITY'] == '+0'
+
+    def test_cost_is_credits(self):
+        assert rows(a_vehicle())['COST'] == 'Cr15,000'
+
+    def test_shipping_drops_a_pointless_decimal(self):
+        assert rows(a_vehicle())['SHIPPING'] == '10 tons'
+        assert rows(a_vehicle(spaces=3))['SHIPPING'] == '1.5 tons'
+
+
+class TestTypstOutput:
+    def test_it_renders_the_design(self):
+        source = render_vehicle_typst(a_vehicle(name='Test ATV', features=[Feature.ATV]))
+
+        assert 'TEST ATV' in source
+        assert 'Heavy Ground Vehicle' in source
+        assert 'STRUCTURE' in source
+
+    def test_the_template_compiles_to_a_pdf(self):
+        # The Typst source can be well-formed and still fail to typeset, so this
+        # is the only check that the template itself is valid.
+        pdf = render_vehicle_pdf(a_vehicle(name='Test ATV', features=[Feature.ATV]))
+
+        assert pdf.startswith(b'%PDF-')
