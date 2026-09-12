@@ -66,6 +66,13 @@ without re-running Python-side business logic.
 As the codebase evolves, that file must be kept current: any new field or
 polymorphic type that matters to a ship's identity must have a roundtrip test.
 
+The contract is not specific to ships. Every domain that produces a design owes
+the same guarantee and keeps its own guardian test — see
+`tests/unit/make/vehicle/test_serialization.py` for vehicles. A design should
+therefore reference shared reference data, such as a table of vehicle types, by
+a serialisable key rather than holding an instance of it: the tables stay in
+code and the design carries only its identity through JSON.
+
 The markdown rendering path is being phased out in favour of the HTML and PDF
 transforms, which means JSON becomes the primary regression artefact. Future
 feature tests should verify correctness through JSON comparison wherever

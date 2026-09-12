@@ -1372,3 +1372,33 @@ This applies only to round-to-nearest. The rules also call for rounding up (Stru
 from Hull, armour Spaces, mounted weapons consuming a Space) and rounding down
 (available Spaces on an airship's gas envelope, a submersible's hours submerged),
 which are ordinary ceilings and floors and are unaffected.
+
+### RIV-005 An Unstated Range Is Not A Range Of Zero
+
+Several vehicle type tables leave the Range column blank for their earliest Tech
+Levels — a TL1–2 ground vehicle and a TL0–2 watercraft print "—" rather than a
+figure. The source makes no claim about how far such a vehicle travels; it simply
+does not state one.
+
+Ceres records this as an absent Range rather than a Range of zero kilometres. Zero
+would be a positive claim the source does not make, and a false one: a TL1 cart
+plainly travels. A design with no stated Range renders the column as "—", as the
+catalogue does.
+
+This is distinct from a genuine zero. A Structure has a Speed of Stopped and a
+Range of 0, because it does not move at all.
+
+### RIV-006 A Design Below Its Type's Tech Level Is Flagged, Not Refused
+
+Each vehicle type states the Tech Level at which it becomes available, and its
+performance table begins there. The rules do not say what a vehicle built below
+that Tech Level does, because it is not a legal design.
+
+Ceres records the violation as an error on the design and otherwise lets it
+behave as though built at the type's own earliest Tech Level, so every property
+stays answerable and the design can still be rendered and inspected. This follows
+the project's general treatment of rule violations as notes on a design rather
+than refusals to construct one: a designer is better served by seeing an illegal
+design with its problem named than by an exception.
+
+The clamp is a rendering convenience, not a claim that such a vehicle exists.
