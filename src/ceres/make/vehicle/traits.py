@@ -21,6 +21,7 @@ class Trait(StrEnum):
     """
 
     ATV = 'ATV'
+    OPEN_TOPPED = 'Open-Topped'
     UNRESPONSIVE = 'Unresponsive'
     VTOL = 'VTOL'
 
