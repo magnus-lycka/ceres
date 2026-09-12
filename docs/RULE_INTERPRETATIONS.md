@@ -1402,3 +1402,28 @@ than refusals to construct one: a designer is better served by seeing an illegal
 design with its problem named than by an exception.
 
 The clamp is a rendering convenience, not a claim that such a vehicle exists.
+
+### RIV-007 Agility Is Not Final Until Options Are Installed
+
+A vehicle's Agility is easy to mistake for a property of its type and size. It is
+not. It is the sum of the type's baseline, the Size table's modifier, any
+features that grant Agility, and the **Control System** option — which the Core
+Options chapter gives as Primitive -1, Basic +0, Improved +1, Enhanced +2,
+Advanced +3, Superior +4.
+
+The published ATV is the clearest case. A Heavy Ground Vehicle derives Agility
++0 -1 = -1, where the catalogue prints +0. The difference is its Control System
+(improved), worth +1. The Air/Raft carries Control System (basic) and so keeps
+the +1 its type and size give it.
+
+Checked across the catalogue designs that print an Agility, including the
+Control System raises agreement from 10 of 29 to 20 of 29. The designs that
+still differ are not explained by this rule and are left for investigation; they
+are not evidence against it.
+
+The consequence for the model is structural: Agility cannot be computed from the
+vehicle's type, size and features alone, so nothing should present it as final
+before options are installed.
+
+Note also that any control system granting a positive Agility DM requires a
+powered vehicle.
