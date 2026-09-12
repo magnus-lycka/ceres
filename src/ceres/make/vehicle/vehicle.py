@@ -133,6 +133,16 @@ class Vehicle(Assembly):
         )
         return self.base_cost * (1 + fractions) + absolute
 
+    def _range_fraction(self, customisation) -> float:
+        """A customisation's share of the pooled fuel adjustment.
+
+        Fuel capacity is stated in Spaces, so its effect depends on how big a
+        share of this vehicle those Spaces are.
+        """
+        if hasattr(customisation, 'range_fraction_for'):
+            return customisation.range_fraction_for(self.spaces)
+        return customisation.range_fraction
+
     def _option_cost(self, option) -> float:
         """What an option costs this design.
 
@@ -243,7 +253,7 @@ class Vehicle(Assembly):
             distance *= customisation.range_multiplier
         # Fuel percentages are pooled and applied to the Range already adjusted
         # by features and power plants, as the Range Modifications section says.
-        fuel = sum(customisation.range_fraction for customisation in self.customisations)
+        fuel = sum(self._range_fraction(customisation) for customisation in self.customisations)
         return round(distance * (1 + fuel))
 
     @property

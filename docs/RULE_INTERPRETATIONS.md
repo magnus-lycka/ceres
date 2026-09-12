@@ -1427,3 +1427,63 @@ before options are installed.
 
 Note also that any control system granting a positive Agility DM requires a
 powered vehicle.
+
+### RIV-008 Fuel Capacity Is Measured In Spaces, Efficiency In Steps
+
+The Customisations chapter quotes fuel capacity as "+25% Range for -10% Spaces"
+and fuel efficiency as "+50% Range" per application, which reads as though both
+were step-wise. The official Vehicle Design Worksheet, distributed with the
+book, computes them differently and more generally:
+
+    Range = (base + 2.5 x fuel_spaces / vehicle_spaces x base) x efficiency
+
+- **Fuel capacity** is stated as a number of Spaces, and its effect is 2.5 times
+  the share of the vehicle given over to fuel. A tenth of the vehicle is
+  therefore the +25% the book quotes — the two agree, but the worksheet allows
+  any number of Spaces rather than only tenths. Fuel capacity appears nowhere in
+  the worksheet's Cost pipeline: it is paid for in Spaces and never in money.
+- **Fuel efficiency** is a step count. Each positive step multiplies Range by a
+  further half and each negative step removes a quarter, so two steps double it.
+  Its Cost is a fraction of the vehicle's base: 25%, 50% and 75% for one, two
+  and three steps, and -10%, -20% and -30% going the other way.
+
+Ceres follows the worksheet, because it reproduces the book's quoted figures
+while also handling vehicles whose fuel is not a round tenth.
+
+The worksheet confirms much else besides: the type and size tables, the range
+ladders, cruise speed as one band down with Range x1.5 rounded, and the shape of
+the Cost pipeline — a base Cost with every percentage taken against that base
+and summed rather than compounded, absolute costs added on top, and total
+reductions limited to 90% of base. It also prices some options by the size of
+the whole vehicle rather than by any volume of their own, vacuum environment
+protection and fire extinguishers among them.
+
+The worksheet is not an answer key either. It disagrees with the book on the
+Cost of a basic sensor system (Cr5,000 against Cr2,000) and on galley Costs, and
+sizes life support as a flat 5% of the vehicle rather than one Space per twenty
+people. Where the two differ and nothing else decides it, Ceres follows the book.
+
+### RIV-009 Published Catalogue Designs Do Not Reliably Reconcile
+
+Several designs in the Vehicle Catalogue cannot be reproduced from the
+construction rules, and this is acknowledged by the book's own contributors
+rather than being a matter of interpretation. On the publisher's forum, in the
+Vehicle Catalogue 2026 Questions and Errata thread, Terry Mixon reports of the
+Corporate Jet Transport that he "had to discount it by 60% to get the price
+close" and "was unable to get the range. Not even close.", concluding "The
+design is definitely broken". Others report being unable to "even remotely
+create some vehicles in this catalogue, always coming out heavier and larger",
+and the Invader Light Grav Tank is printed with wheeled-vehicle statistics.
+
+Ceres has found the same for the two designs it reproduces. Every figure on the
+ATV's and the Air/Raft's stat blocks derives from the rules except Cost, where
+the ATV comes out well above its published Cr155,000 and the Air/Raft below its
+Cr250,000. The Air/Raft's published 2,000km Range is reachable only by two steps
+of fuel efficiency, which then adds half its base Cost again and puts it further
+still from the published figure; the alternative, fuel capacity, would require
+3.2 Spaces of a vehicle that has 8.
+
+These are therefore recorded as source discrepancies on the affected designs
+rather than reconciled. A design whose derived figures differ from its published
+ones is annotated at the point of comparison, and the derivation is not adjusted
+to match. No official errata exists at the time of writing.

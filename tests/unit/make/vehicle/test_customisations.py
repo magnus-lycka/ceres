@@ -6,10 +6,9 @@ Rules: refs/vehicle/06_customisation.md
 from typing import Any
 
 from ceres.make.vehicle.customisations import (
-    DecreasedFuel,
+    FuelCapacity,
+    FuelEfficiency,
     FusionPlusPlant,
-    IncreasedEfficiency,
-    IncreasedFuel,
     SlowerSpeed,
 )
 from ceres.make.vehicle.features import Feature
@@ -58,44 +57,63 @@ class TestSpeedModification:
         assert a_vehicle(customisations=[SlowerSpeed()]).cost == 15_000 * 0.90
 
 
-class TestRangeModification:
-    """Fuel percentages are summed and then applied to the Range already adjusted
-    by features and power plants.
+class TestFuelEfficiency:
+    """A more or less efficient engine: range for money, at no cost in Spaces.
+
+    Each positive step multiplies Range by a further half, each negative step
+    takes away a quarter, and the Cost is a fraction of the vehicle's base.
     """
 
-    def test_increased_efficiency_adds_half_again_each_time(self):
-        assert a_vehicle(customisations=[IncreasedEfficiency(steps=2)]).range_km == 2000
+    def test_two_steps_double_the_range(self):
+        assert a_vehicle(customisations=[FuelEfficiency(steps=2)]).range_km == 2000
 
-    def test_increased_efficiency_costs_a_quarter_of_base_each_time(self):
-        assert a_vehicle(customisations=[IncreasedEfficiency(steps=2)]).cost == 15_000 * 1.50
+    def test_one_step_adds_half_again(self):
+        assert a_vehicle(customisations=[FuelEfficiency(steps=1)]).range_km == 1500
 
-    def test_increased_fuel_buys_range_with_spaces_not_money(self):
-        # refs/vehicle/06_customisation.md — fuel capacity "does not change the
-        # Cost of the vehicle but will affect the number of Spaces available".
-        vehicle = a_vehicle(customisations=[IncreasedFuel(steps=2)])
-        assert vehicle.range_km == 1500
-        assert vehicle.cost == 15_000
-        assert vehicle.available_spaces == 16
+    def test_a_negative_step_takes_a_quarter_away(self):
+        assert a_vehicle(customisations=[FuelEfficiency(steps=-1)]).range_km == 750
 
-    def test_decreased_fuel_cuts_range_and_frees_spaces(self):
-        vehicle = a_vehicle(customisations=[DecreasedFuel(steps=2)])
-        assert vehicle.range_km == 500
-        assert vehicle.available_spaces == 24
+    def test_it_costs_a_share_of_the_base(self):
+        assert a_vehicle(customisations=[FuelEfficiency(steps=1)]).cost == 15_000 * 1.25
+        assert a_vehicle(customisations=[FuelEfficiency(steps=2)]).cost == 15_000 * 1.50
+        assert a_vehicle(customisations=[FuelEfficiency(steps=-1)]).cost == 15_000 * 0.90
 
-    def test_fuel_percentages_apply_after_features_and_power(self):
-        # 1,000 base, halved by Fast, times five for Fusion+, then -50% fuel.
-        vehicle = a_vehicle(
-            features=[Feature.FAST],
-            customisations=[FusionPlusPlant(), DecreasedFuel(steps=2)],
-        )
-        assert vehicle.range_km == 1250
+    def test_it_takes_no_spaces(self):
+        assert a_vehicle(customisations=[FuelEfficiency(steps=2)]).available_spaces == 20
+
+
+class TestFuelCapacity:
+    """Bigger or smaller tanks, measured in Spaces.
+
+    Range changes by 2.5 times the share of the vehicle given over to fuel, so a
+    tenth of the vehicle is worth the +25% the rules quote. Fuel capacity costs
+    Spaces, never money.
+    """
+
+    def test_a_tenth_of_the_vehicle_is_a_quarter_more_range(self):
+        assert a_vehicle(customisations=[FuelCapacity(spaces=2)]).range_km == 1250
+
+    def test_it_scales_with_the_share_given_over_to_fuel(self):
+        assert a_vehicle(customisations=[FuelCapacity(spaces=4)]).range_km == 1500
+        assert a_vehicle(customisations=[FuelCapacity(spaces=8)]).range_km == 2000
+
+    def test_taking_fuel_out_gives_spaces_back(self):
+        vehicle = a_vehicle(customisations=[FuelCapacity(spaces=-2)])
+        assert vehicle.range_km == 750
+        assert vehicle.available_spaces == 22
+
+    def test_adding_fuel_consumes_spaces(self):
+        assert a_vehicle(customisations=[FuelCapacity(spaces=4)]).available_spaces == 16
+
+    def test_it_never_costs_money(self):
+        assert a_vehicle(customisations=[FuelCapacity(spaces=4)]).cost == 15_000
 
 
 class TestThePublishedDesigns:
     def test_the_atv_range(self):
         atv = a_vehicle(
             features=[Feature.ATV, Feature.FAST],
-            customisations=[FusionPlusPlant(), DecreasedFuel(steps=2), SlowerSpeed()],
+            customisations=[FusionPlusPlant(), FuelCapacity(spaces=-4), SlowerSpeed()],
         )
         assert atv.range_km == 1250
         assert atv.cruise_range_km == 1875
@@ -109,10 +127,10 @@ class TestThePublishedDesigns:
             spaces=8,
             tl=8,
             features=[Feature.OPEN_TOPPED],
-            # Four steps of increased fuel, which the Air/Raft's Cost requires:
-            # efficiency would add 25% of base each time, putting it far above
-            # the published Cr250,000.
-            customisations=[IncreasedFuel(steps=4)],
+            # Two steps of efficiency give exactly the published 2,000km. They
+            # also add 50% of base Cost, which puts the design well above its
+            # published Cr250,000 — see RIV-009.
+            customisations=[FuelEfficiency(steps=2)],
         )
         assert air_raft.range_km == 2000
         assert air_raft.cruise_range_km == 3000

@@ -5,7 +5,7 @@ back to a functionally identical" design: same structure, same types, same field
 values. Designs are stored, transferred and rendered from their JSON.
 """
 
-from ceres.make.vehicle.customisations import DecreasedFuel, FusionPlusPlant, SlowerSpeed
+from ceres.make.vehicle.customisations import FuelCapacity, FusionPlusPlant, SlowerSpeed
 from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
@@ -45,7 +45,7 @@ def test_features_and_customisations_survive_the_trip():
         spaces=20,
         tl=12,
         features=[Feature.ATV, Feature.FAST],
-        customisations=[FusionPlusPlant(), DecreasedFuel(steps=2), SlowerSpeed()],
+        customisations=[FusionPlusPlant(), FuelCapacity(spaces=-4), SlowerSpeed()],
     )
 
     restored = Vehicle.model_validate_json(original.model_dump_json())

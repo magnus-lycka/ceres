@@ -18,7 +18,9 @@ from ceres.shared import CeresModel
 
 _FUSION_PLUS_SPACE_FRACTION = 0.10
 _SPEED_STEP_SPACE_FRACTION = 0.10
-_FUEL_STEP_SPACE_FRACTION = 0.10
+# refs: the official Vehicle Design Worksheet computes fuel capacity's effect
+# on Range as 2.5 x the share of the vehicle given over to fuel (RIV-008).
+_RANGE_PER_FUEL_SHARE = 2.5
 
 
 class _Customisation(CeresModel):
@@ -91,47 +93,42 @@ class SlowerSpeed(_Customisation):
         return -0.10 * self.steps
 
 
-class IncreasedEfficiency(_Customisation):
-    """A more efficient engine: more range for more money, at no cost in Spaces."""
+class FuelEfficiency(_Customisation):
+    """A more or less efficient engine: Range traded against Cost, not Spaces.
 
-    kind: Literal['INCREASED_EFFICIENCY'] = 'INCREASED_EFFICIENCY'
+    Each positive step multiplies Range by a further half and each negative step
+    takes away a quarter, so two steps double it. Available up to three times, as
+    the Tech Level allows.
+    """
+
+    kind: Literal['FUEL_EFFICIENCY'] = 'FUEL_EFFICIENCY'
     steps: int = 1
 
     @property
     def range_fraction(self) -> float:
-        return 0.50 * self.steps
+        return self.steps * (0.5 if self.steps > 0 else 0.25)
 
     @property
     def added_cost(self) -> float:
-        return 0.25 * self.steps
+        return self.steps * (0.25 if self.steps > 0 else 0.10)
 
 
-class IncreasedFuel(_Customisation):
-    """Larger tanks: more range for Spaces, at no change in Cost."""
+class FuelCapacity(_Customisation):
+    """Bigger or smaller tanks, measured in the Spaces given over to fuel.
 
-    kind: Literal['INCREASED_FUEL'] = 'INCREASED_FUEL'
-    steps: int = 1
+    Range changes by 2.5 times the share of the vehicle carried as fuel, which
+    is why the rules quote a tenth of the vehicle as +25% Range. Fuel capacity is
+    paid for in Spaces and never in money.
+    """
 
-    def spaces_delta(self, spaces: int) -> int:
-        return -ceil(spaces * _FUEL_STEP_SPACE_FRACTION) * self.steps
-
-    @property
-    def range_fraction(self) -> float:
-        return 0.25 * self.steps
-
-
-class DecreasedFuel(_Customisation):
-    """Smaller tanks: range given up for Spaces, at no change in Cost."""
-
-    kind: Literal['DECREASED_FUEL'] = 'DECREASED_FUEL'
-    steps: int = 1
+    kind: Literal['FUEL_CAPACITY'] = 'FUEL_CAPACITY'
+    spaces: int = 1
 
     def spaces_delta(self, spaces: int) -> int:
-        return floor(spaces * _FUEL_STEP_SPACE_FRACTION) * self.steps
+        return -self.spaces
 
-    @property
-    def range_fraction(self) -> float:
-        return -0.25 * self.steps
+    def range_fraction_for(self, spaces: int) -> float:
+        return _RANGE_PER_FUEL_SHARE * self.spaces / spaces
 
 
 class AquaticDrive(_Customisation):
@@ -154,6 +151,6 @@ class AquaticDrive(_Customisation):
 
 
 CustomisationUnion = Annotated[
-    FusionPlusPlant | SlowerSpeed | IncreasedEfficiency | IncreasedFuel | DecreasedFuel | AquaticDrive,
+    FusionPlusPlant | SlowerSpeed | FuelEfficiency | FuelCapacity | AquaticDrive,
     Field(discriminator='kind'),
 ]
