@@ -6,7 +6,7 @@
    * looked at again. The roster screens read the stored connection on arrival.
    */
   import Connection from '$lib/store/Connection.svelte';
-  import { now, status, transient } from '$lib/store/session.svelte';
+  import { keepMine, now, status, transient } from '$lib/store/session.svelte';
 
   const summary = $derived(
     !status.connected
@@ -37,8 +37,15 @@
       Nothing is lost — edits are kept here and will go up on the next attempt.
     {:else}
       <br />
-      Resolve it with git, then reload. To undo a push:
-      <code>git reset --hard &lt;sha&gt; &amp;&amp; git push --force-with-lease</code>
+      Nothing here is lost: editing carries on, and the changes waiting are still waiting. If the work in this browser
+      is the copy to keep, send it up over what the repository has:
+      <br />
+      <button onclick={() => keepMine()} disabled={status.busy}>
+        {status.busy ? 'Sending…' : `Keep this browser's copy`}
+      </button>
+      <br />
+      To take the repository's copy instead, and lose what is waiting here, resolve it with git and reload. To undo
+      a push: <code>git reset --hard &lt;sha&gt; &amp;&amp; git push --force-with-lease</code>
     {/if}
   </p>
 {/if}

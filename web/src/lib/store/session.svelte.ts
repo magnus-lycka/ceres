@@ -12,7 +12,7 @@
 import { Library } from './library';
 import { IdbFileStore } from './idb';
 import { GitHubRepository } from './github';
-import { Sync, type SyncState } from './sync';
+import { Sync, type SyncOutcome, type SyncState } from './sync';
 import { loadConnection } from './connection';
 
 const local = new IdbFileStore();
@@ -100,11 +100,26 @@ async function consumeInbox(): Promise<void> {
 }
 
 export async function now(): Promise<void> {
+  await attempt((engine) => engine.run());
+}
+
+/**
+ * Resolve a standoff in this browser's favour.
+ *
+ * Deliberately a deliberate act: it is offered only while sync is blocked, and
+ * only the person at the table knows whether the fight they are running is the
+ * copy to keep.
+ */
+export async function keepMine(): Promise<void> {
+  await attempt((engine) => engine.keepMine());
+}
+
+async function attempt(work: (engine: Sync) => Promise<SyncOutcome>): Promise<void> {
   if (!sync || status.busy) return void (await refresh());
   status.busy = true;
   status.imported = '';
   try {
-    const outcome = await sync.run();
+    const outcome = await work(sync);
     status.state = outcome.state;
     status.changes = outcome.state === 'blocked' ? outcome.changes : 0;
     status.at = outcome.at;

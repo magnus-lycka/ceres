@@ -120,6 +120,57 @@ describe('both sides have moved', () => {
   });
 });
 
+describe('resolving a standoff by keeping this browser', () => {
+  /*
+   * The standoff the app can actually get itself into: a push whose commit
+   * landed but whose acknowledgement did not, leaving the repository ahead of
+   * a local copy that holds the same work and more. Nothing here can be merged
+   * automatically, but the referee can say which copy is the real one — and
+   * "this browser" is the answer whenever the fight is happening in it.
+   */
+  it('pushes what is waiting onto where the repository has got to', async () => {
+    await local.setHead('old');
+    await local.write('actors/1.json', '{"mine":true}', 'Save actor 1');
+    const remote = repository('newer');
+
+    const outcome = await new Sync(local, remote).keepMine();
+
+    expect(outcome).toMatchObject({ state: 'synced', changes: 1 });
+    expect(remote.commit.mock.calls[0][2]).toBe('newer');
+  });
+
+  it('never fetches over the copy it was told to keep', async () => {
+    await local.setHead('old');
+    await local.write('actors/1.json', '{"mine":true}', 'Save actor 1');
+    const remote = repository('newer', new Map([['actors/1.json', '{"theirs":true}']]));
+
+    await new Sync(local, remote).keepMine();
+
+    expect(await local.read('actors/1.json')).toBe('{"mine":true}');
+    expect(remote.files).not.toHaveBeenCalled();
+  });
+
+  it('comes back in step, so the next sync is an ordinary one', async () => {
+    await local.setHead('old');
+    await local.write('actors/1.json', '{}', 'Save actor 1');
+
+    await new Sync(local, repository('newer')).keepMine();
+
+    expect(await local.head()).toBe('new-head');
+    expect(await local.changes()).toEqual(new Map());
+  });
+
+  it('takes the repository instead when this browser has nothing to keep', async () => {
+    await local.setHead('old');
+    const remote = repository('newer', new Map([['actors/2.json', '{"id":2}']]));
+
+    await new Sync(local, remote).keepMine();
+
+    expect(await local.read('actors/2.json')).toBe('{"id":2}');
+    expect(remote.commit).not.toHaveBeenCalled();
+  });
+});
+
 describe('a repository with no commits yet', () => {
   it('pushes without a parent, creating the branch', async () => {
     await local.write('actors/1.json', '{}', 'Save actor 1');

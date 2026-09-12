@@ -74,9 +74,32 @@ export class Sync {
       at,
       detail:
         mine === null
-          ? 'This browser has unsynced changes and the repository already has data. Resolve with git.'
-          : `The repository moved on to ${theirs.slice(0, 7)} while this browser has ${changes.size} unsynced change(s). Resolve with git.`,
+          ? `This browser has ${changes.size} unsynced change(s) and the repository already has data.`
+          : `The repository moved on to ${theirs.slice(0, 7)} while this browser has ${changes.size} unsynced change(s).`,
     };
+  }
+
+  /**
+   * End a standoff by declaring this browser's copy the one that counts.
+   *
+   * `run()` is right to refuse to guess, but it cannot be the last word: the
+   * app can reach a standoff on its own. A push is a commit followed by two
+   * local writes, and if the context dies in between — a frozen tab, a lost
+   * response, a closed lid — the repository has moved while this copy still
+   * believes it has not. The standoff is then against our own work, and every
+   * later sync repeats it. Somebody has to be able to say "mine".
+   *
+   * What goes up is what is waiting, committed onto wherever the repository
+   * has got to. Paths only the repository has are left alone: the dirty list
+   * says nothing about them, and this is "mine wins where we disagree", not
+   * "make the repository a mirror of this browser".
+   */
+  async keepMine(): Promise<SyncOutcome> {
+    const changes = await this.local.changes();
+    // Nothing of our own to keep, so there is no standoff to resolve and the
+    // ordinary reconciliation — take the repository wholesale — is right.
+    if (changes.size === 0) return this.run();
+    return this.push(changes, await this.remote.head(), new Date());
   }
 
   private async push(
