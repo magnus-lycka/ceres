@@ -54,9 +54,13 @@ class Vehicle(Assembly):
         return VehicleSize.for_spaces(self.spaces)
 
     @property
-    def hull(self) -> int:
-        """Spaces times the type's rate. Never less than 1, whatever reduces it."""
-        return max(round(self.spaces * self.vehicle_type.hull_per_space), 1)
+    def hull(self) -> float:
+        """Spaces times the type's rate. Never less than 1, whatever reduces it.
+
+        Not rounded: the rules round once, at Structure (RIV-001). A type such as
+        an airship at 0.2 per Space produces a genuinely fractional Hull.
+        """
+        return max(self.spaces * self.vehicle_type.hull_per_space, 1)
 
     @property
     def structure(self) -> int:
@@ -86,7 +90,8 @@ class Vehicle(Assembly):
         return self.speed.cruise
 
     @property
-    def range_km(self) -> int:
+    def range_km(self) -> int | None:
+        """Range in kilometres, or None where the type states none at this TL."""
         return self.vehicle_type.range_at(self.tl)
 
     @property
