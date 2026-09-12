@@ -9,6 +9,7 @@ import pytest
 
 from ceres.make.vehicle.size import VehicleSize
 from ceres.make.vehicle.speed import SpeedBand
+from ceres.make.vehicle.traits import Trait
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
@@ -170,7 +171,7 @@ class TestTraits:
     """Traits arrive from the type and from the size band."""
 
     def test_a_huge_vehicle_is_unresponsive(self):
-        assert 'Unresponsive' in a_vehicle(spaces=500).traits
+        assert Trait.UNRESPONSIVE in a_vehicle(spaces=500).traits
 
     def test_a_heavy_vehicle_is_not(self):
-        assert 'Unresponsive' not in a_vehicle(spaces=20).traits
+        assert Trait.UNRESPONSIVE not in a_vehicle(spaces=20).traits

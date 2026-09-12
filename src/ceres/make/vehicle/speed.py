@@ -9,8 +9,8 @@ from enum import IntEnum
 class SpeedBand(IntEnum):
     """One rung of the Speed Band ladder.
 
-    The value is the Speed Band Number the rules use directly in collision
-    damage and acceleration, so the members order and compare as numbers.
+    The member's value is the Speed Band Number the rules use directly in
+    collision damage and acceleration, so a band is an int: `SpeedBand.SLOW == 3`.
     """
 
     STOPPED = 0
@@ -25,10 +25,6 @@ class SpeedBand(IntEnum):
     SUPERSONIC = 9
     HYPERSONIC = 10
     ORBITAL = 11
-
-    @property
-    def number(self) -> int:
-        return self.value
 
     def shifted(self, bands: int) -> SpeedBand:
         """Move along the ladder, stopping at either end rather than falling off."""

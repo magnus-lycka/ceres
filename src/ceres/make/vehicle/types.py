@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from .speed import SpeedBand
+from .traits import Trait
 
 
 @dataclass(frozen=True)
@@ -40,8 +41,7 @@ class _TypeEntry:
     cost_per_space: int
     performance: tuple[_Performance, ...]
     allowed_features: frozenset[str]
-    traits: tuple[str, ...] = ()
-    examples: tuple[str, ...] = ()
+    traits: tuple[Trait, ...] = ()
 
 
 class VehicleType(StrEnum):
@@ -96,12 +96,8 @@ class VehicleType(StrEnum):
         return self._entry.cost_per_space
 
     @property
-    def traits(self) -> tuple[str, ...]:
+    def traits(self) -> tuple[Trait, ...]:
         return self._entry.traits
-
-    @property
-    def examples(self) -> tuple[str, ...]:
-        return self._entry.examples
 
     def _performance_at(self, tl: int) -> _Performance:
         # Below the type's own Tech Level there is no row to read, and the design
@@ -162,7 +158,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('Motorcycle', 'automobile', 'truck', 'tank'),
     ),
     VehicleType.AEROPLANE: _TypeEntry(
         tl=4,
@@ -196,7 +191,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('Light aircraft', 'bomber', 'transport'),
     ),
     VehicleType.AIRSHIP: _TypeEntry(
         tl=3,
@@ -205,7 +199,7 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         hull_per_space=0.2,
         shipping_per_space=0.5,
         cost_per_space=300,
-        traits=('VTOL',),
+        traits=(Trait.VTOL,),
         performance=(
             # The TL3 row is an unpowered balloon, whose speed and range are dictated
             # by atmospheric conditions rather than the vehicle.
@@ -219,7 +213,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         allowed_features=frozenset(
             {'Agile', 'Fast', 'Open Frame', 'Responsive', 'Rigid', 'Slow', 'Streamlined', 'Unresponsive'}
         ),
-        examples=('Balloon', 'blimp', 'zeppelin'),
     ),
     VehicleType.GRAV_VEHICLE: _TypeEntry(
         tl=8,
@@ -228,7 +221,7 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         hull_per_space=2,
         shipping_per_space=0.5,
         cost_per_space=30000,
-        traits=('VTOL',),
+        traits=(Trait.VTOL,),
         performance=(
             _Performance(from_tl=8, speed=SpeedBand.HIGH, km=1000),
             _Performance(from_tl=9, speed=SpeedBand.FAST, km=2000),
@@ -249,7 +242,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('G/bike', 'air/raft', 'G/carrier'),
     ),
     VehicleType.HOVERCRAFT: _TypeEntry(
         tl=5,
@@ -268,7 +260,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         allowed_features=frozenset(
             {'Agile', 'Fast', 'Open Frame', 'Open-Topped', 'Responsive', 'Slow', 'Unresponsive'}
         ),
-        examples=('Hover jeep', 'landing craft', 'ferry'),
     ),
     VehicleType.ROTORCRAFT: _TypeEntry(
         tl=5,
@@ -277,7 +268,7 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         hull_per_space=0.5,
         shipping_per_space=1,
         cost_per_space=25000,
-        traits=('VTOL',),
+        traits=(Trait.VTOL,),
         performance=(
             _Performance(from_tl=5, speed=SpeedBand.MEDIUM, km=500),
             _Performance(from_tl=7, speed=SpeedBand.HIGH, km=1000),
@@ -300,7 +291,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('Helicopter', 'aerodyne', 'ornithopter'),
     ),
     VehicleType.STRUCTURE: _TypeEntry(
         tl=0,
@@ -311,7 +301,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         cost_per_space=50,
         performance=(_Performance(from_tl=0, speed=SpeedBand.STOPPED, km=0),),
         allowed_features=frozenset({'AFV', 'Open Frame', 'Open-Topped', 'Streamlined'}),
-        examples=('House', 'fortress', 'outpost', 'rocket stage'),
     ),
     VehicleType.SUBMERSIBLE: _TypeEntry(
         tl=4,
@@ -341,7 +330,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('Submarine', 'diving bell'),
     ),
     VehicleType.WALKER: _TypeEntry(
         tl=8,
@@ -350,7 +338,7 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         hull_per_space=2,
         shipping_per_space=0.5,
         cost_per_space=10000,
-        traits=('ATV',),
+        traits=(Trait.ATV,),
         performance=(
             _Performance(from_tl=8, speed=SpeedBand.VERY_SLOW, km=150),
             _Performance(from_tl=9, speed=SpeedBand.SLOW, km=300),
@@ -372,7 +360,6 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('Load lifter', 'AT-AT'),
     ),
     VehicleType.WATERCRAFT: _TypeEntry(
         tl=0,
@@ -404,6 +391,5 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
                 'Unresponsive',
             }
         ),
-        examples=('Canoe', 'speedboat', 'sailboat', 'tanker'),
     ),
 }

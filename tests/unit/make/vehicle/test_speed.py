@@ -29,7 +29,7 @@ class TestTheLadder:
         ],
     )
     def test_band_numbers(self, band, number):
-        assert band.number == number
+        assert band == number
 
     def test_bands_are_ordered_by_number(self):
         assert SpeedBand.SLOW < SpeedBand.MEDIUM

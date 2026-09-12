@@ -6,6 +6,8 @@ Rules: refs/vehicle/03_vehicle_design.md — Vehicle Size
 from dataclasses import dataclass
 from enum import StrEnum
 
+from .traits import Trait
+
 
 @dataclass(frozen=True)
 class _SizeEntry:
@@ -15,7 +17,7 @@ class _SizeEntry:
     speed_band_modifier: int
     agility_modifier: int
     armour_volume: float
-    traits: tuple[str, ...] = ()
+    traits: tuple[Trait, ...] = ()
 
 
 class VehicleSize(StrEnum):
@@ -54,7 +56,7 @@ class VehicleSize(StrEnum):
         return _SIZES[self].armour_volume
 
     @property
-    def traits(self) -> tuple[str, ...]:
+    def traits(self) -> tuple[Trait, ...]:
         return _SIZES[self].traits
 
 
@@ -64,9 +66,9 @@ _SIZES: dict[VehicleSize, _SizeEntry] = {
     VehicleSize.LIGHT: _SizeEntry(min_spaces=4, speed_band_modifier=0, agility_modifier=0, armour_volume=2.0),
     VehicleSize.HEAVY: _SizeEntry(min_spaces=20, speed_band_modifier=-1, agility_modifier=-1, armour_volume=1.0),
     VehicleSize.HUGE: _SizeEntry(
-        min_spaces=200, speed_band_modifier=-1, agility_modifier=-2, armour_volume=0.5, traits=('Unresponsive',)
+        min_spaces=200, speed_band_modifier=-1, agility_modifier=-2, armour_volume=0.5, traits=(Trait.UNRESPONSIVE,)
     ),
     VehicleSize.MASSIVE: _SizeEntry(
-        min_spaces=2000, speed_band_modifier=-1, agility_modifier=-4, armour_volume=0.5, traits=('Unresponsive',)
+        min_spaces=2000, speed_band_modifier=-1, agility_modifier=-4, armour_volume=0.5, traits=(Trait.UNRESPONSIVE,)
     ),
 }

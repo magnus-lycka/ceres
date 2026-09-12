@@ -6,6 +6,7 @@ Rules: refs/vehicle/03_vehicle_design.md — Vehicle Size
 import pytest
 
 from ceres.make.vehicle.size import VehicleSize
+from ceres.make.vehicle.traits import Trait
 
 
 class TestBandForSpaces:
@@ -54,7 +55,7 @@ class TestSizeEffects:
 
     @pytest.mark.parametrize('size', [VehicleSize.HUGE, VehicleSize.MASSIVE])
     def test_the_largest_vehicles_are_unresponsive(self, size):
-        assert 'Unresponsive' in size.traits
+        assert Trait.UNRESPONSIVE in size.traits
 
     @pytest.mark.parametrize('size', [VehicleSize.SMALL, VehicleSize.LIGHT, VehicleSize.HEAVY])
     def test_smaller_vehicles_have_no_size_trait(self, size):
