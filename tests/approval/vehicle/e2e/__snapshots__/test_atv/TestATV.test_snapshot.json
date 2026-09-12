@@ -1,0 +1,67 @@
+{
+  "data": {
+    "name": "All Terrain Vehicle (ATV)",
+    "description": "",
+    "vehicle_type": "Ground Vehicle",
+    "size": "Heavy",
+    "spaces": 20,
+    "target_size_dm": 2,
+    "features_and_traits": [
+      "ATV",
+      "Fast"
+    ],
+    "tl": 12,
+    "skill": "Drive (varies)",
+    "agility": 0,
+    "speed": 5,
+    "cruise_speed": 4,
+    "range_km": 1250,
+    "cruise_range_km": 1875,
+    "crew": 1,
+    "passengers": 7,
+    "comfort_label": "Extended Seating",
+    "cargo_tons": 1.5,
+    "structure": 4,
+    "shipping_tons": 10.0,
+    "cost": 202580.0,
+    "armour": {
+      "Forward": 6,
+      "Port": 6,
+      "Dorsal": 6,
+      "Aft": 6,
+      "Starboard": 6,
+      "Ventral": 6
+    },
+    "equipment": [
+      "Air Lock",
+      "Aquatic Drive (Very Slow, 600km)",
+      "Autopilot (basic)",
+      "Bunk x2",
+      "Collision Protection (improved) x16",
+      "Computer/1",
+      "Control System (improved)",
+      "Fire Extinguishers",
+      "Fresher (standard)",
+      "Fusion+ (basic) PP 2",
+      "Galley (mini)",
+      "Life Support (short term)",
+      "Navigation System (improved)",
+      "Sensor System (improved)",
+      "Transceiver (superior)",
+      "Vacuum Environment Protection"
+    ],
+    "derived_figures": {
+      "Autopilot (skill level)": "+0",
+      "Communications (range)": "500km, tightbeam, satellite uplink, encrypted",
+      "Navigation (Navigation DM)": "+2",
+      "Sensors (Electronics (sensors) DM)": "+1, 5km",
+      "Camouflage (Recon DM)": "—",
+      "Stealth (Electronics (sensors) DM)": "—"
+    },
+    "notes": []
+  },
+  "annotations": {
+    "cost": "Ceres Cr202,580 vs published Cr155,000 — the published figure is canon and predates the construction rules, see RIV-009",
+    "cruise_range_km": "Ceres 1,875 vs published 1,880 — the entry rounds the derived figure to the nearest ten"
+  }
+}

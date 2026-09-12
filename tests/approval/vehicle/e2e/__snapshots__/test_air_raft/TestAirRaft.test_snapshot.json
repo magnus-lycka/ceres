@@ -1,0 +1,58 @@
+{
+  "data": {
+    "name": "Air/Raft",
+    "description": "",
+    "vehicle_type": "Grav Vehicle",
+    "size": "Light",
+    "spaces": 8,
+    "target_size_dm": 1,
+    "features_and_traits": [
+      "Open-Topped",
+      "VTOL"
+    ],
+    "tl": 8,
+    "skill": "Flyer (grav)",
+    "agility": 1,
+    "speed": 5,
+    "cruise_speed": 4,
+    "range_km": 2000,
+    "cruise_range_km": 3000,
+    "crew": 1,
+    "passengers": 5,
+    "comfort_label": "Basic Seating",
+    "cargo_tons": 0.25,
+    "structure": 2,
+    "shipping_tons": 4.0,
+    "cost": 341500.0,
+    "armour": {
+      "Forward": 3,
+      "Port": 3,
+      "Dorsal": 3,
+      "Aft": 3,
+      "Starboard": 3,
+      "Ventral": 3
+    },
+    "equipment": [
+      "Autopilot (improved)",
+      "Collision Protection (basic) x8",
+      "Computer/1",
+      "Control System (basic)",
+      "Entertainment System",
+      "Navigation System (basic)",
+      "Sensor System (basic)",
+      "Transceiver (improved)"
+    ],
+    "derived_figures": {
+      "Autopilot (skill level)": "+1",
+      "Communications (range)": "500km, satellite uplink",
+      "Navigation (Navigation DM)": "+1",
+      "Sensors (Electronics (sensors) DM)": "+0, 1km",
+      "Camouflage (Recon DM)": "—",
+      "Stealth (Electronics (sensors) DM)": "—"
+    },
+    "notes": []
+  },
+  "annotations": {
+    "cost": "Ceres Cr341,500 vs published Cr250,000 — the published figure is canon and predates the construction rules, see RIV-009"
+  }
+}
