@@ -15,6 +15,7 @@ from pydantic import Field, field_validator
 from ceres.shared import Assembly
 
 from .armour import Armour, Face
+from .comfort import comfort_label
 from .customisations import CustomisationUnion
 from .features import Feature
 from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleComputer
@@ -28,6 +29,9 @@ _HULL_PER_STRUCTURE = 10
 
 # refs/vehicle/02_new_rules.md — cruising increases Range by 50%.
 _CRUISE_RANGE_BONUS = 1.5
+
+# refs/vehicle/03_vehicle_design.md — a Space of cargo is a quarter of a dTon.
+_TONS_PER_CARGO_SPACE = 0.25
 
 
 class Vehicle(Assembly):
@@ -45,6 +49,9 @@ class Vehicle(Assembly):
     features: list[Feature] = Field(default_factory=list)
     customisations: list[CustomisationUnion] = Field(default_factory=list)
     options: list[OptionUnion] = Field(default_factory=list)
+    crew: int = 0
+    passengers: int = 0
+    cargo_spaces: int = 0
 
     @field_validator('spaces')
     @classmethod
@@ -59,6 +66,14 @@ class Vehicle(Assembly):
         if self.tl < self.vehicle_type.tl:
             self.error(f'{self.vehicle_type.value} requires TL{self.vehicle_type.tl}, this design is TL{self.tl}')
         self._check_features()
+        self._check_it_fits()
+
+    def _check_it_fits(self) -> None:
+        if (over := -self.available_spaces) > 0:
+            self.error(
+                f'this design needs {over} more Space(s) than its {self.spaces} provide, '
+                f'once everything installed and carried is accounted for'
+            )
 
     def _check_features(self) -> None:
         for feature in self.features:
@@ -130,9 +145,42 @@ class Vehicle(Assembly):
 
     @property
     def available_spaces(self) -> int:
-        """Spaces left to install into, after customisations take or free some."""
+        """Spaces still unspent, after everything installed and carried."""
         taken = sum(option.spaces(self.spaces) for option in self.options)
-        return self.spaces + sum(c.spaces_delta(self.spaces) for c in self.customisations) - taken
+        customised = sum(c.spaces_delta(self.spaces) for c in self.customisations)
+        return self.spaces + customised - taken - self.occupant_spaces - self.cargo_spaces
+
+    @property
+    def occupants(self) -> int:
+        return self.crew + self.passengers
+
+    @property
+    def occupant_spaces(self) -> int:
+        """One Space each, for a vehicle built to human dimensions."""
+        return self.occupants
+
+    @property
+    def cargo_tons(self) -> float:
+        """A Space of cargo is a quarter of a displacement ton, about 250kg."""
+        return self.cargo_spaces * _TONS_PER_CARGO_SPACE
+
+    @property
+    def comfort_points(self) -> float:
+        """Each standard seat Space is worth one, plus what the fittings carry."""
+        from_fittings = sum(getattr(option, 'comfort_points', 0.0) for option in self.options)
+        return self.occupant_spaces + from_fittings
+
+    @property
+    def comfort_level(self) -> float | None:
+        """Comfort Points shared between the occupants, or None with nobody aboard."""
+        if self.occupants == 0:
+            return None
+        return self.comfort_points / self.occupants
+
+    @property
+    def comfort_label(self) -> str | None:
+        level = self.comfort_level
+        return None if level is None else comfort_label(level)
 
     @property
     def agility(self) -> int:
@@ -236,6 +284,10 @@ class Vehicle(Assembly):
             cruise_speed=self.cruise_speed,
             range_km=self.range_km,
             cruise_range_km=self.cruise_range_km,
+            crew=self.crew,
+            passengers=self.passengers,
+            comfort_label=self.comfort_label,
+            cargo_tons=self.cargo_tons,
             structure=self.structure,
             shipping_tons=self.shipping_tons,
             cost=self.cost,

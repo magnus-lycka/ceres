@@ -37,6 +37,10 @@ class VehicleSpec(BaseModel):
     cruise_speed: SpeedBand
     range_km: int | None = None
     cruise_range_km: int | None = None
+    crew: int = 0
+    passengers: int = 0
+    comfort_label: str | None = None
+    cargo_tons: float = 0.0
     structure: int
     shipping_tons: float
     cost: float

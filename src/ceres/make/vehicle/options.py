@@ -161,8 +161,17 @@ _LIFE_SUPPORT: dict[str, _Grade] = {
 }
 
 # refs/vehicle/13_internal_options.md — Fresher and Galley, by Spaces and Cost per Space
-_FRESHER: dict[str, tuple[int, int, float]] = {'half': (4, 1, 500), 'standard': (5, 2, 750), 'full': (5, 4, 1_500)}
-_GALLEY: dict[str, tuple[int, int, float]] = {'mini': (2, 1, 250), 'full': (2, 5, 500), 'gourmet': (3, 5, 2_000)}
+# (TL, Spaces, Cost per Space, Comfort Points)
+_FRESHER: dict[str, tuple[int, int, float, float]] = {
+    'half': (4, 1, 500, 1),
+    'standard': (5, 2, 750, 2),
+    'full': (5, 4, 1_500, 8),
+}
+_GALLEY: dict[str, tuple[int, int, float, float]] = {
+    'mini': (2, 1, 250, 1),
+    'full': (2, 5, 500, 5),
+    'gourmet': (3, 5, 2_000, 10),
+}
 
 # refs/vehicle/16_automation.md — Computers. A computer is free once the vehicle
 # reaches the Tech Level at which it becomes standard equipment.
@@ -259,6 +268,10 @@ class Fresher(_Option):
     def cost(self, spaces: int) -> float:
         return _FRESHER[self.quality][2] * self.spaces(spaces)
 
+    @property
+    def comfort_points(self) -> float:
+        return _FRESHER[self.quality][3]
+
 
 class Galley(_Option):
     """Food preparation and serving."""
@@ -271,6 +284,10 @@ class Galley(_Option):
 
     def cost(self, spaces: int) -> float:
         return _GALLEY[self.quality][2] * self.spaces(spaces)
+
+    @property
+    def comfort_points(self) -> float:
+        return _GALLEY[self.quality][3]
 
 
 class EntertainmentSystem(_Option):
