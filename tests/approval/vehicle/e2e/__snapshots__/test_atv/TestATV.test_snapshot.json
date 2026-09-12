@@ -23,7 +23,7 @@
     "cargo_tons": 1.5,
     "structure": 4,
     "shipping_tons": 10.0,
-    "cost": 202580.0,
+    "cost": 202612.5,
     "armour": {
       "Forward": 6,
       "Port": 6,
@@ -47,7 +47,7 @@
       "Life Support (short term)",
       "Navigation System (improved)",
       "Sensor System (improved)",
-      "Transceiver (superior)",
+      "Transceiver (advanced)",
       "Vacuum Environment Protection"
     ],
     "derived_figures": {
@@ -61,7 +61,8 @@
     "notes": []
   },
   "annotations": {
-    "cost": "Ceres Cr202,580 vs published Cr155,000 — the published figure is canon and predates the construction rules, see RIV-009",
+    "cost": "Ceres Cr202,612.50 vs published Cr155,000 — the published figure is canon and predates the construction rules, see RIV-009",
+    "equipment": "Ceres Transceiver (advanced) vs published (superior) — gear retrotech stops after three halvings, see RIV-011",
     "cruise_range_km": "Ceres 1,875 vs published 1,880 — the entry rounds the derived figure to the nearest ten"
   }
 }

@@ -199,6 +199,11 @@ class TransceiverEquipment(Equipment):
         }
 
     @classmethod
+    def model_tl(cls, range_km: int, tl: int) -> int:
+        """The Tech Level of the listed model a transceiver built at `tl` starts from."""
+        return cls._resolve_spec_tl(range_km, tl)
+
+    @classmethod
     def _resolve_spec_tl(cls, range_km: int, tl: int | None) -> int:
         """The TL of the model a transceiver of this range is built from.
 

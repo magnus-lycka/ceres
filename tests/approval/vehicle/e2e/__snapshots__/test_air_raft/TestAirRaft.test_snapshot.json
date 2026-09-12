@@ -23,7 +23,7 @@
     "cargo_tons": 0.25,
     "structure": 2,
     "shipping_tons": 4.0,
-    "cost": 341500.0,
+    "cost": 341450.0,
     "armour": {
       "Forward": 3,
       "Port": 3,
@@ -53,6 +53,6 @@
     "notes": []
   },
   "annotations": {
-    "cost": "Ceres Cr341,500 vs published Cr250,000 — the published figure is canon and predates the construction rules, see RIV-009"
+    "cost": "Ceres Cr341,450 vs published Cr250,000 — the published figure is canon and predates the construction rules, see RIV-009"
   }
 }

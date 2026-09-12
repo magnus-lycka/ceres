@@ -150,18 +150,7 @@ class TestPricedByTheWholeVehicle:
         assert a_vehicle(options=[FireExtinguishers()]).cost == 15_000 + 400
 
 
-class TestGearBackedOptions:
-    """ADR-0002 — the item is gear; the vehicle rules price the installation."""
-
-    def test_a_transceiver_is_a_gear_part(self):
-        option = VehicleTransceiver(range_km=500)
-        assert option.part.range_km == 500
-        assert 'Transceiver' in option.part.description
-
-    def test_transceiver_options_are_priced_by_the_vehicle_rules(self):
-        option = VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True)
-        assert option.cost(20) == 600 + 1_000 + 2_000 + 4_000
-
+class TestComputer:
     def test_a_computer_is_a_gear_part(self):
         assert VehicleComputer(processing=1).part.processing == 1
 
@@ -170,28 +159,50 @@ class TestGearBackedOptions:
         assert a_vehicle(tl=8, options=[VehicleComputer(processing=1)]).cost == 15_000 + 500
         assert a_vehicle(tl=12, options=[VehicleComputer(processing=1)]).cost == 15_000
 
-    def test_fire_extinguishers_carry_the_gear_part(self):
+
+class TestFireExtinguishers:
+    def test_they_carry_the_gear_part(self):
         assert FireExtinguishers().part.cost == 50
 
 
-class TestTechStage:
-    """refs/vehicle/08_options.md — Tech Level Stages. Transceivers and computers
-    get cheaper as technology advances past their introduction.
+class TestTransceiver:
+    """A vehicle's transceiver is the gear item, built at the vehicle's Tech Level.
+
+    ADR-0002 and RIG-001: the price follows the Central Supply Catalogue's
+    retrotech from the latest regional radio already introduced — the TL7 model
+    at Cr500, then the TL9 model at Cr500 — halving each Tech Level for at most
+    three. The stage it is named by counts those halvings (RIV-011).
     """
 
-    def test_a_stage_names_itself_and_discounts_the_cost(self):
-        # A 500km transceiver is Cr600 basic; superior is a twentieth of that.
-        superior = VehicleTransceiver(range_km=500, stage='superior')
-        assert superior.label == 'Transceiver (superior)'
-        assert superior.cost(20) == 30
+    def test_one_tl_past_its_model_it_costs_half(self):
+        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500)])
+        assert vehicle.cost == 15_000 + 250
+        assert vehicle.equipment == ['Transceiver (improved)']
 
-    def test_improved_halves_it(self):
-        assert VehicleTransceiver(range_km=500, stage='improved').cost(20) == 300
+    def test_a_listed_model_is_the_listed_price(self):
+        vehicle = a_vehicle(tl=9, options=[VehicleTransceiver(range_km=500)])
+        assert vehicle.cost == 15_000 + 500
+        assert vehicle.equipment == ['Transceiver (basic)']
 
-    def test_basic_is_the_listed_price(self):
-        assert VehicleTransceiver(range_km=500).cost(20) == 600
+    def test_the_discount_stops_after_three_tls(self):
+        vehicle = a_vehicle(tl=14, options=[VehicleTransceiver(range_km=500)])
+        assert vehicle.cost == 15_000 + 500 / 8
+        assert vehicle.equipment == ['Transceiver (advanced)']
 
-    def test_the_discount_applies_to_the_transceiver_not_its_options(self):
-        # Options are priced in their own right, so only the set is discounted.
-        superior = VehicleTransceiver(range_km=500, stage='superior', satellite_uplink=True)
-        assert superior.cost(20) == 30 + 1_000
+    def test_it_installs_the_gear_parts_built_at_the_vehicle_tl(self):
+        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500)])
+        (transceiver,) = [option for option in vehicle.options if isinstance(option, VehicleTransceiver)]
+        assert transceiver.transceiver_part.range_km == 500
+        assert transceiver.transceiver_part.tl == 8
+
+    def test_uplink_and_encryption_are_priced_as_gear(self):
+        # refs/csc/05_communications.md — an uplink is half the transceiver or at
+        # least Cr1000; an encryption module is Cr4000.
+        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500, satellite_uplink=True, encryption=True)])
+        assert vehicle.cost == 15_000 + 250 + 1_000 + 4_000
+
+    def test_tightbeam_is_priced_by_the_vehicle_rules(self):
+        # refs/vehicle/09_core_options.md — Transceiver Options: Tightbeam Cr2000.
+        # Gear has no tightbeam part to take a price from.
+        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500, tightbeam=True)])
+        assert vehicle.cost == 15_000 + 250 + 2_000

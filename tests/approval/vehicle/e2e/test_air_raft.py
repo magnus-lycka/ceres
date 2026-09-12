@@ -46,7 +46,7 @@ _expected = SimpleNamespace(
     # fuel efficiency, which add half the base Cost again. The same figure
     # appears in the Core Rulebook, so it predates this design sequence and is
     # canon rather than derived — see RIV-009.
-    cost=341_500,
+    cost=341_450,
 )
 
 
@@ -69,7 +69,7 @@ def build_air_raft() -> Vehicle:
             CollisionProtection(quality='basic', spaces_protected=8),
             VehicleComputer(processing=1),
             EntertainmentSystem(),
-            VehicleTransceiver(range_km=500, stage='improved', satellite_uplink=True),
+            VehicleTransceiver(range_km=500, satellite_uplink=True),
         ],
     )
 
@@ -107,7 +107,7 @@ class TestAirRaft:
         snap = AnnotatedSnapshot(build_air_raft().build_spec().model_dump(mode='json'))
         snap.annotate(
             'cost',
-            'Ceres Cr341,500 vs published Cr250,000 — the published figure is canon and '
+            'Ceres Cr341,450 vs published Cr250,000 — the published figure is canon and '
             'predates the construction rules, see RIV-009',
         )
         assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

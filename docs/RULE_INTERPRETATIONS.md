@@ -1568,3 +1568,38 @@ VoidSailor is non-rigid and ships at 0.2 tons per Space, the same order as the
 baseline; the Sky Dirge is Rigid and biotech, cannot be deflated at all, and
 ships at 2.0 tons per Space. Neither figure follows from the rules as written
 (RIV-009).
+
+### RIV-011 A Vehicle's Transceiver Is Priced As Gear
+
+The *Vehicle Handbook* contradicts itself on how transceivers are priced by Tech
+Level. The Core Options chapter lists a transceiver table by range and says they
+"do not change size or Cost with Tech Level". The Options chapter says
+transceivers and computers do change, following a Tech Level Stages table —
+improved, enhanced, advanced and superior, at a half, a quarter, a tenth and a
+twentieth of the price. The catalogue sides with the second: the ATV carries a
+"Transceiver (superior)". The *Central Supply Catalogue* has its own rule again,
+retrotech, which halves the price for each Tech Level past the model for no more
+than three Tech Levels (RIG-001).
+
+A transceiver is gear, so a vehicle installs the gear item (ADR-0002). Ceres
+builds it at the vehicle's Tech Level and takes its price from `ceres.gear`,
+which applies the Central Supply Catalogue's retrotech. Neither of the Vehicle
+Handbook's transceiver pricings is used. A satellite uplink and an encryption
+module are priced as gear too. A tightbeam keeps the Vehicle Handbook's Cr2,000,
+since gear has no tightbeam part to price it from.
+
+The stage a transceiver is named by counts how many Tech Levels of retrotech it
+was built with, using the Tech Level Stages names: none is basic, one improved,
+two enhanced, three advanced. Because retrotech stops after three Tech Levels, a
+transceiver is at most advanced.
+
+This reproduces the Air/Raft, whose TL8 radio is the TL7 model one Tech Level
+on: "Transceiver (improved)", as printed. It does not reproduce the ATV. Its TL12
+radio is the TL9 model with all three halvings used up, so Ceres names it
+advanced where the entry prints superior, and prices it at Cr62.50 where the
+Vehicle Handbook's own reading would give Cr30. Both are recorded on the ATV as
+differences from the published entry.
+
+Computers are not yet priced this way. The Vehicle Handbook's vehicle computers
+have no evident counterpart among the gear computers, so they still take their
+price from the Automation chapter's table.

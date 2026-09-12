@@ -12,13 +12,12 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from ceres.shared import Assembly
-
 from .armour import Armour, Face
+from .base import VehicleBase
 from .comfort import comfort_label
 from .customisations import CustomisationUnion
 from .features import Feature
-from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleComputer, VehicleTransceiver
+from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleTransceiver
 from .size import VehicleSize, target_size_dm
 from .spec import VehicleSpec
 from .speed import SpeedBand
@@ -47,7 +46,7 @@ def _signed(value: int | None) -> str:
     return _DASH if value is None else f'{value:+d}'
 
 
-class Vehicle(Assembly):
+class Vehicle(VehicleBase):
     """A vehicle design.
 
     Hull and Structure are both kept: modifiers apply to Hull, and Structure —
@@ -76,6 +75,8 @@ class Vehicle(Assembly):
         return spaces
 
     def model_post_init(self, __context: Any) -> None:
+        for option in self.options:
+            option.bind(self)
         if self.tl < self.vehicle_type.tl:
             self.error(f'{self.vehicle_type.value} requires TL{self.vehicle_type.tl}, this design is TL{self.tl}')
         self._check_features()
@@ -142,7 +143,7 @@ class Vehicle(Assembly):
             customisation.added_cost for customisation in self.customisations
         )
         absolute = sum(customisation.cost(self.spaces) for customisation in self.customisations) + sum(
-            self._option_cost(option) for option in self.options
+            option.cost for option in self.options
         )
         return self.base_cost * (1 + fractions) + absolute
 
@@ -156,20 +157,10 @@ class Vehicle(Assembly):
             return customisation.range_fraction_for(self.spaces)
         return customisation.range_fraction
 
-    def _option_cost(self, option) -> float:
-        """What an option costs this design.
-
-        A computer becomes standard equipment at no Cost once the vehicle is
-        advanced enough, which only the vehicle knows.
-        """
-        if isinstance(option, VehicleComputer):
-            return option.cost_at_tl(self.tl)
-        return option.cost(self.spaces)
-
     @property
     def available_spaces(self) -> int:
         """Spaces still unspent, after everything installed and carried."""
-        taken = sum(option.spaces(self.spaces) for option in self.options)
+        taken = sum(option.spaces for option in self.options)
         customised = sum(c.spaces_delta(self.spaces) for c in self.customisations)
         return self.spaces + customised - taken - self.occupant_spaces - self.cargo_spaces
 
@@ -244,7 +235,7 @@ class Vehicle(Assembly):
     @property
     def comfort_points(self) -> float:
         """Each standard seat Space is worth one, plus what the fittings carry."""
-        from_fittings = sum(getattr(option, 'comfort_points', 0.0) for option in self.options)
+        from_fittings = sum(option.comfort_points for option in self.options)
         return self.occupant_spaces + from_fittings
 
     @property

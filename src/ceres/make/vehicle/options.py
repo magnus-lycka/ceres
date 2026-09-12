@@ -13,16 +13,34 @@ from dataclasses import dataclass
 from math import ceil
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
-from ceres.gear.comm import RadioTransceiverPart
+from ceres.gear.comm import RETROTECH_MAX_ELECTRONICS_LEVELS, RadioTransceiverEquipment, TransceiverPart
 from ceres.gear.computer import ComputerPart
 from ceres.gear.safety import FireExtinguisherPart
 from ceres.shared import CeresModel
 
+from .base import VehicleBase
+
 
 class _Option(CeresModel):
-    """What every option can be asked, whether or not it answers."""
+    """What every option can be asked, whether or not it answers.
+
+    An option is bound to the vehicle it is installed in (ARCHITECTURE.md,
+    two-phase construction), because what it costs and occupies can depend on
+    that vehicle's size and Tech Level.
+    """
+
+    _vehicle: VehicleBase | None = PrivateAttr(default=None)
+
+    def bind(self, vehicle: VehicleBase) -> None:
+        self._vehicle = vehicle
+
+    @property
+    def vehicle(self) -> VehicleBase:
+        if self._vehicle is None:
+            raise RuntimeError(f'{type(self).__name__} is not installed in a vehicle')
+        return self._vehicle
 
     @property
     def label(self) -> str:
@@ -40,12 +58,18 @@ class _Option(CeresModel):
     def agility(self) -> int:
         return 0
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return 0.0
 
-    def spaces(self, spaces: int) -> int:
-        """Spaces consumed on a vehicle this big."""
+    @property
+    def spaces(self) -> int:
+        """Spaces this consumes in the vehicle it is installed in."""
         return 0
+
+    @property
+    def comfort_points(self) -> float:
+        return 0.0
 
 
 @dataclass(frozen=True)
@@ -127,7 +151,8 @@ class ControlSystem(_Option):
     def agility(self) -> int:
         return _CONTROL[self.quality].value
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return _CONTROL[self.quality].cost
 
 
@@ -141,7 +166,8 @@ class Autopilot(_Option):
     def skill_level(self) -> int:
         return _AUTOPILOT[self.quality].value
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return _AUTOPILOT[self.quality].cost
 
 
@@ -155,7 +181,8 @@ class NavigationSystem(_Option):
     def navigation_dm(self) -> int:
         return _NAVIGATION[self.quality].value
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return _NAVIGATION[self.quality].cost
 
 
@@ -173,7 +200,8 @@ class SensorSystem(_Option):
     def range_km(self) -> int:
         return _SENSORS[self.quality].range_km
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return _SENSORS[self.quality].cost
 
 
@@ -213,25 +241,13 @@ _COMPUTERS: dict[int, tuple[int, float, int]] = {
     3: (12, 2_000, 16),
 }
 
-# refs/vehicle/09_core_options.md — Transceivers, by range in kilometres
-# refs/vehicle/08_options.md — Tech Level Stages. An item made well past its
-# introduction is cheaper for the same capability.
-_TECH_STAGE_COST: dict[str, float] = {
-    'basic': 1.0,
-    'improved': 0.5,
-    'enhanced': 0.25,
-    'advanced': 0.1,
-    'superior': 0.05,
-}
+# refs/vehicle/08_options.md — Tech Level Stages, naming how many Tech Levels an
+# item is past its introduction.
+_STAGE_NAMES = ('basic', 'improved', 'enhanced', 'advanced', 'superior')
 
-_TRANSCEIVERS: dict[int, tuple[int, float]] = {
-    5: (5, 200),
-    50: (5, 600),
-    500: (6, 600),
-    5_000: (6, 3_000),
-    50_000: (7, 50_000),
-    500_000: (9, 50_000),
-}
+# refs/vehicle/09_core_options.md — Transceiver Options. Gear has no tightbeam
+# part, so this one option keeps the vehicle rules' price.
+_TIGHTBEAM_COST = 2_000
 
 
 class CollisionProtection(_Option):
@@ -252,7 +268,8 @@ class CollisionProtection(_Option):
     def protection(self) -> int:
         return _COLLISION[self.quality].value
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return _COLLISION[self.quality].cost * self.spaces_protected
 
 
@@ -262,10 +279,12 @@ class AirLock(_Option):
     kind: Literal['AIR_LOCK'] = 'AIR_LOCK'
     count: int = 1
 
-    def spaces(self, spaces: int) -> int:
+    @property
+    def spaces(self) -> int:
         return 2 * self.count
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return 2_000 * self.count
 
 
@@ -280,12 +299,14 @@ class LifeSupport(_Option):
     def label(self) -> str:
         return f'Life Support ({self.duration.replace("_", " ")})'
 
-    def spaces(self, spaces: int) -> int:
+    @property
+    def spaces(self) -> int:
         per_space = _LIFE_SUPPORT[self.duration].value
         return max(ceil(self.people / per_space), 1)
 
-    def cost(self, spaces: int) -> float:
-        return _LIFE_SUPPORT[self.duration].cost * self.spaces(spaces)
+    @property
+    def cost(self) -> float:
+        return _LIFE_SUPPORT[self.duration].cost * self.spaces
 
 
 class Bunk(_Option):
@@ -294,10 +315,12 @@ class Bunk(_Option):
     kind: Literal['BUNK'] = 'BUNK'
     count: int = 1
 
-    def spaces(self, spaces: int) -> int:
+    @property
+    def spaces(self) -> int:
         return self.count
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return 200 * self.count
 
     @property
@@ -311,11 +334,13 @@ class Fresher(_Option):
     kind: Literal['FRESHER'] = 'FRESHER'
     quality: Literal['half', 'standard', 'full'] = 'standard'
 
-    def spaces(self, spaces: int) -> int:
+    @property
+    def spaces(self) -> int:
         return _FRESHER[self.quality][1]
 
-    def cost(self, spaces: int) -> float:
-        return _FRESHER[self.quality][2] * self.spaces(spaces)
+    @property
+    def cost(self) -> float:
+        return _FRESHER[self.quality][2] * self.spaces
 
     @property
     def comfort_points(self) -> float:
@@ -328,11 +353,13 @@ class Galley(_Option):
     kind: Literal['GALLEY'] = 'GALLEY'
     quality: Literal['mini', 'full', 'gourmet'] = 'mini'
 
-    def spaces(self, spaces: int) -> int:
+    @property
+    def spaces(self) -> int:
         return _GALLEY[self.quality][1]
 
-    def cost(self, spaces: int) -> float:
-        return _GALLEY[self.quality][2] * self.spaces(spaces)
+    @property
+    def cost(self) -> float:
+        return _GALLEY[self.quality][2] * self.spaces
 
     @property
     def comfort_points(self) -> float:
@@ -344,7 +371,8 @@ class EntertainmentSystem(_Option):
 
     kind: Literal['ENTERTAINMENT_SYSTEM'] = 'ENTERTAINMENT_SYSTEM'
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         return 200.0
 
     @property
@@ -360,8 +388,9 @@ class VacuumEnvironment(_Option):
 
     kind: Literal['VACUUM_ENVIRONMENT'] = 'VACUUM_ENVIRONMENT'
 
-    def cost(self, spaces: int) -> float:
-        return 2_000 * spaces
+    @property
+    def cost(self) -> float:
+        return 2_000 * self.vehicle.spaces
 
 
 class FireExtinguishers(_Option):
@@ -377,8 +406,9 @@ class FireExtinguishers(_Option):
     def part(self) -> FireExtinguisherPart:
         return FireExtinguisherPart()
 
-    def cost(self, spaces: int) -> float:
-        return 20 * spaces
+    @property
+    def cost(self) -> float:
+        return 20 * self.vehicle.spaces
 
 
 class VehicleComputer(_Option):
@@ -400,32 +430,45 @@ class VehicleComputer(_Option):
         tl, _, _ = _COMPUTERS[self.processing]
         return ComputerPart(processing=self.processing, tl=tl)
 
-    def cost_at_tl(self, tl: int) -> float:
+    @property
+    def cost(self) -> float:
         _, cost, free_from_tl = _COMPUTERS[self.processing]
-        return 0.0 if tl >= free_from_tl else cost
-
-    def cost(self, spaces: int) -> float:
-        # The Tech Level discount is applied by the vehicle, which knows its own.
-        _, cost, _ = _COMPUTERS[self.processing]
-        return cost
+        return 0.0 if self.vehicle.tl >= free_from_tl else cost
 
 
 class VehicleTransceiver(_Option):
-    """A radio transceiver, with the vehicle-scale options it can carry.
+    """A radio transceiver, with the options it can carry.
 
-    The transceiver is gear; the vehicle rules price the installation.
+    The transceiver is gear, built at the Tech Level of the vehicle it is fitted
+    to, so its price follows the Central Supply Catalogue's retrotech (RIG-001,
+    RIV-011). Transceivers take no Spaces.
     """
 
     kind: Literal['TRANSCEIVER'] = 'TRANSCEIVER'
     range_km: int = 500
-    stage: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
     satellite_uplink: bool = False
     tightbeam: bool = False
     encryption: bool = False
 
     @property
+    def _equipment(self) -> RadioTransceiverEquipment:
+        return RadioTransceiverEquipment(
+            range_km=self.range_km,
+            tl=self.vehicle.tl,
+            satellite_uplink=self.satellite_uplink,
+            encryption=self.encryption,
+        )
+
+    @property
+    def transceiver_part(self) -> TransceiverPart:
+        return self._equipment.transceiver_part
+
+    @property
     def label(self) -> str:
-        return f'Transceiver ({self.stage})'
+        """Named by its Tech Level stage: how far past its model it was built."""
+        model_tl = RadioTransceiverEquipment.model_tl(self.range_km, self.vehicle.tl)
+        levels = min(self.vehicle.tl - model_tl, RETROTECH_MAX_ELECTRONICS_LEVELS)
+        return f'Transceiver ({_STAGE_NAMES[levels]})'
 
     @property
     def communications(self) -> str:
@@ -440,27 +483,10 @@ class VehicleTransceiver(_Option):
         return ', '.join(parts)
 
     @property
-    def part(self) -> RadioTransceiverPart:
-        tl, cost = _TRANSCEIVERS[self.range_km]
-        return RadioTransceiverPart(range_km=self.range_km, tl=tl, cost=cost)
-
-    def cost(self, spaces: int) -> float:
-        # refs/vehicle/09_core_options.md — Transceiver Options. The vehicle
-        # rules price fitting these, which is not what the same option costs
-        # bought on its own (ADR-0002).
-        _, listed = _TRANSCEIVERS[self.range_km]
-        cost = listed * _TECH_STAGE_COST[self.stage]
-        if self.satellite_uplink:
-            cost += 1_000
-        if self.tightbeam:
-            cost += 2_000
-        if self.encryption:
-            cost += 4_000
-        return cost
-
-    def spaces(self, spaces: int) -> int:
-        # A satellite uplink consumes a Space at introduction, none at TL8+.
-        return 0
+    def cost(self) -> float:
+        """The gear parts installed — transceiver, uplink, encryption — plus tightbeam."""
+        tightbeam = _TIGHTBEAM_COST if self.tightbeam else 0
+        return sum(part.cost for part in self._equipment.parts) + tightbeam
 
 
 OptionUnion = Annotated[
