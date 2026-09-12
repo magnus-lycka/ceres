@@ -1265,3 +1265,43 @@ manipulators do to it, so the skills row is a convenience, not the record.
 This notation is a display artifact in the same sense as `(All)` (RIR-012): nothing
 in the design buys a "3/2", it is a statement that two DMs are available and the
 choice is a table decision.
+
+## Rule Interpretations for vehicles
+
+### RIV-001 The Vehicle Damage Track Is Called Structure, Not Hull
+
+The 2026 *Vehicle Handbook* is internally inconsistent about the name of a vehicle's
+damage track. The rules text calls it **Hull** throughout — `HULL 0.5 per Space` in
+every vehicle type table, "a vehicle's Hull cannot be less than 1" under Design
+Limits, "Reinforced Hull +10%" and "Light Hull -25%" under Structural Reinforcement,
+and "+50% to the vehicle's Hull" in the AFV feature. The catalogue stat blocks print
+**STRUCTURE**: the ATV entry shows `STRUCTURE 4`, not `HULL 4`.
+
+Ceres uses **Structure** everywhere — the attribute name in `make.vehicle`, and the
+label in rendered specs. Wherever the source says "Hull" of a vehicle, read
+"Structure".
+
+Two reasons. First, rendered output has to match the published catalogue entries it
+is compared against, and those say Structure. Second, `Hull` already means something
+else in Ceres: in `make.ship` it is a *part* with its own configuration, armour and
+cost, not an integer damage track. Reusing the word for a vehicle's damage-track
+integer would put two unrelated meanings in the same codebase, in the package that
+ship will eventually import.
+
+This is a naming translation only. The values and formulas are the source's.
+
+### RIV-002 Armour `6 (18)` Notation Is Derived At Render Time
+
+Catalogue armour tables print two numbers per face, for example the ATV's
+`Forward 6 (18)`. The first is the face's Protection. The second is the protection
+applied against small arms only, which the Armour chapter states is reduced by both
+the armour and the Tech Level of the vehicle — the ATV is TL12, so 6 + 12 = 18.
+
+The parenthesised figure is presentation, not design state. Ceres stores Protection
+per face and derives the small-arms figure when rendering a spec. It is not a field
+on the design and is not serialised.
+
+The Tech Level bonus applies only while the face is not reduced below the base
+Protection for the vehicle's Tech Level — the open-topped dorsal face being the
+case where it is. A face in that state prints its Protection without the
+parenthesised figure.
