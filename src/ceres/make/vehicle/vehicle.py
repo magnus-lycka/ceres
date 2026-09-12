@@ -17,7 +17,7 @@ from ceres.shared import Assembly
 from .armour import Armour, Face
 from .customisations import CustomisationUnion
 from .features import Feature
-from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem
+from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleComputer
 from .size import VehicleSize, target_size_dm
 from .spec import VehicleSpec
 from .speed import SpeedBand
@@ -114,9 +114,19 @@ class Vehicle(Assembly):
             customisation.added_cost for customisation in self.customisations
         )
         absolute = sum(customisation.cost(self.spaces) for customisation in self.customisations) + sum(
-            option.cost(self.spaces) for option in self.options
+            self._option_cost(option) for option in self.options
         )
         return self.base_cost * (1 + fractions) + absolute
+
+    def _option_cost(self, option) -> float:
+        """What an option costs this design.
+
+        A computer becomes standard equipment at no Cost once the vehicle is
+        advanced enough, which only the vehicle knows.
+        """
+        if isinstance(option, VehicleComputer):
+            return option.cost_at_tl(self.tl)
+        return option.cost(self.spaces)
 
     @property
     def available_spaces(self) -> int:

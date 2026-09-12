@@ -5,7 +5,22 @@ Rules: refs/vehicle/09_core_options.md
 
 from typing import Any
 
-from ceres.make.vehicle.options import Autopilot, ControlSystem, NavigationSystem, SensorSystem
+from ceres.make.vehicle.options import (
+    AirLock,
+    Autopilot,
+    Bunk,
+    CollisionProtection,
+    ControlSystem,
+    FireExtinguishers,
+    Fresher,
+    Galley,
+    LifeSupport,
+    NavigationSystem,
+    SensorSystem,
+    VacuumEnvironment,
+    VehicleComputer,
+    VehicleTransceiver,
+)
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
@@ -97,3 +112,63 @@ class TestThePublishedDesigns:
         assert air_raft.navigation_dm == 1
         assert air_raft.sensors_dm == 0
         assert air_raft.sensors_range_km == 1
+
+
+class TestInstalledFittings:
+    """refs/vehicle/13_internal_options.md — what each fitting costs and occupies."""
+
+    def test_an_airlock_takes_two_spaces_each(self):
+        vehicle = a_vehicle(options=[AirLock()])
+        assert vehicle.available_spaces == 18
+        assert vehicle.cost == 15_000 + 2_000
+
+    def test_collision_protection_is_priced_per_space_protected(self):
+        assert a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)]).cost == 15_000 + 16_000
+
+    def test_life_support_covers_twenty_people_per_space(self):
+        vehicle = a_vehicle(options=[LifeSupport(duration='short_term', people=8)])
+        assert vehicle.available_spaces == 19
+        assert vehicle.cost == 15_000 + 10_000
+
+    def test_a_fresher_and_a_galley_are_priced_by_the_space_they_take(self):
+        assert a_vehicle(options=[Fresher(quality='standard')]).cost == 15_000 + 1_500
+        assert a_vehicle(options=[Galley(quality='mini')]).cost == 15_000 + 250
+
+    def test_bunks_take_a_space_each(self):
+        vehicle = a_vehicle(options=[Bunk(count=2)])
+        assert vehicle.available_spaces == 18
+        assert vehicle.cost == 15_000 + 400
+
+
+class TestPricedByTheWholeVehicle:
+    """Some options are priced by the size of the vehicle they fit out."""
+
+    def test_vacuum_protection_scales_with_the_vehicle(self):
+        assert a_vehicle(options=[VacuumEnvironment()]).cost == 15_000 + 40_000
+
+    def test_fire_extinguishers_scale_with_the_vehicle(self):
+        assert a_vehicle(options=[FireExtinguishers()]).cost == 15_000 + 400
+
+
+class TestGearBackedOptions:
+    """ADR-0002 — the item is gear; the vehicle rules price the installation."""
+
+    def test_a_transceiver_is_a_gear_part(self):
+        option = VehicleTransceiver(range_km=500)
+        assert option.part.range_km == 500
+        assert 'Transceiver' in option.part.description
+
+    def test_transceiver_options_are_priced_by_the_vehicle_rules(self):
+        option = VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True)
+        assert option.cost(20) == 600 + 1_000 + 2_000 + 4_000
+
+    def test_a_computer_is_a_gear_part(self):
+        assert VehicleComputer(processing=1).part.processing == 1
+
+    def test_a_computer_is_free_once_it_is_standard_equipment(self):
+        # refs/vehicle/16_automation.md — Computer/1 is Cr500 at TL8, free at TL11+.
+        assert a_vehicle(tl=8, options=[VehicleComputer(processing=1)]).cost == 15_000 + 500
+        assert a_vehicle(tl=12, options=[VehicleComputer(processing=1)]).cost == 15_000
+
+    def test_fire_extinguishers_carry_the_gear_part(self):
+        assert FireExtinguishers().part.cost == 50

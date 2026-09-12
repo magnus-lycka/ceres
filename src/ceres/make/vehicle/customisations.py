@@ -134,7 +134,26 @@ class DecreasedFuel(_Customisation):
         return -0.25 * self.steps
 
 
+class AquaticDrive(_Customisation):
+    """A secondary drive letting a land vehicle cross calm water.
+
+    Its performance is that of an equivalent watercraft, one Speed Band and one
+    Agility lower, with a tenth of the range.
+    """
+
+    kind: Literal['AQUATIC_DRIVE'] = 'AQUATIC_DRIVE'
+
+    def drive_spaces(self, spaces: int) -> int:
+        return max(ceil(spaces * 0.05), 1)
+
+    def spaces_delta(self, spaces: int) -> int:
+        return -self.drive_spaces(spaces)
+
+    def cost(self, spaces: int) -> float:
+        return 1_500 * spaces
+
+
 CustomisationUnion = Annotated[
-    FusionPlusPlant | SlowerSpeed | IncreasedEfficiency | IncreasedFuel | DecreasedFuel,
+    FusionPlusPlant | SlowerSpeed | IncreasedEfficiency | IncreasedFuel | DecreasedFuel | AquaticDrive,
     Field(discriminator='kind'),
 ]
