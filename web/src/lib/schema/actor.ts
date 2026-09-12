@@ -144,6 +144,7 @@ type KindChecked = {
   dexterity: number | null;
   endurance: number | null;
   hits: number | null;
+  injuries?: Injury[];
   criticals?: Partial<Record<CriticalLocation, Critical>>;
 };
 
@@ -168,6 +169,12 @@ export function checkKind(actor: KindChecked, ctx: z.RefinementCtx): void {
   }
   if (!wantsCharacteristics && actor.hits === null) {
     ctx.addIssue({ code: 'custom', message: `a ${actor.kind} needs hits` });
+  }
+  if (actor.kind === 'robot' && actor.injuries?.some((injury) => injury.kind === 'stun')) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'a robot cannot retain stun damage; an electromagnetic stunner causes physical Hits',
+    });
   }
   const criticals = Object.values(actor.criticals ?? {});
   if (actor.kind !== 'robot' && criticals.some((row) => row.severity > 0 || row.note)) {

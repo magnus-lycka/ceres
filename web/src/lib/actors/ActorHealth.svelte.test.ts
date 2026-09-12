@@ -59,6 +59,14 @@ describe('ActorHealth', () => {
     expect(onchange.mock.calls[0][0].criticals.brain).toEqual({ severity: 3, note: '' });
   });
 
+  it('offers robots physical damage rather than recoverable stun', async () => {
+    const screen = await render(ActorHealth, { actor: warbot, onchange: vi.fn() });
+
+    await expect.element(screen.getByText('Stunners cause physical Hits to robots.')).toBeVisible();
+    expect(screen.container.querySelector('option[value="stun"]')).toBeNull();
+    await expect.element(screen.getByLabelText('Injury kind')).toHaveValue('lethal');
+  });
+
   // Stun is deducted from END alone, so the form must not offer STR or DEX —
   // stun that reached them could kill, which it never can.
   it('offers stun on one stat only, where lethal offers three', async () => {

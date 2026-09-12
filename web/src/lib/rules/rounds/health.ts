@@ -31,17 +31,23 @@ function total(actor: Actor, stat: Stat, kind?: Injury['kind']): number {
 }
 
 /**
- * The one stat stun can touch.
+ * The one stat recoverable stun can touch.
  *
  * Stun damage is deducted from END only — it never spills into STR or DEX, and
- * so can never kill. For an actor hurt through Hits it suppresses Hits.
+ * so can never kill. For an animal it suppresses Hits. An electromagnetic
+ * stunner instead causes lasting physical Hits to a robot, so a robot has no
+ * recoverable stun stat (Robot Handbook, p.106).
  */
 export function stunStat(actor: Actor): Stat {
+  if (actor.kind === 'robot') {
+    throw new Error('a stunner causes physical Hits to a robot, not recoverable stun');
+  }
   return hurtByCharacteristics(actor) ? 'endurance' : 'hits';
 }
 
 /** Stun currently suppressing the damage-bearing stat. */
 export function stunPoints(actor: Actor): number {
+  if (actor.kind === 'robot') return 0;
   return total(actor, stunStat(actor), 'stun');
 }
 
@@ -114,13 +120,17 @@ export function recordInjury(
   reductions: Partial<Record<Stat, number>>,
 ): Actor {
   if (kind === 'stun') {
-    const allowed = stunStat(actor);
+    // The input names the weapon's damage trait. For a robot its applied
+    // result is nevertheless lasting physical damage, and the history stores
+    // that result rather than the attack which produced it.
+    const allowed = actor.kind === 'robot' ? 'hits' : stunStat(actor);
     const illegal = Object.entries(reductions).filter(([stat, points]) => stat !== allowed && points);
     if (illegal.length > 0) {
       throw new Error(`stun only reduces ${allowed}, not ${illegal.map(([stat]) => stat).join(', ')}`);
     }
   }
-  return { ...actor, injuries: [...actor.injuries, { when: null, kind, reductions }] };
+  const recorded = actor.kind === 'robot' && kind === 'stun' ? 'lethal' : kind;
+  return { ...actor, injuries: [...actor.injuries, { when: null, kind: recorded, reductions }] };
 }
 
 export function removeInjury(actor: Actor, index: number): Actor {

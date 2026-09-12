@@ -166,6 +166,15 @@ describe('a robot loses Hits like an animal, but not the states that go with the
   it('is still operational above zero Hits', () => {
     expect(isDead(warbot(20, [hurt('lethal', { hits: 19 })]))).toBe(false);
   });
+
+  it('takes a stunner hit as lasting physical damage, not recoverable stun', () => {
+    const damaged = recordInjury(warbot(), 'stun', { hits: 20 });
+
+    expect(damaged.injuries).toEqual([{ when: null, kind: 'lethal', reductions: { hits: 20 } }]);
+    expect(stunPoints(damaged)).toBe(0);
+    expect(isDead(damaged)).toBe(true);
+    expect(healthSummary(damaged)).toBe('dead');
+  });
 });
 
 describe('recording an injury outside a fight', () => {
@@ -182,9 +191,13 @@ describe('recording an injury outside a fight', () => {
 });
 
 describe('stun only ever reduces one stat', () => {
-  it('is END for a sophont and Hits for anything else', () => {
+  it('is END for a sophont and Hits for an animal', () => {
     expect(stunStat(sophont())).toBe('endurance');
     expect(stunStat(beast())).toBe('hits');
+  });
+
+  it('is not a recoverable damage category for a robot', () => {
+    expect(() => stunStat(warbot())).toThrow(/physical Hits/);
   });
 
   it('refuses stun on STR or DEX, which would let it kill', () => {

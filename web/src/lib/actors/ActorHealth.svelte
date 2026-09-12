@@ -40,8 +40,13 @@
   let kind = $state<Injury['kind']>('lethal');
   let entry = $state<Partial<Record<Stat, number>>>({});
 
-  /** Stun only reduces one stat, so the form offers only that one. */
-  const editable = $derived<Stat[]>(kind === 'stun' ? [stunStat(actor)] : columns.map(([stat]) => stat));
+  /** A robot cannot retain stun; changing selection cannot leave that stale. */
+  const selectedKind = $derived<Injury['kind']>(actor.kind === 'robot' ? 'lethal' : kind);
+
+  /** Recoverable stun only reduces one stat, so the form offers only that one. */
+  const editable = $derived<Stat[]>(
+    selectedKind === 'stun' ? [stunStat(actor)] : columns.map(([stat]) => stat),
+  );
 
   function points(stat: Stat): number {
     return entry[stat] ?? 0;
@@ -52,7 +57,7 @@
       editable.map((stat) => [stat, points(stat)]).filter(([, value]) => (value as number) > 0),
     ) as Partial<Record<Stat, number>>;
     if (Object.keys(reductions).length === 0) return;
-    onchange(recordInjury(actor, kind, reductions));
+    onchange(recordInjury(actor, selectedKind, reductions));
     entry = {};
   }
 
@@ -96,6 +101,7 @@
   <div class="panels">
     <div class="panel">
       <h3>Injuries</h3>
+      {#if actor.kind === 'robot'}<p class="hint">Stunners cause physical Hits to robots.</p>{/if}
       <table>
         <thead>
           <tr>
@@ -107,7 +113,7 @@
         <tbody>
           {#each actor.injuries as injury, index (index)}
             <tr>
-              <td>{injury.kind}</td>
+              <td>{actor.kind === 'robot' ? 'physical' : injury.kind}</td>
               {#each columns as [stat] (stat)}
                 <td>{injury.reductions[stat] ? `-${injury.reductions[stat]}` : '—'}</td>
               {/each}
@@ -118,9 +124,13 @@
           {/each}
           <tr class="add">
             <td>
-              <select aria-label="Injury kind" bind:value={kind}>
-                <option value="lethal">lethal</option>
-                <option value="stun">stun</option>
+              <select
+                aria-label="Injury kind"
+                value={selectedKind}
+                onchange={(event) => (kind = event.currentTarget.value as Injury['kind'])}
+              >
+                <option value="lethal">{actor.kind === 'robot' ? 'physical' : 'lethal'}</option>
+                {#if actor.kind !== 'robot'}<option value="stun">stun</option>{/if}
               </select>
             </td>
             {#each columns as [stat] (stat)}
@@ -205,6 +215,10 @@
   }
   .state {
     color: #b91c1c;
+  }
+  .hint {
+    margin: 0 0 0.35rem;
+    color: #5f6368;
   }
   table {
     border-collapse: collapse;

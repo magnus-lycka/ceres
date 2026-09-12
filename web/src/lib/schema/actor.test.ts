@@ -46,6 +46,16 @@ describe('actor schema', () => {
     expect(hurt.criticals.brain).toEqual({ severity: 2, note: 'DM−2 to all skills' });
   });
 
+  it('rejects recoverable stun on a robot, because a stunner causes physical Hits', () => {
+    const result = actorSchema.safeParse({
+      ...robot,
+      injuries: [{ kind: 'stun', reductions: { hits: 3 } }],
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toContain('physical Hits');
+  });
+
   it('defaults a critical to undamaged and unannotated', () => {
     expect(actorSchema.parse({ ...robot, criticals: { brain: {} } }).criticals.brain).toEqual({
       severity: 0,
