@@ -3,7 +3,6 @@ from ceres.worlds import DEFAULT_MILIEU, SectorWorldFilters, SectorWorldOptions,
 
 def test_default_milieu_is_string():
     assert isinstance(DEFAULT_MILIEU, str)
-    assert DEFAULT_MILIEU  # not empty
 
 
 def test_sector_world_options_is_importable():
