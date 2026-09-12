@@ -9,6 +9,38 @@ being used in code rather than decided on paper. It currently covers vehicle
 design and the cross-domain collisions that domain exposed; ships, robots,
 characters and worlds are not yet written up.
 
+## Assemblies, parts and gear
+
+**Part**:
+A component with a Tech Level and a cost that can be installed into any
+assembly — a ship, a robot, a vehicle, a piece of gear. What a part contributes
+in a given context (displacement, Spaces, power) is supplied by that context,
+not by the part.
+_Avoid_: component, module, unit
+
+**Assembly**:
+Anything a part can be installed into. Ships, robots, vehicles and gear are all
+assemblies.
+_Avoid_: container, host, chassis
+
+**Equipment**:
+An assembly that packages one or more parts into a single thing — a transceiver
+that is a radio part plus a computer part plus an encryption part.
+_Avoid_: item, device, kit
+
+**Gear**:
+Equipment that makes sense on its own: something you could buy as a unit and
+use without installing it in anything. A transceiver, a computer, a fire
+extinguisher. The test is isolation, not size or portability.
+
+A vehicle's air lock, collision protection or autopilot is *not* gear. It has no
+existence outside the vehicle, so it belongs to the domain that installs it.
+
+When a domain needs something that is gear, it reuses gear's **part**, not its
+packaging: the part carries the item's identity and Tech Level, while the
+installing domain supplies what the installation costs and occupies there.
+_Avoid_: equipment (narrower here), accessory, kit
+
 ## Vehicle design
 
 **Space**:
