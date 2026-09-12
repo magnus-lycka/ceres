@@ -9,12 +9,12 @@ import pytest
 
 from ceres.make.vehicle.size import VehicleSize
 from ceres.make.vehicle.speed import SpeedBand
-from ceres.make.vehicle.types import GROUND_VEHICLE, ROTORCRAFT
+from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
 
 def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
+    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
     return Vehicle(**(defaults | kwargs))
 
 
@@ -68,7 +68,7 @@ class TestStructure:
         # rotorcraft is Hull 0.5 per Space, so 41 Spaces is Hull 20.5 and
         # Structure is a tenth of that rounded up: 2.05 -> 3. Rounding Hull first
         # would give Hull 20 and Structure 2.
-        vehicle = a_vehicle(vehicle_type=ROTORCRAFT, spaces=41, tl=12)
+        vehicle = a_vehicle(vehicle_type=VehicleType.ROTORCRAFT, spaces=41, tl=12)
         assert vehicle.hull == 20.5
         assert vehicle.structure == 3
 

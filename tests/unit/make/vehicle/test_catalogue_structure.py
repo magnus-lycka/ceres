@@ -18,39 +18,31 @@ Paladin especially — it is the design that decides RIV-002.
 
 import pytest
 
-from ceres.make.vehicle.types import (
-    AIRSHIP,
-    GRAV_VEHICLE,
-    GROUND_VEHICLE,
-    ROTORCRAFT,
-    SUBMERSIBLE,
-    WALKER,
-    WATERCRAFT,
-)
+from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
 # (design, type, Spaces, printed Structure) — refs/vehicle/26_wehicle_catalogue.md
 PUBLISHED = [
-    ('Aerocar SuperTaxi', ROTORCRAFT, 6, 1),
-    ('Air/Raft', GRAV_VEHICLE, 8, 2),
-    ('Assault Monocycle', GROUND_VEHICLE, 2, 1),
-    ('ATV', GROUND_VEHICLE, 20, 4),
-    ('Destroyer', WATERCRAFT, 4_000, 800),
-    ('Dirt Bike', GROUND_VEHICLE, 2, 1),
-    ('Dracoflame', ROTORCRAFT, 3, 1),
-    ('G/racer', GRAV_VEHICLE, 2, 1),
-    ('Gecko', GROUND_VEHICLE, 9, 2),
-    ('Hyper MagTube Car', GROUND_VEHICLE, 40, 8),
-    ('Light Cargo Lifter', WALKER, 3, 1),
-    ('Nautilus', SUBMERSIBLE, 370, 111),
-    ('Prospecting Buggy', GRAV_VEHICLE, 8, 2),
-    ('Public Safety Cruiser', GRAV_VEHICLE, 16, 4),
-    ('Runabout', GRAV_VEHICLE, 3, 1),
-    ('SkyStrike G/Fighter', GRAV_VEHICLE, 14, 3),
-    ('Speeder', GRAV_VEHICLE, 4, 1),
-    ('Titan Turtle', SUBMERSIBLE, 20_000_000, 6_000_000),
-    ('Vyrtybyrd Touring RV', ROTORCRAFT, 100, 5),
-    ('VoidSailor Mobile Home', AIRSHIP, 215, 5),
+    ('Aerocar SuperTaxi', VehicleType.ROTORCRAFT, 6, 1),
+    ('Air/Raft', VehicleType.GRAV_VEHICLE, 8, 2),
+    ('Assault Monocycle', VehicleType.GROUND_VEHICLE, 2, 1),
+    ('ATV', VehicleType.GROUND_VEHICLE, 20, 4),
+    ('Destroyer', VehicleType.WATERCRAFT, 4_000, 800),
+    ('Dirt Bike', VehicleType.GROUND_VEHICLE, 2, 1),
+    ('Dracoflame', VehicleType.ROTORCRAFT, 3, 1),
+    ('G/racer', VehicleType.GRAV_VEHICLE, 2, 1),
+    ('Gecko', VehicleType.GROUND_VEHICLE, 9, 2),
+    ('Hyper MagTube Car', VehicleType.GROUND_VEHICLE, 40, 8),
+    ('Light Cargo Lifter', VehicleType.WALKER, 3, 1),
+    ('Nautilus', VehicleType.SUBMERSIBLE, 370, 111),
+    ('Prospecting Buggy', VehicleType.GRAV_VEHICLE, 8, 2),
+    ('Public Safety Cruiser', VehicleType.GRAV_VEHICLE, 16, 4),
+    ('Runabout', VehicleType.GRAV_VEHICLE, 3, 1),
+    ('SkyStrike G/Fighter', VehicleType.GRAV_VEHICLE, 14, 3),
+    ('Speeder', VehicleType.GRAV_VEHICLE, 4, 1),
+    ('Titan Turtle', VehicleType.SUBMERSIBLE, 20_000_000, 6_000_000),
+    ('Vyrtybyrd Touring RV', VehicleType.ROTORCRAFT, 100, 5),
+    ('VoidSailor Mobile Home', VehicleType.AIRSHIP, 215, 5),
 ]
 
 

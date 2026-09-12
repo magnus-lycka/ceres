@@ -1,0 +1,36 @@
+"""A vehicle design must survive a trip through JSON unchanged.
+
+docs/ARCHITECTURE.md — "A complete design must serialize to JSON and deserialize
+back to a functionally identical" design: same structure, same types, same field
+values. Designs are stored, transferred and rendered from their JSON.
+"""
+
+from ceres.make.vehicle.types import VehicleType
+from ceres.make.vehicle.vehicle import Vehicle
+
+
+def test_a_design_roundtrips_through_json():
+    original = Vehicle(name='Test ATV', vehicle_type=VehicleType.GROUND_VEHICLE, spaces=20, tl=12)
+
+    restored = Vehicle.model_validate_json(original.model_dump_json())
+
+    assert restored == original
+
+
+def test_a_restored_design_derives_the_same_figures():
+    original = Vehicle(name='Sky Dirge', vehicle_type=VehicleType.AIRSHIP, spaces=128, tl=12)
+
+    restored = Vehicle.model_validate_json(original.model_dump_json())
+
+    assert restored.hull == original.hull
+    assert restored.structure == original.structure
+    assert restored.speed is original.speed
+    assert restored.shipping_tons == original.shipping_tons
+
+
+def test_the_type_is_named_in_the_json_not_inlined():
+    # The type table is reference data, not part of a design's identity: a design
+    # records which type it is, and the table stays in code.
+    payload = Vehicle(name='Air/Raft', vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=10).model_dump()
+
+    assert payload['vehicle_type'] == 'Grav Vehicle'

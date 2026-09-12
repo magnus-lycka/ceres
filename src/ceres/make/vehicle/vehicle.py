@@ -8,9 +8,8 @@ Rules: refs/vehicle/03_vehicle_design.md, refs/vehicle/02_new_rules.md
 """
 
 from math import ceil
-from typing import ClassVar
 
-from pydantic import ConfigDict, field_validator
+from pydantic import field_validator
 
 from ceres.shared import Assembly
 
@@ -33,8 +32,6 @@ class Vehicle(Assembly):
     vehicle_type: VehicleType
     spaces: int
     tl: int
-
-    model_config: ClassVar[ConfigDict] = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator('spaces')
     @classmethod
