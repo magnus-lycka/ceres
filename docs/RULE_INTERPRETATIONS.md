@@ -1459,9 +1459,15 @@ the whole vehicle rather than by any volume of their own, vacuum environment
 protection and fire extinguishers among them.
 
 The worksheet is not an answer key either. It disagrees with the book on the
-Cost of a basic sensor system (Cr5,000 against Cr2,000) and on galley Costs, and
-sizes life support as a flat 5% of the vehicle rather than one Space per twenty
-people. Where the two differ and nothing else decides it, Ceres follows the book.
+Cost of a basic sensor system, charging Cr5,000 against the book's Cr2,000, and
+it sizes life support as a flat 5% of the vehicle rather than one Space per
+twenty people — which happens to give the same answer for a 20 Space vehicle.
+Where the two differ and nothing else decides it, Ceres follows the book.
+
+Read the worksheet's Options table by its declared columns rather than by
+position. Each row carries four Cost columns — per unit, per vehicle Space, per
+option Space and per cent of base — and a Costing column saying which of them
+applies. Reading the wrong one invents disagreements that are not there.
 
 ### RIV-009 Published Catalogue Designs Do Not Reliably Reconcile
 
@@ -1482,6 +1488,13 @@ Cr250,000. The Air/Raft's published 2,000km Range is reachable only by two steps
 of fuel efficiency, which then adds half its base Cost again and puts it further
 still from the published figure; the alternative, fuel capacity, would require
 3.2 Spaces of a vehicle that has 8.
+
+The likeliest explanation for the Costs specifically is that the published
+prices predate the construction system and are canon. The *Core Rulebook* lists
+the same figures — the Air/Raft at Cr250,000 and the ATV at Cr155,000 — so these
+are inherited numbers that a later, self-consistent design sequence has to
+reproduce rather than derive. A comprehensive system whose rules add up will not
+always land on a price that was fixed before those rules existed.
 
 These are therefore recorded as source discrepancies on the affected designs
 rather than reconciled. A design whose derived figures differ from its published
