@@ -12,6 +12,7 @@
    */
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
+  import { tick } from 'svelte';
   import { library, refresh } from '$lib/store/session.svelte';
   import {
     actorId,
@@ -85,8 +86,9 @@
     return keep(async () => {
       const saved = await store(newActor(kind, actorId(UNSAVED)));
       actors = [...actors, saved];
-      // On the new row, ready to type its name.
-      grid?.focus(actors.length - 1);
+      // On the new actor, wherever the current view seats it.
+      await tick();
+      grid?.focus(saved.id);
     });
   }
 
@@ -113,7 +115,8 @@
     return keep(async () => {
       const copy = await store({ ...duplicate(source, actorId(UNSAVED), actors), id: actorId(UNSAVED) });
       actors = [...actors, copy];
-      grid?.focus(actors.length - 1);
+      await tick();
+      grid?.focus(copy.id);
     });
   }
 
@@ -123,10 +126,10 @@
     // No confirmation: deleting is the referee's business, not the app's.
     return keep(async () => {
       await library.deleteActor(doomed);
-      const gone = actors.findIndex((actor) => actor.id === doomed);
       actors = actors.filter((actor) => actor.id !== doomed);
       selectedId = null;
-      grid?.focus(Math.min(gone, actors.length - 1));
+      await tick();
+      grid?.focusNearest();
     });
   }
 
@@ -162,13 +165,7 @@
   deleting a row. Paste a block from a spreadsheet with ⌘V. Drag-select a range and ⌘C to copy one out.
 </p>
 
-<ActorGrid
-  bind:this={grid}
-  {actors}
-  onselect={(actor) => (selectedId = actor?.id ?? null)}
-  onedit={edited}
-  ontags={replace}
-/>
+<ActorGrid bind:this={grid} {actors} onselect={(id) => (selectedId = id)} onedit={edited} ontags={replace} />
 
 {#if selected}
   <ActorHealth actor={selected} onchange={replace} />

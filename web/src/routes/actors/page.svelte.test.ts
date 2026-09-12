@@ -10,6 +10,7 @@
  * and that the change is recorded as waiting to go up.
  */
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from '@vitest/browser/context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorId } from '$lib/schema/actor';
 import { library, status } from '$lib/store/session.svelte';
@@ -27,6 +28,17 @@ const rin = {
   hits: null,
   injuries: [],
   criticals: {},
+};
+
+const warbot = {
+  ...rin,
+  id: actorId(2),
+  name: 'Warbot',
+  kind: 'robot' as const,
+  strength: null,
+  dexterity: null,
+  endurance: null,
+  hits: 20,
 };
 
 /** The grid cell, not the health panel heading that also carries the name. */
@@ -66,6 +78,46 @@ describe('the actors page', () => {
     await screen.getByRole('button', { name: 'Add animal' }).click();
 
     await vi.waitFor(async () => expect(await library.actors()).toHaveLength(2));
+  });
+
+  it('duplicates the selected entity when filtering changes its row index', async () => {
+    await library.saveActor(warbot);
+    const screen = await render(ActorsPage);
+    await vi.waitFor(() => expect(names(screen.container)).toEqual(['Rin', 'Warbot']));
+
+    screen.container
+      .querySelector<HTMLButtonElement>('th[data-svgrid-header-col="name"] .sv-grid-col-filter-btn')
+      ?.click();
+    await userEvent.fill(screen.getByPlaceholder('Filter value...'), 'War');
+    screen.container.querySelector<HTMLElement>('.sv-grid-menu-backdrop')?.click();
+    await vi.waitFor(() => expect(names(screen.container)).toEqual(['Warbot']));
+    await userEvent.click(screen.getByRole('gridcell', { name: 'Warbot' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+
+    await vi.waitFor(async () =>
+      expect((await library.actors()).map((actor) => actor.name)).toEqual(['Rin', 'Warbot', 'Warbot 1']),
+    );
+  });
+
+  it('deletes the selected entity when filtering changes its row index', async () => {
+    await library.saveActor(warbot);
+    const screen = await render(ActorsPage);
+    await vi.waitFor(() => expect(names(screen.container)).toEqual(['Rin', 'Warbot']));
+
+    screen.container
+      .querySelector<HTMLButtonElement>('th[data-svgrid-header-col="name"] .sv-grid-col-filter-btn')
+      ?.click();
+    await userEvent.fill(screen.getByPlaceholder('Filter value...'), 'War');
+    screen.container.querySelector<HTMLElement>('.sv-grid-menu-backdrop')?.click();
+    await vi.waitFor(() => expect(names(screen.container)).toEqual(['Warbot']));
+    await userEvent.click(screen.getByRole('gridcell', { name: 'Warbot' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await vi.waitFor(async () =>
+      expect((await library.actors()).map((actor) => actor.name)).toEqual(['Rin']),
+    );
   });
 
   // The nav indicator is driven by this count, so an edit that does not raise

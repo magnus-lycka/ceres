@@ -58,7 +58,7 @@
   import { cellForClipboard, provideTagsForm, tagsColumn } from '$lib/tags/tagsColumn';
   import TagPicker from '$lib/tags/TagPicker.svelte';
   import { distinctTags } from '$lib/schema/tags';
-  import type { Actor } from '$lib/schema/actor';
+  import type { Actor, ActorId } from '$lib/schema/actor';
 
   let {
     actors,
@@ -67,8 +67,8 @@
     ontags,
   }: {
     actors: Actor[];
-    /** The actor whose row the cursor is in, or null when none is. */
-    onselect: (actor: Actor | null) => void;
+    /** Stable identity for the actor whose row the cursor is in. */
+    onselect: (actor: ActorId | null) => void;
     /**
      * An actor after a cell edit, so the page can persist it.
      *
@@ -148,15 +148,20 @@
    * selection exactly as the mouse does.
    */
   function report(rowIndex: number) {
-    activeRow = rowIndex >= 0 ? (actors[rowIndex] ?? null) : null;
-    onselect(activeRow);
+    // The event's index belongs to SvGrid's displayed rows, after filtering
+    // and sorting. Looking it up in the original `actors` array selects a
+    // different actor as soon as either operation changes row zero.
+    const displayed = api?.getDisplayedRows() ?? actors;
+    activeId = rowIndex >= 0 ? (displayed[rowIndex]?.id ?? null) : null;
+    onselect(activeId);
   }
 
   /**
-   * The actor the cursor is in, kept because `TagsLauncher` cannot say which
-   * row it was mounted for without handing out a row id.
+   * The actor the cursor is in. Identity is kept rather than the object so a
+   * save which replaces `actors` cannot leave the tag form holding stale data.
    */
-  let activeRow = $state<Actor | null>(null);
+  let activeId = $state<ActorId | null>(null);
+  const activeRow = $derived(actors.find((actor) => actor.id === activeId) ?? null);
 
   /**
    * Store the chosen tags, close the form, and put the keyboard back.
@@ -169,7 +174,7 @@
     tagging = null;
     if (!actor) return;
     ontags?.({ ...actor, tags });
-    focus(actors.findIndex((each) => each.id === actor.id));
+    focus(actor.id);
   }
 
   /**
@@ -242,11 +247,11 @@
     if (claimedFocus || actors.length === 0) return;
     const idle = document.activeElement === null || document.activeElement === document.body;
     if (!idle) return;
-    claimedFocus = focus(0);
+    claimedFocus = focus(actors[0].id);
   });
 
   /**
-   * Put the keyboard back in the grid, on a given row.
+   * Put the keyboard back in the grid, on a given actor.
    *
    * Pressing a toolbar button moves focus to that button, and nothing hands it
    * back — so after Add or Delete the arrow keys are dead until the grid is
@@ -263,10 +268,29 @@
    * Option+J yields `event.key === '∆'`, so match on `event.code === 'KeyJ'`
    * with `altKey` — reading `event.key` will simply not work.
    */
-  export function focus(rowIndex: number): boolean {
+  export function focus(actor: ActorId): boolean {
+    const rowIndex = (api?.getDisplayedRows() ?? actors).findIndex((row) => row.id === actor);
+    if (rowIndex < 0) return false;
+    return focusAt(rowIndex);
+  }
+
+  /** Keep the cursor near its old position after its actor was deleted. */
+  export function focusNearest(): boolean {
+    const displayed = api?.getDisplayedRows() ?? actors;
+    if (displayed.length === 0) {
+      activeId = null;
+      onselect(null);
+      return false;
+    }
+    const rowIndex = Math.min(api?.getActiveCell()?.rowIndex ?? 0, displayed.length - 1);
+    return focusAt(rowIndex);
+  }
+
+  /** SvGrid's positional focus operation is contained on this side. */
+  function focusAt(rowIndex: number): boolean {
     const table = container?.querySelector<HTMLElement>('.sv-grid-table');
     if (!table) return false;
-    api?.setActiveCell(Math.max(rowIndex, 0), 0);
+    api?.setActiveCell(rowIndex, 0);
     table.focus({ preventScroll: true });
     return true;
   }

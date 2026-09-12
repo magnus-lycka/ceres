@@ -69,15 +69,38 @@ describe('ActorGrid', () => {
   });
 
   // The page drives Duplicate, Delete and the health panel off this, and must
-  // receive an actor rather than a row index.
-  it('reports the actor whose row was clicked', async () => {
+  // receive stable identity rather than a row index.
+  it('reports the id of the actor whose row was clicked', async () => {
     const onselect = vi.fn();
     const screen = await render(ActorGrid, { actors, onselect });
 
     await screen.getByText('Warbot').click();
 
     expect(onselect).toHaveBeenCalled();
-    expect(onselect.mock.calls.at(-1)![0]).toMatchObject({ id: actorId(2), name: 'Warbot' });
+    expect(onselect.mock.calls.at(-1)![0]).toBe(actorId(2));
+  });
+
+  it('reports the visible actor after filtering changes the row indices', async () => {
+    const onselect = vi.fn();
+    const screen = await render(ActorGrid, { actors, onselect });
+
+    const filter = screen.container.querySelector<HTMLButtonElement>(
+      'th[data-svgrid-header-col="name"] .sv-grid-col-filter-btn',
+    );
+    filter?.click();
+    await userEvent.fill(screen.getByPlaceholder('Filter value...'), 'War');
+    screen.container.querySelector<HTMLElement>('.sv-grid-menu-backdrop')?.click();
+    await vi.waitFor(() =>
+      expect(
+        [...screen.container.querySelectorAll('td[data-col-id="name"]')].map((cell) =>
+          cell.textContent?.trim(),
+        ),
+      ).toEqual(['Warbot']),
+    );
+
+    await userEvent.click(screen.getByRole('gridcell', { name: 'Warbot' }));
+
+    expect(onselect.mock.calls.at(-1)![0]).toBe(actorId(2));
   });
 });
 
@@ -92,7 +115,7 @@ describe('moving around without a mouse', () => {
 
     await userEvent.keyboard('{ArrowDown}');
 
-    expect(onselect.mock.calls.at(-1)?.[0]).toMatchObject({ name: 'Warbot' });
+    expect(onselect.mock.calls.at(-1)?.[0]).toBe(actorId(2));
   });
 
   // SvGrid starts editing on F2 or Space. Needing the mouse to edit a
@@ -141,7 +164,7 @@ describe('arriving on the page', () => {
     );
 
     await userEvent.keyboard('{ArrowDown}');
-    expect(onselect.mock.calls.at(-1)?.[0]).toMatchObject({ name: 'Warbot' });
+    expect(onselect.mock.calls.at(-1)?.[0]).toBe(actorId(2));
   });
 });
 
@@ -168,7 +191,7 @@ describe('the column marker', () => {
 describe('handing the keyboard back', () => {
   // Pressing a toolbar button takes focus away from the grid, and nothing
   // returns it — so after Add or Delete the arrow keys are dead.
-  it('takes focus back on request, on the row asked for', async () => {
+  it('takes focus back on request, on the actor asked for', async () => {
     const onselect = vi.fn();
     const screen = await render(ActorGrid, { actors, onselect });
     const elsewhere = document.createElement('button');
@@ -176,10 +199,10 @@ describe('handing the keyboard back', () => {
     elsewhere.focus();
     expect(document.activeElement).toBe(elsewhere);
 
-    screen.component.focus(1);
+    screen.component.focus(actorId(1));
 
     expect(document.activeElement).toBe(screen.container.querySelector('.sv-grid-table'));
-    await vi.waitFor(() => expect(onselect.mock.calls.at(-1)?.[0]).toMatchObject({ name: 'Warbot' }));
+    await vi.waitFor(() => expect(onselect.mock.calls.at(-1)?.[0]).toBe(actorId(1)));
     elsewhere.remove();
   });
 });
