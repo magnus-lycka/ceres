@@ -42,6 +42,7 @@ class _TypeEntry:
     performance: tuple[_Performance, ...]
     allowed_features: frozenset[str]
     traits: tuple[Trait, ...] = ()
+    large_range_multiplier: float = 1.0
 
 
 class VehicleType(StrEnum):
@@ -98,6 +99,15 @@ class VehicleType(StrEnum):
     @property
     def traits(self) -> tuple[Trait, ...]:
         return self._entry.traits
+
+    @property
+    def large_range_multiplier(self) -> float:
+        """What Range is multiplied by once the vehicle is Heavy or larger.
+
+        Only two types gain anything: a watercraft of 20 Spaces or more carries
+        far more fuel for its size, and an aeroplane somewhat more.
+        """
+        return self._entry.large_range_multiplier
 
     def _performance_at(self, tl: int) -> _Performance:
         # Below the type's own Tech Level there is no row to read, and the design
@@ -160,6 +170,7 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         ),
     ),
     VehicleType.AEROPLANE: _TypeEntry(
+        large_range_multiplier=1.5,
         tl=4,
         skill='Flyer (wing)',
         agility=1,
@@ -365,6 +376,7 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
         ),
     ),
     VehicleType.WATERCRAFT: _TypeEntry(
+        large_range_multiplier=10.0,
         tl=0,
         skill='Seafarer (varies)',
         agility=-2,

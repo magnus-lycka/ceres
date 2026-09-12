@@ -172,3 +172,26 @@ class TestGearBackedOptions:
 
     def test_fire_extinguishers_carry_the_gear_part(self):
         assert FireExtinguishers().part.cost == 50
+
+
+class TestTechStage:
+    """refs/vehicle/08_options.md — Tech Level Stages. Transceivers and computers
+    get cheaper as technology advances past their introduction.
+    """
+
+    def test_a_stage_names_itself_and_discounts_the_cost(self):
+        # A 500km transceiver is Cr600 basic; superior is a twentieth of that.
+        superior = VehicleTransceiver(range_km=500, stage='superior')
+        assert superior.label == 'Transceiver (superior)'
+        assert superior.cost(20) == 30
+
+    def test_improved_halves_it(self):
+        assert VehicleTransceiver(range_km=500, stage='improved').cost(20) == 300
+
+    def test_basic_is_the_listed_price(self):
+        assert VehicleTransceiver(range_km=500).cost(20) == 600
+
+    def test_the_discount_applies_to_the_transceiver_not_its_options(self):
+        # Options are priced in their own right, so only the set is discounted.
+        superior = VehicleTransceiver(range_km=500, stage='superior', satellite_uplink=True)
+        assert superior.cost(20) == 30 + 1_000

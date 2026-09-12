@@ -81,6 +81,30 @@
   #v(4pt)
 ]
 
+// EQUIPMENT: the list on the left, what it confers on the right.
+#if report_data.equipment != "" [
+  #v(6pt)
+  #text(size: 12pt, weight: "bold")[EQUIPMENT]
+  #v(3pt)
+  #grid(
+    columns: (1fr, 1.2fr),
+    column-gutter: 6mm,
+    [
+      #block(inset: (x: 5pt, y: 4pt), stroke: table-rule)[#report_data.equipment]
+    ],
+    [
+      #table(
+        columns: (auto, 1fr),
+        inset: (x: 5pt, y: 3pt),
+        ..report_data.derived_figures.map(row => (
+          [#row.at("label")],
+          [#row.at("value")],
+        )).flatten(),
+      )
+    ],
+  )
+]
+
 #if report_data.notes.len() > 0 [
   #v(4pt)
   #render-grouped(report_data.notes)

@@ -17,6 +17,7 @@ from pydantic import Field
 from ceres.shared import CeresModel
 
 _FUSION_PLUS_SPACE_FRACTION = 0.10
+_FUSION_PLUS_POWER_PER_SPACE = 1
 _SPEED_STEP_SPACE_FRACTION = 0.10
 # refs: the official Vehicle Design Worksheet computes fuel capacity's effect
 # on Range as 2.5 x the share of the vehicle given over to fuel (RIV-008).
@@ -25,6 +26,24 @@ _RANGE_PER_FUEL_SHARE = 2.5
 
 class _Customisation(CeresModel):
     """What every customisation can be asked, whether or not it answers."""
+
+    @property
+    def label(self) -> str:
+        """How the equipment list names this. Empty when it is not equipment.
+
+        Speed and fuel modifications change the vehicle rather than adding
+        anything to it, so a catalogue entry never lists them.
+        """
+        return ''
+
+    def label_in(self, vehicle) -> str:
+        """How this design's equipment list names it.
+
+        Given the vehicle because some customisations describe themselves in
+        terms of what they do to it — a power plant's output, a secondary
+        drive's performance.
+        """
+        return self.label
 
     def spaces_delta(self, spaces: int) -> int:
         """Spaces freed (positive) or consumed (negative) on a vehicle this big."""
@@ -66,6 +85,13 @@ class FusionPlusPlant(_Customisation):
 
     def spaces_delta(self, spaces: int) -> int:
         return -self.plant_spaces(spaces)
+
+    def label_in(self, vehicle) -> str:
+        return f'Fusion+ ({self.quality}) PP {self.power_points(vehicle.spaces)}'
+
+    def power_points(self, spaces: int) -> int:
+        """One Power per Space of plant, for a basic Fusion+."""
+        return self.plant_spaces(spaces) * _FUSION_PLUS_POWER_PER_SPACE
 
     @property
     def range_multiplier(self) -> float:
@@ -139,6 +165,10 @@ class AquaticDrive(_Customisation):
     """
 
     kind: Literal['AQUATIC_DRIVE'] = 'AQUATIC_DRIVE'
+
+    def label_in(self, vehicle) -> str:
+        speed, distance = vehicle.aquatic_performance
+        return f'Aquatic Drive ({speed}, {distance:,.0f}km)'
 
     def drive_spaces(self, spaces: int) -> int:
         return max(ceil(spaces * 0.05), 1)

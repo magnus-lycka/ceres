@@ -25,6 +25,18 @@ class _Option(CeresModel):
     """What every option can be asked, whether or not it answers."""
 
     @property
+    def label(self) -> str:
+        """How the equipment list names this, quality and quantity included."""
+        name = _NAMES[type(self).__name__]
+        quality = getattr(self, 'quality', None)
+        if quality:
+            name = f'{name} ({quality})'
+        count = getattr(self, 'count', 1)
+        if count > 1:
+            name = f'{name} x{count}'
+        return name
+
+    @property
     def agility(self) -> int:
         return 0
 
@@ -47,6 +59,25 @@ class _Grade:
 
 
 # refs/vehicle/09_core_options.md — Control Systems
+# How each option is named in an equipment list.
+_NAMES = {
+    'ControlSystem': 'Control System',
+    'Autopilot': 'Autopilot',
+    'NavigationSystem': 'Navigation System',
+    'SensorSystem': 'Sensor System',
+    'CollisionProtection': 'Collision Protection',
+    'AirLock': 'Air Lock',
+    'LifeSupport': 'Life Support',
+    'Bunk': 'Bunk',
+    'Fresher': 'Fresher',
+    'Galley': 'Galley',
+    'EntertainmentSystem': 'Entertainment System',
+    'VacuumEnvironment': 'Vacuum Environment Protection',
+    'FireExtinguishers': 'Fire Extinguishers',
+    'VehicleComputer': 'Computer',
+    'VehicleTransceiver': 'Transceiver',
+}
+
 _CONTROL: dict[str, _Grade] = {
     'primitive': _Grade(tl=1, cost=-25, value=-1),
     'basic': _Grade(tl=0, cost=0, value=0),
@@ -183,6 +214,16 @@ _COMPUTERS: dict[int, tuple[int, float, int]] = {
 }
 
 # refs/vehicle/09_core_options.md — Transceivers, by range in kilometres
+# refs/vehicle/08_options.md — Tech Level Stages. An item made well past its
+# introduction is cheaper for the same capability.
+_TECH_STAGE_COST: dict[str, float] = {
+    'basic': 1.0,
+    'improved': 0.5,
+    'enhanced': 0.25,
+    'advanced': 0.1,
+    'superior': 0.05,
+}
+
 _TRANSCEIVERS: dict[int, tuple[int, float]] = {
     5: (5, 200),
     50: (5, 600),
@@ -202,6 +243,10 @@ class CollisionProtection(_Option):
     kind: Literal['COLLISION_PROTECTION'] = 'COLLISION_PROTECTION'
     quality: Literal['basic', 'improved', 'advanced'] = 'basic'
     spaces_protected: int = 1
+
+    @property
+    def label(self) -> str:
+        return f'Collision Protection ({self.quality}) x{self.spaces_protected}'
 
     @property
     def protection(self) -> int:
@@ -230,6 +275,10 @@ class LifeSupport(_Option):
     kind: Literal['LIFE_SUPPORT'] = 'LIFE_SUPPORT'
     duration: Literal['short_term', 'long_term', 'closed_cycle'] = 'short_term'
     people: int = 1
+
+    @property
+    def label(self) -> str:
+        return f'Life Support ({self.duration.replace("_", " ")})'
 
     def spaces(self, spaces: int) -> int:
         per_space = _LIFE_SUPPORT[self.duration].value
@@ -343,6 +392,10 @@ class VehicleComputer(_Option):
     processing: int = 1
 
     @property
+    def label(self) -> str:
+        return f'Computer/{self.processing}'
+
+    @property
     def part(self) -> ComputerPart:
         tl, _, _ = _COMPUTERS[self.processing]
         return ComputerPart(processing=self.processing, tl=tl)
@@ -365,9 +418,26 @@ class VehicleTransceiver(_Option):
 
     kind: Literal['TRANSCEIVER'] = 'TRANSCEIVER'
     range_km: int = 500
+    stage: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
     satellite_uplink: bool = False
     tightbeam: bool = False
     encryption: bool = False
+
+    @property
+    def label(self) -> str:
+        return f'Transceiver ({self.stage})'
+
+    @property
+    def communications(self) -> str:
+        """What the equipment table reports for this transceiver."""
+        parts = [f'{self.range_km}km']
+        if self.tightbeam:
+            parts.append('tightbeam')
+        if self.satellite_uplink:
+            parts.append('satellite uplink')
+        if self.encryption:
+            parts.append('encrypted')
+        return ', '.join(parts)
 
     @property
     def part(self) -> RadioTransceiverPart:
@@ -378,7 +448,8 @@ class VehicleTransceiver(_Option):
         # refs/vehicle/09_core_options.md — Transceiver Options. The vehicle
         # rules price fitting these, which is not what the same option costs
         # bought on its own (ADR-0002).
-        _, cost = _TRANSCEIVERS[self.range_km]
+        _, listed = _TRANSCEIVERS[self.range_km]
+        cost = listed * _TECH_STAGE_COST[self.stage]
         if self.satellite_uplink:
             cost += 1_000
         if self.tightbeam:

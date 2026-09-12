@@ -96,6 +96,8 @@ def _build_context(spec: VehicleSpec, *, page_size: str = 'a4', image: str | Non
         'features_and_traits': ', '.join(spec.features_and_traits) or 'None',
         'stats': _stat_rows(spec),
         'armour': _armour_rows(spec),
+        'equipment': ', '.join(spec.equipment),
+        'derived_figures': [{'label': k, 'value': v} for k, v in spec.derived_figures.items()],
         'notes': _notes_for_display(spec.notes),
         'image': image,
         'page_size': page_size,

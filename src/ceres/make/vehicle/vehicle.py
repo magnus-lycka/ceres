@@ -18,7 +18,7 @@ from .armour import Armour, Face
 from .comfort import comfort_label
 from .customisations import CustomisationUnion
 from .features import Feature
-from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleComputer
+from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleComputer, VehicleTransceiver
 from .size import VehicleSize, target_size_dm
 from .spec import VehicleSpec
 from .speed import SpeedBand
@@ -32,6 +32,19 @@ _CRUISE_RANGE_BONUS = 1.5
 
 # refs/vehicle/03_vehicle_design.md — a Space of cargo is a quarter of a dTon.
 _TONS_PER_CARGO_SPACE = 0.25
+
+# An aquatic drive has a tenth of an equivalent watercraft's range.
+_AQUATIC_RANGE_SHARE = 0.10
+
+# refs/vehicle/04_vehicle_types.md — the Range bonus starts at 20 Spaces.
+_LARGE_RANGE_SPACES = 20
+
+_DASH = '—'
+
+
+def _signed(value: int | None) -> str:
+    """A modifier as the catalogue prints it, or a dash where there is none."""
+    return _DASH if value is None else f'{value:+d}'
 
 
 class Vehicle(Assembly):
@@ -174,6 +187,60 @@ class Vehicle(Assembly):
         """A Space of cargo is a quarter of a displacement ton, about 250kg."""
         return self.cargo_spaces * _TONS_PER_CARGO_SPACE
 
+    def _large_range_multiplier(self, vehicle_type: VehicleType) -> float:
+        """Whether this vehicle is big enough to earn its type's Range bonus.
+
+        The rules give it to vehicles of 20 Spaces or more, which is the Heavy
+        band and up.
+        """
+        return vehicle_type.large_range_multiplier if self.spaces >= _LARGE_RANGE_SPACES else 1.0
+
+    @property
+    def equipment(self) -> list[str]:
+        """Everything installed, named as the catalogue names it, in order.
+
+        Customisations that merely change the vehicle rather than adding to it
+        contribute nothing, so speed and fuel modifications do not appear.
+        """
+        named = [c.label_in(self) for c in self.customisations] + [o.label for o in self.options]
+        return sorted(label for label in named if label)
+
+    @property
+    def aquatic_performance(self) -> tuple[SpeedBand, float]:
+        """How this vehicle crosses water, if it has a drive for it.
+
+        An equivalent watercraft of the same Tech Level, one Speed Band slower
+        for the drive and further for the vehicle's size, with a tenth of the
+        range and whatever its features do to that.
+        """
+        watercraft = VehicleType.WATERCRAFT
+        speed = watercraft.speed_at(self.tl).shifted(-1 + self.size.speed_band_modifier)
+        stated = watercraft.range_at(self.tl) or 0
+        distance = stated * self._large_range_multiplier(watercraft) * _AQUATIC_RANGE_SHARE
+        for feature in self.features:
+            distance *= feature.range_multiplier
+        return speed, distance
+
+    @property
+    def derived_figures(self) -> dict[str, str]:
+        """The small table the catalogue prints beneath the equipment list.
+
+        Every row is always present: a dash says the design has nothing that
+        confers it, which is what the catalogue prints too.
+        """
+        transceiver = self._first_option(VehicleTransceiver)
+        sensors = self._first_option(SensorSystem)
+        return {
+            'Autopilot (skill level)': _signed(self.autopilot_skill),
+            'Communications (range)': transceiver.communications if transceiver else _DASH,
+            'Navigation (Navigation DM)': _signed(self.navigation_dm),
+            'Sensors (Electronics (sensors) DM)': (f'{self.sensors_dm:+d}, {sensors.range_km}km' if sensors else _DASH),
+            # Neither is modelled yet; the catalogue prints a dash for designs
+            # that carry none, which every design currently does.
+            'Camouflage (Recon DM)': _DASH,
+            'Stealth (Electronics (sensors) DM)': _DASH,
+        }
+
     @property
     def comfort_points(self) -> float:
         """Each standard seat Space is worth one, plus what the fittings carry."""
@@ -246,7 +313,7 @@ class Vehicle(Assembly):
         stated = self.vehicle_type.range_at(self.tl)
         if stated is None:
             return None
-        distance = float(stated)
+        distance = float(stated) * self._large_range_multiplier(self.vehicle_type)
         for feature in self.features:
             distance *= feature.range_multiplier
         for customisation in self.customisations:
@@ -302,6 +369,8 @@ class Vehicle(Assembly):
             shipping_tons=self.shipping_tons,
             cost=self.cost,
             armour={face: self.armour.protection(face) for face in Face},
+            equipment=self.equipment,
+            derived_figures=self.derived_figures,
             notes=self.notes,
         )
 
