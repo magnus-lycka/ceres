@@ -1268,29 +1268,55 @@ choice is a table decision.
 
 ## Rule Interpretations for vehicles
 
-### RIV-001 The Vehicle Damage Track Is Called Structure, Not Hull
+### RIV-001 Vehicle Hull And Structure Are Both Modelled; Vehicle Hull Is Not Ship Hull
 
-The 2026 *Vehicle Handbook* is internally inconsistent about the name of a vehicle's
-damage track. The rules text calls it **Hull** throughout — `HULL 0.5 per Space` in
-every vehicle type table, "a vehicle's Hull cannot be less than 1" under Design
-Limits, "Reinforced Hull +10%" and "Light Hull -25%" under Structural Reinforcement,
-and "+50% to the vehicle's Hull" in the AFV feature. The catalogue stat blocks print
-**STRUCTURE**: the ATV entry shows `STRUCTURE 4`, not `HULL 4`.
+A vehicle has two related damage figures, and they are not the same number.
+*Vehicle Handbook* p.10 states: "Vehicles have a Hull value based upon their size,
+type and certain features. A vehicle's Structure score is one-tenth of its Hull
+value, rounded up."
 
-Ceres uses **Structure** everywhere — the attribute name in `make.vehicle`, and the
-label in rendered specs. Wherever the source says "Hull" of a vehicle, read
-"Structure".
+Hull is the intermediate value — Spaces times the type's Hull per Space, modified by
+features and structural reinforcement, never less than 1. Structure is what the
+catalogue stat block prints and what play uses as the damage threshold. Ceres models
+both, since the modifiers apply to Hull and rounding to Structure happens once, last.
 
-Two reasons. First, rendered output has to match the published catalogue entries it
-is compared against, and those say Structure. Second, `Hull` already means something
-else in Ceres: in `make.ship` it is a *part* with its own configuration, armour and
-cost, not an integer damage track. Reusing the word for a vehicle's damage-track
-integer would put two unrelated meanings in the same codebase, in the package that
-ship will eventually import.
+Worked against the catalogue, taking Ground Vehicle at Hull 2 per Space and Grav
+Vehicle at Hull 2 per Space:
 
-This is a naming translation only. The values and formulas are the source's.
+| Vehicle   | Spaces | Modifiers                | Hull | Structure |
+| --------- | ------ | ------------------------ | ---- | --------- |
+| ATV       | 20     | —                        | 40   | 4         |
+| Gecko     | 9      | —                        | 18   | 2         |
+| Gunskiff  | 20     | Light Hull -25%          | 30   | 3         |
+| Brutus    | 80     | Reinforced Hull +10%     | 176  | 18        |
+| G/Carrier | 20     | AFV +50%, Reinforced +10%| 66   | 7         |
 
-### RIV-002 Armour `6 (18)` Notation Is Derived At Render Time
+Note the *Core Rulebook* prints a single `HULL` figure for the same vehicles on a
+different scale — its ATV shows Hull 60 where the Vehicle Handbook gives Hull 40 and
+Structure 4. The Vehicle Handbook is the construction source and is internally
+consistent; the Core figure is not reproduced.
+
+**Naming.** `Hull` already means something else in Ceres: in `make.ship` it is a
+*part*, with configuration, armour and cost. A vehicle's Hull is a plain integer.
+The two are unrelated and must not be conflated because they share a word — which
+matters because `make.ship` will eventually import `make.vehicle` (see ADR-0001).
+
+### RIV-002 Structural Reinforcement Is Applied After Feature Hull Modifiers
+
+The rules give AFV as "+50% Hull" and structural reinforcement as Reinforced Hull
+"+10%" or Light Hull "-25%", without stating whether several such modifiers compound
+or are summed against the base.
+
+Ceres applies them sequentially: base Hull, then feature modifiers, then structural
+reinforcement. The published designs do not settle this — the only catalogue entry
+carrying both an AFV and a reinforcement, the G/Carrier, gives Structure 7 either way
+(66 sequential, 64 summed, both rounding to 7) — so this is an interpretation rather
+than a derived rule, chosen because the reinforcement text describes modifying "a
+vehicle's Hull", which reads as the value arrived at so far.
+
+Revisit if a published design is found that distinguishes the two.
+
+### RIV-003 Armour `6 (18)` Notation Is Derived At Render Time
 
 Catalogue armour tables print two numbers per face, for example the ATV's
 `Forward 6 (18)`. The first is the face's Protection. The second is the protection
