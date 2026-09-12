@@ -1500,3 +1500,24 @@ These are therefore recorded as source discrepancies on the affected designs
 rather than reconciled. A design whose derived figures differ from its published
 ones is annotated at the point of comparison, and the derivation is not adjusted
 to match. No official errata exists at the time of writing.
+
+### RIV-010 An Airship Ships Deflated
+
+The Airship type table gives Shipping as "0.1 tons per Space*", footnoted "If
+disassembled, otherwise 0.5 tons per Space", and leaves the choice open.
+
+Ceres uses 0.1. An airship is non-rigid by default — the chapter says so, and
+that it "can be greatly compressed by deflating its envelope for shipping" — so
+deflating it is the ordinary case rather than the exception. Nobody loads an
+inflated hot air balloon into a cargo hold. The official design worksheet takes
+the same figure.
+
+The Rigid feature is the exception: a rigid airship "cannot be compacted for
+storage or transport without full disassembly", and should ship considerably
+larger. Rigid is not modelled yet, so no design can currently express that.
+
+The published airships support the distinction without deriving from it. The
+VoidSailor is non-rigid and ships at 0.2 tons per Space, the same order as the
+baseline; the Sky Dirge is Rigid and biotech, cannot be deflated at all, and
+ships at 2.0 tons per Space. Neither figure follows from the rules as written
+(RIV-009).

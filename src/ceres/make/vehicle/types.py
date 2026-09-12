@@ -192,12 +192,15 @@ _TYPES: dict[VehicleType, _TypeEntry] = {
             }
         ),
     ),
+    # Shipping is the disassembled figure. An airship is non-rigid by default and
+    # is deflated for transport, so an inflated envelope is not what anyone ships
+    # (RIV-010). A Rigid airship cannot be compacted and would ship far larger.
     VehicleType.AIRSHIP: _TypeEntry(
         tl=3,
         skill='Flyer (airship)',
         agility=-3,
         hull_per_space=0.2,
-        shipping_per_space=0.5,
+        shipping_per_space=0.1,
         cost_per_space=300,
         traits=(Trait.VTOL,),
         performance=(
