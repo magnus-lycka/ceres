@@ -1599,6 +1599,12 @@ Handbook's table, and a ship's computer from High Guard. It is not the Central
 Supply Catalogue's retrotech (RIG-001), which prices the transceiver bought on its
 own.
 
-Vehicle computers take their price from the Automation chapter's table, becoming
-free once the vehicle reaches the Tech Level at which they are standard
-equipment.
+Vehicle computers are priced the same way, from the Automation chapter. That
+chapter describes them as "equivalent to personal portable computers but... twice
+as expensive" for their integration into the vehicle, and lists a price and the
+Tech Level from which each is free as standard equipment. Before that, a computer
+gets cheaper by one Tech Level Stage for each Tech Level past its introduction —
+the chapter states the interval as one Tech Level, so unlike a transceiver's the
+stage follows from the vehicle. A Computer/1 is Cr500 at TL8, Cr250 at TL9, Cr125
+at TL10 and free from TL11. This is not the halving retrotech that prices ship
+computers (RIS-005).

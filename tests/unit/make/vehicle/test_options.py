@@ -157,7 +157,21 @@ class TestComputer:
     def test_a_computer_is_free_once_it_is_standard_equipment(self):
         # refs/vehicle/16_automation.md — Computer/1 is Cr500 at TL8, free at TL11+.
         assert a_vehicle(tl=8, options=[VehicleComputer(processing=1)]).cost == 15_000 + 500
+        assert a_vehicle(tl=11, options=[VehicleComputer(processing=1)]).cost == 15_000
         assert a_vehicle(tl=12, options=[VehicleComputer(processing=1)]).cost == 15_000
+
+    def test_it_gets_cheaper_by_tech_level_stage_until_then(self):
+        # refs/vehicle/16_automation.md — computers "decrease in cost at higher
+        # Tech Levels with an interval of one TL as indicated in the Tech Level
+        # Stages table": a half one TL on, a quarter two TLs on.
+        assert a_vehicle(tl=9, options=[VehicleComputer(processing=1)]).cost == 15_000 + 250
+        assert a_vehicle(tl=10, options=[VehicleComputer(processing=1)]).cost == 15_000 + 125
+
+    def test_the_stages_continue_while_a_computer_is_not_yet_free(self):
+        # Computer/3 is Cr2000 at TL12 and free only at TL16, so it reaches the
+        # tenth of advanced at TL15.
+        assert a_vehicle(tl=13, options=[VehicleComputer(processing=3)]).cost == 15_000 + 1_000
+        assert a_vehicle(tl=15, options=[VehicleComputer(processing=3)]).cost == 15_000 + 200
 
 
 class TestFireExtinguishers:

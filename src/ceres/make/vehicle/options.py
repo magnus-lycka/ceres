@@ -449,8 +449,14 @@ class VehicleComputer(_Option):
 
     @property
     def cost(self) -> float:
-        _, cost, free_from_tl = _COMPUTERS[self.processing]
-        return 0.0 if self.vehicle.tl >= free_from_tl else cost
+        """Cheaper by one Tech Level Stage for each TL past its introduction, and
+        free from the TL at which it is standard equipment (RIV-011)."""
+        introduced_tl, listed, free_from_tl = _COMPUTERS[self.processing]
+        if self.vehicle.tl >= free_from_tl:
+            return 0.0
+        stages = list(_TECH_STAGE_COST.values())
+        levels = min(max(self.vehicle.tl - introduced_tl, 0), len(stages) - 1)
+        return listed * stages[levels]
 
 
 class VehicleTransceiver(_Option):
