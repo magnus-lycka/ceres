@@ -313,7 +313,7 @@ class TestFetchSector:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         sector = travellermap.fetch_sector('Troj')
 
@@ -335,7 +335,7 @@ class TestFetchSector:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
         monkeypatch.setattr(
             travellermap,
             'fetch_sectors',
@@ -353,7 +353,7 @@ class TestFetchSector:
         client = _FakeClient()
         client.response = response
         client.requests = []
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
         monkeypatch.setattr(
             travellermap,
             'fetch_sectors',
@@ -387,7 +387,7 @@ class TestFetchSector:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         sector_x, sector_y = travellermap.fetch_sector_coordinates('Troj')
 
@@ -435,7 +435,7 @@ class TestFetchSectors:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         sectors = fetch_sectors('M1120')
 
@@ -449,7 +449,7 @@ class TestFetchSectors:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         first = fetch_sectors('M1120')
         second = fetch_sectors('M1120')
@@ -464,7 +464,7 @@ class TestFetchSectors:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
         monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
 
         first = fetch_sectors('M1120')
@@ -485,7 +485,7 @@ class TestFetchSectorWorlds:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         worlds = fetch_sector_worlds('Troj')
 
@@ -514,7 +514,7 @@ class TestFetchSectorWorlds:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         sector = fetch_sector('Troj')
         worlds = fetch_sector_worlds('Troj')
@@ -532,7 +532,7 @@ class TestFetchSectorWorlds:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
         monkeypatch.setattr(travellermap.settings, 'cache_dir', lambda: tmp_path)
 
         first = fetch_sector('Troj')
@@ -550,7 +550,7 @@ class TestFetchWorld:
         client = _FakeClient()
         client.response = response
         client.requests = requests
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         world = fetch_world('Troj', '2715')
 
@@ -563,7 +563,7 @@ class TestFetchWorld:
         client = _FakeClient()
         client.response = response
         client.requests = []
-        monkeypatch.setattr(travellermap.httpx, 'Client', client)
+        monkeypatch.setattr(travellermap.httpx2, 'Client', client)
 
         with pytest.raises(ValueError, match='No world at Troj/9999'):
             fetch_world('Troj', '9999')

@@ -411,10 +411,10 @@ class TestSectorFilters:
         assert r.status_code == 200
 
     def test_returns_503_on_network_error(self, client, monkeypatch):
-        import httpx
+        import httpx2
 
         def _raise(s):
-            raise httpx.TimeoutException('timeout')
+            raise httpx2.TimeoutException('timeout')
 
         monkeypatch.setattr('ceres.character.web.routes.SectorWorldFilters.from_travellermap', _raise)
         r = client.get('/ui/worlds/sectors/Spin')

@@ -8,7 +8,7 @@ from urllib.parse import quote, urlencode
 from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-import httpx
+import httpx2
 
 from ceres.character.domain.character_state import CharacterProjection, diff_summaries
 from ceres.character.domain.spec import spec_from_summary
@@ -291,7 +291,7 @@ def build_web_router(service: CharacterService) -> APIRouter:
         fulfills = request.query_params.get('fulfills', '').strip()
         try:
             sector = SectorWorldFilters.from_travellermap(sector_abbreviation)
-        except httpx.TimeoutException, httpx.NetworkError:
+        except httpx2.TimeoutException, httpx2.NetworkError:
             picker_query = _world_picker_query(request)
             back_url = f'/ui/worlds/sectors?{picker_query}' if picker_query else '/ui/worlds/sectors'
             return templates.TemplateResponse(

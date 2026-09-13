@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from time import time
 
-import httpx
+import httpx2
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_pascal
 
@@ -55,7 +55,7 @@ def _fetch_text(url: str, *, params: dict | None = None) -> str:
     cached = _read_cached_payload(url, params)
     if cached is not None:
         return cached
-    with httpx.Client(timeout=60.0) as client:
+    with httpx2.Client(timeout=60.0) as client:
         response = client.get(url, params=params)
         response.raise_for_status()
         payload = response.text or json.dumps(response.json())
