@@ -53,7 +53,7 @@ _expected = SimpleNamespace(
     # of a vehicle priced at Cr155,000, both being charged per vehicle Space. The
     # same figure appears in the Core Rulebook, so it predates this design
     # sequence and is canon rather than derived — see RIV-009.
-    cost=202_612.5,
+    cost=202_580,
     equipment=[
         'Air Lock',
         'Aquatic Drive (Very Slow, 600km)',
@@ -69,10 +69,7 @@ _expected = SimpleNamespace(
         'Life Support (short term)',
         'Navigation System (improved)',
         'Sensor System (improved)',
-        # The entry prints Transceiver (superior). Priced as gear, the TL12 radio is
-        # the TL9 model with its three retrotech halvings used up, which the Tech
-        # Level Stages table names advanced — see RIV-011.
-        'Transceiver (advanced)',
+        'Transceiver (superior)',
         'Vacuum Environment Protection',
     ],
 )
@@ -107,7 +104,7 @@ def build_atv() -> Vehicle:
             FireExtinguishers(),
             VacuumEnvironment(),
             VehicleComputer(processing=1),
-            VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True),
+            VehicleTransceiver(range_km=500, stage='superior', satellite_uplink=True, tightbeam=True, encryption=True),
         ],
     )
 
@@ -157,13 +154,8 @@ class TestATV:
         snap = AnnotatedSnapshot(build_atv().build_spec().model_dump(mode='json'))
         snap.annotate(
             'cost',
-            'Ceres Cr202,612.50 vs published Cr155,000 — the published figure is canon and '
+            'Ceres Cr202,580 vs published Cr155,000 — the published figure is canon and '
             'predates the construction rules, see RIV-009',
-        )
-        snap.annotate(
-            'equipment',
-            'Ceres Transceiver (advanced) vs published (superior) — gear retrotech stops after three '
-            'halvings, see RIV-011',
         )
         snap.annotate(
             'cruise_range_km',

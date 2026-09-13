@@ -1299,8 +1299,10 @@ A Tech Level before the earliest model is not supported. The CSC's prototech rul
 would allow electronics up to two Tech Levels early at ten times the cost per
 level, but no design yet needs it.
 
-This rule belongs to the item, so a domain installing electronics takes their
-Tech Level pricing from `ceres.gear` rather than from its own tables (ADR-0002).
+This governs electronics bought as gear in their own right. A domain that
+installs them — a robot, a ship, a vehicle — reuses the gear part for what the
+item is, and prices the installation by its own rules (ADR-0002), where the
+electronics may be only a small part of the integration cost.
 
 ### RIG-002 Computer Retrotech Stops At A Thousandfold
 
@@ -1569,37 +1571,34 @@ baseline; the Sky Dirge is Rigid and biotech, cannot be deflated at all, and
 ships at 2.0 tons per Space. Neither figure follows from the rules as written
 (RIV-009).
 
-### RIV-011 A Vehicle's Transceiver Is Priced As Gear
+### RIV-011 A Vehicle's Transceiver Is Priced By Tech Level Stage
 
 The *Vehicle Handbook* contradicts itself on how transceivers are priced by Tech
 Level. The Core Options chapter lists a transceiver table by range and says they
 "do not change size or Cost with Tech Level". The Options chapter says
 transceivers and computers do change, following a Tech Level Stages table —
 improved, enhanced, advanced and superior, at a half, a quarter, a tenth and a
-twentieth of the price. The catalogue sides with the second: the ATV carries a
-"Transceiver (superior)". The *Central Supply Catalogue* has its own rule again,
-retrotech, which halves the price for each Tech Level past the model for no more
-than three Tech Levels (RIG-001).
+twentieth of the price.
 
-A transceiver is gear, so a vehicle installs the gear item (ADR-0002). Ceres
-builds it at the vehicle's Tech Level and takes its price from `ceres.gear`,
-which applies the Central Supply Catalogue's retrotech. Neither of the Vehicle
-Handbook's transceiver pricings is used. A satellite uplink and an encryption
-module are priced as gear too. A tightbeam keeps the Vehicle Handbook's Cr2,000,
-since gear has no tightbeam part to price it from.
+Ceres follows the Options chapter. The catalogue does too: the Air/Raft carries a
+"Transceiver (improved)" and the ATV a "Transceiver (superior)", stages that mean
+nothing unless they change the price. A vehicle's transceiver costs its range's
+entry in the Core Options table, discounted by its stage. Satellite uplink,
+tightbeam and encryption keep the table's own prices and are not discounted.
 
-The stage a transceiver is named by counts how many Tech Levels of retrotech it
-was built with, using the Tech Level Stages names: none is basic, one improved,
-two enhanced, three advanced. Because retrotech stops after three Tech Levels, a
-transceiver is at most advanced.
+The stage is chosen by the design rather than derived from the vehicle's Tech
+Level. The book never says how many Tech Levels one stage interval spans for a
+transceiver, and no single interval reproduces both published designs: one Tech
+Level per stage makes the TL8 Air/Raft's radio enhanced rather than improved, and
+two per stage makes the TL12 ATV's advanced rather than superior.
 
-This reproduces the Air/Raft, whose TL8 radio is the TL7 model one Tech Level
-on: "Transceiver (improved)", as printed. It does not reproduce the ATV. Its TL12
-radio is the TL9 model with all three halvings used up, so Ceres names it
-advanced where the entry prints superior, and prices it at Cr62.50 where the
-Vehicle Handbook's own reading would give Cr30. Both are recorded on the ATV as
-differences from the published entry.
+A transceiver is gear, so the vehicle installs the gear part for what the item
+is, but prices it by the vehicle rules (ADR-0002). This is the same division
+robots and ships make: a robot's transceiver takes its price from the Robot
+Handbook's table, and a ship's computer from High Guard. It is not the Central
+Supply Catalogue's retrotech (RIG-001), which prices the transceiver bought on its
+own.
 
-Computers are not yet priced this way. The Vehicle Handbook's vehicle computers
-have no evident counterpart among the gear computers, so they still take their
-price from the Automation chapter's table.
+Vehicle computers take their price from the Automation chapter's table, becoming
+free once the vehicle reaches the Tech Level at which they are standard
+equipment.

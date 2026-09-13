@@ -166,43 +166,43 @@ class TestFireExtinguishers:
 
 
 class TestTransceiver:
-    """A vehicle's transceiver is the gear item, built at the vehicle's Tech Level.
+    """A vehicle's transceiver is the gear item, priced by the vehicle rules.
 
-    ADR-0002 and RIG-001: the price follows the Central Supply Catalogue's
-    retrotech from the latest regional radio already introduced — the TL7 model
-    at Cr500, then the TL9 model at Cr500 — halving each Tech Level for at most
-    three. The stage it is named by counts those halvings (RIV-011).
+    ADR-0002: the part says what the item is; the Vehicle Handbook says what
+    fitting one costs. RIV-011: that price is the Core Options table, discounted
+    by the Tech Level Stage the design chooses — a 500km transceiver is Cr600,
+    half at improved, a twentieth at superior.
     """
 
-    def test_one_tl_past_its_model_it_costs_half(self):
-        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500)])
-        assert vehicle.cost == 15_000 + 250
-        assert vehicle.equipment == ['Transceiver (improved)']
-
-    def test_a_listed_model_is_the_listed_price(self):
-        vehicle = a_vehicle(tl=9, options=[VehicleTransceiver(range_km=500)])
-        assert vehicle.cost == 15_000 + 500
+    def test_a_basic_transceiver_is_the_listed_price(self):
+        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500)])
+        assert vehicle.cost == 15_000 + 600
         assert vehicle.equipment == ['Transceiver (basic)']
 
-    def test_the_discount_stops_after_three_tls(self):
-        vehicle = a_vehicle(tl=14, options=[VehicleTransceiver(range_km=500)])
-        assert vehicle.cost == 15_000 + 500 / 8
-        assert vehicle.equipment == ['Transceiver (advanced)']
+    def test_an_improved_transceiver_is_half(self):
+        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage='improved')])
+        assert vehicle.cost == 15_000 + 300
+        assert vehicle.equipment == ['Transceiver (improved)']
 
-    def test_it_installs_the_gear_parts_built_at_the_vehicle_tl(self):
+    def test_a_superior_transceiver_is_a_twentieth(self):
+        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage='superior')])
+        assert vehicle.cost == 15_000 + 30
+        assert vehicle.equipment == ['Transceiver (superior)']
+
+    def test_its_options_are_priced_in_their_own_right(self):
+        # refs/vehicle/09_core_options.md — Transceiver Options. The stage
+        # discounts the transceiver, not what is added to it.
+        vehicle = a_vehicle(
+            options=[
+                VehicleTransceiver(
+                    range_km=500, stage='superior', satellite_uplink=True, tightbeam=True, encryption=True
+                )
+            ]
+        )
+        assert vehicle.cost == 15_000 + 30 + 1_000 + 2_000 + 4_000
+
+    def test_it_installs_the_gear_part(self):
         vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500)])
         (transceiver,) = [option for option in vehicle.options if isinstance(option, VehicleTransceiver)]
         assert transceiver.transceiver_part.range_km == 500
         assert transceiver.transceiver_part.tl == 8
-
-    def test_uplink_and_encryption_are_priced_as_gear(self):
-        # refs/csc/05_communications.md — an uplink is half the transceiver or at
-        # least Cr1000; an encryption module is Cr4000.
-        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500, satellite_uplink=True, encryption=True)])
-        assert vehicle.cost == 15_000 + 250 + 1_000 + 4_000
-
-    def test_tightbeam_is_priced_by_the_vehicle_rules(self):
-        # refs/vehicle/09_core_options.md — Transceiver Options: Tightbeam Cr2000.
-        # Gear has no tightbeam part to take a price from.
-        vehicle = a_vehicle(tl=8, options=[VehicleTransceiver(range_km=500, tightbeam=True)])
-        assert vehicle.cost == 15_000 + 250 + 2_000

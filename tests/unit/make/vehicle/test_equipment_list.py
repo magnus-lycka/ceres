@@ -73,7 +73,9 @@ class TestDerivedFigures:
             options=[
                 Autopilot(quality='basic'),
                 SensorSystem(quality='improved'),
-                VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True),
+                VehicleTransceiver(
+                    range_km=500, stage='superior', satellite_uplink=True, tightbeam=True, encryption=True
+                ),
             ]
         )
         figures = vehicle.build_spec().derived_figures

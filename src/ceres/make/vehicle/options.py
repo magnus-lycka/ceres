@@ -15,7 +15,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, PrivateAttr
 
-from ceres.gear.comm import RETROTECH_MAX_ELECTRONICS_LEVELS, RadioTransceiverEquipment, TransceiverPart
+from ceres.gear.comm import RadioTransceiverPart
 from ceres.gear.computer import ComputerPart
 from ceres.gear.safety import FireExtinguisherPart
 from ceres.shared import CeresModel
@@ -241,13 +241,30 @@ _COMPUTERS: dict[int, tuple[int, float, int]] = {
     3: (12, 2_000, 16),
 }
 
-# refs/vehicle/08_options.md — Tech Level Stages, naming how many Tech Levels an
-# item is past its introduction.
-_STAGE_NAMES = ('basic', 'improved', 'enhanced', 'advanced', 'superior')
+# refs/vehicle/08_options.md — Tech Level Stages. An item built well past its
+# introduction is cheaper for the same capability.
+_TECH_STAGE_COST: dict[str, float] = {
+    'basic': 1.0,
+    'improved': 0.5,
+    'enhanced': 0.25,
+    'advanced': 0.1,
+    'superior': 0.05,
+}
 
-# refs/vehicle/09_core_options.md — Transceiver Options. Gear has no tightbeam
-# part, so this one option keeps the vehicle rules' price.
+# refs/vehicle/09_core_options.md — Transceivers, by range in kilometres: (TL, Cost)
+_TRANSCEIVERS: dict[int, tuple[int, float]] = {
+    5: (5, 200),
+    50: (5, 600),
+    500: (6, 600),
+    5_000: (6, 3_000),
+    50_000: (7, 50_000),
+    500_000: (9, 50_000),
+}
+
+# refs/vehicle/09_core_options.md — Transceiver Options
+_SATELLITE_UPLINK_COST = 1_000
 _TIGHTBEAM_COST = 2_000
+_ENCRYPTION_COST = 4_000
 
 
 class CollisionProtection(_Option):
@@ -439,36 +456,26 @@ class VehicleComputer(_Option):
 class VehicleTransceiver(_Option):
     """A radio transceiver, with the options it can carry.
 
-    The transceiver is gear, built at the Tech Level of the vehicle it is fitted
-    to, so its price follows the Central Supply Catalogue's retrotech (RIG-001,
-    RIV-011). Transceivers take no Spaces.
+    The transceiver is gear, so the vehicle installs the gear part, which says
+    what the item is. The Vehicle Handbook says what fitting one costs: its
+    transceiver table, discounted by the Tech Level Stage the design chooses
+    (ADR-0002, RIV-011). Transceivers take no Spaces.
     """
 
     kind: Literal['TRANSCEIVER'] = 'TRANSCEIVER'
     range_km: int = 500
+    stage: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
     satellite_uplink: bool = False
     tightbeam: bool = False
     encryption: bool = False
 
     @property
-    def _equipment(self) -> RadioTransceiverEquipment:
-        return RadioTransceiverEquipment(
-            range_km=self.range_km,
-            tl=self.vehicle.tl,
-            satellite_uplink=self.satellite_uplink,
-            encryption=self.encryption,
-        )
-
-    @property
-    def transceiver_part(self) -> TransceiverPart:
-        return self._equipment.transceiver_part
+    def transceiver_part(self) -> RadioTransceiverPart:
+        return RadioTransceiverPart(range_km=self.range_km, tl=self.vehicle.tl, cost=self._transceiver_cost)
 
     @property
     def label(self) -> str:
-        """Named by its Tech Level stage: how far past its model it was built."""
-        model_tl = RadioTransceiverEquipment.model_tl(self.range_km, self.vehicle.tl)
-        levels = min(self.vehicle.tl - model_tl, RETROTECH_MAX_ELECTRONICS_LEVELS)
-        return f'Transceiver ({_STAGE_NAMES[levels]})'
+        return f'Transceiver ({self.stage})'
 
     @property
     def communications(self) -> str:
@@ -483,10 +490,19 @@ class VehicleTransceiver(_Option):
         return ', '.join(parts)
 
     @property
+    def _transceiver_cost(self) -> float:
+        _, listed = _TRANSCEIVERS[self.range_km]
+        return listed * _TECH_STAGE_COST[self.stage]
+
+    @property
     def cost(self) -> float:
-        """The gear parts installed — transceiver, uplink, encryption — plus tightbeam."""
-        tightbeam = _TIGHTBEAM_COST if self.tightbeam else 0
-        return sum(part.cost for part in self._equipment.parts) + tightbeam
+        """The transceiver at its stage, and each option at its own price."""
+        return (
+            self._transceiver_cost
+            + (_SATELLITE_UPLINK_COST if self.satellite_uplink else 0)
+            + (_TIGHTBEAM_COST if self.tightbeam else 0)
+            + (_ENCRYPTION_COST if self.encryption else 0)
+        )
 
 
 OptionUnion = Annotated[
