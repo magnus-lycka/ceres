@@ -20,7 +20,7 @@ from .features import Feature
 from .mounts import MountUnion
 from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleTransceiver
 from .size import VehicleSize, target_size_dm
-from .spec import MountSpec, VehicleSpec
+from .spec import CommunicationsSpec, MountSpec, VehicleSpec
 from .speed import SpeedBand
 from .traits import Trait
 from .types import VehicleType
@@ -38,13 +38,6 @@ _AQUATIC_RANGE_SHARE = 0.10
 
 # refs/vehicle/04_vehicle_types.md — the Range bonus starts at 20 Spaces.
 _LARGE_RANGE_SPACES = 20
-
-_DASH = '—'
-
-
-def _signed(value: int | None) -> str:
-    """A modifier as the catalogue prints it, or a dash where there is none."""
-    return _DASH if value is None else f'{value:+d}'
 
 
 class Vehicle(VehicleBase):
@@ -219,24 +212,17 @@ class Vehicle(VehicleBase):
         return speed, distance
 
     @property
-    def derived_figures(self) -> dict[str, str]:
-        """The small table the catalogue prints beneath the equipment list.
-
-        Every row is always present: a dash says the design has nothing that
-        confers it, which is what the catalogue prints too.
-        """
+    def communications(self) -> CommunicationsSpec | None:
+        """The transceiver's range and options, if the design has one."""
         transceiver = self._first_option(VehicleTransceiver)
-        sensors = self._first_option(SensorSystem)
-        return {
-            'Autopilot (skill level)': _signed(self.autopilot_skill),
-            'Communications (range)': transceiver.communications if transceiver else _DASH,
-            'Navigation (Navigation DM)': _signed(self.navigation_dm),
-            'Sensors (Electronics (sensors) DM)': (f'{self.sensors_dm:+d}, {sensors.range_km}km' if sensors else _DASH),
-            # Neither is modelled yet; the catalogue prints a dash for designs
-            # that carry none, which every design currently does.
-            'Camouflage (Recon DM)': _DASH,
-            'Stealth (Electronics (sensors) DM)': _DASH,
-        }
+        if transceiver is None:
+            return None
+        return CommunicationsSpec(
+            range_km=transceiver.range_km,
+            tightbeam=transceiver.tightbeam,
+            satellite_uplink=transceiver.satellite_uplink,
+            encryption=transceiver.encryption,
+        )
 
     @property
     def comfort_points(self) -> float:
@@ -369,7 +355,11 @@ class Vehicle(VehicleBase):
             armour_against_small_arms={face: self.armour.against_small_arms(face) for face in Face},
             equipment=self.equipment,
             mounts=[MountSpec(mount=m.name, face=m.face, weapon_spaces=m.weapon_spaces) for m in self.mounts],
-            derived_figures=self.derived_figures,
+            autopilot_skill=self.autopilot_skill,
+            navigation_dm=self.navigation_dm,
+            sensors_dm=self.sensors_dm,
+            sensors_range_km=self.sensors_range_km,
+            communications=self.communications,
             notes=self.notes,
         )
 

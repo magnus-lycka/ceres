@@ -65,13 +65,15 @@
         "weapon_spaces": 4
       }
     ],
-    "derived_figures": {
-      "Autopilot (skill level)": "+0",
-      "Communications (range)": "500km, tightbeam, satellite uplink, encrypted",
-      "Navigation (Navigation DM)": "+2",
-      "Sensors (Electronics (sensors) DM)": "+1, 5km",
-      "Camouflage (Recon DM)": "—",
-      "Stealth (Electronics (sensors) DM)": "—"
+    "autopilot_skill": 0,
+    "navigation_dm": 2,
+    "sensors_dm": 1,
+    "sensors_range_km": 5,
+    "communications": {
+      "range_km": 500,
+      "tightbeam": true,
+      "satellite_uplink": true,
+      "encryption": true
     },
     "notes": []
   },

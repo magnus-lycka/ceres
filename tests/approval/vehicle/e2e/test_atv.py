@@ -138,7 +138,7 @@ class TestATV:
         assert build_atv().equipment == _expected.equipment
 
     def test_the_equipment_confers_the_published_figures(self):
-        figures = build_atv().derived_figures
+        figures = {row['label']: row['value'] for row in _build_context(build_atv().build_spec())['derived_figures']}
 
         assert figures['Autopilot (skill level)'] == '+0'
         assert figures['Communications (range)'] == '500km, tightbeam, satellite uplink, encrypted'

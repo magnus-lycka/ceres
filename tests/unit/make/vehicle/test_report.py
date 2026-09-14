@@ -9,6 +9,7 @@ from typing import Any
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.mounts import Turret
+from ceres.make.vehicle.options import Autopilot, SensorSystem, VehicleTransceiver
 from ceres.make.vehicle.report import _build_context, render_vehicle_pdf, render_vehicle_typst
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
@@ -82,6 +83,34 @@ class TestOpenToppedArmour:
         rows = {row['face']: row['value'] for row in _build_context(vehicle.build_spec())['armour']}
         assert rows['Dorsal'] == '—'
         assert rows['Forward'] == '3 (11)'
+
+
+class TestDerivedFiguresTable:
+    """The small table beneath the equipment list, as the catalogue words it."""
+
+    def figures(self, vehicle: Vehicle) -> dict[str, str]:
+        return {row['label']: row['value'] for row in _build_context(vehicle.build_spec())['derived_figures']}
+
+    def test_it_words_what_the_fittings_confer(self):
+        figures = self.figures(
+            a_vehicle(
+                options=[
+                    Autopilot(quality='basic'),
+                    SensorSystem(quality='improved'),
+                    VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True),
+                ]
+            )
+        )
+        assert figures['Autopilot (skill level)'] == '+0'
+        assert figures['Sensors (Electronics (sensors) DM)'] == '+1, 5km'
+        assert figures['Communications (range)'] == '500km, tightbeam, satellite uplink, encrypted'
+
+    def test_what_a_design_lacks_is_a_dash(self):
+        figures = self.figures(a_vehicle())
+        assert figures['Autopilot (skill level)'] == '—'
+        assert figures['Navigation (Navigation DM)'] == '—'
+        assert figures['Camouflage (Recon DM)'] == '—'
+        assert figures['Stealth (Electronics (sensors) DM)'] == '—'
 
 
 class TestWeaponsTable:

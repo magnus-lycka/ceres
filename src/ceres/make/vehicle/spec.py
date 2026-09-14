@@ -18,6 +18,15 @@ from .speed import SpeedBand
 from .types import VehicleType
 
 
+class CommunicationsSpec(BaseModel):
+    """A transceiver, as installed: its range and the options it carries."""
+
+    range_km: int
+    tightbeam: bool = False
+    satellite_uplink: bool = False
+    encryption: bool = False
+
+
 class MountSpec(BaseModel):
     """A weapon mount, as installed: what it is, where, and what it can hold."""
 
@@ -56,6 +65,10 @@ class VehicleSpec(BaseModel):
     armour_against_small_arms: dict[Face, int] = Field(default_factory=dict)
     equipment: list[str] = Field(default_factory=list)
     mounts: list[MountSpec] = Field(default_factory=list)
-    derived_figures: dict[str, str] = Field(default_factory=dict)
+    autopilot_skill: int | None = None
+    navigation_dm: int | None = None
+    sensors_dm: int | None = None
+    sensors_range_km: int | None = None
+    communications: CommunicationsSpec | None = None
 
     notes: NoteList = Field(default_factory=NoteList)

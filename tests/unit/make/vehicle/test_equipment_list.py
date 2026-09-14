@@ -9,12 +9,10 @@ from typing import Any
 from ceres.make.vehicle.customisations import AquaticDrive, FusionPlusPlant
 from ceres.make.vehicle.options import (
     AirLock,
-    Autopilot,
     Bunk,
     CollisionProtection,
     ControlSystem,
     SensorSystem,
-    VehicleTransceiver,
 )
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
@@ -63,30 +61,3 @@ class TestAquaticDrive:
 
         atv = a_vehicle(features=[Feature.FAST], customisations=[AquaticDrive()])
         assert atv.equipment == ['Aquatic Drive (Very Slow, 600km)']
-
-
-class TestDerivedFigures:
-    """The small table beneath the equipment list."""
-
-    def test_it_reports_what_the_fittings_confer(self):
-        vehicle = a_vehicle(
-            options=[
-                Autopilot(quality='basic'),
-                SensorSystem(quality='improved'),
-                VehicleTransceiver(
-                    range_km=500, stage='superior', satellite_uplink=True, tightbeam=True, encryption=True
-                ),
-            ]
-        )
-        figures = vehicle.build_spec().derived_figures
-
-        assert figures['Autopilot (skill level)'] == '+0'
-        assert figures['Sensors (Electronics (sensors) DM)'] == '+1, 5km'
-        assert figures['Communications (range)'] == '500km, tightbeam, satellite uplink, encrypted'
-
-    def test_what_a_design_lacks_shows_as_a_dash(self):
-        figures = a_vehicle().build_spec().derived_figures
-
-        assert figures['Autopilot (skill level)'] == '—'
-        assert figures['Camouflage (Recon DM)'] == '—'
-        assert figures['Stealth (Electronics (sensors) DM)'] == '—'

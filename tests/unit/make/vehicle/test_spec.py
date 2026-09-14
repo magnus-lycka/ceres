@@ -7,6 +7,7 @@ is the report context's job, as it is for ships.
 from typing import Any
 
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.options import Autopilot, NavigationSystem, SensorSystem, VehicleTransceiver
 from ceres.make.vehicle.size import VehicleSize
 from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.types import VehicleType
@@ -81,3 +82,36 @@ class TestSpecCarriesRawValues:
 
     def test_a_design_with_neither_lists_nothing(self):
         assert a_vehicle(spaces=6, tl=7).build_spec().features_and_traits == []
+
+
+class TestSpecCarriesWhatTheEquipmentConfers:
+    """Numbers and flags, not the text the catalogue's small table prints."""
+
+    def test_the_figures_the_fittings_confer(self):
+        spec = a_vehicle(
+            options=[
+                Autopilot(quality='basic'),
+                NavigationSystem(quality='improved'),
+                SensorSystem(quality='improved'),
+                VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True),
+            ]
+        ).build_spec()
+
+        assert spec.autopilot_skill == 0
+        assert spec.navigation_dm == 2
+        assert spec.sensors_dm == 1
+        assert spec.sensors_range_km == 5
+        assert spec.communications is not None
+        assert spec.communications.range_km == 500
+        assert spec.communications.tightbeam
+        assert spec.communications.satellite_uplink
+        assert spec.communications.encryption
+
+    def test_a_design_without_them_has_none(self):
+        spec = a_vehicle().build_spec()
+
+        assert spec.autopilot_skill is None
+        assert spec.navigation_dm is None
+        assert spec.sensors_dm is None
+        assert spec.sensors_range_km is None
+        assert spec.communications is None

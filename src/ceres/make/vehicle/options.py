@@ -467,18 +467,6 @@ class VehicleTransceiver(_Option):
         return f'Transceiver ({self.stage})'
 
     @property
-    def communications(self) -> str:
-        """What the equipment table reports for this transceiver."""
-        parts = [f'{self.range_km}km']
-        if self.tightbeam:
-            parts.append('tightbeam')
-        if self.satellite_uplink:
-            parts.append('satellite uplink')
-        if self.encryption:
-            parts.append('encrypted')
-        return ', '.join(parts)
-
-    @property
     def _transceiver_cost(self) -> float:
         _, listed = _TRANSCEIVERS[self.range_km]
         return listed * _TECH_STAGE_COST[self.stage]

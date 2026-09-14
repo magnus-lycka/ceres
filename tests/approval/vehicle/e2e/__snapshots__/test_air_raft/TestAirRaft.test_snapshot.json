@@ -51,13 +51,15 @@
       "Transceiver (improved)"
     ],
     "mounts": [],
-    "derived_figures": {
-      "Autopilot (skill level)": "+1",
-      "Communications (range)": "500km, satellite uplink",
-      "Navigation (Navigation DM)": "+1",
-      "Sensors (Electronics (sensors) DM)": "+0, 1km",
-      "Camouflage (Recon DM)": "—",
-      "Stealth (Electronics (sensors) DM)": "—"
+    "autopilot_skill": 1,
+    "navigation_dm": 1,
+    "sensors_dm": 0,
+    "sensors_range_km": 1,
+    "communications": {
+      "range_km": 500,
+      "tightbeam": false,
+      "satellite_uplink": true,
+      "encryption": false
     },
     "notes": []
   },
