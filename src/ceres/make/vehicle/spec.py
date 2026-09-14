@@ -18,6 +18,14 @@ from .speed import SpeedBand
 from .types import VehicleType
 
 
+class MountSpec(BaseModel):
+    """A weapon mount, as installed: what it is, where, and what it can hold."""
+
+    mount: str
+    face: Face
+    weapon_spaces: int
+
+
 class VehicleSpec(BaseModel):
     """A design's figures, ready to render."""
 
@@ -46,6 +54,7 @@ class VehicleSpec(BaseModel):
     cost: float
     armour: dict[Face, int] = Field(default_factory=dict)
     equipment: list[str] = Field(default_factory=list)
+    mounts: list[MountSpec] = Field(default_factory=list)
     derived_figures: dict[str, str] = Field(default_factory=dict)
 
     notes: NoteList = Field(default_factory=NoteList)

@@ -17,9 +17,10 @@ from .base import VehicleBase
 from .comfort import comfort_label
 from .customisations import CustomisationUnion
 from .features import Feature
+from .mounts import MountUnion
 from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleTransceiver
 from .size import VehicleSize, target_size_dm
-from .spec import VehicleSpec
+from .spec import MountSpec, VehicleSpec
 from .speed import SpeedBand
 from .traits import Trait
 from .types import VehicleType
@@ -61,6 +62,7 @@ class Vehicle(VehicleBase):
     features: list[Feature] = Field(default_factory=list)
     customisations: list[CustomisationUnion] = Field(default_factory=list)
     options: list[OptionUnion] = Field(default_factory=list)
+    mounts: list[MountUnion] = Field(default_factory=list)
     crew: int = 0
     passengers: int = 0
     cargo_spaces: int = 0
@@ -77,6 +79,8 @@ class Vehicle(VehicleBase):
     def model_post_init(self, __context: Any) -> None:
         for option in self.options:
             option.bind(self)
+        for mount in self.mounts:
+            mount.bind(self)
         if self.tl < self.vehicle_type.tl:
             self.error(f'{self.vehicle_type.value} requires TL{self.vehicle_type.tl}, this design is TL{self.tl}')
         self._check_features()
@@ -142,8 +146,10 @@ class Vehicle(VehicleBase):
         fractions = sum(feature.added_cost for feature in self.features) + sum(
             customisation.added_cost for customisation in self.customisations
         )
-        absolute = sum(customisation.cost(self.spaces) for customisation in self.customisations) + sum(
-            option.cost for option in self.options
+        absolute = (
+            sum(customisation.cost(self.spaces) for customisation in self.customisations)
+            + sum(option.cost for option in self.options)
+            + sum(mount.cost for mount in self.mounts)
         )
         return self.base_cost * (1 + fractions) + absolute
 
@@ -160,7 +166,7 @@ class Vehicle(VehicleBase):
     @property
     def available_spaces(self) -> int:
         """Spaces still unspent, after everything installed and carried."""
-        taken = sum(option.spaces for option in self.options)
+        taken = sum(option.spaces for option in self.options) + sum(mount.spaces for mount in self.mounts)
         customised = sum(c.spaces_delta(self.spaces) for c in self.customisations)
         return self.spaces + customised - taken - self.occupant_spaces - self.cargo_spaces
 
@@ -361,6 +367,7 @@ class Vehicle(VehicleBase):
             cost=self.cost,
             armour={face: self.armour.protection(face) for face in Face},
             equipment=self.equipment,
+            mounts=[MountSpec(mount=m.name, face=m.face, weapon_spaces=m.weapon_spaces) for m in self.mounts],
             derived_figures=self.derived_figures,
             notes=self.notes,
         )

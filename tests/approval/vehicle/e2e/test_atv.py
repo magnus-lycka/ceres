@@ -10,6 +10,7 @@ import pytest
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.customisations import AquaticDrive, FuelCapacity, FusionPlusPlant, SlowerSpeed
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.mounts import Turret
 from ceres.make.vehicle.options import (
     AirLock,
     Autopilot,
@@ -26,6 +27,7 @@ from ceres.make.vehicle.options import (
     VehicleComputer,
     VehicleTransceiver,
 )
+from ceres.make.vehicle.report import _build_context
 from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
@@ -48,12 +50,15 @@ _expected = SimpleNamespace(
     structure=4,
     shipping_tons=10,
     protection=6,
+    weapons='Turret: Dorsal, can hold 4 Spaces of weapons',
+    # The turret takes the last Space the design has.
+    spare_spaces=0,
     # The published Cost is Cr155,000. The construction rules do not reach it:
-    # vacuum environment protection and the aquatic drive alone come to Cr70,000
-    # of a vehicle priced at Cr155,000, both being charged per vehicle Space. The
-    # same figure appears in the Core Rulebook, so it predates this design
-    # sequence and is canon rather than derived — see RIV-009.
-    cost=202_580,
+    # vacuum environment protection and the aquatic drive, both charged per
+    # vehicle Space, and the empty turret at Cr20,000 per Space it takes, come to
+    # Cr90,000 between them. The same figure appears in the Core Rulebook, so it
+    # predates this design sequence and is canon rather than derived — see RIV-009.
+    cost=222_580,
     equipment=[
         'Air Lock',
         'Aquatic Drive (Very Slow, 600km)',
@@ -90,6 +95,7 @@ def build_atv() -> Vehicle:
         # list. It is the only rule that produces the printed Speed of High, and
         # the two Spaces it frees are what let the ATV carry what it carries.
         customisations=[FusionPlusPlant(), FuelCapacity(spaces=-4), SlowerSpeed(), AquaticDrive()],
+        mounts=[Turret(face=Face.DORSAL, weapon_spaces=4)],
         options=[
             ControlSystem(quality='improved'),
             Autopilot(quality='basic'),
@@ -139,6 +145,13 @@ class TestATV:
         assert figures['Navigation (Navigation DM)'] == '+2'
         assert figures['Sensors (Electronics (sensors) DM)'] == '+1, 5km'
 
+    def test_it_carries_the_published_empty_turret(self):
+        # The entry's Weapons table: "Turret: Dorsal, can hold 4 Spaces of weapons",
+        # every other column a dash.
+        (row,) = _build_context(build_atv().build_spec())['weapons']
+        assert row['weapon'] == _expected.weapons
+        assert build_atv().available_spaces == _expected.spare_spaces
+
     def test_every_face_carries_the_published_protection(self):
         armour = build_atv().armour
         assert all(armour.protection(face) == _expected.protection for face in Face)
@@ -154,7 +167,7 @@ class TestATV:
         snap = AnnotatedSnapshot(build_atv().build_spec().model_dump(mode='json'))
         snap.annotate(
             'cost',
-            'Ceres Cr202,580 vs published Cr155,000 — the published figure is canon and '
+            'Ceres Cr222,580 vs published Cr155,000 — the published figure is canon and '
             'predates the construction rules, see RIV-009',
         )
         snap.annotate(

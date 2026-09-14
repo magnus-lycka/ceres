@@ -105,6 +105,27 @@
   )
 ]
 
+// Weapons: one row per mount, as the catalogue prints an empty turret.
+#if report_data.weapons.len() > 0 [
+  #v(6pt)
+  #table(
+    columns: (1fr, auto, auto, auto, auto, auto, auto),
+    inset: (x: 5pt, y: 3pt),
+    table.header(
+      [*Weapons*], [*Range*], [*Damage*], [*Magazine*], [*Cost*], [*Traits*], [*Fire Control*],
+    ),
+    ..report_data.weapons.map(row => (
+      [#row.at("weapon")],
+      [#row.at("range")],
+      [#row.at("damage")],
+      [#row.at("magazine")],
+      [#row.at("cost")],
+      [#row.at("traits")],
+      [#row.at("fire_control")],
+    )).flatten(),
+  )
+]
+
 #if report_data.notes.len() > 0 [
   #v(4pt)
   #render-grouped(report_data.notes)

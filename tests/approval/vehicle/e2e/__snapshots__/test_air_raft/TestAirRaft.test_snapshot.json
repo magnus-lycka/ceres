@@ -42,6 +42,7 @@
       "Sensor System (basic)",
       "Transceiver (improved)"
     ],
+    "mounts": [],
     "derived_figures": {
       "Autopilot (skill level)": "+1",
       "Communications (range)": "500km, satellite uplink",

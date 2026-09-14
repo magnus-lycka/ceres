@@ -6,7 +6,9 @@ composed here, not carried by the spec.
 
 from typing import Any
 
+from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.mounts import Turret
 from ceres.make.vehicle.report import _build_context, render_vehicle_pdf, render_vehicle_typst
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
@@ -72,6 +74,22 @@ class TestArmourTable:
         assert {row['value'] for row in armour} == {'3 (11)'}
 
 
+class TestWeaponsTable:
+    """refs/vehicle/26_wehicle_catalogue.md — the ATV prints an empty turret as
+    "Turret: Dorsal, can hold 4 Spaces of weapons", every other column a dash.
+    """
+
+    def test_an_empty_turret_reads_as_the_catalogue_prints_it(self):
+        (row,) = _build_context(a_vehicle(mounts=[Turret(face=Face.DORSAL, weapon_spaces=4)]).build_spec())['weapons']
+        assert row['weapon'] == 'Turret: Dorsal, can hold 4 Spaces of weapons'
+        assert [row[column] for column in ('range', 'damage', 'magazine', 'cost', 'traits', 'fire_control')] == [
+            '—'
+        ] * 6
+
+    def test_a_design_without_weapons_has_no_table(self):
+        assert _build_context(a_vehicle().build_spec())['weapons'] == []
+
+
 class TestTypstOutput:
     def test_it_renders_the_design(self):
         source = render_vehicle_typst(a_vehicle(name='Test ATV', features=[Feature.ATV]))
@@ -86,3 +104,10 @@ class TestTypstOutput:
         pdf = render_vehicle_pdf(a_vehicle(name='Test ATV', features=[Feature.ATV]))
 
         assert pdf.startswith(b'%PDF-')
+
+    def test_a_design_with_a_turret_still_typesets(self):
+        # The Typst source embeds the whole context, so asserting text in it
+        # proves nothing about what the template prints. This only guards the
+        # template's handling of weapons data against typesetting errors.
+        vehicle = a_vehicle(name='Test ATV', mounts=[Turret(face=Face.DORSAL, weapon_spaces=4)])
+        assert render_vehicle_pdf(vehicle).startswith(b'%PDF-')

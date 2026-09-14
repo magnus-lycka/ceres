@@ -67,6 +67,17 @@ def _armour_rows(spec: VehicleSpec) -> list[dict]:
     ]
 
 
+def _weapon_rows(spec: VehicleSpec) -> list[dict]:
+    """The Weapons table. An empty mount prints its capacity and dashes elsewhere."""
+    return [
+        {
+            'weapon': f'{mount.mount}: {mount.face.value}, can hold {mount.weapon_spaces} Spaces of weapons',
+            **dict.fromkeys(('range', 'damage', 'magazine', 'cost', 'traits', 'fire_control'), '—'),
+        }
+        for mount in spec.mounts
+    ]
+
+
 def render_vehicle_typst(vehicle: Vehicle, *, page_size: str = 'a4', image: str | None = None) -> str:
     return render_vehicle_spec_typst(vehicle.build_spec(), page_size=page_size, image=image)
 
@@ -96,6 +107,7 @@ def _build_context(spec: VehicleSpec, *, page_size: str = 'a4', image: str | Non
         'features_and_traits': ', '.join(spec.features_and_traits) or 'None',
         'stats': _stat_rows(spec),
         'armour': _armour_rows(spec),
+        'weapons': _weapon_rows(spec),
         'equipment': ', '.join(spec.equipment),
         'derived_figures': [{'label': k, 'value': v} for k, v in spec.derived_figures.items()],
         'notes': _notes_for_display(spec.notes),

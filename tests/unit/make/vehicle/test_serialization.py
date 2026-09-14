@@ -55,3 +55,22 @@ def test_features_and_customisations_survive_the_trip():
     assert restored.available_spaces == original.available_spaces
     # The union resolves back to the concrete customisation types, not the base.
     assert isinstance(restored.customisations[0], FusionPlusPlant)
+
+
+def test_mounts_survive_the_trip():
+    from ceres.make.vehicle.armour import Face
+    from ceres.make.vehicle.mounts import Turret
+
+    original = Vehicle(
+        name='ATV',
+        vehicle_type=VehicleType.GROUND_VEHICLE,
+        spaces=20,
+        tl=12,
+        mounts=[Turret(face=Face.DORSAL, weapon_spaces=4)],
+    )
+
+    restored = Vehicle.model_validate_json(original.model_dump_json())
+
+    assert restored == original
+    assert isinstance(restored.mounts[0], Turret)
+    assert restored.cost == original.cost
