@@ -147,11 +147,34 @@ def _contains_any_literal(source: str, literals: set[str]) -> bool:
     return any(literal in source for literal in literals)
 
 
+def _is_enum_class(node: ast.ClassDef) -> bool:
+    """Whether a class derives, by name, from one of the enum base classes."""
+    for base in node.bases:
+        name = base.id if isinstance(base, ast.Name) else base.attr if isinstance(base, ast.Attribute) else ''
+        if name.endswith('Enum'):
+            return True
+    return False
+
+
+def _enum_member_value_ids(tree: ast.AST) -> set[int]:
+    """The string constants that define members directly in an enum class body."""
+    ids: set[int] = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.ClassDef) and _is_enum_class(node)):
+            continue
+        for statement in node.body:
+            if isinstance(statement, ast.Assign) and isinstance(statement.value, ast.Constant):
+                ids.add(id(statement.value))
+    return ids
+
+
 def _find_python_literal_occurrences(path: Path, literals: set[str], source: str) -> list[LiteralOccurrence]:
     occurrences: list[LiteralOccurrence] = []
     tree = _parse_python_source(path, source)
     # Keyword argument values are field-name strings, never discriminator literals.
     keyword_value_ids = {id(node.value) for node in ast.walk(tree) if isinstance(node, ast.keyword)}
+    # An enum member's value is its own canonical declaration, not a re-use.
+    keyword_value_ids |= _enum_member_value_ids(tree)
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
             continue

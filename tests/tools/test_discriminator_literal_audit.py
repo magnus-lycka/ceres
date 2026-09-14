@@ -275,3 +275,69 @@ def test_relative_to_repo_root_returns_relative_path_when_possible(tmp_path: Pat
     _write(path, '')
 
     assert relative_to_repo_root(path, tmp_path) == Path('src/ceres/thing.py')
+
+
+def test_audit_accepts_an_enum_member_defining_the_same_string(tmp_path: Path) -> None:
+    # An enum member is itself a canonical, typed declaration of its value. That
+    # another model declares the same word in a Literal is a coincidence of
+    # vocabulary, not a stray re-use of that model's discriminator.
+    _write(
+        tmp_path / 'src' / 'ceres' / 'ship.py',
+        """
+from typing import Literal
+
+
+class Brain:
+    grade: Literal['advanced'] = 'advanced'
+""",
+    )
+    _write(
+        tmp_path / 'src' / 'ceres' / 'vehicle.py',
+        """
+from enum import StrEnum
+
+
+class TechStage(StrEnum):
+    ADVANCED = 'advanced'
+""",
+    )
+
+    result = audit_discriminator_literals(
+        declaration_paths=[tmp_path / 'src' / 'ceres'],
+        scan_paths=[tmp_path / 'src' / 'ceres' / 'vehicle.py'],
+    )
+
+    assert result.ok
+
+
+def test_audit_still_reports_a_bare_string_beside_an_enum(tmp_path: Path) -> None:
+    _write(
+        tmp_path / 'src' / 'ceres' / 'ship.py',
+        """
+from typing import Literal
+
+
+class Brain:
+    grade: Literal['advanced'] = 'advanced'
+""",
+    )
+    _write(
+        tmp_path / 'src' / 'ceres' / 'vehicle.py',
+        """
+from enum import StrEnum
+
+
+class TechStage(StrEnum):
+    ADVANCED = 'advanced'
+
+
+COSTS = {'advanced': 25_000}
+""",
+    )
+
+    result = audit_discriminator_literals(
+        declaration_paths=[tmp_path / 'src' / 'ceres'],
+        scan_paths=[tmp_path / 'src' / 'ceres' / 'vehicle.py'],
+    )
+
+    assert [(violation.literal, violation.lineno) for violation in result.violations] == [('advanced', 9)]
