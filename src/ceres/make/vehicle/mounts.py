@@ -11,25 +11,18 @@ Rules: refs/vehicle/17_weapons.md
 from math import ceil
 from typing import Annotated, Literal
 
-from pydantic import Field, PrivateAttr
-
-from ceres.shared import CeresModel
+from pydantic import Field
 
 from .armour import Face
-from .base import VehicleBase
+from .base import InstalledInVehicle
 
 # refs/vehicle/17_weapons.md — Turret
 _TURRET_WEAPON_SPACES_PER_SPACE = 4
 _TURRET_COST_PER_SPACE = 20_000
 
 
-class _Mount(CeresModel):
+class _Mount(InstalledInVehicle):
     """What every mount can be asked, whether or not it answers."""
-
-    _vehicle: VehicleBase | None = PrivateAttr(default=None)
-
-    def bind(self, vehicle: VehicleBase) -> None:
-        self._vehicle = vehicle
 
     @property
     def name(self) -> str:

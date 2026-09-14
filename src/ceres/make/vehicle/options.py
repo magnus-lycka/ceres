@@ -13,34 +13,17 @@ from dataclasses import dataclass
 from math import ceil
 from typing import Annotated, Literal
 
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
 from ceres.gear.comm import RadioTransceiverPart
 from ceres.gear.computer import ComputerPart
 from ceres.gear.safety import FireExtinguisherPart
-from ceres.shared import CeresModel
 
-from .base import VehicleBase
+from .base import InstalledInVehicle
 
 
-class _Option(CeresModel):
-    """What every option can be asked, whether or not it answers.
-
-    An option is bound to the vehicle it is installed in (ARCHITECTURE.md,
-    two-phase construction), because what it costs and occupies can depend on
-    that vehicle's size and Tech Level.
-    """
-
-    _vehicle: VehicleBase | None = PrivateAttr(default=None)
-
-    def bind(self, vehicle: VehicleBase) -> None:
-        self._vehicle = vehicle
-
-    @property
-    def vehicle(self) -> VehicleBase:
-        if self._vehicle is None:
-            raise RuntimeError(f'{type(self).__name__} is not installed in a vehicle')
-        return self._vehicle
+class _Option(InstalledInVehicle):
+    """What every option can be asked, whether or not it answers."""
 
     @property
     def label(self) -> str:

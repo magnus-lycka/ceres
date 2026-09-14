@@ -74,3 +74,22 @@ def test_mounts_survive_the_trip():
     assert restored == original
     assert isinstance(restored.mounts[0], Turret)
     assert restored.cost == original.cost
+
+
+def test_options_survive_the_trip():
+    # An installed option knows its vehicle; comparing designs must not follow
+    # that reference back round in a circle.
+    from ceres.make.vehicle.options import ControlSystem
+
+    original = Vehicle(
+        name='ATV',
+        vehicle_type=VehicleType.GROUND_VEHICLE,
+        spaces=20,
+        tl=12,
+        options=[ControlSystem(quality='improved')],
+    )
+
+    restored = Vehicle.model_validate_json(original.model_dump_json())
+
+    assert restored == original
+    assert restored.agility == original.agility
