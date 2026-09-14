@@ -41,22 +41,134 @@
       "Ventral": 18
     },
     "equipment": [
-      "Air Lock",
-      "Aquatic Drive (Very Slow, 600km)",
-      "Autopilot (basic)",
-      "Bunk x2",
-      "Collision Protection (improved) x16",
-      "Computer/1",
-      "Control System (improved)",
-      "Fire Extinguishers",
-      "Fresher (standard)",
-      "Fusion+ (basic) PP 2",
-      "Galley (mini)",
-      "Life Support (short term)",
-      "Navigation System (improved)",
-      "Sensor System (improved)",
-      "Transceiver (superior)",
-      "Vacuum Environment Protection"
+      {
+        "name": "Fusion+",
+        "grade": "basic",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": 2
+      },
+      {
+        "name": "Aquatic Drive",
+        "grade": null,
+        "quantity": 1,
+        "speed": 2,
+        "range_km": 600,
+        "power_points": null
+      },
+      {
+        "name": "Control System",
+        "grade": "improved",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Autopilot",
+        "grade": "basic",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Navigation System",
+        "grade": "improved",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Sensor System",
+        "grade": "improved",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Collision Protection",
+        "grade": "improved",
+        "quantity": 16,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Air Lock",
+        "grade": null,
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Life Support",
+        "grade": "short term",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Bunk",
+        "grade": null,
+        "quantity": 2,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Fresher",
+        "grade": "standard",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Galley",
+        "grade": "mini",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Fire Extinguishers",
+        "grade": null,
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Vacuum Environment Protection",
+        "grade": null,
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Computer/1",
+        "grade": null,
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Transceiver",
+        "grade": "superior",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      }
     ],
     "mounts": [
       {

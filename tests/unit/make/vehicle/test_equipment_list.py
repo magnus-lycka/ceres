@@ -1,12 +1,13 @@
 """The EQUIPMENT block: what a design carries, and what that lets it do.
 
 The catalogue prints one alphabetical list naming every customisation and option
-installed, followed by a small table of the figures they confer.
+installed. The spec carries each item as what it is; the report words the list.
 """
 
 from typing import Any
 
-from ceres.make.vehicle.customisations import AquaticDrive, FusionPlusPlant
+from ceres.make.vehicle.customisations import AquaticDrive, FusionPlusPlant, SlowerSpeed
+from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.options import (
     AirLock,
     Bunk,
@@ -14,6 +15,8 @@ from ceres.make.vehicle.options import (
     ControlSystem,
     SensorSystem,
 )
+from ceres.make.vehicle.report import _build_context
+from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
@@ -23,41 +26,64 @@ def a_vehicle(**kwargs) -> Vehicle:
     return Vehicle(**(defaults | kwargs))
 
 
-class TestEquipmentNames:
-    def test_an_option_names_its_quality(self):
-        assert a_vehicle(options=[ControlSystem(quality='improved')]).equipment == ['Control System (improved)']
+def printed(vehicle: Vehicle) -> list[str]:
+    return _build_context(vehicle.build_spec())['equipment']
 
-    def test_an_option_without_qualities_is_named_plainly(self):
-        assert a_vehicle(options=[AirLock()]).equipment == ['Air Lock']
 
-    def test_several_of_a_thing_are_counted(self):
-        assert a_vehicle(options=[Bunk(count=2)]).equipment == ['Bunk x2']
+class TestEquipmentInTheSpec:
+    """Each item as what it is: a name, a grade, how many, and what it does."""
+
+    def test_an_option_carries_its_name_and_grade(self):
+        (item,) = a_vehicle(options=[ControlSystem(quality='improved')]).build_spec().equipment
+        assert (item.name, item.grade, item.quantity) == ('Control System', 'improved', 1)
+
+    def test_a_count_is_a_quantity(self):
+        (item,) = a_vehicle(options=[Bunk(count=2)]).build_spec().equipment
+        assert (item.name, item.grade, item.quantity) == ('Bunk', None, 2)
 
     def test_collision_protection_counts_the_spaces_it_covers(self):
-        vehicle = a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)])
-        assert vehicle.equipment == ['Collision Protection (improved) x16']
+        (item,) = (
+            a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)]).build_spec().equipment
+        )
+        assert (item.name, item.grade, item.quantity) == ('Collision Protection', 'improved', 16)
 
-    def test_customisations_are_listed_too(self):
-        # The catalogue prints a power plant among the equipment, with its output.
-        assert a_vehicle(customisations=[FusionPlusPlant()]).equipment == ['Fusion+ (basic) PP 2']
+    def test_a_power_plant_carries_its_output(self):
+        (item,) = a_vehicle(customisations=[FusionPlusPlant()]).build_spec().equipment
+        assert (item.name, item.grade, item.power_points) == ('Fusion+', 'basic', 2)
+
+    def test_an_aquatic_drive_carries_the_water_performance_it_confers(self):
+        # The published ATV: a TL12 Heavy ground vehicle with Fast crosses water at
+        # Very Slow for 600km.
+        (item,) = a_vehicle(features=[Feature.FAST], customisations=[AquaticDrive()]).build_spec().equipment
+        assert (item.name, item.speed, item.range_km) == ('Aquatic Drive', SpeedBand.VERY_SLOW, 600)
+
+    def test_what_changes_the_vehicle_rather_than_adding_to_it_is_not_equipment(self):
+        assert a_vehicle(customisations=[SlowerSpeed()]).build_spec().equipment == []
+
+
+class TestPrintedEquipment:
+    def test_a_grade_is_parenthesised(self):
+        assert printed(a_vehicle(options=[ControlSystem(quality='improved')])) == ['Control System (improved)']
+
+    def test_an_item_without_a_grade_is_named_plainly(self):
+        assert printed(a_vehicle(options=[AirLock()])) == ['Air Lock']
+
+    def test_a_quantity_is_a_multiplier(self):
+        assert printed(a_vehicle(options=[Bunk(count=2)])) == ['Bunk x2']
+        assert printed(a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)])) == [
+            'Collision Protection (improved) x16'
+        ]
+
+    def test_a_power_plant_prints_its_output(self):
+        assert printed(a_vehicle(customisations=[FusionPlusPlant()])) == ['Fusion+ (basic) PP 2']
+
+    def test_an_aquatic_drive_prints_its_water_performance(self):
+        vehicle = a_vehicle(features=[Feature.FAST], customisations=[AquaticDrive()])
+        assert printed(vehicle) == ['Aquatic Drive (Very Slow, 600km)']
 
     def test_the_list_is_alphabetical(self):
         vehicle = a_vehicle(options=[SensorSystem(), AirLock(), ControlSystem()])
-        assert vehicle.equipment == ['Air Lock', 'Control System (basic)', 'Sensor System (basic)']
+        assert printed(vehicle) == ['Air Lock', 'Control System (basic)', 'Sensor System (basic)']
 
     def test_a_design_with_nothing_installed_lists_nothing(self):
-        assert a_vehicle().equipment == []
-
-
-class TestAquaticDrive:
-    """A secondary drive performs as an equivalent watercraft, one band and one
-    Agility lower, with a tenth of the range.
-    """
-
-    def test_it_reports_the_water_performance_it_confers(self):
-        # The published ATV: a TL12 Heavy ground vehicle with an aquatic drive
-        # crosses water at Very Slow for 600km.
-        from ceres.make.vehicle.features import Feature
-
-        atv = a_vehicle(features=[Feature.FAST], customisations=[AquaticDrive()])
-        assert atv.equipment == ['Aquatic Drive (Very Slow, 600km)']
+        assert printed(a_vehicle()) == []

@@ -16,6 +16,8 @@ from pydantic import Field
 
 from ceres.shared import CeresModel
 
+from .spec import EquipmentSpec
+
 _FUSION_PLUS_SPACE_FRACTION = 0.10
 _FUSION_PLUS_POWER_PER_SPACE = 1
 _SPEED_STEP_SPACE_FRACTION = 0.10
@@ -27,23 +29,14 @@ _RANGE_PER_FUEL_SHARE = 2.5
 class _Customisation(CeresModel):
     """What every customisation can be asked, whether or not it answers."""
 
-    @property
-    def label(self) -> str:
-        """How the equipment list names this. Empty when it is not equipment.
+    def equipment_in(self, vehicle) -> EquipmentSpec | None:
+        """This customisation as an item of equipment, or None if it is not one.
 
         Speed and fuel modifications change the vehicle rather than adding
-        anything to it, so a catalogue entry never lists them.
+        anything to it, so a catalogue entry never lists them. Given the vehicle
+        because some describe themselves by what they do to it.
         """
-        return ''
-
-    def label_in(self, vehicle) -> str:
-        """How this design's equipment list names it.
-
-        Given the vehicle because some customisations describe themselves in
-        terms of what they do to it — a power plant's output, a secondary
-        drive's performance.
-        """
-        return self.label
+        return None
 
     def spaces_delta(self, spaces: int) -> int:
         """Spaces freed (positive) or consumed (negative) on a vehicle this big."""
@@ -86,8 +79,8 @@ class FusionPlusPlant(_Customisation):
     def spaces_delta(self, spaces: int) -> int:
         return -self.plant_spaces(spaces)
 
-    def label_in(self, vehicle) -> str:
-        return f'Fusion+ ({self.quality}) PP {self.power_points(vehicle.spaces)}'
+    def equipment_in(self, vehicle) -> EquipmentSpec | None:
+        return EquipmentSpec(name='Fusion+', grade=self.quality, power_points=self.power_points(vehicle.spaces))
 
     def power_points(self, spaces: int) -> int:
         """One Power per Space of plant, for a basic Fusion+."""
@@ -166,9 +159,9 @@ class AquaticDrive(_Customisation):
 
     kind: Literal['AQUATIC_DRIVE'] = 'AQUATIC_DRIVE'
 
-    def label_in(self, vehicle) -> str:
+    def equipment_in(self, vehicle) -> EquipmentSpec | None:
         speed, distance = vehicle.aquatic_performance
-        return f'Aquatic Drive ({speed}, {distance:,.0f}km)'
+        return EquipmentSpec(name='Aquatic Drive', speed=speed, range_km=round(distance))
 
     def drive_spaces(self, spaces: int) -> int:
         return max(ceil(spaces * 0.05), 1)

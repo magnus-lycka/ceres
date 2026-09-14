@@ -20,7 +20,7 @@ from .features import Feature
 from .mounts import MountUnion
 from .options import Autopilot, NavigationSystem, OptionUnion, SensorSystem, VehicleTransceiver
 from .size import VehicleSize, target_size_dm
-from .spec import CommunicationsSpec, MountSpec, VehicleSpec
+from .spec import CommunicationsSpec, EquipmentSpec, MountSpec, VehicleSpec
 from .speed import SpeedBand
 from .traits import Trait
 from .types import VehicleType
@@ -186,14 +186,14 @@ class Vehicle(VehicleBase):
         return vehicle_type.large_range_multiplier if self.spaces >= _LARGE_RANGE_SPACES else 1.0
 
     @property
-    def equipment(self) -> list[str]:
-        """Everything installed, named as the catalogue names it, in order.
+    def equipment(self) -> list[EquipmentSpec]:
+        """Everything installed that counts as equipment.
 
         Customisations that merely change the vehicle rather than adding to it
         contribute nothing, so speed and fuel modifications do not appear.
         """
-        named = [c.label_in(self) for c in self.customisations] + [o.label for o in self.options]
-        return sorted(label for label in named if label)
+        from_customisations = [c.equipment_in(self) for c in self.customisations]
+        return [item for item in from_customisations if item is not None] + [o.equipment for o in self.options]
 
     @property
     def aquatic_performance(self) -> tuple[SpeedBand, float]:

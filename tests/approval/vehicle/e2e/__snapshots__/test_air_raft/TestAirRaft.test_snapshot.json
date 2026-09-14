@@ -41,14 +41,70 @@
       "Ventral": 11
     },
     "equipment": [
-      "Autopilot (improved)",
-      "Collision Protection (basic) x8",
-      "Computer/1",
-      "Control System (basic)",
-      "Entertainment System",
-      "Navigation System (basic)",
-      "Sensor System (basic)",
-      "Transceiver (improved)"
+      {
+        "name": "Control System",
+        "grade": "basic",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Autopilot",
+        "grade": "improved",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Navigation System",
+        "grade": "basic",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Sensor System",
+        "grade": "basic",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Collision Protection",
+        "grade": "basic",
+        "quantity": 8,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Computer/1",
+        "grade": null,
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Entertainment System",
+        "grade": null,
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      },
+      {
+        "name": "Transceiver",
+        "grade": "improved",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      }
     ],
     "mounts": [],
     "autopilot_skill": 1,

@@ -18,6 +18,21 @@ from .speed import SpeedBand
 from .types import VehicleType
 
 
+class EquipmentSpec(BaseModel):
+    """One item of equipment, as installed: what it is and what it does.
+
+    Only an item's own details are set — a power plant's output, a secondary
+    drive's performance — and the report words the rest.
+    """
+
+    name: str
+    grade: str | None = None
+    quantity: int = 1
+    speed: SpeedBand | None = None
+    range_km: int | None = None
+    power_points: int | None = None
+
+
 class CommunicationsSpec(BaseModel):
     """A transceiver, as installed: its range and the options it carries."""
 
@@ -63,7 +78,7 @@ class VehicleSpec(BaseModel):
     cost: float
     armour: dict[Face, int] = Field(default_factory=dict)
     armour_against_small_arms: dict[Face, int] = Field(default_factory=dict)
-    equipment: list[str] = Field(default_factory=list)
+    equipment: list[EquipmentSpec] = Field(default_factory=list)
     mounts: list[MountSpec] = Field(default_factory=list)
     autopilot_skill: int | None = None
     navigation_dm: int | None = None

@@ -135,7 +135,7 @@ class TestATV:
         assert atv.cost == _expected.cost
 
     def test_it_carries_the_published_equipment(self):
-        assert build_atv().equipment == _expected.equipment
+        assert _build_context(build_atv().build_spec())['equipment'] == _expected.equipment
 
     def test_the_equipment_confers_the_published_figures(self):
         figures = {row['label']: row['value'] for row in _build_context(build_atv().build_spec())['derived_figures']}

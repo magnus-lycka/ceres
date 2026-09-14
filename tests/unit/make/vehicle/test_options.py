@@ -191,17 +191,17 @@ class TestTransceiver:
     def test_a_basic_transceiver_is_the_listed_price(self):
         vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500)])
         assert vehicle.cost == 15_000 + 600
-        assert vehicle.equipment == ['Transceiver (basic)']
+        assert [item.grade for item in vehicle.build_spec().equipment] == ['basic']
 
     def test_an_improved_transceiver_is_half(self):
         vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage='improved')])
         assert vehicle.cost == 15_000 + 300
-        assert vehicle.equipment == ['Transceiver (improved)']
+        assert [item.grade for item in vehicle.build_spec().equipment] == ['improved']
 
     def test_a_superior_transceiver_is_a_twentieth(self):
         vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage='superior')])
         assert vehicle.cost == 15_000 + 30
-        assert vehicle.equipment == ['Transceiver (superior)']
+        assert [item.grade for item in vehicle.build_spec().equipment] == ['superior']
 
     def test_its_options_are_priced_in_their_own_right(self):
         # refs/vehicle/09_core_options.md — Transceiver Options. The stage

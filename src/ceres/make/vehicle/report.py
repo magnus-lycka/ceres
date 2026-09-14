@@ -8,7 +8,7 @@ from pathlib import Path
 
 from ceres.shared import NoteList, _Note
 
-from .spec import VehicleSpec
+from .spec import EquipmentSpec, VehicleSpec
 from .vehicle import Vehicle
 
 _TEMPLATES = Path(__file__).parent / 'templates'
@@ -113,6 +113,21 @@ def _derived_figure_rows(spec: VehicleSpec) -> list[dict]:
     return [{'label': label, 'value': value} for label, value in rows]
 
 
+def _equipment_label(item: EquipmentSpec) -> str:
+    """An item as the catalogue lists it: 'Collision Protection (improved) x16',
+    'Fusion+ (basic) PP 2', 'Aquatic Drive (Very Slow, 600km)'."""
+    label = item.name
+    if item.speed is not None:
+        label += f' ({item.speed}, {item.range_km:,}km)'
+    elif item.grade is not None:
+        label += f' ({item.grade})'
+    if item.power_points is not None:
+        label += f' PP {item.power_points}'
+    if item.quantity > 1:
+        label += f' x{item.quantity}'
+    return label
+
+
 def _weapon_rows(spec: VehicleSpec) -> list[dict]:
     """The Weapons table. An empty mount prints its capacity and dashes elsewhere."""
     return [
@@ -154,7 +169,7 @@ def _build_context(spec: VehicleSpec, *, page_size: str = 'a4', image: str | Non
         'stats': _stat_rows(spec),
         'armour': _armour_rows(spec),
         'weapons': _weapon_rows(spec),
-        'equipment': ', '.join(spec.equipment),
+        'equipment': sorted(_equipment_label(item) for item in spec.equipment),
         'derived_figures': _derived_figure_rows(spec),
         'notes': _notes_for_display(spec.notes),
         'image': image,

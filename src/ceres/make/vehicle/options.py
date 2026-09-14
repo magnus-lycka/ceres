@@ -11,7 +11,7 @@ Rules: refs/vehicle/09_core_options.md
 
 from dataclasses import dataclass
 from math import ceil
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import Field
 
@@ -20,22 +20,26 @@ from ceres.gear.computer import ComputerPart
 from ceres.gear.safety import FireExtinguisherPart
 
 from .base import InstalledInVehicle
+from .spec import EquipmentSpec
 
 
 class _Option(InstalledInVehicle):
     """What every option can be asked, whether or not it answers."""
 
+    _equipment_name: ClassVar[str]
+
     @property
-    def label(self) -> str:
-        """How the equipment list names this, quality and quantity included."""
-        name = _NAMES[type(self).__name__]
-        quality = getattr(self, 'quality', None)
-        if quality:
-            name = f'{name} ({quality})'
-        count = getattr(self, 'count', 1)
-        if count > 1:
-            name = f'{name} x{count}'
-        return name
+    def grade(self) -> str | None:
+        return None
+
+    @property
+    def quantity(self) -> int:
+        return 1
+
+    @property
+    def equipment(self) -> EquipmentSpec:
+        """This option as an item of equipment."""
+        return EquipmentSpec(name=self._equipment_name, grade=self.grade, quantity=self.quantity)
 
     @property
     def agility(self) -> int:
@@ -66,25 +70,6 @@ class _Grade:
 
 
 # refs/vehicle/09_core_options.md — Control Systems
-# How each option is named in an equipment list.
-_NAMES = {
-    'ControlSystem': 'Control System',
-    'Autopilot': 'Autopilot',
-    'NavigationSystem': 'Navigation System',
-    'SensorSystem': 'Sensor System',
-    'CollisionProtection': 'Collision Protection',
-    'AirLock': 'Air Lock',
-    'LifeSupport': 'Life Support',
-    'Bunk': 'Bunk',
-    'Fresher': 'Fresher',
-    'Galley': 'Galley',
-    'EntertainmentSystem': 'Entertainment System',
-    'VacuumEnvironment': 'Vacuum Environment Protection',
-    'FireExtinguishers': 'Fire Extinguishers',
-    'VehicleComputer': 'Computer',
-    'VehicleTransceiver': 'Transceiver',
-}
-
 _CONTROL: dict[str, _Grade] = {
     'primitive': _Grade(tl=1, cost=-25, value=-1),
     'basic': _Grade(tl=0, cost=0, value=0),
@@ -128,7 +113,12 @@ class ControlSystem(_Option):
     """
 
     kind: Literal['CONTROL_SYSTEM'] = 'CONTROL_SYSTEM'
+    _equipment_name: ClassVar[str] = 'Control System'
     quality: Literal['primitive', 'basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
 
     @property
     def agility(self) -> int:
@@ -143,7 +133,12 @@ class Autopilot(_Option):
     """A system that can operate the vehicle at the skill level shown."""
 
     kind: Literal['AUTOPILOT'] = 'AUTOPILOT'
+    _equipment_name: ClassVar[str] = 'Autopilot'
     quality: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
 
     @property
     def skill_level(self) -> int:
@@ -158,7 +153,12 @@ class NavigationSystem(_Option):
     """Route-finding, worth a DM to Navigation checks."""
 
     kind: Literal['NAVIGATION_SYSTEM'] = 'NAVIGATION_SYSTEM'
+    _equipment_name: ClassVar[str] = 'Navigation System'
     quality: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
 
     @property
     def navigation_dm(self) -> int:
@@ -173,7 +173,12 @@ class SensorSystem(_Option):
     """A package of active and passive sensors appropriate to its Tech Level."""
 
     kind: Literal['SENSOR_SYSTEM'] = 'SENSOR_SYSTEM'
+    _equipment_name: ClassVar[str] = 'Sensor System'
     quality: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
 
     @property
     def sensors_dm(self) -> int:
@@ -257,12 +262,18 @@ class CollisionProtection(_Option):
     """
 
     kind: Literal['COLLISION_PROTECTION'] = 'COLLISION_PROTECTION'
+    _equipment_name: ClassVar[str] = 'Collision Protection'
     quality: Literal['basic', 'improved', 'advanced'] = 'basic'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
+
     spaces_protected: int = 1
 
     @property
-    def label(self) -> str:
-        return f'Collision Protection ({self.quality}) x{self.spaces_protected}'
+    def quantity(self) -> int:
+        return self.spaces_protected
 
     @property
     def protection(self) -> int:
@@ -277,7 +288,12 @@ class AirLock(_Option):
     """Lets occupants in and out without exposing the interior."""
 
     kind: Literal['AIR_LOCK'] = 'AIR_LOCK'
+    _equipment_name: ClassVar[str] = 'Air Lock'
     count: int = 1
+
+    @property
+    def quantity(self) -> int:
+        return self.count
 
     @property
     def spaces(self) -> int:
@@ -292,12 +308,13 @@ class LifeSupport(_Option):
     """A breathable atmosphere independent of the one outside."""
 
     kind: Literal['LIFE_SUPPORT'] = 'LIFE_SUPPORT'
+    _equipment_name: ClassVar[str] = 'Life Support'
     duration: Literal['short_term', 'long_term', 'closed_cycle'] = 'short_term'
     people: int = 1
 
     @property
-    def label(self) -> str:
-        return f'Life Support ({self.duration.replace("_", " ")})'
+    def grade(self) -> str | None:
+        return self.duration.replace('_', ' ')
 
     @property
     def spaces(self) -> int:
@@ -313,7 +330,12 @@ class Bunk(_Option):
     """Cramped sleeping space for two, and somewhere to put their things."""
 
     kind: Literal['BUNK'] = 'BUNK'
+    _equipment_name: ClassVar[str] = 'Bunk'
     count: int = 1
+
+    @property
+    def quantity(self) -> int:
+        return self.count
 
     @property
     def spaces(self) -> int:
@@ -332,7 +354,12 @@ class Fresher(_Option):
     """Hygiene facilities."""
 
     kind: Literal['FRESHER'] = 'FRESHER'
+    _equipment_name: ClassVar[str] = 'Fresher'
     quality: Literal['half', 'standard', 'full'] = 'standard'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
 
     @property
     def spaces(self) -> int:
@@ -351,7 +378,12 @@ class Galley(_Option):
     """Food preparation and serving."""
 
     kind: Literal['GALLEY'] = 'GALLEY'
+    _equipment_name: ClassVar[str] = 'Galley'
     quality: Literal['mini', 'full', 'gourmet'] = 'mini'
+
+    @property
+    def grade(self) -> str | None:
+        return self.quality
 
     @property
     def spaces(self) -> int:
@@ -370,6 +402,7 @@ class EntertainmentSystem(_Option):
     """Audio and, at higher Tech Levels, visual media."""
 
     kind: Literal['ENTERTAINMENT_SYSTEM'] = 'ENTERTAINMENT_SYSTEM'
+    _equipment_name: ClassVar[str] = 'Entertainment System'
 
     @property
     def cost(self) -> float:
@@ -387,6 +420,7 @@ class VacuumEnvironment(_Option):
     """
 
     kind: Literal['VACUUM_ENVIRONMENT'] = 'VACUUM_ENVIRONMENT'
+    _equipment_name: ClassVar[str] = 'Vacuum Environment Protection'
 
     @property
     def cost(self) -> float:
@@ -401,6 +435,7 @@ class FireExtinguishers(_Option):
     """
 
     kind: Literal['FIRE_EXTINGUISHERS'] = 'FIRE_EXTINGUISHERS'
+    _equipment_name: ClassVar[str] = 'Fire Extinguishers'
 
     @property
     def part(self) -> FireExtinguisherPart:
@@ -419,11 +454,12 @@ class VehicleComputer(_Option):
     """
 
     kind: Literal['COMPUTER'] = 'COMPUTER'
+    _equipment_name: ClassVar[str] = 'Computer'
     processing: int = 1
 
     @property
-    def label(self) -> str:
-        return f'Computer/{self.processing}'
+    def equipment(self) -> EquipmentSpec:
+        return EquipmentSpec(name=f'{self._equipment_name}/{self.processing}')
 
     @property
     def part(self) -> ComputerPart:
@@ -452,6 +488,7 @@ class VehicleTransceiver(_Option):
     """
 
     kind: Literal['TRANSCEIVER'] = 'TRANSCEIVER'
+    _equipment_name: ClassVar[str] = 'Transceiver'
     range_km: int = 500
     stage: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
     satellite_uplink: bool = False
@@ -463,8 +500,8 @@ class VehicleTransceiver(_Option):
         return RadioTransceiverPart(range_km=self.range_km, tl=self.vehicle.tl, cost=self._transceiver_cost)
 
     @property
-    def label(self) -> str:
-        return f'Transceiver ({self.stage})'
+    def grade(self) -> str | None:
+        return self.stage
 
     @property
     def _transceiver_cost(self) -> float:

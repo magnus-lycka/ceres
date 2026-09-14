@@ -82,7 +82,7 @@
 ]
 
 // EQUIPMENT: the list on the left, what it confers on the right.
-#if report_data.equipment != "" [
+#if report_data.equipment.len() > 0 [
   #v(6pt)
   #text(size: 12pt, weight: "bold")[EQUIPMENT]
   #v(3pt)
@@ -90,7 +90,7 @@
     columns: (1fr, 1.2fr),
     column-gutter: 6mm,
     [
-      #block(inset: (x: 5pt, y: 4pt), stroke: table-rule)[#report_data.equipment]
+      #block(inset: (x: 5pt, y: 4pt), stroke: table-rule)[#report_data.equipment.join(", ")]
     ],
     [
       #table(
