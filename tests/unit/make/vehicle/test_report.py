@@ -74,6 +74,16 @@ class TestArmourTable:
         assert {row['value'] for row in armour} == {'3 (11)'}
 
 
+class TestOpenToppedArmour:
+    def test_the_open_top_prints_as_a_dash(self):
+        # refs/vehicle/26_wehicle_catalogue.md — the Gecko, Grav Chair and
+        # Gunskiff, all Open-Topped, print "Dorsal —".
+        vehicle = a_vehicle(vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=8, features=[Feature.OPEN_TOPPED])
+        rows = {row['face']: row['value'] for row in _build_context(vehicle.build_spec())['armour']}
+        assert rows['Dorsal'] == '—'
+        assert rows['Forward'] == '3 (11)'
+
+
 class TestWeaponsTable:
     """refs/vehicle/26_wehicle_catalogue.md — the ATV prints an empty turret as
     "Turret: Dorsal, can hold 4 Spaces of weapons", every other column a dash.

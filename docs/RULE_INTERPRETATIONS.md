@@ -1608,3 +1608,21 @@ the chapter states the interval as one Tech Level, so unlike a transceiver's the
 stage follows from the vehicle. A Computer/1 is Cr500 at TL8, Cr250 at TL9, Cr125
 at TL10 and free from TL11. This is not the halving retrotech that prices ship
 computers (RIS-005).
+
+### RIV-012 An Open-Topped Vehicle Has No Dorsal Protection
+
+The Open-Topped feature says that "an open-topped vehicle has no top armour", and
+the Armour chapter allows no face below Base Protection "except for the dorsal
+face of open-topped vehicles", adding that the Tech Level bonus against small
+arms applies only while a face is not reduced below Base Protection, "as in an
+open-topped vehicle".
+
+Ceres gives an open-topped vehicle a dorsal Protection of 0, with no Tech Level
+bonus on that face. Its other faces keep their Base Protection. A face with no
+protection and no bonus prints as a dash.
+
+The catalogue mostly agrees. The Gecko, the Grav Chair and the Gunskiff are all
+Open-Topped and all print Dorsal as a dash. The Air/Raft is the exception: it
+prints Dorsal 3 (11), the same as every other face. Ceres follows the rule and the
+majority of the catalogue, and records the Air/Raft's dorsal figure as a
+difference from its published entry.

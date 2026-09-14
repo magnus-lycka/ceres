@@ -53,6 +53,7 @@ class VehicleSpec(BaseModel):
     shipping_tons: float
     cost: float
     armour: dict[Face, int] = Field(default_factory=dict)
+    armour_against_small_arms: dict[Face, int] = Field(default_factory=dict)
     equipment: list[str] = Field(default_factory=list)
     mounts: list[MountSpec] = Field(default_factory=list)
     derived_figures: dict[str, str] = Field(default_factory=dict)

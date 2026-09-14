@@ -324,7 +324,7 @@ class Vehicle(VehicleBase):
     def armour(self) -> Armour:
         """Protection on each face. Nothing buys armour yet, so this is the
         Base Protection the Tech Level provides."""
-        return Armour.unarmoured(self.tl)
+        return Armour.unarmoured(self.tl, open_topped=Feature.OPEN_TOPPED in self.features)
 
     @property
     def target_size_dm(self) -> int:
@@ -366,6 +366,7 @@ class Vehicle(VehicleBase):
             shipping_tons=self.shipping_tons,
             cost=self.cost,
             armour={face: self.armour.protection(face) for face in Face},
+            armour_against_small_arms={face: self.armour.against_small_arms(face) for face in Face},
             equipment=self.equipment,
             mounts=[MountSpec(mount=m.name, face=m.face, weapon_spaces=m.weapon_spaces) for m in self.mounts],
             derived_figures=self.derived_figures,

@@ -32,6 +32,14 @@
       "Starboard": 6,
       "Ventral": 6
     },
+    "armour_against_small_arms": {
+      "Forward": 18,
+      "Port": 18,
+      "Dorsal": 18,
+      "Aft": 18,
+      "Starboard": 18,
+      "Ventral": 18
+    },
     "equipment": [
       "Air Lock",
       "Aquatic Drive (Very Slow, 600km)",

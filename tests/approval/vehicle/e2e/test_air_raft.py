@@ -41,6 +41,12 @@ _expected = SimpleNamespace(
     structure=2,
     shipping_tons=4,
     protection=3,
+    # The entry prints Dorsal 3 (11) like every other face. The Open-Topped
+    # feature says an open-topped vehicle "has no top armour", and the other
+    # open-topped catalogue designs — the Gecko, Grav Chair and Gunskiff — all
+    # print Dorsal as a dash. The Air/Raft's entry is the inconsistent one — see
+    # RIV-012.
+    dorsal_protection=0,
     # The published Cost is Cr250,000. It is not reproducible from the
     # construction rules: reaching the printed 2,000km range needs two steps of
     # fuel efficiency, which add half the base Cost again. The same figure
@@ -96,7 +102,8 @@ class TestAirRaft:
 
     def test_every_face_carries_the_published_protection(self):
         armour = build_air_raft().armour
-        assert all(armour.protection(face) == _expected.protection for face in Face)
+        assert all(armour.protection(face) == _expected.protection for face in Face if face is not Face.DORSAL)
+        assert armour.protection(Face.DORSAL) == _expected.dorsal_protection
 
     def test_it_is_a_legal_design(self):
         air_raft = build_air_raft()
@@ -109,5 +116,10 @@ class TestAirRaft:
             'cost',
             'Ceres Cr341,500 vs published Cr250,000 — the published figure is canon and '
             'predates the construction rules, see RIV-009',
+        )
+        snap.annotate(
+            'armour',
+            'Ceres Dorsal 0 vs published 3 (11) — an open-topped vehicle has no top armour, as the '
+            'other open-topped entries print it, see RIV-012',
         )
         assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

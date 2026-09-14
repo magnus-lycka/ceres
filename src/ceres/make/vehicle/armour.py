@@ -65,12 +65,21 @@ class Armour(BaseModel):
         """Protection including the Tech Level bonus (RIV-003).
 
         The bonus applies to attacks that are not critical hits, not Destructive
-        and do not have a non-stun Blast trait.
+        and do not have a non-stun Blast trait. It also applies only while the
+        face is not below the Base Protection for its Tech Level, which an open
+        top is.
         """
-        return self.protection(face) + self.tl
+        protection = self.protection(face)
+        return protection + self.tl if protection >= base_protection(self.tl) else protection
 
     @classmethod
-    def unarmoured(cls, tl: int) -> Armour:
-        """A vehicle that has bought no armour, protected only by its materials."""
+    def unarmoured(cls, tl: int, *, open_topped: bool = False) -> Armour:
+        """A vehicle that has bought no armour, protected only by its materials.
+
+        An open-topped vehicle has no top armour at all (RIV-012).
+        """
         protection = base_protection(tl)
-        return cls(tl=tl, faces=dict.fromkeys(Face, protection))
+        faces = dict.fromkeys(Face, protection)
+        if open_topped:
+            faces[Face.DORSAL] = 0
+        return cls(tl=tl, faces=faces)

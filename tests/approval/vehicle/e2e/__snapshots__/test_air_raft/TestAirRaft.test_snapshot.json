@@ -27,10 +27,18 @@
     "armour": {
       "Forward": 3,
       "Port": 3,
-      "Dorsal": 3,
+      "Dorsal": 0,
       "Aft": 3,
       "Starboard": 3,
       "Ventral": 3
+    },
+    "armour_against_small_arms": {
+      "Forward": 11,
+      "Port": 11,
+      "Dorsal": 0,
+      "Aft": 11,
+      "Starboard": 11,
+      "Ventral": 11
     },
     "equipment": [
       "Autopilot (improved)",
@@ -54,6 +62,7 @@
     "notes": []
   },
   "annotations": {
-    "cost": "Ceres Cr341,500 vs published Cr250,000 — the published figure is canon and predates the construction rules, see RIV-009"
+    "cost": "Ceres Cr341,500 vs published Cr250,000 — the published figure is canon and predates the construction rules, see RIV-009",
+    "armour": "Ceres Dorsal 0 vs published 3 (11) — an open-topped vehicle has no top armour, as the other open-topped entries print it, see RIV-012"
   }
 }

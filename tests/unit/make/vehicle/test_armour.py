@@ -56,3 +56,29 @@ class TestAgainstSmallArms:
         # The ATV prints 6 (18) at TL12, and the Air/Raft 3 (11) at TL8.
         assert a_vehicle(tl=12).armour.against_small_arms(Face.FORWARD) == 18
         assert a_vehicle(tl=8, spaces=8).armour.against_small_arms(Face.FORWARD) == 11
+
+
+class TestOpenTopped:
+    """refs/vehicle/05_features.md — Open-Topped: "An open-topped vehicle has no top
+    armour". refs/vehicle/07_armour.md — no face may fall below Base Protection
+    "except for the dorsal face of open-topped vehicles", and the Tech Level bonus
+    applies only while a face is not below it, "as in an open-topped vehicle".
+    """
+
+    def test_an_open_topped_vehicle_has_no_dorsal_protection(self):
+        from ceres.make.vehicle.features import Feature
+
+        armour = a_vehicle(vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=8, features=[Feature.OPEN_TOPPED]).armour
+        assert armour.protection(Face.DORSAL) == 0
+
+    def test_its_other_faces_keep_base_protection(self):
+        from ceres.make.vehicle.features import Feature
+
+        armour = a_vehicle(vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=8, features=[Feature.OPEN_TOPPED]).armour
+        assert [armour.protection(face) for face in Face if face is not Face.DORSAL] == [3] * 5
+
+    def test_the_open_top_gets_no_tech_level_bonus_against_small_arms(self):
+        from ceres.make.vehicle.features import Feature
+
+        armour = a_vehicle(vehicle_type=VehicleType.GRAV_VEHICLE, spaces=8, tl=8, features=[Feature.OPEN_TOPPED]).armour
+        assert armour.against_small_arms(Face.DORSAL) == 0

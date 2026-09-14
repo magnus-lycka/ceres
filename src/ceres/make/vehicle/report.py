@@ -57,14 +57,20 @@ def _km(distance: int | None) -> str | None:
 
 
 def _armour_rows(spec: VehicleSpec) -> list[dict]:
-    """Each face's Protection, with the small-arms figure in parentheses.
+    """Each face's Protection, with the small-arms figure in parentheses (RIV-003).
 
-    The parenthesised figure is composed here and stored nowhere (RIV-003).
+    A face without the Tech Level bonus prints its Protection alone, and one with
+    no protection at all — an open top — prints a dash, as the catalogue does.
     """
-    return [
-        {'face': face.value, 'value': f'{protection} ({protection + spec.tl})'}
-        for face, protection in spec.armour.items()
-    ]
+    rows = []
+    for face, protection in spec.armour.items():
+        against_small_arms = spec.armour_against_small_arms[face]
+        if against_small_arms > protection:
+            value = f'{protection} ({against_small_arms})'
+        else:
+            value = str(protection) if protection else '—'
+        rows.append({'face': face.value, 'value': value})
+    return rows
 
 
 def _weapon_rows(spec: VehicleSpec) -> list[dict]:
