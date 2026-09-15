@@ -2,11 +2,18 @@ from pydantic import PrivateAttr
 
 from ceres.shared import Assembly, CeresModel
 
+from .speed import SpeedBand
+
 
 class VehicleBase(Assembly):
     """Minimal vehicle interface that installed options depend on."""
 
     spaces: int
+
+    @property
+    def aquatic_performance(self) -> tuple[SpeedBand, float]:
+        """How the vehicle crosses water, for an aquatic drive to report."""
+        raise NotImplementedError
 
 
 class InstalledInVehicle(CeresModel):

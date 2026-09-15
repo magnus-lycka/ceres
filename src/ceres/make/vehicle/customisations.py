@@ -14,8 +14,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from ceres.shared import CeresModel
-
+from .base import InstalledInVehicle
 from .grades import Grade
 from .spec import EquipmentSpec
 
@@ -27,20 +26,21 @@ _SPEED_STEP_SPACE_FRACTION = 0.10
 _RANGE_PER_FUEL_SHARE = 2.5
 
 
-class _Customisation(CeresModel):
+class _Customisation(InstalledInVehicle):
     """What every customisation can be asked, whether or not it answers."""
 
-    def equipment_in(self, vehicle) -> EquipmentSpec | None:
+    @property
+    def equipment(self) -> EquipmentSpec | None:
         """This customisation as an item of equipment, or None if it is not one.
 
         Speed and fuel modifications change the vehicle rather than adding
-        anything to it, so a catalogue entry never lists them. Given the vehicle
-        because some describe themselves by what they do to it.
+        anything to it, so a catalogue entry never lists them.
         """
         return None
 
-    def spaces_delta(self, spaces: int) -> int:
-        """Spaces freed (positive) or consumed (negative) on a vehicle this big."""
+    @property
+    def spaces_delta(self) -> int:
+        """Spaces freed (positive) or consumed (negative) in its vehicle."""
         return 0
 
     @property
@@ -62,7 +62,8 @@ class _Customisation(CeresModel):
         """A fraction of the vehicle's base Cost."""
         return 0.0
 
-    def cost(self, spaces: int) -> float:
+    @property
+    def cost(self) -> float:
         """Cost in credits that is not a fraction of the vehicle's base."""
         return 0.0
 
@@ -73,26 +74,31 @@ class FusionPlusPlant(_Customisation):
     kind: Literal['FUSION_PLUS'] = 'FUSION_PLUS'
     quality: Literal[Grade.BASIC] = Grade.BASIC
 
-    def plant_spaces(self, spaces: int) -> int:
+    @property
+    def plant_spaces(self) -> int:
         """A tenth of the vehicle, and never less than one Space."""
-        return max(ceil(spaces * _FUSION_PLUS_SPACE_FRACTION), 1)
+        return max(ceil(self.vehicle.spaces * _FUSION_PLUS_SPACE_FRACTION), 1)
 
-    def spaces_delta(self, spaces: int) -> int:
-        return -self.plant_spaces(spaces)
+    @property
+    def spaces_delta(self) -> int:
+        return -self.plant_spaces
 
-    def equipment_in(self, vehicle) -> EquipmentSpec | None:
-        return EquipmentSpec(name='Fusion+', grade=self.quality, power_points=self.power_points(vehicle.spaces))
+    @property
+    def equipment(self) -> EquipmentSpec | None:
+        return EquipmentSpec(name='Fusion+', grade=self.quality, power_points=self.power_points)
 
-    def power_points(self, spaces: int) -> int:
+    @property
+    def power_points(self) -> int:
         """One Power per Space of plant, for a basic Fusion+."""
-        return self.plant_spaces(spaces) * _FUSION_PLUS_POWER_PER_SPACE
+        return self.plant_spaces * _FUSION_PLUS_POWER_PER_SPACE
 
     @property
     def range_multiplier(self) -> float:
         return 5.0
 
-    def cost(self, spaces: int) -> float:
-        return self.plant_spaces(spaces) * 15_000
+    @property
+    def cost(self) -> float:
+        return self.plant_spaces * 15_000
 
 
 class SlowerSpeed(_Customisation):
@@ -101,8 +107,9 @@ class SlowerSpeed(_Customisation):
     kind: Literal['SLOWER'] = 'SLOWER'
     steps: int = 1
 
-    def spaces_delta(self, spaces: int) -> int:
-        return floor(spaces * _SPEED_STEP_SPACE_FRACTION) * self.steps
+    @property
+    def spaces_delta(self) -> int:
+        return floor(self.vehicle.spaces * _SPEED_STEP_SPACE_FRACTION) * self.steps
 
     @property
     def speed_bands(self) -> int:
@@ -144,11 +151,13 @@ class FuelCapacity(_Customisation):
     kind: Literal['FUEL_CAPACITY'] = 'FUEL_CAPACITY'
     spaces: int = 1
 
-    def spaces_delta(self, spaces: int) -> int:
+    @property
+    def spaces_delta(self) -> int:
         return -self.spaces
 
-    def range_fraction_for(self, spaces: int) -> float:
-        return _RANGE_PER_FUEL_SHARE * self.spaces / spaces
+    @property
+    def range_fraction(self) -> float:
+        return _RANGE_PER_FUEL_SHARE * self.spaces / self.vehicle.spaces
 
 
 class AquaticDrive(_Customisation):
@@ -160,18 +169,22 @@ class AquaticDrive(_Customisation):
 
     kind: Literal['AQUATIC_DRIVE'] = 'AQUATIC_DRIVE'
 
-    def equipment_in(self, vehicle) -> EquipmentSpec | None:
-        speed, distance = vehicle.aquatic_performance
+    @property
+    def equipment(self) -> EquipmentSpec | None:
+        speed, distance = self.vehicle.aquatic_performance
         return EquipmentSpec(name='Aquatic Drive', speed=speed, range_km=round(distance))
 
-    def drive_spaces(self, spaces: int) -> int:
-        return max(ceil(spaces * 0.05), 1)
+    @property
+    def drive_spaces(self) -> int:
+        return max(ceil(self.vehicle.spaces * 0.05), 1)
 
-    def spaces_delta(self, spaces: int) -> int:
-        return -self.drive_spaces(spaces)
+    @property
+    def spaces_delta(self) -> int:
+        return -self.drive_spaces
 
-    def cost(self, spaces: int) -> float:
-        return 1_500 * spaces
+    @property
+    def cost(self) -> float:
+        return 1_500 * self.vehicle.spaces
 
 
 CustomisationUnion = Annotated[

@@ -70,6 +70,8 @@ class Vehicle(VehicleBase):
         return spaces
 
     def model_post_init(self, __context: Any) -> None:
+        for customisation in self.customisations:
+            customisation.bind(self)
         for option in self.options:
             option.bind(self)
         for mount in self.mounts:
@@ -140,27 +142,17 @@ class Vehicle(VehicleBase):
             customisation.added_cost for customisation in self.customisations
         )
         absolute = (
-            sum(customisation.cost(self.spaces) for customisation in self.customisations)
+            sum(customisation.cost for customisation in self.customisations)
             + sum(option.cost for option in self.options)
             + sum(mount.cost for mount in self.mounts)
         )
         return self.base_cost * (1 + fractions) + absolute
 
-    def _range_fraction(self, customisation) -> float:
-        """A customisation's share of the pooled fuel adjustment.
-
-        Fuel capacity is stated in Spaces, so its effect depends on how big a
-        share of this vehicle those Spaces are.
-        """
-        if hasattr(customisation, 'range_fraction_for'):
-            return customisation.range_fraction_for(self.spaces)
-        return customisation.range_fraction
-
     @property
     def available_spaces(self) -> int:
         """Spaces still unspent, after everything installed and carried."""
         taken = sum(option.spaces for option in self.options) + sum(mount.spaces for mount in self.mounts)
-        customised = sum(c.spaces_delta(self.spaces) for c in self.customisations)
+        customised = sum(c.spaces_delta for c in self.customisations)
         return self.spaces + customised - taken - self.occupant_spaces - self.cargo_spaces
 
     @property
@@ -192,7 +184,7 @@ class Vehicle(VehicleBase):
         Customisations that merely change the vehicle rather than adding to it
         contribute nothing, so speed and fuel modifications do not appear.
         """
-        from_customisations = [c.equipment_in(self) for c in self.customisations]
+        from_customisations = [c.equipment for c in self.customisations]
         return [item for item in from_customisations if item is not None] + [o.equipment for o in self.options]
 
     @property
@@ -303,7 +295,7 @@ class Vehicle(VehicleBase):
             distance *= customisation.range_multiplier
         # Fuel percentages are pooled and applied to the Range already adjusted
         # by features and power plants, as the Range Modifications section says.
-        fuel = sum(self._range_fraction(customisation) for customisation in self.customisations)
+        fuel = sum(customisation.range_fraction for customisation in self.customisations)
         return round(distance * (1 + fuel))
 
     @property
