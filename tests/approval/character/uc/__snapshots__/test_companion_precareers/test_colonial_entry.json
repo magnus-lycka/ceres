@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "colonial_upbringing",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,

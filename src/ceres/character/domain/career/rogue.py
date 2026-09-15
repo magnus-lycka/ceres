@@ -1,4 +1,7 @@
+from collections.abc import Mapping
 from typing import ClassVar, Literal
+
+from pydantic import Field
 
 from ceres.character.domain.benefits import (
     ARMOR,
@@ -31,14 +34,15 @@ from ceres.character.domain.career.career_data import (
 )
 from ceres.character.domain.career.career_events import (
     PendingChoices,
+    _apply_mishap_ejection,
     career_progress_pending,
-    muster_out_setup,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
 from ceres.character.domain.career.skill_table_entries import Char, Skill
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, ConnectionKind
+from ceres.character.domain.connection import make_connection
 from ceres.character.domain.skills import (
     Advocate,
     Astrogation,
@@ -67,7 +71,9 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.mechanism.event_base import ChoiceBase, Event
+from ceres.character.input_specs import InputSpec, NumberEntry, Select, TextEntry, form_int, form_str
+from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
 # ── mishap 2: arrested ────────────────────────────────────────────────────────
 
@@ -86,54 +92,88 @@ class RogueMishap2Handler(CareerHandlerBase):
 # ── mishap 3: betrayed by a friend ───────────────────────────────────────────
 
 
-class RogueMishap3RollTwo(ChoiceBase):
-    kind: Literal['rogue_mishap_3_roll_two'] = 'rogue_mishap_3_roll_two'
-    label: str = '2 (sent to Prisoner career next term)'
+class RogueBetrayalHandler(EventHandlerBase):
+    kind: Literal['rogue_betrayal'] = 'rogue_betrayal'
+    relationship: Literal['rival', 'enemy']
+    roll: int = Field(ge=2, le=12)
+    connection_index: int | None = None
+    name: str = ''
 
-    def handle(self, projection: CharacterProjection, event) -> None:
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
         from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 
-        set_forced_prison_career(
-            projection,
-            'Betrayed by a friend. Rolled 2 — must take the Prisoner career next term.',
+        kind = ConnectionKind.RIVAL if self.relationship == 'rival' else ConnectionKind.ENEMY
+        connections = projection.summary.connections
+        if self.connection_index is not None:
+            if not 0 <= self.connection_index < len(connections) or not connections[self.connection_index].is_friendly:
+                raise ReplayError('Choose an existing Contact or Ally as the betrayer')
+            old = connections[self.connection_index]
+            connections[self.connection_index] = make_connection(
+                kind, term=old.term, origin=old.origin, name=old.name, note=old.note
+            )
+        else:
+            if any(connection.is_friendly for connection in connections):
+                raise ReplayError('Choose an existing Contact or Ally as the betrayer')
+            connections.append(
+                make_connection(
+                    kind,
+                    term=projection.summary.terms_started_in_pre_and_careers,
+                    origin='An unexpected betrayer',
+                    name=self.name,
+                )
+            )
+        if self.roll == 2:
+            set_forced_prison_career(
+                projection, 'Betrayed by a friend. Rolled 2 — must take the Prisoner career next term.'
+            )
+        _apply_mishap_ejection(projection, event.id, 0)
+
+
+class PendingRogueBetrayal(PendingInputBase):
+    kind: Literal['rogue_betrayal'] = 'rogue_betrayal'
+    instruction: str = 'Resolve the betrayal and roll to see whether you must enter prison.'
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        index = form_str(form, 'connection_index', '')
+        return Event(
+            fulfills=self.pending_id,
+            handler=RogueBetrayalHandler.model_validate(
+                {
+                    'relationship': form_str(form, 'relationship', ''),
+                    'roll': form_int(form, 'roll', 0),
+                    'connection_index': int(index) if index else None,
+                    'name': form_str(form, 'name', ''),
+                }
+            ),
         )
-        if projection.summary.career_terms:
-            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
-        muster_out_setup(projection, event.id, 0)
 
-
-class RogueMishap3RollOther(ChoiceBase):
-    kind: Literal['rogue_mishap_3_roll_other'] = 'rogue_mishap_3_roll_other'
-    label: str = '3–12'
-
-    def handle(self, projection: CharacterProjection, event) -> None:
-        if projection.summary.career_terms:
-            projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
-        muster_out_setup(projection, event.id, 0)
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        friends = [
+            (f'{connection.display_name}: {connection.name or connection.origin}', str(index))
+            for index, connection in enumerate(projection.summary.connections)
+            if connection.is_friendly
+        ]
+        identity: InputSpec = (
+            Select(name='connection_index', label='Who betrayed you?', options=friends)
+            if friends
+            else TextEntry(name='name', label='Betrayer name (optional)')
+        )
+        return [
+            identity,
+            Select(name='relationship', label='The betrayer becomes', options=[('Rival', 'rival'), ('Enemy', 'enemy')]),
+            NumberEntry(name='roll', label='Prison roll (2D, 2–12): on 2, take Prisoner next term', min=2, max=12),
+        ]
 
 
 class RogueMishap3Handler(CareerHandlerBase):
     kind: Literal['rogue_mishap_3'] = 'rogue_mishap_3'
+    record_as_problem: ClassVar[bool] = False
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        friends = [c for c in projection.summary.connections if c.is_friendly]
-        if friends:
-            betrayer = friends[-1]
-            projection.summary.connections.remove(betrayer)
-            projection.add_connection(
-                ConnectionKind.RIVAL, origin=f'A friend who turned on you (formerly {betrayer.display_name})'
-            )
-        else:
-            projection.add_connection(ConnectionKind.RIVAL, origin='An unknown betrayer')
-
-        projection.queue_deferred(
-            PendingChoices(
-                pending_id=(event_id, pending_idx),
-                instruction='Roll 2D: on a result of exactly 2, you must take the Prisoner career next term',
-                choices=[RogueMishap3RollTwo(), RogueMishap3RollOther()],
-            )
-        )
+        projection.queue_deferred(PendingRogueBetrayal(pending_id=(event_id, pending_idx)))
         return pending_idx + 1
 
 

@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "school_of_hard_knocks",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -144,7 +145,7 @@
         "School of Hard Knocks graduation: DM-2 on all commission and promotion checks in first career (unless you leave that career by choice). Apply manually."
       ],
       "narrative": [
-        "Pre-career event (School of Hard Knocks): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (School of Hard Knocks): Taking advantage of youth, you party as much as you study.",
         "Graduated from School of Hard Knocks."
       ],
       "cash": 0,

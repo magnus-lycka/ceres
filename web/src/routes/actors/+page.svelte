@@ -11,6 +11,7 @@
    * indices stop at that boundary.
    */
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
+  import ActorSource from '$lib/characters/ActorSource.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
   import { tick } from 'svelte';
   import { library, refresh } from '$lib/store/session.svelte';
@@ -48,6 +49,12 @@
   async function load() {
     actors = await library.actors();
     unreadable = [...library.problems];
+    const requested = new URL(location.href).searchParams.get('id');
+    if (requested) {
+      selectedId = actorId(Number(requested));
+      await tick();
+      grid?.focus(selectedId);
+    }
   }
 
   /**
@@ -169,6 +176,12 @@
 
 {#if selected}
   <ActorHealth actor={selected} onchange={replace} />
+  <ActorSource
+    actor={selected}
+    onchange={(updated) => {
+      actors = actors.map((actor) => (actor.id === updated.id ? updated : actor));
+    }}
+  />
 {:else}
   <p class="hint">Click a row to edit its health.</p>
 {/if}
@@ -181,15 +194,15 @@
     margin-bottom: 0.5rem;
   }
   .hint {
-    color: #555;
+    color: var(--muted);
   }
   .busy {
-    color: #555;
+    color: var(--muted);
   }
   .problem {
-    background: #fef2f2;
-    border-left: 3px solid #b91c1c;
-    color: #7c2c1a;
+    background: var(--error-bg);
+    border-left: 3px solid var(--danger);
+    color: var(--error-text);
     padding: 0.4rem 0.75rem;
     margin: 0 0 0.5rem;
   }

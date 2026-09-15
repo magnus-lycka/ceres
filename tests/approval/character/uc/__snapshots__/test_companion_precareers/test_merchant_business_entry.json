@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "merchant_academy_business",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,

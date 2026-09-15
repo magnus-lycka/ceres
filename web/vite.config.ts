@@ -34,6 +34,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'components',
+          setupFiles: ['./src/browser-test-setup.ts'],
           // `.browser.test.ts` is for code that needs a real browser API rather
           // than a component — IndexedDB above all, which is worth testing
           // against the real thing rather than a mock of it.

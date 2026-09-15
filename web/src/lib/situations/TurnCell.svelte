@@ -41,7 +41,7 @@
   }
 
   button {
-    background: #fff;
+    background: var(--surface);
     border: 1px solid #cbd5e1;
     border-radius: 4px;
     cursor: pointer;
@@ -51,10 +51,10 @@
   }
 
   button:hover {
-    background: #e8f0fe;
+    background: var(--selected-bg);
   }
 
   .spent {
-    color: #64748b;
+    color: var(--muted);
   }
 </style>

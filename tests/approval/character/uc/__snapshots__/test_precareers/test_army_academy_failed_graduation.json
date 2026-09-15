@@ -91,6 +91,7 @@
       "terms": [
         {
           "kind": "army_academy",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -236,7 +237,7 @@
         "Army Academy: failed graduation (roll > 2) — may still enter Army automatically, but no commission roll in first term."
       ],
       "narrative": [
-        "Pre-career event (Army Academy): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Army Academy): Taking advantage of youth, you party as much as you study.",
         "Did not graduate from Army Academy."
       ],
       "cash": 0,

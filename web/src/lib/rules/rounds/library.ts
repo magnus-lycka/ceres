@@ -50,8 +50,10 @@ export function duplicate(source: Actor, id: ActorId, actors: readonly Actor[]):
   const taken = new Set(actors.map((actor) => actor.name));
   let suffix = 1;
   while (taken.has(`${base} ${suffix}`)) suffix += 1;
+  const independent = { ...source };
+  delete independent.character;
   return {
-    ...source,
+    ...independent,
     id,
     name: `${base} ${suffix}`,
     tags: [...source.tags],

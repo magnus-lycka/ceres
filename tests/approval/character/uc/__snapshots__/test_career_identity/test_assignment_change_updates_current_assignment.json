@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "scout_term",
+        "start_age": 18,
         "event": "You perform an exemplary service for the scouts.",
         "mishap": null,
         "prison": null,
@@ -116,6 +117,7 @@
       },
       {
         "kind": "scout_term",
+        "start_age": 22,
         "event": null,
         "mishap": null,
         "prison": null,

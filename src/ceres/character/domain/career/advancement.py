@@ -9,7 +9,7 @@ from ceres.character.domain.career.career_data import (
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.character.domain.skills import AnySkill, level_fields
-from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
+from ceres.character.input_specs import InfoText, InputSpec, NumberEntry, Select, form_int, form_str
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
@@ -87,7 +87,19 @@ class PendingAdvancement(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=AdvancementHandler(roll=form_int(form, 'roll', 2)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return [NumberEntry(name='roll', label='2D roll (2–12)', min=2, max=12)]
+        assignment = projection.summary.current_assignment
+        if assignment is None:
+            raise ReplayError('No current assignment')
+        characteristic = assignment.advancement.characteristic
+        dm = characteristic_dm(projection.summary.characteristics.get(characteristic, 0))
+        event_dm = projection.pending_advancement_dm
+        return [
+            InfoText(
+                text=f'Applied automatically: {characteristic} DM {dm:+d}; '
+                f'event DM {event_dm:+d}; total DM {dm + event_dm:+d}.'
+            ),
+            NumberEntry(name='roll', label='2D roll (2–12, before DMs)', min=2, max=12),
+        ]
 
 
 class PendingCommissionChoice(PendingInputBase):

@@ -16,18 +16,17 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1DoubleRoll, CommonMishap1Severe
 from ceres.character.domain.career.rogue import (
+    PendingRogueBetrayal,
     PendingRogueEvent9SkillRoll,
+    RogueBetrayalHandler,
     RogueEvent3Defend,
     RogueEvent3Lawyer,
     RogueEvent3SkillRoll,
     RogueEvent6Backstab,
     RogueEvent6Refuse,
-    RogueMishap3RollOther,
-    RogueMishap3RollTwo,
 )
 from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
-from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
-from ceres.character.domain.connection import Contact, Enemy, Rival
+from ceres.character.domain.connection import Contact, Enemy
 from ceres.character.domain.skills import (
     Admin,
     Advocate,
@@ -134,92 +133,11 @@ class TestRogueMishap2:
 
 
 class TestRogueMishap3:
-    def _setup_to_mishap(self) -> list:
-        base = _enter_rogue()
-        return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=4))]
-
-    def test_mishap_3_queues_prisoner_roll_pending(self):
-        base = self._setup_to_mishap()
-        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))]
-        projection = replay(1, events)
-        pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingChoices)),
-            None,
-        )
-        assert pending is not None
-
-    def test_mishap_3_no_contacts_adds_rival(self):
-        base = self._setup_to_mishap()
-        events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))]
-        projection = replay(1, events)
-        rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
-        assert len(rivals) == 1
-
-    def test_mishap_3_prisoner_roll_2_forces_prisoner(self):
-        base = self._setup_to_mishap()
-        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
-        events = [
-            *base,
-            mishap,
-            Event(
-                fulfills=(mishap.id, 0),
-                handler=CareerChoiceHandler(choice=RogueMishap3RollTwo.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
-        assert pending is not None
-        assert [c.name for c in pending.options] == ['Prisoner']
-
-    def test_mishap_3_prisoner_roll_other_no_forced_prisoner(self):
-        base = self._setup_to_mishap()
-        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
-        events = [
-            *base,
-            mishap,
-            Event(
-                fulfills=(mishap.id, 0),
-                handler=CareerChoiceHandler(choice=RogueMishap3RollOther.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-        prisoner_pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice) and p.options == ['Prisoner']),
-            None,
-        )
-        assert prisoner_pending is None
-
-    def test_mishap_3_ends_career(self):
-        base = self._setup_to_mishap()
-        mishap = Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=3))
-        events = [
-            *base,
-            mishap,
-            Event(
-                fulfills=(mishap.id, 0),
-                handler=CareerChoiceHandler(choice=RogueMishap3RollOther.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_career is None
-
-    def test_mishap_3_existing_contact_is_converted_to_rival(self):
-        from ceres.character.domain.career.rogue import RogueMishap3Handler
-        from ceres.character.domain.sophont import VILANI
-        from tests.unit.character.helpers import MOCK_WORLD
-
-        proj = CharacterProjection(
-            character_id=1,
-            summary=CharacterSummary(name='Test', sophont=VILANI, homeworld=MOCK_WORLD),
-        )
-        proj.summary.connections.append(Contact(origin='Old friend'))
-        RogueMishap3Handler.handle(proj, event_id=5, pending_idx=0)
-
-        contacts = [c for c in proj.summary.connections if isinstance(c, Contact)]
-        rivals = [c for c in proj.summary.connections if isinstance(c, Rival)]
-        assert len(contacts) == 0
-        assert len(rivals) == 1
-        assert 'contact' in rivals[0].origin.lower()
+    def test_form_captures_relationship_identity_and_raw_prison_roll(self):
+        pending = PendingRogueBetrayal(pending_id=(5, 0))
+        event = pending.event_from_form({'relationship': 'enemy', 'connection_index': '1', 'roll': '2'})
+        assert event.fulfills == (5, 0)
+        assert event.handler == RogueBetrayalHandler(relationship='enemy', connection_index=1, roll=2)
 
 
 # ── event 3: arrested and charged ────────────────────────────────────────────

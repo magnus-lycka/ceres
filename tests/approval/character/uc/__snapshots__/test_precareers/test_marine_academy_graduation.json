@@ -91,6 +91,7 @@
       "terms": [
         {
           "kind": "marine_academy",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -201,7 +202,7 @@
         "Marine Academy graduation: entitled to a commission roll at the start of your first Marines career term with DM+2. Apply manually."
       ],
       "narrative": [
-        "Pre-career event (Marine Academy): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Marine Academy): Taking advantage of youth, you party as much as you study.",
         "Graduated from Marine Academy."
       ],
       "cash": 0,

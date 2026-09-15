@@ -83,6 +83,7 @@ class PreCareerEntryHandler(EventHandlerBase):
                 queue_career_choice(projection, event.id, 'Pre-career entry failed — choose a career')
                 return
         term = precareer.make_term()
+        term.start_age = projection.summary.age
         projection.summary.terms.append(term)
         projection.summary.age += 4
         pending_idx = 0
@@ -154,7 +155,9 @@ class PreCareerEventHandler(EventHandlerBase):
         term_event = precareer.events.get(self.roll)
         if term_event is None:
             raise ReplayError(f'No pre-career event entry for roll {self.roll}')
-        projection.summary.narrative.append(f'Pre-career event ({precareer.name}): {term_event.text}')
+        projection.summary.narrative.append(
+            f'Term {len(projection.summary.terms)} event ({precareer.name}): {term_event.text}'
+        )
         pending_idx = 0
         if self.roll in (3, 11):
             if self.roll == 11:

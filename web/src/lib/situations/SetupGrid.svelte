@@ -148,7 +148,7 @@
   }
 
   .grid :global(tr:has(.sv-grid-cell-active) td[data-col-id='id']) {
-    background: #e8f0fe;
+    background: var(--selected-bg);
     font-weight: 600;
   }
 </style>

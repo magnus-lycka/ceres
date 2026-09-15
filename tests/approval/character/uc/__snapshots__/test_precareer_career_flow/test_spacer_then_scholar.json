@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "spacer_community",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -100,6 +101,7 @@
       },
       {
         "kind": "scholar_term",
+        "start_age": 22,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -255,7 +257,7 @@
       "Spacer Community graduation: DM+1 to enlist, commission, and promotion in Merchant (Free Trader). Apply manually."
     ],
     "narrative": [
-      "Pre-career event (Spacer Community): Taking advantage of youth, you party as much as you study.",
+      "Term 1 event (Spacer Community): Taking advantage of youth, you party as much as you study.",
       "Graduated from Spacer Community."
     ],
     "cash": 0,

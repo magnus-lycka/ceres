@@ -12,7 +12,7 @@ from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skill_events import PendingSkillChoice
 from ceres.character.domain.skills import AnySkill, Level, level_fields, skill_instances
-from ceres.character.input_specs import NumberEntry, Select
+from ceres.character.input_specs import InfoText, InputSpec, NumberEntry, Select, form_int
 from ceres.character.mechanism.event_base import Event, PendingInputBase
 
 
@@ -138,6 +138,28 @@ class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
 
     kind: Literal['advanced_training_skill_roll'] = 'advanced_training_skill_roll'
     threshold: int = 8
+    education_dm: int = 0
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        from ceres.character.domain.career.career_events import SkillRollHandler
+
+        roll = form_int(form, 'roll', 0)
+        if not 2 <= roll <= 12:
+            raise ValueError('Enter the 2D dice total, from 2 to 12, before modifiers')
+        return Event(
+            fulfills=self.pending_id,
+            handler=SkillRollHandler(skill=Chars.EDU, modified_roll=roll + self.education_dm),
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        needed = max(2, self.threshold - self.education_dm)
+        return [
+            InfoText(
+                text=f'Roll {needed}+ on 2D. EDU DM {self.education_dm:+d} is applied automatically. '
+                'On success, choose an existing skill to increase by one level.'
+            ),
+            NumberEntry(name='roll', label='EDU check: 2D roll (2–12, before DMs)', min=2, max=12),
+        ]
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         if event.modified_roll >= self.threshold:

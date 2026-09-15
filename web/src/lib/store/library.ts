@@ -40,6 +40,14 @@ const IMPORTS = 'imports';
 /** Keyed by entity kind, as the Python store names them. */
 type Counters = Record<string, number>;
 
+export interface CharacterSource {
+  url: string;
+  name: string;
+  strength: number;
+  dexterity: number;
+  endurance: number;
+}
+
 export class Library {
   constructor(private readonly files: FileStore) {}
 
@@ -87,6 +95,46 @@ export class Library {
    */
   async actor(id: ActorId): Promise<Actor | null> {
     return this.readOne(path(ACTORS, id), actorSchema.safeParse.bind(actorSchema), 'actor');
+  }
+
+  /** Repeated adds open the existing linked individual without updating it. */
+  addCharacter(source: CharacterSource): Promise<Actor> {
+    return this.queued(async () => {
+      const existing = (await this.actors()).find((actor) => actor.character?.url === source.url);
+      if (existing) return existing;
+      const { url, ...physical } = source;
+      const actor = actorSchema.parse({
+        ...physical,
+        id: await this.nextId(ACTORS),
+        kind: 'sophont',
+        character: { url },
+      });
+      await this.putActor(actor);
+      return actor;
+    });
+  }
+
+  /** Character refresh is a library operation so every caller respects play. */
+  refreshCharacter(id: ActorId, source: CharacterSource): Promise<Actor> {
+    return this.queued(async () => {
+      const actor = await this.actor(id);
+      if (!actor || actor.character?.url !== source.url)
+        throw new Error('Actor is not linked to this character.');
+      const active = (await this.situations()).some(
+        (situation) =>
+          situation.state === 'current' && situation.members.some((member) => member.actor === id),
+      );
+      if (active) throw new Error('Cannot refresh a character in an active situation.');
+      const updated = actorSchema.parse({
+        ...actor,
+        name: source.name,
+        strength: source.strength,
+        dexterity: source.dexterity,
+        endurance: source.endurance,
+      });
+      await this.putActor(updated);
+      return updated;
+    });
   }
 
   saveActor(actor: Actor): Promise<Actor> {

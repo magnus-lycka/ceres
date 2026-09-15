@@ -214,11 +214,11 @@
     margin: 0.25rem 0;
   }
   .state {
-    color: #b91c1c;
+    color: var(--danger);
   }
   .hint {
     margin: 0 0 0.35rem;
-    color: #5f6368;
+    color: var(--muted);
   }
   table {
     border-collapse: collapse;
@@ -237,12 +237,12 @@
   }
   h3 {
     font-size: 0.85rem;
-    color: #555;
+    color: var(--muted);
     margin: 0.5rem 0 0.25rem;
     font-weight: 600;
   }
   .record .hurt {
-    background: #fef2f2;
+    background: var(--error-bg);
   }
   .note {
     width: 18rem;

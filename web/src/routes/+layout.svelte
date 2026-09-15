@@ -3,6 +3,7 @@
   // site is ever served from a subdirectory rather than the domain root.
   import { resolve } from '$app/paths';
   import { start, status } from '$lib/store/session.svelte';
+  import ThemeSwitch from '$lib/ThemeSwitch.svelte';
 
   let { children } = $props();
 
@@ -19,6 +20,7 @@
 </script>
 
 <nav>
+  <a href={resolve('/characters')}>Characters</a>
   <a href={resolve('/actors')}>Actors</a>
   <a href={resolve('/parties')}>Parties</a>
   <a href={resolve('/situation')}>Situation</a>
@@ -27,6 +29,7 @@
     class:pending={status.changes > 0 && status.state !== 'blocked'}
     class:blocked={status.state === 'blocked'}>{label}</a
   >
+  <ThemeSwitch />
 </nav>
 
 {@render children()}
@@ -40,10 +43,16 @@
   nav {
     display: flex;
     gap: 1rem;
+    flex-wrap: wrap;
     margin-bottom: 1rem;
   }
+  @media (max-width: 760px) {
+    :global(body) {
+      padding: 1rem;
+    }
+  }
   nav a {
-    color: #2563eb;
+    color: var(--link);
     text-decoration: none;
   }
 </style>

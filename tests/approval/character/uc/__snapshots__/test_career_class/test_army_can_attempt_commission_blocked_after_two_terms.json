@@ -82,6 +82,7 @@
     "terms": [
       {
         "kind": "CAREER_TERM",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -118,6 +119,7 @@
       },
       {
         "kind": "CAREER_TERM",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,

@@ -91,6 +91,7 @@
       "terms": [
         {
           "kind": "army_academy",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -237,7 +238,7 @@
         "Army Academy graduation: entitled to a commission roll at the start of your first Army career term with DM+2 (automatic with honours). Apply manually."
       ],
       "narrative": [
-        "Pre-career event (Army Academy): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Army Academy): Taking advantage of youth, you party as much as you study.",
         "Graduated from Army Academy with honours!"
       ],
       "cash": 0,

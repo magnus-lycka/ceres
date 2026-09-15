@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "scholar_term",
+        "start_age": 18,
         "event": "You are called upon to perform research that goes against your conscience.",
         "mishap": null,
         "prison": null,

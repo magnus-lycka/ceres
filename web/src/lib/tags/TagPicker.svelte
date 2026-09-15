@@ -121,7 +121,7 @@
     min-width: 320px;
     max-width: 480px;
     padding: 16px;
-    background: #fff;
+    background: var(--surface);
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
@@ -145,14 +145,14 @@
     max-height: 8rem;
     overflow-y: auto;
     padding-top: 8px;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--tag-bg);
   }
 
   .pill {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #e2e8f0;
+    background: var(--tag-bg);
     border: 0;
     border-radius: 9999px;
     padding: 2px 8px;
@@ -173,7 +173,7 @@
 
   .none {
     margin: 0;
-    color: #64748b;
+    color: var(--muted);
   }
 
   .entry {

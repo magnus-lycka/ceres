@@ -6,8 +6,8 @@ themselves and render to stat blocks.
 
 This glossary is grown lazily, one domain at a time, as terms are settled by
 being used in code rather than decided on paper. It currently covers vehicle
-design and the cross-domain collisions that domain exposed; ships, robots,
-characters and worlds are not yet written up.
+design and its cross-domain collisions, plus the relationship between character
+creation and rounds; ships, robots and worlds are not yet written up.
 
 ## Assemblies, parts and gear
 
@@ -97,6 +97,26 @@ _Avoid_: handling, manoeuvrability
 A named property a vehicle has by virtue of its type, size or features, such as
 Unresponsive or ATV. Carries rules consequences but is not itself bought.
 _Avoid_: tag, flag, attribute, quality
+
+## Characters and rounds
+
+**Character**:
+A Traveller whose characteristics, skills and biography are established through
+character creation, including a generic NPC used as the basis for individuals
+in play.
+
+**Actor**:
+An individual tracked for play in rounds: a sophont, animal or robot, including
+its current injuries. Actors can originate from character creation, direct
+creation in rounds, or other sources.
+
+**Linked actor**:
+An actor associated with its source character, whose character-derived details
+can be refreshed explicitly while retaining its combat injuries.
+
+**Actor copy**:
+An independent actor created by copying another actor in rounds. It has no
+link to the original actor's source character and can be edited independently.
 
 ## Collisions between domains
 

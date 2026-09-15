@@ -42,23 +42,23 @@ class TestAppendIncrementExistingSkillPending:
 
 class TestPendingAdvancedTrainingSkillRoll:
     def test_event_from_form_parses_skill_and_roll(self):
-        pending = PendingAdvancedTrainingSkillRoll(pending_id=(1, 0), instruction='Roll EDU 8+', options=[Admin()])
-        event = pending.event_from_form({'skill': Admin().kind, 'modified_roll': '9'})
+        pending = PendingAdvancedTrainingSkillRoll(pending_id=(1, 0), instruction='Roll EDU 8+', education_dm=1)
+        event = pending.event_from_form({'roll': '8'})
         assert isinstance(event.handler, SkillRollHandler)
         assert event.handler.modified_roll == 9
 
     def test_event_from_form_handles_characteristic(self):
         pending = PendingAdvancedTrainingSkillRoll(pending_id=(1, 0), instruction='Roll EDU 8+', options=[Chars.EDU])
-        event = pending.event_from_form({'skill': 'EDU', 'modified_roll': '8'})
+        event = pending.event_from_form({'roll': '8'})
         assert isinstance(event.handler, SkillRollHandler)
         assert event.handler.skill == Chars.EDU
 
-    def test_input_specs_returns_select_and_roll(self):
+    def test_input_specs_returns_edu_check_without_a_skill_selector(self):
         pending = PendingAdvancedTrainingSkillRoll(pending_id=(1, 0), instruction='Roll EDU 8+', options=[Admin()])
         specs = pending.input_specs(_projection())
         assert len(specs) == 2
-        assert isinstance(specs[0], Select) and specs[0].name == 'skill'
-        assert isinstance(specs[1], NumberEntry) and specs[1].name == 'modified_roll'
+        assert not any(isinstance(spec, Select) for spec in specs)
+        assert isinstance(specs[1], NumberEntry) and specs[1].name == 'roll'
 
     def test_resolve_on_success_queues_increment_pending(self):
         pending = PendingAdvancedTrainingSkillRoll(pending_id=(1, 0), instruction='Roll EDU 8+', options=[Admin()])

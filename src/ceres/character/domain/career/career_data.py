@@ -103,6 +103,7 @@ class AdvancementDmOption(BaseModel):
 
 
 class CareerTableEntry(BaseModel):
+    record_as_problem: ClassVar[bool] = True
     text: str
     stay_in_career: bool = False
     defer_ejection: bool = False
@@ -735,6 +736,7 @@ class CareerData(TermData):
             previous = projection.summary.career_terms[-1]
             if term.continue_career_run_from(previous):
                 pass
+        term.start_age = projection.summary.age
         projection.summary.terms.append(term)
 
     def update_current_term_rank(self, projection) -> None:

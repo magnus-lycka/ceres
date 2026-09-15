@@ -103,6 +103,7 @@
     "terms": [
       {
         "kind": "citizen_term",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -255,7 +256,7 @@
     ],
     "narrative": [
       "Automatic mishap (rolled natural 2) in term 1",
-      "Mishap (Citizen): Severely injured."
+      "Term 1 mishap (Citizen): Severely injured."
     ],
     "cash": 0,
     "dead": false,

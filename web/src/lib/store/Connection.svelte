@@ -106,14 +106,14 @@
     flex-direction: column;
     gap: 0.15rem;
     font-size: 0.85rem;
-    color: #555;
+    color: var(--muted);
   }
   .status {
     margin: 0.5rem 0 0;
     font-weight: 600;
   }
   .hint {
-    color: #555;
+    color: var(--muted);
     margin: 0.25rem 0 0;
     font-size: 0.85rem;
   }

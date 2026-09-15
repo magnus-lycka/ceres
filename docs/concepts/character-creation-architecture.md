@@ -157,3 +157,63 @@ Rules belong with the domain that understands them.
 This separation matters because Traveller character creation is not one fixed
 flow. Alien sophonts, optional Companion rules, psionics, alternate careers,
 and cultural variants all change the rule surface.
+
+## Agreed Web UI Direction
+
+Design decisions agreed on 2026-09-13. The Svelte character interface is now
+available at `/characters`, alongside rounds. Implementation and follow-up work
+are tracked in [issue #63](https://github.com/magnus-lycka/ceres/issues/63).
+
+Build and run the shared interface:
+
+```bash
+npm --prefix web run build
+uv run uvicorn ceres.character.web.app:app --reload --port 1105
+```
+
+Open `http://localhost:1105/characters`. The previous server-rendered interface
+remains available at `/ui`.
+
+- Character creation joins the existing Svelte application used by rounds.
+  Shared navigation and appearance establish a uniform Ceres web interface;
+  moving other domains into that interface is separate work.
+- FastAPI and the Python character engine remain responsible for creation
+  rules. The frontend presents backend-supplied choices and input descriptors,
+  so new sophonts and careers using supported input kinds require no frontend
+  changes. A genuinely new interaction kind may require a new renderer.
+- Retain the existing creation rules and choices while redesigning the screen
+  around the current decision, a visible character summary, and accessible
+  creation history.
+- Finished characters can be added to the rounds actor library as linked
+  actors. An explicit "Update from character" action refreshes an actor;
+  character changes never propagate silently. Combat injuries remain separate
+  from creation history.
+- Transfer the character's name and physical characteristics to the actor,
+  together with a link to its full character sheet. Skills, careers and
+  biography remain on the character sheet. Refresh preserves actor notes,
+  tags and injuries.
+- Each rounds library has at most one linked actor per source character.
+  Adding the same character again opens the existing actor. Character refresh
+  is blocked while the actor participates in an active situation.
+- Character creation is one optional origin for rounds actors, including
+  generic NPCs. Actors created directly in rounds or obtained from other
+  sources remain supported and do not require a character record.
+- Copying an actor in rounds produces an independent, editable actor with no
+  source-character link, character-sheet link, or character-refresh behaviour.
+  Copies are not subject to the one-linked-actor-per-character restriction;
+  a generic NPC can therefore supply multiple independent actors for play.
+- Deleting the source character retains the linked actor and all its data.
+  After the backend confirms deletion, show "Source character deleted" and
+  disable refresh. Temporary backend unavailability shows "Source unavailable"
+  instead; it is not evidence of deletion.
+- Character creation continues to persist on the Python server. Rounds keeps
+  browser storage and GitHub sync; unified persistence is outside this rewrite.
+- Preserve world selection and filters, undo, character listing and deletion,
+  completed sheets, and PDF download.
+- Design primarily for desktop and tablet, with a usable stacked phone layout.
+  On narrow screens the current decision takes priority; summary and history
+  remain accessible.
+- The normal launch serves the built Svelte application and character API
+  through FastAPI at one address. Preserve standalone rounds operation;
+  when the backend is unavailable, Characters explains that it needs the server
+  while rounds remains usable.

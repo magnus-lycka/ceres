@@ -414,13 +414,16 @@ class TestPendingHomeworldChangeRequiredEventFromForm:
         with pytest.raises(ValueError, match='Sector and hex code are required'):
             pending.event_from_form({'sector': 'Spinward Marches', 'hex_code': ''})
 
-    def test_input_specs_returns_info_text(self):
-        from ceres.character.input_specs import InfoText
+    def test_input_specs_explains_relocation_and_requests_a_world(self):
+        from ceres.character.input_specs import InfoText, SelectWorld
 
         pending = self._pending()
         specs = pending.input_specs(_projection())
-        assert len(specs) == 1
+        assert len(specs) == 2
         assert isinstance(specs[0], InfoText)
+        assert specs[0].text == 'You must relocate.'
+        assert isinstance(specs[1], SelectWorld)
+        assert specs[1].sector_abbreviation == MOCK_WORLD.sector_abbreviation
 
 
 # ── PendingHomeworldChangeOffered: form handling ──────────────────────────────
@@ -452,10 +455,13 @@ class TestPendingHomeworldChangeOfferedFormHandling:
         with pytest.raises(ValueError, match='Sector and hex code are required'):
             pending.event_from_form({'keep': '', 'sector': 'Spinward Marches', 'hex_code': ''})
 
-    def test_input_specs_returns_info_text(self):
-        from ceres.character.input_specs import InfoText
+    def test_input_specs_offers_world_selection_or_skip(self):
+        from ceres.character.input_specs import InfoText, SelectWorld
 
         pending = self._pending()
         specs = pending.input_specs(_projection())
-        assert len(specs) == 1
+        assert len(specs) == 2
         assert isinstance(specs[0], InfoText)
+        assert isinstance(specs[1], SelectWorld)
+        assert specs[1].open_label == 'Change Homeworld'
+        assert specs[1].skip_values == {'keep': '1'}

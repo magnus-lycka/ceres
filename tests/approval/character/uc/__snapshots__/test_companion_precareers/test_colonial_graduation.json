@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "colonial_upbringing",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -273,7 +274,7 @@
         "Colonial Upbringing graduation: total starting age is 22+2D3; add 2D3 extra years to current age. Apply manually."
       ],
       "narrative": [
-        "Pre-career event (Colonial Upbringing): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Colonial Upbringing): Taking advantage of youth, you party as much as you study.",
         "Graduated from Colonial Upbringing."
       ],
       "cash": 0,

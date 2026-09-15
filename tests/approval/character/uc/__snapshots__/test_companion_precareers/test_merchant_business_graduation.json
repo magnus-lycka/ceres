@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "merchant_academy_business",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -161,7 +162,7 @@
         "Merchant Academy (Business) graduation: DM+1 on all advancement checks in Merchant or Citizen. Apply manually."
       ],
       "narrative": [
-        "Pre-career event (Merchant Academy (Business)): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Merchant Academy (Business)): Taking advantage of youth, you party as much as you study.",
         "Graduated from Merchant Academy (Business)."
       ],
       "cash": 0,

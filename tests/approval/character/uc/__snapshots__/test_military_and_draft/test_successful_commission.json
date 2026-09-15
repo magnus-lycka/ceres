@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "army_term",
+        "start_age": 18,
         "event": "Surrounded and outnumbered by the enemy, you hold out until relief arrives. Gain DM+2 to your next advancement roll.",
         "mishap": null,
         "prison": null,
@@ -826,8 +827,11 @@
       },
       [
         {
+          "text": "Roll 6+ on 2D to survive. STR DM +0 is applied automatically. A natural 2 always fails."
+        },
+        {
           "name": "roll",
-          "label": "2D roll (2–12)",
+          "label": "2D roll (2–12, before DMs)",
           "min": 2,
           "max": 12
         }

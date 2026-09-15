@@ -3,4 +3,7 @@
 </script>
 
 <h1>Ceres</h1>
-<p>Rounds library. Start with <a href={resolve('/actors')}>Actors</a>.</p>
+<p>
+  Create a Traveller in <a href={resolve('/characters')}>Characters</a>, or manage play with
+  <a href={resolve('/actors')}>Actors</a>.
+</p>

@@ -11,6 +11,7 @@ class Term(BaseModel):
     """Base record for a completed or in-progress term (career or pre-career)."""
 
     kind: str  # discriminator; concrete subclasses set to a Literal
+    start_age: int = 18
     event: str | None = None
     mishap: str | None = None
     prison: str | None = None

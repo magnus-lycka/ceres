@@ -103,6 +103,7 @@
     "terms": [
       {
         "kind": "rogue_term",
+        "start_age": 18,
         "event": null,
         "mishap": "Arrested. You must take the Prisoner career in your next term.",
         "prison": "Arrested. You must take the Prisoner career in your next term.",
@@ -250,7 +251,7 @@
       "Arrested. You must take the Prisoner career in your next term."
     ],
     "narrative": [
-      "Mishap (Rogue): Arrested. You must take the Prisoner career in your next term."
+      "Term 1 mishap (Rogue): Arrested. You must take the Prisoner career in your next term."
     ],
     "cash": 0,
     "dead": false,
@@ -775,8 +776,11 @@
       },
       [
         {
+          "text": "Roll 5+ on 2D to survive. INT DM +1 is applied automatically. A natural 2 always fails."
+        },
+        {
           "name": "roll",
-          "label": "2D roll (2–12)",
+          "label": "2D roll (2–12, before DMs)",
           "min": 2,
           "max": 12
         }

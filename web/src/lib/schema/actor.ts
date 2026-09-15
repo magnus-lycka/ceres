@@ -122,6 +122,8 @@ export const actorDefinition = {
 const base = z.object({
   id: actorIdSchema.default(UNSAVED as ActorId),
   ...actorDefinition,
+  /** Optional origin; duplicated actors deliberately omit it. */
+  character: z.object({ url: z.url() }).optional(),
   /** Persistent health: what has been done to this actor, oldest first. */
   injuries: z.array(injurySchema).default([]),
   /**

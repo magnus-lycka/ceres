@@ -221,7 +221,7 @@ class TestPreCareerEventHandler:
     def test_normal_roll_appends_narrative(self):
         proj = self._proj_with_precareer()
         PreCareerEventHandler(roll=5).apply(proj, _any_event())
-        assert any('Pre-career event' in n for n in proj.summary.narrative)
+        assert any(n.startswith('Term 1 event (University):') for n in proj.summary.narrative)
 
     def test_roll_3_ends_precareer_without_graduation(self):
         from ceres.character.domain.precareer.precareer_term import PreCareerTerm

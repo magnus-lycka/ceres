@@ -1,5 +1,6 @@
 """CharacterService — the domain façade for all character operations."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -7,13 +8,14 @@ from typing import Any
 from ceres.character.domain.career.career_data import CareerData
 from ceres.character.domain.career.loader import selectable_careers
 from ceres.character.domain.character_start import CharacterCreatedHandler
-from ceres.character.domain.character_state import CharacterSummary
+from ceres.character.domain.character_state import CharacterProjection, CharacterSummary, diff_summaries
 from ceres.character.domain.event_handlers import register_event_handlers
 from ceres.character.domain.precareer.loader import load_precareers
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.sophont import SOPHONT_NAMES, available_sophont_names
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.store import SqliteCharacterBackend
+from ceres.character.presentation import CharacterView, character_view
 
 
 @dataclass
@@ -43,14 +45,48 @@ class CharacterService:
             for r in self._backend.list_characters()
         ]
 
+    def _projection(self, character_id: int) -> CharacterProjection:
+        projection = self._backend.get_projection(character_id)
+        if projection is None:
+            raise ValueError(f'Character {character_id} not found')
+        return projection
+
+    def view(self, character_id: int) -> CharacterView:
+        self._require_character(character_id)
+        return character_view(character_id, self._projection(character_id))
+
+    def choose(self, character_id: int, fulfills: str, values: Mapping[str, str]) -> CharacterView:
+        before = self._projection(character_id).summary.model_copy(deep=True)
+        self.submit_event(character_id, fulfills, values)
+        projection = self._projection(character_id)
+        view = character_view(character_id, projection)
+        view.changes = diff_summaries(before, projection.summary)
+        if before.homeworld != projection.summary.homeworld and projection.summary.homeworld:
+            view.changes.insert(0, f'Homeworld: {projection.summary.homeworld.name}')
+        return view
+
+    def undo(self, character_id: int) -> CharacterView:
+        self._require_character(character_id)
+        if len(self._backend.load_typed_events(character_id) or []) <= 1:
+            raise ValueError('There is no previous creation step.')
+        self._backend.rollback_last_event(character_id)
+        return self.view(character_id)
+
+    def pdf(self, character_id: int) -> bytes:
+        from ceres.character.domain.spec import spec_from_summary
+        from ceres.character.report import render_stat_block_gallery_pdf
+
+        self._require_character(character_id)
+        return render_stat_block_gallery_pdf([spec_from_summary(self._projection(character_id).summary)])
+
     def get_summary(self, character_id: int) -> Any | None:
         return self._backend.get_summary(character_id)
 
     def get_projection(self, character_id: int) -> Any | None:
         return self._backend.get_projection(character_id)
 
-    def submit_event(self, character_id: int, fulfills: str, form_data: dict[str, str]) -> None:
-        projection = self._backend.get_projection(character_id)
+    def submit_event(self, character_id: int, fulfills: str, form_data: Mapping[str, str]) -> None:
+        projection = self._projection(character_id)
         if projection is None:
             raise ValueError(f'Character {character_id} not found')
         parts = fulfills.split('.')
@@ -79,7 +115,7 @@ class CharacterService:
     def available_careers(self, character_id: int | None = None) -> tuple[CareerData, ...]:
         if character_id is not None:
             self._require_character(character_id)
-            projection = self._backend.get_projection(character_id)
+            projection = self._projection(character_id)
             return selectable_careers(projection)
         return selectable_careers()
 

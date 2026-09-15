@@ -3,7 +3,7 @@ from typing import Literal
 
 from ceres.adapters.travellermap import TravellerMapWorld, fetch_world
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.input_specs import InfoText, InputSpec, form_str
+from ceres.character.input_specs import InfoText, InputSpec, SelectWorld, WorldFilterCriteria, WorldRef, form_str
 from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 
@@ -103,7 +103,7 @@ class PendingHomeworldChangeRequired(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=HomeworldChangedHandler(new_homeworld=world))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return [InfoText(text=self.reason)]
+        return _homeworld_change_specs(projection, self.reason, self.target_constraints)
 
 
 class PendingHomeworldChangeOffered(PendingInputBase):
@@ -130,4 +130,22 @@ class PendingHomeworldChangeOffered(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=HomeworldChangedHandler(new_homeworld=world))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return [InfoText(text=self.reason)]
+        return _homeworld_change_specs(projection, self.reason, self.target_constraints, optional=True)
+
+
+def _homeworld_change_specs(
+    projection: CharacterProjection, reason: str, target_constraints: str | None, *, optional: bool = False
+) -> list[InputSpec]:
+    homeworld = projection.summary.homeworld
+    return [
+        InfoText(text=reason),
+        SelectWorld(
+            name='homeworld',
+            open_label='Change Homeworld' if optional else None,
+            skip_values={'keep': '1'} if optional else None,
+            label='New homeworld',
+            sector_abbreviation=homeworld.sector_abbreviation if homeworld else None,
+            reference_world=WorldRef(homeworld.sector_abbreviation, homeworld.hex) if homeworld else None,
+            filters=WorldFilterCriteria(bases=('S', 'W') if target_constraints == 'world_with_scout_base' else ()),
+        ),
+    ]

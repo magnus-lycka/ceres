@@ -143,12 +143,12 @@
     margin-bottom: 0.5rem;
   }
   .hint {
-    color: #555;
+    color: var(--muted);
   }
   .problem {
-    background: #fef2f2;
-    border-left: 3px solid #b91c1c;
-    color: #7c2c1a;
+    background: var(--error-bg);
+    border-left: 3px solid var(--danger);
+    color: var(--error-text);
     padding: 0.4rem 0.75rem;
     margin: 0 0 0.5rem;
   }

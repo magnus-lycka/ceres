@@ -86,6 +86,8 @@ from ceres.character.domain.skills import (
     level_fields,
 )
 from ceres.character.input_specs import (
+    ActionChoice,
+    InfoText,
     InputSpec,
     NumberEntry,
     Select,
@@ -128,8 +130,11 @@ class MishapHandler(EventHandlerBase):
         mishap = career.mishaps.get(self.roll)
         pending_idx = 0
         if mishap:
-            projection.summary.problems.append(mishap.text)
-            projection.summary.narrative.append(f'Mishap ({career.name}): {mishap.text}')
+            if mishap.record_as_problem:
+                projection.summary.problems.append(mishap.text)
+            projection.summary.narrative.append(
+                f'Term {len(projection.summary.terms)} mishap ({career.name}): {mishap.text}'
+            )
             pending_idx = mishap.apply(projection, event, pending_idx)
         defer = mishap is not None and getattr(mishap, 'defer_ejection', False)
         if defer:
@@ -167,7 +172,7 @@ class TermEventHandler(EventHandlerBase):
         career_handler_invoked = False
         if term_event:
             projection.summary.narrative.append(
-                f'Term {projection.summary.terms_started_in_current_career} event ({career.name}): {term_event.text}'
+                f'Term {len(projection.summary.terms)} event ({career.name}): {term_event.text}'
             )
             if projection.summary.career_terms:
                 projection.summary.career_terms[-1].event = term_event.text
@@ -455,7 +460,19 @@ class PendingSurvive(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=SurviveHandler(roll=form_int(form, 'roll', 2)))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return [NumberEntry(name='roll', label='2D roll (2–12)', min=2, max=12)]
+        assignment = projection.summary.current_assignment
+        if assignment is None:
+            raise ReplayError('No current assignment')
+        check = assignment.survival
+        dm = characteristic_dm(projection.summary.characteristics.get(check.characteristic, 0))
+        needed = max(3, check.target - dm)
+        return [
+            InfoText(
+                text=f'Roll {needed}+ on 2D to survive. {check.characteristic} DM {dm:+d} '
+                'is applied automatically. A natural 2 always fails.'
+            ),
+            NumberEntry(name='roll', label='2D roll (2–12, before DMs)', min=2, max=12),
+        ]
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         assignment = projection.summary.current_assignment
@@ -470,7 +487,7 @@ class PendingSurvive(PendingInputBase):
         else:
             if event.roll == 2:
                 projection.summary.narrative.append(
-                    f'Automatic mishap (rolled natural 2) in term {projection.summary.terms_started_in_current_career}'
+                    f'Automatic mishap (rolled natural 2) in term {len(projection.summary.terms)}'
                 )
             projection.queue_deferred(PendingMishap(pending_id=(event.id, 0), instruction='Roll 1D on Mishap table'))
 
@@ -531,11 +548,19 @@ class PendingReenlist(PendingInputBase):
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
 
-        reenlist = form_str(form, 'reenlist', 'false').lower() in ('true', '1', 'yes')
+        choice = form_str(form, 'reenlist', '').lower()
+        if choice not in ('true', '1', 'yes', 'false', '0', 'no'):
+            raise ValueError('Choose Reenlist or Muster out')
+        reenlist = choice in ('true', '1', 'yes')
+        if not reenlist and not self.can_muster_out:
+            raise ValueError('You must remain in this career for another term')
         return Event(fulfills=self.pending_id, handler=ReenlistHandler(reenlist=reenlist))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        return []
+        options = [('Reenlist', 'true')]
+        if self.can_muster_out:
+            options.append(('Muster out', 'false'))
+        return [ActionChoice(name='reenlist', options=options)]
 
 
 class PendingAssignmentChangeChoice(PendingInputBase):

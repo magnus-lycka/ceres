@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "school_of_hard_knocks",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,

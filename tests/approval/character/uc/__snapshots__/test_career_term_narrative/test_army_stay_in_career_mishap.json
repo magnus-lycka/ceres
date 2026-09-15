@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "army_term",
+        "start_age": 18,
         "event": "Disaster! Roll on the Mishap table but you are not ejected from this career.",
         "mishap": null,
         "prison": null,
@@ -279,7 +280,7 @@
     ],
     "narrative": [
       "Term 1 event (Army): Disaster! Roll on the Mishap table but you are not ejected from this career.",
-      "Mishap (Army): You are tormented by or quarrel with an officer or fellow soldier. Gain that officer as a Rival as they drive you out of the service."
+      "Term 1 mishap (Army): You are tormented by or quarrel with an officer or fellow soldier. Gain that officer as a Rival as they drive you out of the service."
     ],
     "cash": 0,
     "dead": false,
@@ -830,8 +831,11 @@
       },
       [
         {
+          "text": "Roll 5+ on 2D to survive. END DM +0 is applied automatically. A natural 2 always fails."
+        },
+        {
           "name": "roll",
-          "label": "2D roll (2–12)",
+          "label": "2D roll (2–12, before DMs)",
           "min": 2,
           "max": 12
         }

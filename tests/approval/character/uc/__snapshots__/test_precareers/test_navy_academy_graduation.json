@@ -91,6 +91,7 @@
       "terms": [
         {
           "kind": "navy_academy",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -209,7 +210,7 @@
         "Navy Academy graduation: entitled to a commission roll at the start of your first Navy career term with DM+2. Apply manually."
       ],
       "narrative": [
-        "Pre-career event (Navy Academy): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Navy Academy): Taking advantage of youth, you party as much as you study.",
         "Graduated from Navy Academy."
       ],
       "cash": 0,

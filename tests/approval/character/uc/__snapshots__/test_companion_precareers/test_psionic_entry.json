@@ -91,6 +91,7 @@
       "terms": [
         {
           "kind": "psionic_community",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,

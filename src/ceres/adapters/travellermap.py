@@ -363,3 +363,8 @@ def fetch_world(sector_abbreviation: str, hex_code: str) -> TravellerMapWorld:
     if not worlds:
         raise ValueError(f'No world at {sector_abbreviation}/{hex_code}')
     return TravellerMapWorld.model_validate(worlds[0])
+
+
+def fetch_jump_worlds(sector_abbreviation: str, hex_code: str, radius: int) -> list[TravellerMapWorld]:
+    payload = _fetch_json(f'{_BASE_URL}/{sector_abbreviation}/{hex_code}/jump/{radius}')
+    return [TravellerMapWorld.model_validate(world) for world in payload.get('Worlds', [])]

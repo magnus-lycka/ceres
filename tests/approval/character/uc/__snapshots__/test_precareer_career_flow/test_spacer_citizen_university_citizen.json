@@ -103,6 +103,7 @@
     "terms": [
       {
         "kind": "spacer_community",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -113,6 +114,7 @@
       },
       {
         "kind": "citizen_term",
+        "start_age": 22,
         "event": "Your business expands, your corporation grows, or your colony thrives.",
         "mishap": null,
         "prison": null,
@@ -153,6 +155,7 @@
       },
       {
         "kind": "university",
+        "start_age": 26,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -164,6 +167,7 @@
       },
       {
         "kind": "citizen_term",
+        "start_age": 30,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -328,10 +332,10 @@
       "University graduation: entitled to a commission roll before first military career. Apply manually."
     ],
     "narrative": [
-      "Pre-career event (Spacer Community): Taking advantage of youth, you party as much as you study.",
+      "Term 1 event (Spacer Community): Taking advantage of youth, you party as much as you study.",
       "Graduated from Spacer Community.",
-      "Term 1 event (Citizen): Your business expands, your corporation grows, or your colony thrives.",
-      "Pre-career event (University): Taking advantage of youth, you party as much as you study.",
+      "Term 2 event (Citizen): Your business expands, your corporation grows, or your colony thrives.",
+      "Term 3 event (University): Taking advantage of youth, you party as much as you study.",
       "Graduated from University."
     ],
     "cash": 2000,

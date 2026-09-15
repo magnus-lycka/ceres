@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "army_term",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -816,8 +817,11 @@
       },
       [
         {
+          "text": "Roll 5+ on 2D to survive. END DM +0 is applied automatically. A natural 2 always fails."
+        },
+        {
           "name": "roll",
-          "label": "2D roll (2–12)",
+          "label": "2D roll (2–12, before DMs)",
           "min": 2,
           "max": 12
         }

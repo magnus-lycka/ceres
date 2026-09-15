@@ -91,6 +91,7 @@
       "terms": [
         {
           "kind": "psionic_community",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,
@@ -160,7 +161,7 @@
       "problems": [],
       "narrative": [
         "Psionic institute training complete",
-        "Pre-career event (Psionic Community): Taking advantage of youth, you party as much as you study.",
+        "Term 1 event (Psionic Community): Taking advantage of youth, you party as much as you study.",
         "Graduated from Psionic Community."
       ],
       "cash": 0,

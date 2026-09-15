@@ -37,7 +37,7 @@
   }
 
   .pill {
-    background: #e2e8f0;
+    background: var(--tag-bg);
     border-radius: 9999px;
     padding: 1px 8px;
     white-space: nowrap;
@@ -51,12 +51,12 @@
     border: 1px solid #cbd5e1;
     border-radius: 4px;
     cursor: pointer;
-    color: #475569;
+    color: var(--muted);
     line-height: 1;
     padding: 1px 5px;
   }
 
   button:hover {
-    background: #e8f0fe;
+    background: var(--selected-bg);
   }
 </style>

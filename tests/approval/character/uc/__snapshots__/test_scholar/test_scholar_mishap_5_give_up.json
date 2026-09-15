@@ -103,6 +103,7 @@
     "terms": [
       {
         "kind": "scholar_term",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,
@@ -262,7 +263,7 @@
       "Your work is sabotaged by unknown parties."
     ],
     "narrative": [
-      "Mishap (Scholar): Your work is sabotaged by unknown parties."
+      "Term 1 mishap (Scholar): Your work is sabotaged by unknown parties."
     ],
     "cash": 0,
     "dead": false,

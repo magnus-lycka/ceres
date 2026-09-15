@@ -158,9 +158,10 @@ class TestPendingAdvancement:
         assert event.handler.roll == 2
 
     def test_input_specs_returns_roll_entry(self):
-        specs = PendingAdvancement(pending_id=(1, 0), instruction='Roll').input_specs(_projection())
-        assert len(specs) == 1
-        assert isinstance(specs[0], NumberEntry) and specs[0].name == 'roll'
+        specs = PendingAdvancement(pending_id=(1, 0), instruction='Roll').input_specs(_projection_in_army_support())
+        roll = next(spec for spec in specs if isinstance(spec, NumberEntry))
+        assert roll.name == 'roll'
+        assert roll.label == '2D roll (2–12, before DMs)'
 
 
 class TestPendingCommissionChoice:

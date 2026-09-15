@@ -87,6 +87,7 @@
       "terms": [
         {
           "kind": "merchant_academy_shipboard",
+          "start_age": 18,
           "event": null,
           "mishap": null,
           "prison": null,

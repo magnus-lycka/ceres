@@ -90,6 +90,7 @@
     "terms": [
       {
         "kind": "army_term",
+        "start_age": 18,
         "event": null,
         "mishap": null,
         "prison": null,

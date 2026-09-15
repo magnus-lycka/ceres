@@ -365,7 +365,7 @@
   }
   .list li.open {
     border-left-color: #1a73e8;
-    background: #f5f8ff;
+    background: var(--info-bg);
   }
   .pick {
     flex: 1;
@@ -387,16 +387,16 @@
     white-space: nowrap;
   }
   .state.planned {
-    background: #e8f0fe;
-    color: #174ea6;
+    background: var(--selected-bg);
+    color: var(--selected-text);
   }
   .state.current {
-    background: #e6f4ea;
-    color: #137333;
+    background: var(--success-bg);
+    color: var(--success-text);
   }
   .state.past {
-    background: #f1f3f4;
-    color: #5f6368;
+    background: var(--subtle-bg);
+    color: var(--muted);
   }
   label {
     display: flex;
@@ -410,12 +410,12 @@
     flex: 1;
   }
   .hint {
-    color: #555;
+    color: var(--muted);
   }
   .problem {
-    background: #fef2f2;
-    border-left: 3px solid #b91c1c;
-    color: #7c2c1a;
+    background: var(--error-bg);
+    border-left: 3px solid var(--danger);
+    color: var(--error-text);
     padding: 0.4rem 0.75rem;
     margin: 0.5rem 0;
   }

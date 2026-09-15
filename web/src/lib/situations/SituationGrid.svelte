@@ -159,11 +159,11 @@
    * backgrounds and a colour on `tr` would sit behind them.
    */
   .grid :global(tr.turn-ready > td) {
-    background: #e6f4ea;
+    background: var(--success-bg);
   }
 
   .grid :global(tr.turn-acted > td) {
-    background: #f1f3f4;
-    color: #5f6368;
+    background: var(--subtle-bg);
+    color: var(--muted);
   }
 </style>

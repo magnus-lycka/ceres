@@ -36,7 +36,7 @@ from ceres.character.domain.character_state import CharacterProjection, Characte
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Admin, Level
 from ceres.character.domain.sophont import VILANI
-from ceres.character.input_specs import NumberEntry, Select
+from ceres.character.input_specs import ActionChoice, NumberEntry, Select
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, PendingInputBase
 from tests.unit.character.helpers import MOCK_WORLD
@@ -89,10 +89,10 @@ class TestPendingSurvive:
 
     def test_input_specs_returns_roll_entry(self):
         pending = PendingSurvive(pending_id=(1, 0), instruction='Roll 2D')
-        specs = pending.input_specs(_projection())
-        assert len(specs) == 1
-        assert isinstance(specs[0], NumberEntry)
-        assert specs[0].min == 2 and specs[0].max == 12
+        specs = pending.input_specs(_projection_with_army())
+        roll = next(spec for spec in specs if isinstance(spec, NumberEntry))
+        assert roll.min == 2 and roll.max == 12
+        assert roll.label == '2D roll (2–12, before DMs)'
 
     def test_resolve_natural_2_queues_mishap_with_narrative(self):
         from ceres.character.domain.career.career_data import CareerTerm
@@ -177,7 +177,7 @@ class TestMishapHandler:
         event.apply(proj)
 
         assert any('Severely injured' in problem for problem in proj.summary.problems)
-        assert any('Mishap (Army)' in note for note in proj.summary.narrative)
+        assert any('Term 1 mishap (Army)' in note for note in proj.summary.narrative)
         assert proj.summary.current_career is ARMY
 
     def test_stay_in_career_queues_advancement_after_mishap(self):
@@ -379,17 +379,26 @@ class TestPendingReenlist:
         assert isinstance(event.handler, ReenlistHandler)
         assert event.handler.reenlist is False
 
-    def test_event_from_form_defaults_to_false(self):
+    def test_event_from_form_requires_an_explicit_choice(self):
         pending = PendingReenlist(pending_id=(1, 0))
-        event = pending.event_from_form({})
-        assert isinstance(event.handler, ReenlistHandler)
-        assert event.handler.reenlist is False
+        with pytest.raises(ValueError, match='Choose'):
+            pending.event_from_form({})
+
+    def test_event_from_form_rejects_forbidden_muster_out(self):
+        pending = PendingReenlist(pending_id=(1, 0), can_muster_out=False)
+        with pytest.raises(ValueError, match='must remain'):
+            pending.event_from_form({'reenlist': 'false'})
 
     def test_template_fragment_is_reenlist(self):
         assert PendingReenlist(pending_id=(1, 0)).template_fragment == 'reenlist'
 
-    def test_input_specs_returns_empty(self):
-        assert PendingReenlist(pending_id=(1, 0)).input_specs(_projection()) == []
+    @pytest.mark.parametrize('can_muster_out', [True, False])
+    def test_input_specs_offers_only_allowed_actions(self, can_muster_out):
+        pending = PendingReenlist(pending_id=(1, 0), can_muster_out=can_muster_out)
+        spec = pending.input_specs(_projection())[0]
+        assert isinstance(spec, ActionChoice)
+        assert spec.name == 'reenlist'
+        assert spec.options == [('Reenlist', 'true')] + ([('Muster out', 'false')] if can_muster_out else [])
 
 
 class TestReenlistHandler:

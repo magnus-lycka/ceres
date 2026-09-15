@@ -35,6 +35,14 @@ class Select:
 
 
 @dataclass
+class ActionChoice:
+    """A single choice submitted immediately by an action button."""
+
+    name: str
+    options: list[tuple[str, str]]
+
+
+@dataclass
 class Reference:
     """A fixed value that accompanies the submission (hidden field in web)."""
 
@@ -98,6 +106,8 @@ class SelectWorld:
     sector_abbreviation: str | None = None
     reference_world: WorldRef | None = None
     filters: WorldFilterCriteria = field(default_factory=WorldFilterCriteria)
+    open_label: str | None = None
+    skip_values: dict[str, str] | None = None
 
 
 @dataclass
@@ -148,7 +158,7 @@ class CareerChoice:
     can_finish: bool = False
 
 
-InputSpec = NumberEntry | Select | Reference | TextEntry | InfoText | SelectWorld | CareerChoice
+InputSpec = NumberEntry | Select | ActionChoice | Reference | TextEntry | InfoText | SelectWorld | CareerChoice
 
 
 def form_str(form: Mapping[str, str], key: str, default: str = '') -> str:

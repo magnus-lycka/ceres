@@ -77,9 +77,9 @@
 
 <style>
   .imported {
-    background: #e6f4ea;
-    border-left: 3px solid #137333;
-    color: #0d652d;
+    background: var(--success-bg);
+    border-left: 3px solid var(--success-text);
+    color: var(--success-text);
     padding: 0.4rem 0.75rem;
   }
   .problem ul {
@@ -93,26 +93,26 @@
     align-items: baseline;
   }
   .state.blocked {
-    color: #7c2c1a;
+    color: var(--error-text);
     font-weight: 600;
   }
   .detail {
-    color: #555;
+    color: var(--muted);
     font-size: 0.85rem;
   }
   .problem {
-    background: #fef2f2;
-    border-left: 3px solid #b91c1c;
+    background: var(--error-bg);
+    border-left: 3px solid var(--danger);
     padding: 0.5rem 0.75rem;
     max-width: 44rem;
   }
   /* Not reaching the repository is a delay, not a problem to solve. */
   .problem.transient {
-    background: #fffbeb;
-    border-left-color: #b45309;
+    background: var(--warning-bg);
+    border-left-color: var(--warning-text);
   }
   .hint {
-    color: #555;
+    color: var(--muted);
     max-width: 44rem;
   }
 </style>

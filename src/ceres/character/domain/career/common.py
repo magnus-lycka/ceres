@@ -6,7 +6,7 @@ from ceres.character.domain.career.career_data import CareerHandlerBase
 from ceres.character.domain.career.career_events import PendingChoices, _apply_mishap_ejection
 from ceres.character.domain.career.common_pending import PendingAdvancedTrainingSkillRoll
 from ceres.character.domain.character_state import CharacterProjection
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, characteristic_dm
 from ceres.character.domain.health.health_events import PendingDoubleInjuryRoll
 from ceres.character.mechanism.event_base import ChoiceBase
 
@@ -24,6 +24,7 @@ def handle_advanced_training(
             instruction=instruction,
             options=[Chars.EDU],
             threshold=threshold,
+            education_dm=characteristic_dm(projection.summary.characteristics.get(Chars.EDU, 0)),
         )
     )
     return pending_idx + 1
