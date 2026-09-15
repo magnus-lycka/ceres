@@ -1626,3 +1626,31 @@ Open-Topped and all print Dorsal as a dash. The Air/Raft is the exception: it
 prints Dorsal 3 (11), the same as every other face. Ceres follows the rule and the
 majority of the catalogue, and records the Air/Raft's dorsal figure as a
 difference from its published entry.
+
+### RIV-013 The ATV Carries An Unlisted Slower Speed Modification
+
+The published ATV is a TL12 Heavy Ground Vehicle with the Fast feature, and prints
+its Speed as High (Medium). Its equipment list names no speed modification.
+
+The construction rules give it a different Speed without one: a TL12 ground
+vehicle is Fast, Heavy size takes a band, and the Fast feature gives it back,
+so Fast. Ceres builds the ATV with a Slower speed modification, which takes one
+band and brings it to the printed High.
+
+This is inferred rather than read off the page, and the inference is made only
+because two independent constraints both require it:
+
+- **Speed.** Nothing else the ATV carries changes its Speed Band. Slower is the
+  only rule that produces the printed figure.
+- **Spaces.** Slower frees a tenth of the vehicle, two Spaces. Everything else
+  the ATV carries — its crew, passengers, cargo, fittings, power plant, aquatic
+  drive and empty turret — fills its twenty Spaces exactly once those two are
+  counted. Without them the design needs two Spaces more than it has.
+
+That the modification is missing from the equipment list is expected rather than
+suspicious. Speed and fuel modifications change the vehicle rather than adding
+anything to it, and no catalogue entry lists them among its equipment.
+
+This is not a component invented to force agreement with a published figure.
+The rules provide the modification; the entry simply cannot show it, and the
+design is illegal without it.
