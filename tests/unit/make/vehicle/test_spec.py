@@ -7,6 +7,7 @@ is the report context's job, as it is for ships.
 from typing import Any
 
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.options import Autopilot, NavigationSystem, SensorSystem, VehicleTransceiver
 from ceres.make.vehicle.size import VehicleSize
 from ceres.make.vehicle.speed import SpeedBand
@@ -90,9 +91,9 @@ class TestSpecCarriesWhatTheEquipmentConfers:
     def test_the_figures_the_fittings_confer(self):
         spec = a_vehicle(
             options=[
-                Autopilot(quality='basic'),
-                NavigationSystem(quality='improved'),
-                SensorSystem(quality='improved'),
+                Autopilot(quality=Grade.BASIC),
+                NavigationSystem(quality=Grade.IMPROVED),
+                SensorSystem(quality=Grade.IMPROVED),
                 VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True),
             ]
         ).build_spec()

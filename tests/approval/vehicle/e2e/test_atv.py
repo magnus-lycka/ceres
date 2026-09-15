@@ -10,6 +10,7 @@ import pytest
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.customisations import AquaticDrive, FuelCapacity, FusionPlusPlant, SlowerSpeed
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.mounts import Turret
 from ceres.make.vehicle.options import (
     AirLock,
@@ -19,8 +20,11 @@ from ceres.make.vehicle.options import (
     ControlSystem,
     FireExtinguishers,
     Fresher,
+    FresherSize,
     Galley,
+    GalleyKind,
     LifeSupport,
+    LifeSupportDuration,
     NavigationSystem,
     SensorSystem,
     VacuumEnvironment,
@@ -97,20 +101,22 @@ def build_atv() -> Vehicle:
         customisations=[FusionPlusPlant(), FuelCapacity(spaces=-4), SlowerSpeed(), AquaticDrive()],
         mounts=[Turret(face=Face.DORSAL, weapon_spaces=4)],
         options=[
-            ControlSystem(quality='improved'),
-            Autopilot(quality='basic'),
-            NavigationSystem(quality='improved'),
-            SensorSystem(quality='improved'),
-            CollisionProtection(quality='improved', spaces_protected=16),
+            ControlSystem(quality=Grade.IMPROVED),
+            Autopilot(quality=Grade.BASIC),
+            NavigationSystem(quality=Grade.IMPROVED),
+            SensorSystem(quality=Grade.IMPROVED),
+            CollisionProtection(quality=Grade.IMPROVED, spaces_protected=16),
             AirLock(),
-            LifeSupport(duration='short_term', people=8),
+            LifeSupport(duration=LifeSupportDuration.SHORT_TERM, people=8),
             Bunk(count=2),
-            Fresher(quality='standard'),
-            Galley(quality='mini'),
+            Fresher(quality=FresherSize.STANDARD),
+            Galley(quality=GalleyKind.MINI),
             FireExtinguishers(),
             VacuumEnvironment(),
             VehicleComputer(processing=1),
-            VehicleTransceiver(range_km=500, stage='superior', satellite_uplink=True, tightbeam=True, encryption=True),
+            VehicleTransceiver(
+                range_km=500, stage=Grade.SUPERIOR, satellite_uplink=True, tightbeam=True, encryption=True
+            ),
         ],
     )
 

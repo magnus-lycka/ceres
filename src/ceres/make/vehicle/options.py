@@ -10,6 +10,7 @@ Rules: refs/vehicle/09_core_options.md
 """
 
 from dataclasses import dataclass
+from enum import StrEnum
 from math import ceil
 from typing import Annotated, ClassVar, Literal
 
@@ -20,6 +21,7 @@ from ceres.gear.computer import ComputerPart
 from ceres.gear.safety import FireExtinguisherPart
 
 from .base import InstalledInVehicle
+from .grades import Grade
 from .spec import EquipmentSpec
 
 
@@ -59,8 +61,26 @@ class _Option(InstalledInVehicle):
         return 0.0
 
 
+class FresherSize(StrEnum):
+    HALF = 'half'
+    STANDARD = 'standard'
+    FULL = 'full'
+
+
+class GalleyKind(StrEnum):
+    MINI = 'mini'
+    FULL = 'full'
+    GOURMET = 'gourmet'
+
+
+class LifeSupportDuration(StrEnum):
+    SHORT_TERM = 'short term'
+    LONG_TERM = 'long term'
+    CLOSED_CYCLE = 'closed cycle'
+
+
 @dataclass(frozen=True)
-class _Grade:
+class _GradeRow:
     """One row of an option's quality table."""
 
     tl: int
@@ -70,39 +90,39 @@ class _Grade:
 
 
 # refs/vehicle/09_core_options.md — Control Systems
-_CONTROL: dict[str, _Grade] = {
-    'primitive': _Grade(tl=1, cost=-25, value=-1),
-    'basic': _Grade(tl=0, cost=0, value=0),
-    'improved': _Grade(tl=7, cost=5_000, value=1),
-    'enhanced': _Grade(tl=10, cost=15_000, value=2),
-    'advanced': _Grade(tl=12, cost=25_000, value=3),
-    'superior': _Grade(tl=15, cost=100_000, value=4),
+_CONTROL: dict[Grade, _GradeRow] = {
+    Grade.PRIMITIVE: _GradeRow(tl=1, cost=-25, value=-1),
+    Grade.BASIC: _GradeRow(tl=0, cost=0, value=0),
+    Grade.IMPROVED: _GradeRow(tl=7, cost=5_000, value=1),
+    Grade.ENHANCED: _GradeRow(tl=10, cost=15_000, value=2),
+    Grade.ADVANCED: _GradeRow(tl=12, cost=25_000, value=3),
+    Grade.SUPERIOR: _GradeRow(tl=15, cost=100_000, value=4),
 }
 
 # refs/vehicle/09_core_options.md — Autopilot
-_AUTOPILOT: dict[str, _Grade] = {
-    'basic': _Grade(tl=5, cost=2_000, value=0),
-    'improved': _Grade(tl=7, cost=7_500, value=1),
-    'enhanced': _Grade(tl=9, cost=10_000, value=2),
-    'advanced': _Grade(tl=11, cost=15_000, value=3),
-    'superior': _Grade(tl=14, cost=60_000, value=4),
+_AUTOPILOT: dict[Grade, _GradeRow] = {
+    Grade.BASIC: _GradeRow(tl=5, cost=2_000, value=0),
+    Grade.IMPROVED: _GradeRow(tl=7, cost=7_500, value=1),
+    Grade.ENHANCED: _GradeRow(tl=9, cost=10_000, value=2),
+    Grade.ADVANCED: _GradeRow(tl=11, cost=15_000, value=3),
+    Grade.SUPERIOR: _GradeRow(tl=14, cost=60_000, value=4),
 }
 
 # refs/vehicle/09_core_options.md — Navigation Systems
-_NAVIGATION: dict[str, _Grade] = {
-    'basic': _Grade(tl=5, cost=2_000, value=1),
-    'improved': _Grade(tl=9, cost=10_000, value=2),
-    'enhanced': _Grade(tl=11, cost=25_000, value=3),
-    'advanced': _Grade(tl=13, cost=50_000, value=4),
+_NAVIGATION: dict[Grade, _GradeRow] = {
+    Grade.BASIC: _GradeRow(tl=5, cost=2_000, value=1),
+    Grade.IMPROVED: _GradeRow(tl=9, cost=10_000, value=2),
+    Grade.ENHANCED: _GradeRow(tl=11, cost=25_000, value=3),
+    Grade.ADVANCED: _GradeRow(tl=13, cost=50_000, value=4),
 }
 
 # refs/vehicle/09_core_options.md — Sensor Systems
-_SENSORS: dict[str, _Grade] = {
-    'basic': _Grade(tl=5, cost=2_000, value=0, range_km=1),
-    'improved': _Grade(tl=7, cost=15_000, value=1, range_km=5),
-    'enhanced': _Grade(tl=11, cost=25_000, value=2, range_km=15),
-    'advanced': _Grade(tl=13, cost=50_000, value=3, range_km=25),
-    'superior': _Grade(tl=16, cost=100_000, value=4, range_km=50),
+_SENSORS: dict[Grade, _GradeRow] = {
+    Grade.BASIC: _GradeRow(tl=5, cost=2_000, value=0, range_km=1),
+    Grade.IMPROVED: _GradeRow(tl=7, cost=15_000, value=1, range_km=5),
+    Grade.ENHANCED: _GradeRow(tl=11, cost=25_000, value=2, range_km=15),
+    Grade.ADVANCED: _GradeRow(tl=13, cost=50_000, value=3, range_km=25),
+    Grade.SUPERIOR: _GradeRow(tl=16, cost=100_000, value=4, range_km=50),
 }
 
 
@@ -114,7 +134,9 @@ class ControlSystem(_Option):
 
     kind: Literal['CONTROL_SYSTEM'] = 'CONTROL_SYSTEM'
     _equipment_name: ClassVar[str] = 'Control System'
-    quality: Literal['primitive', 'basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+    quality: Literal[Grade.PRIMITIVE, Grade.BASIC, Grade.IMPROVED, Grade.ENHANCED, Grade.ADVANCED, Grade.SUPERIOR] = (
+        Grade.BASIC
+    )
 
     @property
     def grade(self) -> str | None:
@@ -134,7 +156,7 @@ class Autopilot(_Option):
 
     kind: Literal['AUTOPILOT'] = 'AUTOPILOT'
     _equipment_name: ClassVar[str] = 'Autopilot'
-    quality: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+    quality: Literal[Grade.BASIC, Grade.IMPROVED, Grade.ENHANCED, Grade.ADVANCED, Grade.SUPERIOR] = Grade.BASIC
 
     @property
     def grade(self) -> str | None:
@@ -154,7 +176,8 @@ class NavigationSystem(_Option):
 
     kind: Literal['NAVIGATION_SYSTEM'] = 'NAVIGATION_SYSTEM'
     _equipment_name: ClassVar[str] = 'Navigation System'
-    quality: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+    # Its table stops at advanced.
+    quality: Literal[Grade.BASIC, Grade.IMPROVED, Grade.ENHANCED, Grade.ADVANCED] = Grade.BASIC
 
     @property
     def grade(self) -> str | None:
@@ -174,7 +197,7 @@ class SensorSystem(_Option):
 
     kind: Literal['SENSOR_SYSTEM'] = 'SENSOR_SYSTEM'
     _equipment_name: ClassVar[str] = 'Sensor System'
-    quality: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+    quality: Literal[Grade.BASIC, Grade.IMPROVED, Grade.ENHANCED, Grade.ADVANCED, Grade.SUPERIOR] = Grade.BASIC
 
     @property
     def grade(self) -> str | None:
@@ -194,30 +217,30 @@ class SensorSystem(_Option):
 
 
 # refs/vehicle/13_internal_options.md — Collision Protection
-_COLLISION: dict[str, _Grade] = {
-    'basic': _Grade(tl=7, cost=500, value=8),
-    'improved': _Grade(tl=9, cost=1_000, value=12),
-    'advanced': _Grade(tl=12, cost=2_000, value=20),
+_COLLISION: dict[Grade, _GradeRow] = {
+    Grade.BASIC: _GradeRow(tl=7, cost=500, value=8),
+    Grade.IMPROVED: _GradeRow(tl=9, cost=1_000, value=12),
+    Grade.ADVANCED: _GradeRow(tl=12, cost=2_000, value=20),
 }
 
 # refs/vehicle/13_internal_options.md — Life Support
-_LIFE_SUPPORT: dict[str, _Grade] = {
-    'short_term': _Grade(tl=4, cost=10_000, value=20),
-    'long_term': _Grade(tl=6, cost=50_000, value=5),
-    'closed_cycle': _Grade(tl=8, cost=100_000, value=5),
+_LIFE_SUPPORT: dict[LifeSupportDuration, _GradeRow] = {
+    LifeSupportDuration.SHORT_TERM: _GradeRow(tl=4, cost=10_000, value=20),
+    LifeSupportDuration.LONG_TERM: _GradeRow(tl=6, cost=50_000, value=5),
+    LifeSupportDuration.CLOSED_CYCLE: _GradeRow(tl=8, cost=100_000, value=5),
 }
 
 # refs/vehicle/13_internal_options.md — Fresher and Galley, by Spaces and Cost per Space
 # (TL, Spaces, Cost per Space, Comfort Points)
-_FRESHER: dict[str, tuple[int, int, float, float]] = {
-    'half': (4, 1, 500, 1),
-    'standard': (5, 2, 750, 2),
-    'full': (5, 4, 1_500, 8),
+_FRESHER: dict[FresherSize, tuple[int, int, float, float]] = {
+    FresherSize.HALF: (4, 1, 500, 1),
+    FresherSize.STANDARD: (5, 2, 750, 2),
+    FresherSize.FULL: (5, 4, 1_500, 8),
 }
-_GALLEY: dict[str, tuple[int, int, float, float]] = {
-    'mini': (2, 1, 250, 1),
-    'full': (2, 5, 500, 5),
-    'gourmet': (3, 5, 2_000, 10),
+_GALLEY: dict[GalleyKind, tuple[int, int, float, float]] = {
+    GalleyKind.MINI: (2, 1, 250, 1),
+    GalleyKind.FULL: (2, 5, 500, 5),
+    GalleyKind.GOURMET: (3, 5, 2_000, 10),
 }
 
 # refs/vehicle/16_automation.md — Computers. A computer is free once the vehicle
@@ -231,12 +254,12 @@ _COMPUTERS: dict[int, tuple[int, float, int]] = {
 
 # refs/vehicle/08_options.md — Tech Level Stages. An item built well past its
 # introduction is cheaper for the same capability.
-_TECH_STAGE_COST: dict[str, float] = {
-    'basic': 1.0,
-    'improved': 0.5,
-    'enhanced': 0.25,
-    'advanced': 0.1,
-    'superior': 0.05,
+_TECH_STAGE_COST: dict[Grade, float] = {
+    Grade.BASIC: 1.0,
+    Grade.IMPROVED: 0.5,
+    Grade.ENHANCED: 0.25,
+    Grade.ADVANCED: 0.1,
+    Grade.SUPERIOR: 0.05,
 }
 
 # refs/vehicle/09_core_options.md — Transceivers, by range in kilometres: (TL, Cost)
@@ -263,7 +286,7 @@ class CollisionProtection(_Option):
 
     kind: Literal['COLLISION_PROTECTION'] = 'COLLISION_PROTECTION'
     _equipment_name: ClassVar[str] = 'Collision Protection'
-    quality: Literal['basic', 'improved', 'advanced'] = 'basic'
+    quality: Literal[Grade.BASIC, Grade.IMPROVED, Grade.ADVANCED] = Grade.BASIC
 
     @property
     def grade(self) -> str | None:
@@ -309,12 +332,12 @@ class LifeSupport(_Option):
 
     kind: Literal['LIFE_SUPPORT'] = 'LIFE_SUPPORT'
     _equipment_name: ClassVar[str] = 'Life Support'
-    duration: Literal['short_term', 'long_term', 'closed_cycle'] = 'short_term'
+    duration: LifeSupportDuration = LifeSupportDuration.SHORT_TERM
     people: int = 1
 
     @property
     def grade(self) -> str | None:
-        return self.duration.replace('_', ' ')
+        return self.duration
 
     @property
     def spaces(self) -> int:
@@ -355,7 +378,7 @@ class Fresher(_Option):
 
     kind: Literal['FRESHER'] = 'FRESHER'
     _equipment_name: ClassVar[str] = 'Fresher'
-    quality: Literal['half', 'standard', 'full'] = 'standard'
+    quality: FresherSize = FresherSize.STANDARD
 
     @property
     def grade(self) -> str | None:
@@ -379,7 +402,7 @@ class Galley(_Option):
 
     kind: Literal['GALLEY'] = 'GALLEY'
     _equipment_name: ClassVar[str] = 'Galley'
-    quality: Literal['mini', 'full', 'gourmet'] = 'mini'
+    quality: GalleyKind = GalleyKind.MINI
 
     @property
     def grade(self) -> str | None:
@@ -490,7 +513,7 @@ class VehicleTransceiver(_Option):
     kind: Literal['TRANSCEIVER'] = 'TRANSCEIVER'
     _equipment_name: ClassVar[str] = 'Transceiver'
     range_km: int = 500
-    stage: Literal['basic', 'improved', 'enhanced', 'advanced', 'superior'] = 'basic'
+    stage: Literal[Grade.BASIC, Grade.IMPROVED, Grade.ENHANCED, Grade.ADVANCED, Grade.SUPERIOR] = Grade.BASIC
     satellite_uplink: bool = False
     tightbeam: bool = False
     encryption: bool = False

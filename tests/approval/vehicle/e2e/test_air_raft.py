@@ -10,6 +10,7 @@ import pytest
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.customisations import FuelEfficiency
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.options import (
     Autopilot,
     CollisionProtection,
@@ -68,14 +69,14 @@ def build_air_raft() -> Vehicle:
         features=[Feature.OPEN_TOPPED],
         customisations=[FuelEfficiency(steps=2)],
         options=[
-            ControlSystem(quality='basic'),
-            Autopilot(quality='improved'),
-            NavigationSystem(quality='basic'),
-            SensorSystem(quality='basic'),
-            CollisionProtection(quality='basic', spaces_protected=8),
+            ControlSystem(quality=Grade.BASIC),
+            Autopilot(quality=Grade.IMPROVED),
+            NavigationSystem(quality=Grade.BASIC),
+            SensorSystem(quality=Grade.BASIC),
+            CollisionProtection(quality=Grade.BASIC, spaces_protected=8),
             VehicleComputer(processing=1),
             EntertainmentSystem(),
-            VehicleTransceiver(range_km=500, stage='improved', satellite_uplink=True),
+            VehicleTransceiver(range_km=500, stage=Grade.IMPROVED, satellite_uplink=True),
         ],
     )
 

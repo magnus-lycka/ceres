@@ -7,6 +7,7 @@ values. Designs are stored, transferred and rendered from their JSON.
 
 from ceres.make.vehicle.customisations import FuelCapacity, FusionPlusPlant, SlowerSpeed
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
 
@@ -86,7 +87,7 @@ def test_options_survive_the_trip():
         vehicle_type=VehicleType.GROUND_VEHICLE,
         spaces=20,
         tl=12,
-        options=[ControlSystem(quality='improved')],
+        options=[ControlSystem(quality=Grade.IMPROVED)],
     )
 
     restored = Vehicle.model_validate_json(original.model_dump_json())

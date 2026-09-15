@@ -16,6 +16,7 @@ from pydantic import Field
 
 from ceres.shared import CeresModel
 
+from .grades import Grade
 from .spec import EquipmentSpec
 
 _FUSION_PLUS_SPACE_FRACTION = 0.10
@@ -70,7 +71,7 @@ class FusionPlusPlant(_Customisation):
     """A compact fusion plant, refuelled from water, that greatly extends range."""
 
     kind: Literal['FUSION_PLUS'] = 'FUSION_PLUS'
-    quality: Literal['basic'] = 'basic'
+    quality: Literal[Grade.BASIC] = Grade.BASIC
 
     def plant_spaces(self, spaces: int) -> int:
         """A tenth of the vehicle, and never less than one Space."""

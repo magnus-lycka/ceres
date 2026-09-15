@@ -8,6 +8,7 @@ from typing import Any
 
 from ceres.make.vehicle.customisations import AquaticDrive, FusionPlusPlant, SlowerSpeed
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.options import (
     AirLock,
     Bunk,
@@ -34,7 +35,7 @@ class TestEquipmentInTheSpec:
     """Each item as what it is: a name, a grade, how many, and what it does."""
 
     def test_an_option_carries_its_name_and_grade(self):
-        (item,) = a_vehicle(options=[ControlSystem(quality='improved')]).build_spec().equipment
+        (item,) = a_vehicle(options=[ControlSystem(quality=Grade.IMPROVED)]).build_spec().equipment
         assert (item.name, item.grade, item.quantity) == ('Control System', 'improved', 1)
 
     def test_a_count_is_a_quantity(self):
@@ -43,7 +44,7 @@ class TestEquipmentInTheSpec:
 
     def test_collision_protection_counts_the_spaces_it_covers(self):
         (item,) = (
-            a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)]).build_spec().equipment
+            a_vehicle(options=[CollisionProtection(quality=Grade.IMPROVED, spaces_protected=16)]).build_spec().equipment
         )
         assert (item.name, item.grade, item.quantity) == ('Collision Protection', 'improved', 16)
 
@@ -63,14 +64,14 @@ class TestEquipmentInTheSpec:
 
 class TestPrintedEquipment:
     def test_a_grade_is_parenthesised(self):
-        assert printed(a_vehicle(options=[ControlSystem(quality='improved')])) == ['Control System (improved)']
+        assert printed(a_vehicle(options=[ControlSystem(quality=Grade.IMPROVED)])) == ['Control System (improved)']
 
     def test_an_item_without_a_grade_is_named_plainly(self):
         assert printed(a_vehicle(options=[AirLock()])) == ['Air Lock']
 
     def test_a_quantity_is_a_multiplier(self):
         assert printed(a_vehicle(options=[Bunk(count=2)])) == ['Bunk x2']
-        assert printed(a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)])) == [
+        assert printed(a_vehicle(options=[CollisionProtection(quality=Grade.IMPROVED, spaces_protected=16)])) == [
             'Collision Protection (improved) x16'
         ]
 

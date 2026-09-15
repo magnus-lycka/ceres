@@ -8,6 +8,7 @@ from typing import Any
 
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.features import Feature
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.mounts import Turret
 from ceres.make.vehicle.options import Autopilot, SensorSystem, VehicleTransceiver
 from ceres.make.vehicle.report import _build_context, render_vehicle_pdf, render_vehicle_typst
@@ -95,8 +96,8 @@ class TestDerivedFiguresTable:
         figures = self.figures(
             a_vehicle(
                 options=[
-                    Autopilot(quality='basic'),
-                    SensorSystem(quality='improved'),
+                    Autopilot(quality=Grade.BASIC),
+                    SensorSystem(quality=Grade.IMPROVED),
                     VehicleTransceiver(range_km=500, satellite_uplink=True, tightbeam=True, encryption=True),
                 ]
             )
@@ -121,9 +122,7 @@ class TestWeaponsTable:
     def test_an_empty_turret_reads_as_the_catalogue_prints_it(self):
         (row,) = _build_context(a_vehicle(mounts=[Turret(face=Face.DORSAL, weapon_spaces=4)]).build_spec())['weapons']
         assert row['weapon'] == 'Turret: Dorsal, can hold 4 Spaces of weapons'
-        assert [row[column] for column in ('range', 'damage', 'magazine', 'cost', 'traits', 'fire_control')] == [
-            '—'
-        ] * 6
+        assert [value for value in row.values() if value != row['weapon']] == ['—'] * 6
 
     def test_a_design_without_weapons_has_no_table(self):
         assert _build_context(a_vehicle().build_spec())['weapons'] == []

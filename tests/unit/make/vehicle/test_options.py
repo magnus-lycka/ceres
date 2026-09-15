@@ -5,6 +5,7 @@ Rules: refs/vehicle/09_core_options.md
 
 from typing import Any
 
+from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.options import (
     AirLock,
     Autopilot,
@@ -13,8 +14,11 @@ from ceres.make.vehicle.options import (
     ControlSystem,
     FireExtinguishers,
     Fresher,
+    FresherSize,
     Galley,
+    GalleyKind,
     LifeSupport,
+    LifeSupportDuration,
     NavigationSystem,
     SensorSystem,
     VacuumEnvironment,
@@ -35,22 +39,22 @@ class TestControlSystem:
 
     def test_an_improved_control_system_raises_agility(self):
         # A Heavy ground vehicle is Agility -1 before its controls.
-        assert a_vehicle(options=[ControlSystem(quality='improved')]).agility == 0
+        assert a_vehicle(options=[ControlSystem(quality=Grade.IMPROVED)]).agility == 0
 
     def test_a_basic_control_system_grants_nothing(self):
-        assert a_vehicle(options=[ControlSystem(quality='basic')]).agility == -1
+        assert a_vehicle(options=[ControlSystem(quality=Grade.BASIC)]).agility == -1
 
     def test_a_primitive_control_system_costs_agility(self):
-        assert a_vehicle(options=[ControlSystem(quality='primitive')]).agility == -2
+        assert a_vehicle(options=[ControlSystem(quality=Grade.PRIMITIVE)]).agility == -2
 
     def test_it_costs_what_the_table_says(self):
-        assert a_vehicle(options=[ControlSystem(quality='improved')]).cost == 15_000 + 5_000
+        assert a_vehicle(options=[ControlSystem(quality=Grade.IMPROVED)]).cost == 15_000 + 5_000
 
 
 class TestAutopilot:
     def test_it_flies_at_the_listed_skill_level(self):
-        assert a_vehicle(options=[Autopilot(quality='basic')]).autopilot_skill == 0
-        assert a_vehicle(options=[Autopilot(quality='improved')]).autopilot_skill == 1
+        assert a_vehicle(options=[Autopilot(quality=Grade.BASIC)]).autopilot_skill == 0
+        assert a_vehicle(options=[Autopilot(quality=Grade.IMPROVED)]).autopilot_skill == 1
 
     def test_a_design_without_one_has_no_autopilot(self):
         assert a_vehicle().autopilot_skill is None
@@ -58,8 +62,8 @@ class TestAutopilot:
 
 class TestNavigationSystem:
     def test_it_grants_its_navigation_dm(self):
-        assert a_vehicle(options=[NavigationSystem(quality='improved')]).navigation_dm == 2
-        assert a_vehicle(options=[NavigationSystem(quality='basic')]).navigation_dm == 1
+        assert a_vehicle(options=[NavigationSystem(quality=Grade.IMPROVED)]).navigation_dm == 2
+        assert a_vehicle(options=[NavigationSystem(quality=Grade.BASIC)]).navigation_dm == 1
 
     def test_a_design_without_one_has_no_navigation_dm(self):
         assert a_vehicle().navigation_dm is None
@@ -67,7 +71,7 @@ class TestNavigationSystem:
 
 class TestSensorSystem:
     def test_it_grants_a_dm_and_a_range(self):
-        vehicle = a_vehicle(options=[SensorSystem(quality='improved')])
+        vehicle = a_vehicle(options=[SensorSystem(quality=Grade.IMPROVED)])
         assert vehicle.sensors_dm == 1
         assert vehicle.sensors_range_km == 5
 
@@ -82,10 +86,10 @@ class TestThePublishedDesigns:
     def test_the_atv(self):
         atv = a_vehicle(
             options=[
-                ControlSystem(quality='improved'),
-                Autopilot(quality='basic'),
-                NavigationSystem(quality='improved'),
-                SensorSystem(quality='improved'),
+                ControlSystem(quality=Grade.IMPROVED),
+                Autopilot(quality=Grade.BASIC),
+                NavigationSystem(quality=Grade.IMPROVED),
+                SensorSystem(quality=Grade.IMPROVED),
             ]
         )
         assert atv.agility == 0
@@ -101,10 +105,10 @@ class TestThePublishedDesigns:
             spaces=8,
             tl=8,
             options=[
-                ControlSystem(quality='basic'),
-                Autopilot(quality='improved'),
-                NavigationSystem(quality='basic'),
-                SensorSystem(quality='basic'),
+                ControlSystem(quality=Grade.BASIC),
+                Autopilot(quality=Grade.IMPROVED),
+                NavigationSystem(quality=Grade.BASIC),
+                SensorSystem(quality=Grade.BASIC),
             ],
         )
         assert air_raft.agility == 1
@@ -123,16 +127,19 @@ class TestInstalledFittings:
         assert vehicle.cost == 15_000 + 2_000
 
     def test_collision_protection_is_priced_per_space_protected(self):
-        assert a_vehicle(options=[CollisionProtection(quality='improved', spaces_protected=16)]).cost == 15_000 + 16_000
+        assert (
+            a_vehicle(options=[CollisionProtection(quality=Grade.IMPROVED, spaces_protected=16)]).cost
+            == 15_000 + 16_000
+        )
 
     def test_life_support_covers_twenty_people_per_space(self):
-        vehicle = a_vehicle(options=[LifeSupport(duration='short_term', people=8)])
+        vehicle = a_vehicle(options=[LifeSupport(duration=LifeSupportDuration.SHORT_TERM, people=8)])
         assert vehicle.available_spaces == 19
         assert vehicle.cost == 15_000 + 10_000
 
     def test_a_fresher_and_a_galley_are_priced_by_the_space_they_take(self):
-        assert a_vehicle(options=[Fresher(quality='standard')]).cost == 15_000 + 1_500
-        assert a_vehicle(options=[Galley(quality='mini')]).cost == 15_000 + 250
+        assert a_vehicle(options=[Fresher(quality=FresherSize.STANDARD)]).cost == 15_000 + 1_500
+        assert a_vehicle(options=[Galley(quality=GalleyKind.MINI)]).cost == 15_000 + 250
 
     def test_bunks_take_a_space_each(self):
         vehicle = a_vehicle(options=[Bunk(count=2)])
@@ -194,12 +201,12 @@ class TestTransceiver:
         assert [item.grade for item in vehicle.build_spec().equipment] == ['basic']
 
     def test_an_improved_transceiver_is_half(self):
-        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage='improved')])
+        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage=Grade.IMPROVED)])
         assert vehicle.cost == 15_000 + 300
         assert [item.grade for item in vehicle.build_spec().equipment] == ['improved']
 
     def test_a_superior_transceiver_is_a_twentieth(self):
-        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage='superior')])
+        vehicle = a_vehicle(options=[VehicleTransceiver(range_km=500, stage=Grade.SUPERIOR)])
         assert vehicle.cost == 15_000 + 30
         assert [item.grade for item in vehicle.build_spec().equipment] == ['superior']
 
@@ -209,7 +216,7 @@ class TestTransceiver:
         vehicle = a_vehicle(
             options=[
                 VehicleTransceiver(
-                    range_km=500, stage='superior', satellite_uplink=True, tightbeam=True, encryption=True
+                    range_km=500, stage=Grade.SUPERIOR, satellite_uplink=True, tightbeam=True, encryption=True
                 )
             ]
         )

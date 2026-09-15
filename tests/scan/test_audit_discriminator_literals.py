@@ -13,6 +13,9 @@ def test_audit_discriminator_literals_repo_wide() -> None:
             repo_root / 'src' / 'ceres' / 'character',
             repo_root / 'tests' / 'unit' / 'character',
             repo_root / 'tests' / 'approval' / 'character',
+            repo_root / 'src' / 'ceres' / 'make' / 'vehicle',
+            repo_root / 'tests' / 'unit' / 'make' / 'vehicle',
+            repo_root / 'tests' / 'approval' / 'vehicle',
         ],
     )
 

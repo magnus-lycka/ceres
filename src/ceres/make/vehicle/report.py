@@ -4,6 +4,7 @@ The spec carries values; this is where they become the strings a stat block
 prints, such as 'High (Medium)' and 'Cr155000'.
 """
 
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from ceres.shared import NoteList, _Note
@@ -128,13 +129,25 @@ def _equipment_label(item: EquipmentSpec) -> str:
     return label
 
 
+@dataclass(frozen=True)
+class _WeaponRow:
+    """One row of the Weapons table. An empty mount has only its own description."""
+
+    weapon: str
+    range: str = _DASH
+    damage: str = _DASH
+    magazine: str = _DASH
+    cost: str = _DASH
+    traits: str = _DASH
+    fire_control: str = _DASH
+
+
 def _weapon_rows(spec: VehicleSpec) -> list[dict]:
     """The Weapons table. An empty mount prints its capacity and dashes elsewhere."""
     return [
-        {
-            'weapon': f'{mount.mount}: {mount.face.value}, can hold {mount.weapon_spaces} Spaces of weapons',
-            **dict.fromkeys(('range', 'damage', 'magazine', 'cost', 'traits', 'fire_control'), _DASH),
-        }
+        asdict(
+            _WeaponRow(weapon=f'{mount.mount}: {mount.face.value}, can hold {mount.weapon_spaces} Spaces of weapons')
+        )
         for mount in spec.mounts
     ]
 
