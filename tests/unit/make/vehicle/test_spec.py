@@ -4,20 +4,13 @@ The spec carries raw values; composing display strings such as 'High (Medium)'
 is the report context's job, as it is for ships.
 """
 
-from typing import Any
-
 from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.grades import Grade
 from ceres.make.vehicle.options import Autopilot, NavigationSystem, SensorSystem, VehicleTransceiver
 from ceres.make.vehicle.size import VehicleSize
 from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.types import VehicleType
-from ceres.make.vehicle.vehicle import Vehicle
-
-
-def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
-    return Vehicle(**(defaults | kwargs))
+from tests.unit.make.vehicle.helpers import a_vehicle
 
 
 class TestTargetSize:

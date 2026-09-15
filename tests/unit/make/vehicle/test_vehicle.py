@@ -3,20 +3,13 @@
 Rules: refs/vehicle/03_vehicle_design.md, refs/vehicle/02_new_rules.md
 """
 
-from typing import Any
-
 import pytest
 
 from ceres.make.vehicle.size import VehicleSize
 from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.traits import Trait
 from ceres.make.vehicle.types import VehicleType
-from ceres.make.vehicle.vehicle import Vehicle
-
-
-def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
-    return Vehicle(**(defaults | kwargs))
+from tests.unit.make.vehicle.helpers import a_vehicle
 
 
 class TestSizing:

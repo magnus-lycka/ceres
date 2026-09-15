@@ -3,16 +3,9 @@
 Rules: refs/vehicle/07_armour.md
 """
 
-from typing import Any
-
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.types import VehicleType
-from ceres.make.vehicle.vehicle import Vehicle
-
-
-def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
-    return Vehicle(**(defaults | kwargs))
+from tests.unit.make.vehicle.helpers import a_vehicle
 
 
 class TestFaces:

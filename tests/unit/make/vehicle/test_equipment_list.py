@@ -4,8 +4,6 @@ The catalogue prints one alphabetical list naming every customisation and option
 installed. The spec carries each item as what it is; the report words the list.
 """
 
-from typing import Any
-
 from ceres.make.vehicle.customisations import AquaticDrive, FusionPlusPlant, SlowerSpeed
 from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.grades import Grade
@@ -18,13 +16,8 @@ from ceres.make.vehicle.options import (
 )
 from ceres.make.vehicle.report import _build_context
 from ceres.make.vehicle.speed import SpeedBand
-from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
-
-
-def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
-    return Vehicle(**(defaults | kwargs))
+from tests.unit.make.vehicle.helpers import a_vehicle
 
 
 def printed(vehicle: Vehicle) -> list[str]:

@@ -4,8 +4,6 @@ The stat block's paired figures — 'High (Medium)' — and its formatted Cost a
 composed here, not carried by the spec.
 """
 
-from typing import Any
-
 from ceres.make.vehicle.armour import Face
 from ceres.make.vehicle.features import Feature
 from ceres.make.vehicle.grades import Grade
@@ -14,11 +12,7 @@ from ceres.make.vehicle.options import Autopilot, SensorSystem, VehicleTransceiv
 from ceres.make.vehicle.report import _build_context, render_vehicle_pdf, render_vehicle_typst
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
-
-
-def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
-    return Vehicle(**(defaults | kwargs))
+from tests.unit.make.vehicle.helpers import a_vehicle
 
 
 def rows(vehicle: Vehicle) -> dict[str, str]:

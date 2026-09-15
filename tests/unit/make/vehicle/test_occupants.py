@@ -4,16 +4,10 @@ Rules: refs/vehicle/02_new_rules.md — Crew and Passenger Comfort;
 refs/vehicle/03_vehicle_design.md — steps 11 and 12.
 """
 
-from typing import Any
-
 from ceres.make.vehicle.options import Bunk, EntertainmentSystem, Fresher, Galley
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
-
-
-def a_vehicle(**kwargs) -> Vehicle:
-    defaults: dict[str, Any] = {'name': 'Test', 'vehicle_type': VehicleType.GROUND_VEHICLE, 'spaces': 20, 'tl': 12}
-    return Vehicle(**(defaults | kwargs))
+from tests.unit.make.vehicle.helpers import a_vehicle
 
 
 class TestOccupants:
