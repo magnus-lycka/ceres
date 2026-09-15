@@ -21,6 +21,7 @@ from ceres.make.vehicle.options import (
     VehicleComputer,
     VehicleTransceiver,
 )
+from ceres.make.vehicle.report import _build_context
 from ceres.make.vehicle.speed import SpeedBand
 from ceres.make.vehicle.types import VehicleType
 from ceres.make.vehicle.vehicle import Vehicle
@@ -48,6 +49,24 @@ _expected = SimpleNamespace(
     # print Dorsal as a dash. The Air/Raft's entry is the inconsistent one — see
     # RIV-012.
     dorsal_protection=0,
+    equipment=[
+        'Autopilot (improved)',
+        'Collision Protection (basic) x8',
+        'Computer/1',
+        'Control System (basic)',
+        'Entertainment System',
+        'Navigation System (basic)',
+        'Sensor System (basic)',
+        'Transceiver (improved)',
+    ],
+    derived_figures={
+        'Autopilot (skill level)': '+1',
+        'Communications (range)': '500km, satellite uplink',
+        'Navigation (Navigation DM)': '+1',
+        'Sensors (Electronics (sensors) DM)': '+0, 1km',
+        'Camouflage (Recon DM)': '—',
+        'Stealth (Electronics (sensors) DM)': '—',
+    },
     # The published Cost is Cr250,000. It is not reproducible from the
     # construction rules: reaching the printed 2,000km range needs two steps of
     # fuel efficiency, which add half the base Cost again. The same figure
@@ -100,6 +119,13 @@ class TestAirRaft:
         assert air_raft.structure == _expected.structure
         assert air_raft.shipping_tons == _expected.shipping_tons
         assert air_raft.cost == _expected.cost
+
+    def test_it_carries_the_published_equipment(self):
+        assert _build_context(build_air_raft().build_spec())['equipment'] == _expected.equipment
+
+    def test_the_equipment_confers_the_published_figures(self):
+        rows = _build_context(build_air_raft().build_spec())['derived_figures']
+        assert {row['label']: row['value'] for row in rows} == _expected.derived_figures
 
     def test_every_face_carries_the_published_protection(self):
         armour = build_air_raft().armour
