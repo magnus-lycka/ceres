@@ -68,3 +68,27 @@ class TestLegality:
 
     def test_compatible_features_are_not_an_error(self):
         assert a_vehicle(features=[Feature.ATV, Feature.FAST]).notes.errors == []
+
+
+class TestMultiLegged:
+    """refs/vehicle/05_features.md — Multi-Legged: a walker with more than two legs.
+    TL8, walkers only, Agility +1, +100% base Cost. Its DM+1 in rough terrain is an
+    operator-check modifier, not a design figure.
+    """
+
+    def walker(self, **overrides):
+        return a_vehicle(vehicle_type=VehicleType.WALKER, spaces=6, tl=12, **overrides)
+
+    def test_it_adds_one_to_agility(self):
+        assert self.walker(features=[Feature.MULTI_LEGGED]).agility == self.walker().agility + 1
+
+    def test_it_doubles_the_base_cost(self):
+        # 6 Spaces x Cr10,000 base, +100%.
+        assert self.walker(features=[Feature.MULTI_LEGGED]).cost == 60_000 * 2
+
+    def test_a_walker_may_take_it(self):
+        assert self.walker(features=[Feature.MULTI_LEGGED]).notes.errors == []
+
+    def test_only_a_walker_may_take_it(self):
+        vehicle = a_vehicle(features=[Feature.MULTI_LEGGED])
+        assert any('Multi-Legged' in error for error in vehicle.notes.errors)

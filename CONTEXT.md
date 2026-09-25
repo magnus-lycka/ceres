@@ -118,6 +118,43 @@ can be refreshed explicitly while retaining its combat injuries.
 An independent actor created by copying another actor in rounds. It has no
 link to the original actor's source character and can be edited independently.
 
+**Injury**:
+Lost Hits or characteristic points, recorded as the reduction it caused rather
+than the roll that caused it. What every actor kind is hurt by, one way or
+another.
+_See also_: Critical
+
+**Critical**:
+Damage to one of a robot's seven systems (power, weapon, armour, chassis,
+locomotion, options, brain), recorded as a severity rather than as points
+lost. Distinct from Injury: a Critical may cause an Injury (a Chassis critical
+inflicts Hits damage) or cause none at all (an Armour critical reduces
+Protection and nothing else). Only a robot has systems to take one.
+_See also_: Injury
+
+**Movement**:
+How far an actor can move on foot in one Minor Action, in metres. One name for
+the quantity the core calls a Traveller's "Movement score" and an animal's
+"Speed" (`refs/core/03_combat.md`); Ceres uses Movement for all three actor
+kinds and reserves Speed for the separate concept below.
+_See also_: Speed
+
+**Speed** (rounds):
+An actor's Speed Band — the scale a chase or an escape is measured against,
+separate from Movement. Present on every actor kind, though it matters most
+for a robot with the vehicle-speed-movement option, which can operate at
+either its walking Movement or its vehicle Speed.
+_See also_: Movement
+
+**Wrecked** / **Destroyed** / **Dead**:
+The word for an actor reaching the end of what its Hits or characteristics can
+absorb, which differs by kind: a sophont is Dead (characteristics exhausted,
+one threshold only); an animal is Dead at Hits ≤ 0 and Destroyed at Hits ≤
+−starting Hits; a robot is Wrecked at Hits ≤ 0 ("potentially repairable") and
+Destroyed at Hits ≤ −2×starting Hits. One underlying state — out of the fight
+for good — with kind-appropriate words, and for animals and robots a second,
+further threshold the word alone distinguishes.
+
 ## Collisions between domains
 
 These words mean genuinely different things in different Ceres domains. They
@@ -136,4 +173,16 @@ meaningful in another.
 **Armour**:
 Ships carry a single armour rating. Vehicles carry Protection independently on
 six named faces. The vehicle term is Protection, and the allocation across
-faces is part of what it means.
+faces is part of what it means. An Actor in rounds also carries Protection, as
+one number rather than six faces — closer to the ship sense, but a third,
+separate meaning: a rounds Actor is not a vehicle and its Protection has no
+per-face allocation.
+
+**Endurance**:
+A sophont's END is a damage-bearing characteristic, eroded by injury like STR
+and DEX and restored by rest or healing. A robot's Endurance is hours of
+operation — an entirely different quantity, in a different unit, reduced by
+halving rather than by damage. The two are never unified into one field: a
+Stun weapon can reduce a sophont's END but has nothing to do with a robot's
+Endurance, and a Power critical that halves a robot's Endurance has no
+sophont equivalent.

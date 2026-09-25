@@ -848,7 +848,10 @@ clean sync.
 Not yet in `web/`: the combat dialog and applying damage, the injury and triage
 views, the round-by-round markers, and the correction editors. Those rules are
 settled — phases 1–5 below are their record — but they are not on a screen yet,
-so **the browser app cannot yet run a fight**.
+so **the browser app cannot yet run a fight**. Robot combat — criticals and the
+universal damage arithmetic that both kinds share — is designed below under
+"Robot combat: criticals and universal damage arithmetic" and not yet built;
+that section supersedes phases 1–5 wherever they disagree.
 
 **The Python prototype**, `ceres/rounds/domain/` and `ceres/rounds/ui/`, still
 runs with `uv run python -m ceres.rounds.ui.app` on port 8081, with **105
@@ -932,6 +935,225 @@ Interruption at any step resumes to exactly one result; a bundle that reappears
 after being consumed installs nothing. What is missing is everything that puts
 a file in the inbox: no issue form, no workflow, no repository automation.
 
+## Robot combat: criticals and universal damage arithmetic
+
+Designed but not yet built. Supersedes phases 1–5 above wherever they
+disagree — in particular, "Ranges, movement, cover, weapons, attack
+resolution — permanently out of scope" no longer holds as broadly as it once
+did; see what is and is not in scope below.
+
+### What the referee still rolls
+
+The app rolls nothing — settled once, not to be reopened. The referee rolls
+initiative, the to-hit check, and damage dice at the table, in front of the
+players — that is where the fun is and it stays there. Location rolls are no
+exception: the app prompts for one, the referee rolls 2D at the table and
+types it in. What the app takes off the referee's hands is bookkeeping that
+follows mechanically from numbers already rolled: the arithmetic from Effect
+and a damage roll to what actually lands, and the cascade of sustained-damage
+thresholds one attack can cross, deciding how many location prompts to make.
+
+### Universal damage arithmetic
+
+One arithmetic, not a robot-specific one: `refs/core/03_combat.md:263-278`
+applies to a sophont and an animal exactly as it does to a robot. The referee
+enters the attack roll's Effect and the raw damage roll; the app computes:
+
+```text
+landed = max(rolled + Effect - max(0, Protection - AP), 1 if Effect >= 6 else 0)
+```
+
+For melee, the referee adds the attacking limb's STR DM into the damage roll
+themselves — for a robot this is the *manipulator's* STR, which the app does
+not model, so it is never derived.
+
+**Protection** becomes an attribute on every Actor, all three kinds — animals
+carry the Armour trait (`:624`) exactly as sophonts carry armour. It is shown
+in the attack dialog and overtypable for that one attack, which covers cover
+(`:292`, Protection bonus rather than a second field), a called shot, or
+anything unusual, in one control.
+
+**Weapon traits** the app knows, because both change the arithmetic in a way
+judged easy to forget (RIC-018): a **Shotgun** checkbox doubles Protection
+against the target (`refs/core/04_equipment.md:827`); a **Stun** checkbox
+converts the injury per RIC-011/RIC-017 and, against a robot, halves
+Protection (`refs/robot/50_other_considerations.md:29`, RIC-017). Every other
+trait — Blast, AP as a named trait, Smart, and the rest — is out of scope; see
+"Explicitly deferred".
+
+### Reaction DMs, shown but not applied
+
+The attack dialog lets the defender's reaction be declared before the referee
+rolls, so its DM is visible before the roll rather than after. Only Dive for
+cover (flat -2) and a sophont's Dodge (-(DEX DM or Athletics(dex), whichever
+is higher)) can be pre-filled; Parry (-Melee skill) and a robot or animal's
+Dodge (no characteristics modelled for either) show as blank, editable DMs.
+**The app never adjusts the Effect the referee types in** — the DM is a
+reminder shown before the roll, and the referee has already applied it by the
+time Effect is entered.
+
+### Actor attributes
+
+New Actor fields, all editable in the detail panel (see "Layout" below), kept
+as an injury-style history rather than a running total — consistent with
+`DamageTrack`, and because a critical's *cost* stays answerable after a second
+one lands (RIC-016 covers the chassis knock-on case where this matters most).
+Halved and quartered values keep their fraction except INT, which rounds down
+per Traveller convention (`docs/RULE_INTERPRETATIONS.md`).
+
+- **Protection** — all kinds. Reduced by Armour criticals.
+- **Movement** (metres per Minor Action) — all kinds. The core calls this a
+  Traveller's "Movement score" (`:162`) and an animal's "Speed" (`:606`);
+  Ceres uses one name, Movement, for the one quantity. Reduced by Locomotion
+  and some Power criticals. The app does not spend Movement against a map —
+  see "Explicitly deferred" — but does derive the *displayed* value from the
+  prone condition, which quarters it (`:162`); terrain is not tracked and stays
+  the referee's to apply.
+- **Speed** (Speed Band) — all kinds, distinct from Movement. What the robot
+  critical table calls "Speed" (`refs/robot/50_other_considerations.md:139`)
+  is this. Reduced by Locomotion and some Power criticals.
+- **Endurance** (hours of operation) — robots only. Not the same quantity as a
+  sophont's END characteristic, despite the shared name; the two are kept in
+  separate fields and never unified into one `Stat` (see `CONTEXT.md`,
+  "Endurance"). Reduced by Power criticals, by halving.
+- **INT** — robots only, as a system attribute reduced by a Brain critical, not
+  as a characteristic. `checkKind`'s rule that a non-sophont carries no
+  characteristics is restated to say: hurt through Hits, not characteristics,
+  but a robot carries INT as a system attribute criticals can reduce.
+
+### Criticals: the seven-location record
+
+`Critical` and `Injury` are different things (see `CONTEXT.md`): an Injury is
+lost Hits or characteristics; a Critical is a damaged *system*. A critical can
+cause an injury (Chassis) or none (Armour). `criticals.ts` already holds the
+severity mechanics (`severityAfter`, `attackCriticalSeverity`,
+`sustainedCriticalCount`) and is extended rather than replaced:
+
+- **Attack critical**: Effect 6+ with damage landing after Protection —
+  Severity = Effect − 5 (`refs/robot/50_other_considerations.md:117`).
+- **Sustained critical**: one Severity 1 critical, location rolled, per 10% of
+  starting Hits crossed by cumulative damage. `sustainedCriticalCount` is a
+  pure function of cumulative damage before/after, so the order attack and
+  sustained criticals are resolved in cannot change how many are earned
+  (`:119`).
+- **Repeat hit**: `new Severity = max(rolled, old + 1)`, capped at 6; once at 6,
+  every further hit there inflicts a flat 6D instead (`:118`).
+- **Chassis knock-on** (RIC-016): several rows read "Chassis Severity +1" or,
+  at their worst row, "+1D". This is a flat additive step to the chassis
+  location's *current* severity, capped at 6 — not a rolled critical, so the
+  repeat-hit rule does not apply to it. Chassis S2 receiving a Power S6's
+  "+1D" and rolling 3 becomes Chassis S5; rolling 4+ is capped at S6. Reaching
+  a newly-stepped chassis severity applies that row's "Suffer nD" at the
+  severity just reached, which can itself cross further sustained thresholds.
+- **Discard/reroll** (RIC-019): a location that cannot apply — no weapon or
+  option installed (neither is modelled; see "Explicitly deferred"), or a
+  hardened brain, which the handbook says is *ignored, not re-rolled*
+  (`:31`) — is answered on the same prompt: "doesn't apply — reroll" for a
+  missing component, "doesn't apply — discard" for a hardened brain. The app
+  does not know which applies; the referee says.
+- **Stop at wrecked** (RIC-019): once a robot's Hits reach ≤ 0, no further
+  location prompts are made for the rest of that resolution — remaining damage
+  still accumulates toward Destroyed, but a wrecked robot takes no turns, so
+  its criticals change nothing at the table.
+- **Locomotion "1m or one Speed Band"** (RIC-020): Locomotion and Power
+  criticals that read "1m or one Speed Band" reduce Movement by default; the
+  app asks only when the robot's Speed is above Idle, since that is the only
+  case where "or" is a real choice rather than an obvious one. A Power
+  critical that reads "Endurance halved" *and* a Speed reduction reduces both
+  Movement and Speed.
+- **Held as an attribute, not derived**: Armour, Power and
+  Locomotion criticals write directly to Protection, Endurance/Speed/Movement.
+  Chassis criticals are Hits damage, already tracked. Weapon, Options, and the
+  skill/INT-halved rows on Brain (S1-S4) stay free-text notes — no weapon or
+  option identity is modelled, and no skill model or robot INT-as-erodable-
+  characteristic is either; see "Explicitly deferred". Brain S5/S6 (disabled /
+  destroyed) become a state gating the robot's turn — the one thing that must
+  be tracked, since criticals are the only thing that can stop a robot acting
+  (a robot has no unconsciousness). Immobilised (Locomotion S5/S6) does *not*
+  gate a turn — the handbook says usable weapons may still fire.
+
+### Wrecked, destroyed, dead (RIC-021)
+
+One predicate for "out of the fight for good" (`isDead`/`isDestroyed`-style),
+the word varying by kind:
+
+- **Sophont**: dead — all three physical characteristics exhausted by lethal
+  damage (RIC-012). No second threshold.
+- **Animal**: dead at Hits ≤ 0; destroyed at Hits ≤ −starting Hits
+  (`refs/core/03_combat.md`, animal rules).
+- **Robot**: wrecked at Hits ≤ 0, "potentially repairable"; destroyed at
+  Hits ≤ −2×starting Hits (`refs/robot/50_other_considerations.md:145`) — note
+  the robot threshold is twice starting Hits, not equal to it, unlike the
+  animal one.
+
+`isDestroyed` does not exist in `$lib/rules/rounds` today and is added
+alongside `isDead`/`isUnconscious` in `health.ts`.
+
+### The attack dialog
+
+One dialog, all three kinds — the arithmetic above is universal, and only the
+tail differs by kind (STR-or-DEX for a sophont, the location cascade for a
+robot, neither for an animal). Opened from the round table's **Target**
+column on the acting (green) actor's row, pre-filled with that actor's
+previous target if they have one; the target cell shows the latest target's
+name once the dialog closes and is cleared for everyone at the start of each
+new round. A toolbar **Other** button opens the same dialog with no attacker,
+for falls, fire and vacuum — no turn spent, no reaction possible, matching the
+NiceGUI prototype's Other source.
+
+### Layout
+
+`/situation/` is a list of proper links (openable in a new tab); a situation's
+own screen moves to `/situation/<id>`, rendering by state exactly as the
+`Situation` schema already frames it — planned (guest list), current (the
+fight), past (read-only record) — with nothing else on the page. The round
+table sits on the left; two detail panels sit on the right, both instances of
+the one `ActorDetails` component the Actors screen also uses, both editable,
+both scrolling internally with the column itself sticky so neither scrolls off
+as the table grows. The top panel shows whichever actor's row was last
+clicked; the bottom panel shows that actor's current target and is completely
+empty — no placeholder text — when they have none.
+
+The round table gains **Target**, **Incap** (folded into the Turn cell rather
+than a separate column) and **Conditions** (prone) as columns, on the "does
+this affect who goes next" test. Protection, Movement and Speed do not appear
+as grid columns — they belong in the detail panel. A robot's criticals show as
+one compact indicator, not seven columns: `sum(severity²)` mapped to a
+continuous red ramp on that cell's *foreground* only (not the row background,
+which already carries dead/unconscious/acted), `red = min(8 × score, 255)`
+composed against the theme's base text colour so it reaches pure red at a
+score of 32 — one Severity 6 alone (36) is already fully red; six Severity 1s
+(6) is barely tinted.
+
+### Repair — not part of this pass
+
+Lowering a critical's severity on the record does not yet restore Protection,
+Movement, Speed, Endurance or INT — the attributes above are new state the
+existing repair-by-lowering-severity gesture does not touch. Until it does, a
+robot damaged through the new dialog can only be mended by hand-editing its
+attributes in the detail panel. Flagged as debt created by this plan, per
+`WORKING_AGREEMENT.md`; not scheduled ahead of the rest of this section.
+
+### Build order
+
+Each step lands on a screen (`WORKING_AGREEMENT.md`'s "each ending in something
+Magnus can look at"):
+
+0. **Layout and routing** — `/situation/` vs `/situation/<id>`, two detail
+   panels, sticky/scrolling. No new attributes yet; panels show what exists
+   today.
+1. **Actor attributes** — Protection, Movement, Speed all kinds; Endurance,
+   INT robots only; `checkKind` restated; `isDestroyed` added. Visible in the
+   panels built in step 0.
+2. **Round table columns, Target cell, the attack dialog's non-robot path** —
+   reaction DM hints, weapon traits, Effect, damage, a negative Effect ending
+   the exchange as a miss with the turn still spent. Incapacitation and the
+   injury's round stamp land on `Member`. **First step where a fight can
+   actually be run.**
+3. **The effects table and the robot path** — location prompts, the cascade,
+   discard/reroll, stop at wrecked, the criticals colour indicator.
+4. **Repair** — lowering a severity restores what it took.
+
 ## Explicitly deferred
 
 - **First aid as a tracked action.** First aid happens inside a fight, often
@@ -958,11 +1180,28 @@ a file in the inbox: no issue form, no workflow, no repository automation.
   clock, since it counts days.
 - **A campaign clock, and any tracking of time or rest between fights.**
   Considered and rejected: see Time and Situation boundaries.
-- **Robot combat rules** — robots have Hits but their own damage, stun,
-  protection and critical-hit rules. Their damage track waits until those rules
-  are read; it must not inherit animal `HitsTrack` semantics by convenience.
 - **The Companion's optional rules** — Natural Resilience, Knockout Blow, Random
   First Blood, alternative initiative, disabling wounds
   (`refs/companion/13_combat.md`). Noted as existing; not implemented.
-- **Ranges, movement, cover, weapons, attack resolution** — permanently out of
-  scope for this package.
+- **Ranges, cover, position and movement as a tracked activity** — the app does
+  not know where anyone is, does not resolve line of sight, and does not spend
+  an actor's Movement against a map. It does hold a Movement score per actor
+  (metres per Minor Action) as an attribute a robot critical can reduce; see
+  "Robot combat: criticals and universal damage arithmetic".
+- **Weapon traits, beyond Shotgun and Stun** — Blast, AP as a named trait
+  (entered as a plain number instead), Smart, and the rest of the Core traits
+  list. Shotgun and Stun are modelled because both directly double or halve
+  Protection and were judged likely to be forgotten; nothing else has that
+  property yet. Revisit if another trait turns out to be forgotten often.
+  Tracking issue: file against #56 when it recurs.
+- **Weapons and options as modelled components** — a robot's individual
+  weapons and options are not represented, so a Weapon or Options critical
+  ("random weapon suffers DM-2", "random option destroyed") is read off the
+  handout and written into that location's note rather than resolved or
+  tracked by the app. The referee picks which one, if it matters.
+- **The Injuries triage view** — a NiceGUI-era screen showing every actor's
+  injuries side by side, for a medic choosing who to treat first. Two detail
+  panels (see below) show one actor and one target, not a triage comparison
+  across the whole roster. Worth rebuilding once the underlying data
+  (attributes, criticals) is in place, since it becomes a read-only view over
+  data this work already stores — but not part of this pass.

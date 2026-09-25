@@ -1,10 +1,11 @@
-"""Render every source-derived vehicle design, as the robot and ship galleries do."""
+"""Render every vehicle design, as the robot and ship galleries do."""
 
 import pytest
 
 from ceres.make.vehicle.report import render_vehicle_pdf, render_vehicle_typst
 from tests.approval.vehicle.e2e.test_air_raft import build_air_raft
 from tests.approval.vehicle.e2e.test_atv import build_atv
+from tests.approval.vehicle.e2e.test_topper import build_topper
 
 from ._output import write_json_output, write_pdf_output, write_typst_output
 
@@ -14,6 +15,7 @@ _VEHICLES = sorted(
     [
         ('test_air_raft', build_air_raft),
         ('test_atv', build_atv),
+        ('test_topper', build_topper),
     ],
     key=lambda entry: entry[1]().name.lower(),
 )

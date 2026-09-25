@@ -1,0 +1,64 @@
+{
+  "data": {
+    "name": "Topper class Law Enforcement Walker",
+    "description": "",
+    "vehicle_type": "Walker",
+    "size": "Light",
+    "spaces": 6,
+    "target_size_dm": 1,
+    "features_and_traits": [
+      "ATV",
+      "Multi-Legged"
+    ],
+    "tl": 12,
+    "skill": "Drive (walker)",
+    "agility": 1,
+    "speed": 4,
+    "cruise_speed": 3,
+    "range_km": 450,
+    "cruise_range_km": 675,
+    "crew": 1,
+    "passengers": 4,
+    "comfort_label": "Basic Seating",
+    "cargo_tons": 0.25,
+    "structure": 2,
+    "shipping_tons": 3.0,
+    "cost": 135000.0,
+    "armour": {
+      "Forward": 6,
+      "Port": 6,
+      "Dorsal": 6,
+      "Aft": 6,
+      "Starboard": 6,
+      "Ventral": 6
+    },
+    "armour_against_small_arms": {
+      "Forward": 18,
+      "Port": 18,
+      "Dorsal": 18,
+      "Aft": 18,
+      "Starboard": 18,
+      "Ventral": 18
+    },
+    "equipment": [
+      {
+        "name": "Autopilot",
+        "grade": "advanced",
+        "quantity": 1,
+        "speed": null,
+        "range_km": null,
+        "power_points": null
+      }
+    ],
+    "mounts": [],
+    "autopilot_skill": 3,
+    "navigation_dm": null,
+    "sensors_dm": null,
+    "sensors_range_km": null,
+    "communications": null,
+    "notes": []
+  },
+  "annotations": {
+    "passengers": "Four prisoners at one Space each; crowded capacities down to Clown Seating are in the design notes, since Ceres models one Space per occupant"
+  }
+}

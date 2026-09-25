@@ -44,6 +44,7 @@ class Feature(StrEnum):
 
     ATV = 'ATV'
     FAST = 'Fast'
+    MULTI_LEGGED = 'Multi-Legged'
     OPEN_TOPPED = 'Open-Topped'
     SLOW = 'Slow'
 
@@ -96,6 +97,12 @@ _FEATURES: dict[Feature, _FeatureEntry] = {
         incompatible_with=frozenset({'Slow', 'Supersonic'}),
         speed_bands=1,
         range_multiplier=0.5,
+        added_cost=1.00,
+    ),
+    # The Powered prerequisite always holds: Ceres models no unpowered vehicles.
+    Feature.MULTI_LEGGED: _FeatureEntry(
+        tl=8,
+        agility=1,
         added_cost=1.00,
     ),
     Feature.OPEN_TOPPED: _FeatureEntry(

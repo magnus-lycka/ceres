@@ -915,6 +915,121 @@ The table uses the same `X(Y)` notation for characters and animals: `X` is the
 stun currently suppressing END or Hits, and `Y` is the remaining overflow
 countdown.
 
+### RIC-016 Chassis Severity Knock-On Is A Flat Increment, Not A Rolled Critical
+
+Several rows of the robot Critical Hits Effects table read "Chassis Severity
++1", and Power Severity 6 reads "Chassis Severity +1D"
+(`refs/robot/50_other_considerations.md:137-143`). `criticals.ts` deliberately
+left this uncoded because the rows "do not state plainly what severity the
+follow-on chassis critical takes."
+
+Ceres reads this as a flat additive step to the Chassis location's *current*
+severity, capped at 6 — not a critical rolled against Effect or earned by a
+sustained-damage threshold, so the repeat-hit rule
+(`new Severity = max(rolled, old + 1)`, `:118`) does not apply to it: the step
+is the rule, not a floor under a roll. "+1D" is the same step, sized by a die
+roll rather than fixed at one. Reaching a newly-stepped Chassis severity
+applies that severity's own effect — "Suffer nD" at the severity just
+reached — which is ordinary Chassis damage and can itself cross further
+sustained-damage thresholds.
+
+Example: Chassis at Severity 2 takes a Power Severity 6 hit. The referee rolls
+1D for the knock-on: a 3 brings Chassis to Severity 5; a 4 or higher is capped
+at Severity 6, and every further critical to Chassis inflicts a flat 6D
+regardless of the roll (`:118`).
+
+### RIC-017 A Robot's Protection Against Stun Is Modelled As A Plain Half, Without Its Listed Exceptions
+
+"A normal robot's Protection is only half effective against stunner attacks"
+(`refs/robot/50_other_considerations.md:29`). The same paragraph lists four
+qualifications: an android or biological robot's armour is fully effective
+instead; hostile-environment protection (+2) is not halved; radiation-environment
+protection adds half its TL, rounded down, and is not halved either; and sonic
+stunners cause a robot no damage at all.
+
+Ceres implements only the plain halving, shown in the attack dialog as a
+halved, overtypable Protection value (`docs/plan-rounds.md`, "Weapon traits
+the app knows"). None of the four exceptions are modelled — no robot
+distinguishes android/biological construction, hostile- or
+radiation-environment protection, or a stunner's sonic-vs-electromagnetic
+type. A referee running one of these cases overtypes the Protection value
+the halving proposes. This is a deliberate scope limit, not an oversight:
+modelling any of the four means modelling robot options this plan does not
+otherwise need.
+
+### RIC-018 Shotgun And Stun Are The Only Weapon Traits The App Applies To Protection
+
+A Shotgun using pellet ammunition doubles Protection against it
+(`refs/core/04_equipment.md:827`); RIC-017 above halves it for Stun against a
+robot. Both are modelled as checkboxes in the attack dialog because both
+directly multiply Protection and were judged likely to be forgotten if left
+to the referee. No other weapon trait (Blast, AP as a named trait rather than
+a typed number, Smart, and the rest of the Core list) is modelled; AP is
+entered as a plain number, and everything else is the referee's arithmetic
+before the numbers reach the dialog. See `docs/plan-rounds.md`, "Explicitly
+deferred", for the standing list.
+
+### RIC-019 The Sustained-Damage And Location Cascade Stops Once A Robot Is Wrecked
+
+"Every time cumulative damage crosses another 10% of starting Hits, roll a
+location... keep resolving until no new threshold has been crossed"
+(`refs/robot/50_other_considerations.md:119`, restated in
+`handouts/robot_combat_cards.typ`). Taken as literally as possible, one large
+hit against a robot already near destroyed can demand a dozen or more
+location rolls whose outcome changes nothing: a robot at Hits ≤ 0 is wrecked
+and takes no further turns (`:145`), so no critical rolled against it has any
+effect at the table.
+
+Ceres stops prompting for further locations once cumulative damage on a given
+resolution brings the robot's Hits to ≤ 0. The damage total itself keeps
+accumulating past that point, because it still decides whether the robot is
+merely wrecked or, past twice its starting Hits, irreparably destroyed
+(`:145`); only the location-by-location bookkeeping stops. A location roll
+that would decide something real — whether *this* attack itself is what wrecks
+the robot — still happens; only the ones beyond that point are skipped.
+
+Separately, a location that cannot apply — a Weapon or Options critical
+rolled against a robot with none installed, per "If the location does not
+exist, reroll" (`:110`) — is answered by the referee choosing to reroll,
+since Ceres does not model which components a robot carries and so cannot
+detect this itself. A hardened robot brain is different again: its brain
+criticals are "ignored, not re-rolled"
+(`refs/robot/50_other_considerations.md:31`), so the same prompt offers a
+second, distinct answer — discard rather than reroll — and the referee picks
+the one the case calls for.
+
+### RIC-020 Locomotion And Power Criticals That Read "1m Or One Speed Band" Default To Movement
+
+Several Locomotion and Power severities reduce "Speed... by 1m or one Speed
+Band" (`refs/robot/50_other_considerations.md:137,141`) without stating which
+applies, or who decides. Ceres tracks the two as separate attributes,
+Movement (metres per Minor Action) and Speed (Speed Band) — see `CONTEXT.md`
+— so the rule's "or" has to resolve to one of them.
+
+Most robots have no means of trading between the two: the choice is only real
+for a robot with the vehicle speed movement modification, which "can
+typically turn it off and operate at more walking speed"
+(`refs/robot/08_locomotion_modifications.md:45-53`) and therefore genuinely
+has both a Movement rate and a Speed Band in play. Ceres reduces Movement by
+default, and asks only when the robot's Speed is above Idle — the signal that
+vehicle-speed movement might be in use. A Power critical that separately reads
+"Endurance halved" and a Speed-or-Movement reduction on the same row reduces
+both Endurance and whichever of Movement/Speed applies; the two clauses are
+independent.
+
+### RIC-021 Robot Wrecked/Destroyed And Animal Dead/Destroyed Use Different Thresholds
+
+Both use a second, harsher threshold beyond the first — but not the same one.
+An animal is dead at Hits ≤ 0 and its body is destroyed at Hits ≤ −starting
+Hits, "a negative equal to or less than its starting Hits" (`refs/core/03_combat.md`,
+animal rules). A robot is wrecked at Hits ≤ 0, "potentially repairable," and
+irreparably destroyed only past **twice** its starting Hits (`refs/robot/
+50_other_considerations.md:145`): "if a robot suffers damage beyond twice its
+initial Hits, it is totally destroyed." The doubling is not a typo or an
+inconsistency to reconcile — it is what each source states, and the robot's
+threshold is twice as forgiving as the animal's. See `CONTEXT.md`,
+"Wrecked/Destroyed/Dead".
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net
