@@ -17,7 +17,7 @@
  */
 import type { Actor, ActorId } from '$lib/schema/actor';
 import { isDead, isDestroyed, isUnconscious } from './health';
-import { situationSchema, type Member, type Situation } from '$lib/schema/situation';
+import { situationSchema, type Condition, type Member, type Situation } from '$lib/schema/situation';
 
 export type { Member, Situation };
 
@@ -80,6 +80,8 @@ export function addActors(
         incapacitatedUntil: null,
         reactions: 0,
         nextReactions: 0,
+        conditions: [],
+        forfeitsNext: false,
       })),
     ],
   };
@@ -182,6 +184,32 @@ export function react(situation: Situation, actor: ActorId): Situation {
 }
 
 /**
+ * Diving for cover puts an actor on the ground and forgoes their next actions
+ * completely (refs/core/03_combat.md:208). That is this round's turn if it is
+ * unspent, and next round's if it is not (RIC-013). It is not a DM-1 reaction:
+ * there are no actions left to penalise.
+ */
+export function dive(situation: Situation, actor: ActorId): Situation {
+  return update(
+    situation,
+    (member) => member.actor === actor,
+    (member) => {
+      const prone = { ...member, conditions: [...new Set<Condition>([...member.conditions, 'prone'])] };
+      return member.acted ? { ...prone, forfeitsNext: true } : { ...prone, acted: true, reactions: 0 };
+    },
+  );
+}
+
+/** Clear a condition the referee says has ended: getting up is a Minor Action nobody tracks. */
+export function clearCondition(situation: Situation, actor: ActorId, condition: Condition): Situation {
+  return update(
+    situation,
+    (member) => member.actor === actor,
+    (member) => ({ ...member, conditions: member.conditions.filter((each) => each !== condition) }),
+  );
+}
+
+/**
  * Stun puts an actor out for a number of rounds (:366).
  *
  * The count starts with the round of the hit when their turn in it is still to
@@ -216,7 +244,9 @@ export function newRound(situation: Situation): Situation {
     round: situation.round + 1,
     members: situation.members.map((member) => ({
       ...member,
-      acted: false,
+      // A dive forgoes the turn this round brings, and spends the forfeit.
+      acted: member.forfeitsNext,
+      forfeitsNext: false,
       waiting: false,
       // Reactions taken after acting now cost this round; any not yet spent stay.
       reactions: member.reactions + member.nextReactions,

@@ -113,6 +113,23 @@ describe('ActorHealth', () => {
     expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ int: 3 }));
   });
 
+  // "Being prone will quarter a Traveller's Movement score" (:162). The stored
+  // Movement is what the actor is; the hint is what it comes to on the ground.
+  it('says what Movement comes to while prone, and only then', async () => {
+    const guard: Actor = { ...rin, movement: 6 };
+
+    const down = await render(ActorHealth, { actor: guard, prone: true, onchange: vi.fn() });
+    await expect.element(down.getByText('prone: 1.5 m')).toBeVisible();
+    down.unmount();
+
+    const standing = await render(ActorHealth, { actor: guard, onchange: vi.fn() });
+    await expect.element(standing.getByText(/prone:/)).not.toBeInTheDocument();
+    standing.unmount();
+
+    const unset = await render(ActorHealth, { actor: rin, prone: true, onchange: vi.fn() });
+    await expect.element(unset.getByText(/prone:/)).not.toBeInTheDocument();
+  });
+
   it('keeps a critical record for a robot', async () => {
     const screen = await render(ActorHealth, { actor: warbot, onchange: vi.fn() });
     await expect.element(screen.getByText('Criticals')).toBeVisible();

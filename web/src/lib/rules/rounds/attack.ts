@@ -7,7 +7,7 @@
  */
 import type { Actor, ActorId } from '../../schema/actor';
 import { takeDamage } from './damage';
-import { attack, incapacitate, react, type Situation } from './situation';
+import { attack, dive, incapacitate, react, type Situation } from './situation';
 import type { Reaction } from './reaction';
 
 export type Attack = {
@@ -98,10 +98,19 @@ export function carryOutAttack(
     excessTo,
   });
   const struck = incapacitate(attack(situation, attacker, target), target, hurt.incapacitatedFor);
-  return {
-    // A Dodge or a Parry costs the target DM-1 on their next actions. Diving for
-    // cover costs them those actions instead, which is not recorded yet.
-    situation: reaction === 'dodge' || reaction === 'parry' ? react(struck, target) : struck,
-    target: hurt.actor,
-  };
+  return { situation: withReaction(struck, target, reaction), target: hurt.actor };
+}
+
+/**
+ * What the target's reaction costs them. A Dodge or a Parry is DM-1 on their next
+ * actions; diving for cover costs those actions themselves, and leaves them prone.
+ */
+function withReaction(
+  situation: Situation,
+  target: ActorId,
+  reaction: Reaction | null | undefined,
+): Situation {
+  if (reaction === 'dodge' || reaction === 'parry') return react(situation, target);
+  if (reaction === 'dive') return dive(situation, target);
+  return situation;
 }

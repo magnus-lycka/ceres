@@ -226,6 +226,18 @@ describe('carrying out an attack', () => {
       expect(situation.members[1]).toMatchObject({ reactions: 0, nextReactions: 0 });
     });
 
+    it('puts a target who dives on the ground and takes the turn they had not yet used', () => {
+      const { situation } = carryOutAttack(brawl, roster, { ...strike, reaction: 'dive' });
+
+      expect(situation.members[1]).toMatchObject({ acted: true, conditions: ['prone'], forfeitsNext: false });
+    });
+
+    it('costs a target who dives after acting their next turn instead', () => {
+      const { situation } = carryOutAttack(act(brawl, guard.id), roster, { ...strike, reaction: 'dive' });
+
+      expect(situation.members[1]).toMatchObject({ conditions: ['prone'], forfeitsNext: true });
+    });
+
     it('costs nothing when there is no reaction', () => {
       const { situation } = carryOutAttack(brawl, roster, strike);
 

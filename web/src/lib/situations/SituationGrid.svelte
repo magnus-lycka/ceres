@@ -42,8 +42,10 @@
   import '@svgrid/grid/themes/excel.css';
   import '$lib/grid/scrollbar.css';
   import { memberState, turnOrder, type MemberState, type Situation } from '$lib/rules/rounds/situation';
+  import type { Condition } from '$lib/schema/situation';
   import { maxVitality, nowVitality, stunCell } from '$lib/rules/rounds/vitality';
   import type { Actor, ActorId } from '$lib/schema/actor';
+  import ConditionsCell from './ConditionsCell.svelte';
   import TargetCell from './TargetCell.svelte';
   import TurnCell from './TurnCell.svelte';
 
@@ -54,6 +56,7 @@
     onwait,
     onselect,
     onattack,
+    onclear,
   }: {
     situation: Situation;
     /** The actors the rows refer to, for names and the DEX tie-break. */
@@ -64,6 +67,8 @@
     onselect?: (actor: ActorId | null) => void;
     /** The actor whose Target cell was pressed: the one whose turn it is. */
     onattack: (actor: ActorId) => void;
+    /** The referee says a condition has ended: getting up, say. */
+    onclear: (actor: ActorId, condition: Condition) => void;
   } = $props();
 
   let api = $state<SvGridApi<TableFeatures, Row> | null>(null);
@@ -94,6 +99,8 @@
     /** DM-1 each on the actions still to come this round, and on next round's. */
     reactions: number;
     nextReactions: number;
+    /** Lasting states such as prone, shown as tags. */
+    conditions: Condition[];
   };
 
   /** The health cells for one row, or dashes when the actor cannot be found. */
@@ -112,6 +119,7 @@
       ...vitality(member.actor),
       target: roster.find((actor) => actor.id === member.target)?.name ?? '',
       state: memberState(situation, member, roster),
+      conditions: member.conditions,
       reactions: member.reactions,
       nextReactions: member.nextReactions,
       outFor:
@@ -125,23 +133,35 @@
 
   const columns: GridColumns<Row> = [
     // Wide enough for "Sindalian Combat Robot": three of those in one fight is normal.
-    { field: 'name', header: 'Name', width: 190, editable: false },
+    { field: 'name', header: 'Name', width: 196, editable: false },
     // Editable, because an actor dropped in on their own arrives with no side
     // and a fight may be split or re-sided as it goes. It is a plain name, not
     // a reference to the Party that may have supplied it.
-    { field: 'party', header: 'Party', width: 90, editable: false },
+    { field: 'party', header: 'Party', width: 60, editable: false },
     // The one thing typed here. The referee rolls; the app never does.
-    { field: 'initiative', header: 'Ini', width: 50, editable: false },
+    { field: 'initiative', header: 'Ini', width: 40, editable: false },
     // What the actor is, and what is left of it. Two cells rather than one
     // column per characteristic: the pair reads as a before and an after, and
     // an actor hurt through Hits has one score rather than three.
-    { field: 'max', header: 'Max', width: 70, editable: false },
-    { field: 'now', header: 'Now', width: 70, editable: false },
-    { field: 'stun', header: 'Stun', width: 74, editable: false },
+    { field: 'max', header: 'Max', width: 56, editable: false },
+    { field: 'now', header: 'Now', width: 56, editable: false },
+    { field: 'stun', header: 'Stun', width: 62, editable: false },
+    {
+      id: 'conditions',
+      header: 'Cond',
+      width: 72,
+      editable: false,
+      cell: (ctx: Cell) =>
+        renderComponent(ConditionsCell, {
+          actor: ctx.row.original.name,
+          conditions: ctx.row.original.conditions,
+          onclear: (condition: Condition) => onclear(ctx.row.original.id, condition),
+        }),
+    },
     {
       id: 'target',
       header: 'Target',
-      width: 140,
+      width: 130,
       editable: false,
       cell: (ctx: Cell) =>
         renderComponent(TargetCell, {

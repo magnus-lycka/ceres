@@ -16,6 +16,8 @@ import {
   act,
   addActors,
   attack,
+  clearCondition,
+  dive,
   delay,
   emptySituation,
   incapacitate,
@@ -445,6 +447,45 @@ describe('a reaction', () => {
     const next = newRound(react(round2(), sana.id));
 
     expect(find(next, sana).reactions).toBe(1);
+  });
+});
+
+/**
+ * "a Traveller diving for cover will forgo their next actions completely – they
+ * are too busy trying to avoid being hurt!" (refs/core/03_combat.md:208), and
+ * they are on the ground afterwards. "Next" is the next set not yet spent, as
+ * for any reaction (RIC-013).
+ */
+describe('diving for cover', () => {
+  const round2 = () => ({ ...ready([rin, 12], [sana, 8]), round: 2 });
+
+  it('ends the turn now for someone who has not acted, and leaves them prone', () => {
+    const situation = dive(round2(), sana.id);
+
+    expect(find(situation, sana)).toMatchObject({ acted: true, forfeitsNext: false, conditions: ['prone'] });
+    expect(memberState(situation, find(situation, sana), roster)).toBe('acted');
+  });
+
+  it('costs next round’s turn instead for someone who has already acted', () => {
+    const situation = dive(act(round2(), sana.id), sana.id);
+
+    expect(find(situation, sana)).toMatchObject({ acted: true, forfeitsNext: true, conditions: ['prone'] });
+
+    const next = newRound(situation);
+    expect(find(next, sana)).toMatchObject({ acted: true, forfeitsNext: false });
+    expect(memberState(next, find(next, sana), roster)).toBe('acted');
+  });
+
+  it('is on the ground once, however often they dive', () => {
+    expect(find(dive(dive(round2(), sana.id), sana.id), sana).conditions).toEqual(['prone']);
+  });
+
+  // Getting up is the referee's to record: it is a Minor Action nobody tracks.
+  it('is undone by clearing the condition, and stays prone until it is', () => {
+    const down = newRound(dive(round2(), sana.id));
+    expect(find(down, sana).conditions).toEqual(['prone']);
+
+    expect(find(clearCondition(down, sana.id, 'prone'), sana).conditions).toEqual([]);
   });
 });
 

@@ -93,7 +93,17 @@ export const memberSchema = z.object({
   reactions: z.number().int().nonnegative().default(0),
   /** The same, for reactions taken after they had acted: they cost next round's actions (RIC-013). */
   nextReactions: z.number().int().nonnegative().default(0),
+  /**
+   * Lasting states the referee clears explicitly, shown as tags on the row.
+   * Prone is the one there is: diving for cover puts an actor on the ground, and
+   * getting up is a Minor Action nobody tracks.
+   */
+  conditions: z.array(z.enum(['prone'])).default([]),
+  /** Diving for cover forgoes their next actions: this is set when those are next round's. */
+  forfeitsNext: z.boolean().default(false),
 });
+export const conditions = ['prone'] as const;
+export type Condition = (typeof conditions)[number];
 
 export type Member = z.infer<typeof memberSchema>;
 

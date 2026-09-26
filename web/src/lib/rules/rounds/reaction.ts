@@ -35,6 +35,8 @@ type Situation = {
   shotgun?: boolean;
   /** Reactions the attacker has taken that count against the roll they are about to make. */
   attackerReactions?: number;
+  /** The defender is on the ground: DM-1 on attacks against a prone target (refs/core/03_combat.md:130). */
+  prone?: boolean;
 };
 
 /**
@@ -61,12 +63,16 @@ function defendersReaction({ defender, reaction, attack, shotgun }: Situation): 
 }
 
 /**
- * The DMs the app knows of: what the defender's reaction costs the attacker, and
- * DM-1 for each reaction the attacker has taken themselves (:192). Nothing here
- * is ever applied to a roll.
+ * The DMs the app knows of: what the defender's reaction costs the attacker, DM-1
+ * for a prone target, and DM-1 for each reaction the attacker has taken
+ * themselves (:192). Nothing here is ever applied to a roll.
+ *
+ * A target diving for cover right now is prone by the dive, and the Dive row is
+ * that rule's own figure, so the prone DM is not added on top of it.
  */
 export function knownModifiers(situation: Situation): Modifier[] {
   const rows = defendersReaction(situation);
+  if (situation.prone && situation.reaction !== 'dive') rows.push({ label: 'Prone target', dm: -1 });
   const own = situation.attackerReactions ?? 0;
   return own > 0 ? [...rows, { label: 'Your reactions', dm: -own }] : rows;
 }

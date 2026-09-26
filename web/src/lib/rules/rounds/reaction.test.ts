@@ -109,6 +109,32 @@ describe('the DM a Dodge puts on the attack', () => {
   });
 });
 
+describe('a prone target', () => {
+  // "Prone Target -1" (refs/core/03_combat.md:130), among the common modifiers.
+  it('costs the attacker DM-1', () => {
+    expect(knownModifiers({ defender: sophont(8), reaction: null, attack: 'ranged', prone: true })).toEqual([
+      { label: 'Prone target', dm: -1 },
+    ]);
+  });
+
+  it('comes after what a reaction costs, and is absent for a target on their feet', () => {
+    const rows = knownModifiers({ defender: sophont(12), reaction: 'dodge', attack: 'ranged', prone: true });
+
+    expect(rows.map((row) => row.label)).toEqual(['Dodge (DEX DM)', 'Prone target']);
+    expect(knownModifiers({ defender: sophont(8), reaction: null, attack: 'ranged', prone: false })).toEqual(
+      [],
+    );
+  });
+
+  // The Dive row is the diving rule's own figure; the prone DM would count the
+  // same fact twice.
+  it('is not counted again for a target diving for cover right now', () => {
+    expect(knownModifiers({ defender: sophont(8), reaction: 'dive', attack: 'ranged', prone: true })).toEqual(
+      [{ label: 'Dive for cover', dm: -2 }],
+    );
+  });
+});
+
 describe('the attacker’s own reactions', () => {
   // "every time a Traveller performs a Reaction, they will suffer DM-1 on their
   // next set of actions" (:192): a known DM on the roll about to be made.

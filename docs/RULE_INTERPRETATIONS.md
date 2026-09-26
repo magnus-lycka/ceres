@@ -1108,6 +1108,20 @@ A Shotgun using pellet ammunition "ignores Dodge dice modifiers"
 cover is offered only against ranged attacks (`:190`), and a parry only against
 melee ones; a reaction the attack does not allow is dropped.
 
+A target on the ground costs the attacker DM−1 ("Prone Target", `:130`). A target
+diving for cover *right now* is not given that row as well as the Dive row: the
+Dive row is the diving rule's own figure, and the prone DM would count the same
+fact twice. Diving inflicts DM−2 on "every attacker who targets them in this
+combat round" (`:204`); Ceres shows the Dive row to the attacker who provoked the
+dive and the prone row to those after, and does not model the rest of that round
+separately.
+
+Diving for cover forgoes the diver's next actions completely (`:208`). Read as
+for any reaction (RIC-013), that is this round's turn if it is unspent and next
+round's if it is not, and leaves them prone. Prone lasts until the referee says
+the actor has got up, which is a Minor Action nobody tracks, and quarters
+Movement while it does (`:162`).
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

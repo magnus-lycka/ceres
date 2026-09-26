@@ -64,6 +64,18 @@ async function pickRow(container: HTMLElement, name: string) {
   await userEvent.click(cell!);
 }
 
+/**
+ * Put the cursor in a row by its Ini cell, which is the one that cannot read the
+ * same as another: a Target cell names someone, and the Name column would then
+ * offer two cells with the same text.
+ */
+async function pickRowByInitiative(container: HTMLElement, name: string) {
+  const row = [...container.querySelectorAll<HTMLElement>('td[data-col-id="name"]')]
+    .find((td) => td.textContent?.trim() === name)
+    ?.closest('tr');
+  await userEvent.click(row!.querySelector<HTMLElement>('td[data-col-id="initiative"]')!);
+}
+
 const hasTurnButtons = (container: HTMLElement) =>
   [...container.querySelectorAll('tbody button')].some((b) => b.textContent?.trim() === 'Done');
 
@@ -742,6 +754,77 @@ describe('attacking', () => {
       const second = attackDialog(screen);
       await expect.element(second.getByText('Your reactions')).toBeVisible();
       await expect.element(second.getByText('−1', { exact: true }).first()).toBeVisible();
+    });
+
+    // Diving for cover is not a penalty but a change of state: down, and out of
+    // the round they had not yet used.
+    it('puts a target who dives for cover on the ground and takes their turn', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dive for cover');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await expect.element(screen.getByRole('button', { name: 'Clear prone for Guard' })).toBeVisible();
+      await vi.waitFor(async () => {
+        const [stored] = await library.situations();
+        expect(stored.members.flatMap((member) => member.conditions)).toEqual(['prone']);
+        expect(stored.members.every((member) => member.acted)).toBe(true);
+      });
+      await expect.element(screen.getByText(/Everyone has acted/)).toBeVisible();
+    });
+
+    // Getting up is a Minor Action nobody tracks: it is the referee who says so.
+    it('clears prone when the referee says the actor has got up', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dive for cover');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await screen.getByRole('button', { name: 'Clear prone for Guard' }).click();
+
+      await vi.waitFor(async () => {
+        const [stored] = await library.situations();
+        expect(stored.members.flatMap((member) => member.conditions)).toEqual([]);
+      });
+      await expect
+        .element(screen.getByRole('button', { name: 'Clear prone for Guard' }))
+        .not.toBeInTheDocument();
+    });
+
+    // "Prone Target -1": every attack on someone on the ground, not only the one
+    // they dived from.
+    it('reminds the next attacker that a prone target costs them DM-1', async () => {
+      const { screen } = await fight([sophont('Guard'), 12], [sophont('Rex'), 8], [sophont('Sana'), 4]);
+      await screen.getByRole('button', { name: 'Guard attacks' }).click();
+      const first = attackDialog(screen);
+      await first.getByLabelText('Target').selectOptions('Sana');
+      await first.getByLabelText('Reaction').selectOptions('Dive for cover');
+      await first.getByLabelText('Effect').fill('-1');
+      await first.getByRole('button', { name: 'Apply' }).click();
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const second = attackDialog(screen);
+      await second.getByLabelText('Target').selectOptions('Sana');
+
+      await expect.element(second.getByText('Prone target')).toBeVisible();
+    });
+
+    it('shows a prone actor’s Movement as it is on the ground in the detail panel', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), movement: 6 }, 8]);
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dive for cover');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await pickRowByInitiative(screen.container, 'Guard');
+
+      await expect.element(screen.getByText('prone: 1.5 m')).toBeVisible();
     });
   });
 });

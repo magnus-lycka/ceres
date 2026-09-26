@@ -25,7 +25,16 @@
   } from '$lib/rules/rounds/health';
   import { criticalRows, setCritical } from '$lib/rules/rounds/criticals';
 
-  let { actor, onchange }: { actor: Actor; onchange: (updated: Actor) => void } = $props();
+  let {
+    actor,
+    prone = false,
+    onchange,
+  }: {
+    actor: Actor;
+    /** On the ground in the situation being run: Movement is quartered (refs/core/03_combat.md:162). */
+    prone?: boolean;
+    onchange: (updated: Actor) => void;
+  } = $props();
 
   const columns = $derived(
     hurtByCharacteristics(actor)
@@ -128,6 +137,9 @@
             onchange={(event) => set({ movement: optional(event.currentTarget.value) })}
           /></label
         >
+        {#if prone && actor.movement !== null}
+          <span class="hint">prone: {actor.movement / 4} m</span>
+        {/if}
         <label>
           Speed
           <select

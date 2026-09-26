@@ -23,6 +23,7 @@
   import {
     act,
     addActors,
+    clearCondition,
     delay,
     removeActor,
     roundComplete,
@@ -33,7 +34,7 @@
   import { carryOutAttack, type Strike } from '$lib/rules/rounds/attack';
   import type { Actor, ActorId } from '$lib/schema/actor';
   import type { Party } from '$lib/schema/party';
-  import type { Situation, SituationId } from '$lib/schema/situation';
+  import type { Condition, Situation, SituationId } from '$lib/schema/situation';
 
   let { id }: { id: SituationId } = $props();
 
@@ -299,6 +300,9 @@
       )}
       previous={open.members.find((member) => member.actor === attackingActor.id)?.target ?? null}
       attackerReactions={open.members.find((member) => member.actor === attackingActor.id)?.reactions ?? 0}
+      prone={open.members
+        .filter((member) => member.conditions.includes('prone'))
+        .map((member) => member.actor)}
       onapply={strike}
       oncancel={() => (attacking = null)}
     />
@@ -324,12 +328,19 @@
         onwait={(actor: ActorId) => change(delay(open, actor))}
         onselect={(actor: ActorId | null) => (picked = actor)}
         onattack={(actor: ActorId) => (attacking = actor)}
+        onclear={(actor: ActorId, condition: Condition) => change(clearCondition(open, actor, condition))}
       />
     {/if}
 
     {#snippet panels()}
       {#if pickedActor}
-        <ActorHealth actor={pickedActor} onchange={correct} />
+        <ActorHealth
+          actor={pickedActor}
+          prone={open.members.some(
+            (member) => member.actor === pickedActor.id && member.conditions.includes('prone'),
+          )}
+          onchange={correct}
+        />
       {/if}
     {/snippet}
   </Workspace>
