@@ -199,6 +199,48 @@ See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for patterns and technical decisions
 and [AI_README.md](AI_README.md) for contributor guidance (including AI
 assistants).
 
+### Running the web application
+
+The Svelte application contains both Rounds and Characters. It can be run in
+two ways.
+
+#### Development: Vite on 5173 and FastAPI on 1105
+
+Run the backend in one terminal:
+
+```bash
+uv run uvicorn ceres.character.web.app:app --reload --port 1105
+```
+
+Run the Vite development server in another terminal:
+
+```bash
+npm --prefix web run dev
+```
+
+Open <http://localhost:5173>. Vite serves the live frontend and proxies
+requests under `/api` to FastAPI at `127.0.0.1:1105`. Use this mode while
+developing the frontend so that hot reloading is available.
+
+#### Combined: built frontend and FastAPI on 1105
+
+Build the frontend, then start FastAPI:
+
+```bash
+npm --prefix web run build
+uv run uvicorn ceres.character.web.app:app --reload --port 1105
+```
+
+Open <http://localhost:1105>. FastAPI serves both the built Svelte application
+and the API from the same origin. The API is available under `/api`, including
+`/api/characters`. The previous server-rendered character interface is
+available under `/ui`.
+
+Browser storage is isolated by origin. Consequently, `localhost:5173` and
+`localhost:1105` have separate IndexedDB data and separate locally stored Git
+connection settings. Pick one frontend origin for a working session; opening
+the other does not show the first origin's local Rounds data.
+
 ## Fair Use
 
 The Traveller, 2300AD, Twilight: 2000 and Dark
