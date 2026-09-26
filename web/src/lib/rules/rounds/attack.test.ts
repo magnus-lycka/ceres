@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { actorId, type Actor } from '../../schema/actor';
 import { current, isDead } from './health';
 import { act, addActors, emptySituation, memberState } from './situation';
-import { carryOutAttack, resolveAttack } from './attack';
+import { carryOutAttack, protectionAgainst, resolveAttack } from './attack';
 
 describe('the damage an attack lands', () => {
   // "damage is rolled for, with the Effect of the attack roll added" (:263),
@@ -45,6 +45,39 @@ describe('the damage an attack lands', () => {
   it('ignores as much Protection as the weapon has AP', () => {
     expect(resolveAttack({ effect: 0, roll: 7, protection: 5, ap: 3 })).toBe(5);
     expect(resolveAttack({ effect: 0, roll: 7, protection: 2, ap: 5 })).toBe(7);
+  });
+});
+
+/**
+ * The Protection an attack meets. Two weapon traits change it before anything
+ * is subtracted, and both are named here so that neither is forgotten
+ * (docs/RULE_INTERPRETATIONS.md, RIC-017 and RIC-018).
+ */
+describe('the Protection an attack meets', () => {
+  const armoured = { ...sophont(9, 'Guard'), protection: 3 };
+
+  it('is what the target wears, for an ordinary weapon', () => {
+    expect(protectionAgainst(armoured, {})).toBe(3);
+  });
+
+  // "armour gives double Protection against pellet attacks" (:827)
+  it('is doubled against a Shotgun', () => {
+    expect(protectionAgainst(armoured, { shotgun: true })).toBe(6);
+  });
+
+  // "A normal robot's Protection is only half effective against stunner
+  // attacks" (refs/robot/50_other_considerations.md:29). Halved and rounded
+  // down, which is RIC-017's reading of a Protection that does not halve evenly.
+  it('is halved against a Stun weapon, when the target is a robot, rounding down', () => {
+    const plated = { ...armoured, kind: 'robot' as const, protection: 5 };
+
+    expect(protectionAgainst(plated, { stun: true })).toBe(2);
+    expect(protectionAgainst({ ...plated, protection: 8 }, { stun: true })).toBe(4);
+  });
+
+  it('is not halved for a target that is not a robot, nor against anything but Stun', () => {
+    expect(protectionAgainst(armoured, { stun: true })).toBe(3);
+    expect(protectionAgainst({ ...armoured, kind: 'robot' as const }, {})).toBe(3);
   });
 });
 
@@ -158,6 +191,53 @@ describe('carrying out an attack', () => {
     expect(() =>
       carryOutAttack(brawl, roster, { attacker: rex.id, target: actorId(99), effect: 0, roll: 5 }),
     ).toThrow(/no actor 99/);
+  });
+
+  describe('with weapon traits', () => {
+    const armoured = { ...guard, protection: 3 };
+    const plated: Actor = {
+      ...guard,
+      id: actorId(3),
+      name: 'Warbot',
+      kind: 'robot',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 20,
+      protection: 8,
+    };
+    const strike = { attacker: rex.id, effect: 0, roll: 12 };
+
+    it('meets double the Protection from a Shotgun', () => {
+      const { target } = carryOutAttack(brawl, [rex, armoured], {
+        ...strike,
+        target: armoured.id,
+        shotgun: true,
+      });
+
+      // 12 less 6, not 12 less 3.
+      expect(target.injuries[0].reductions).toEqual({ endurance: 6 });
+    });
+
+    it('meets half a robot’s Protection from a stunner, as lasting Hits', () => {
+      const fight = { ...addActors(emptySituation(), [rex, plated], 'Everyone'), round: 3 };
+
+      const { target } = carryOutAttack(fight, [rex, plated], { ...strike, target: plated.id, stun: true });
+
+      // 12 less 4, not 12 less 8.
+      expect(target.injuries).toEqual([{ when: 3, kind: 'lethal', reductions: { hits: 8 } }]);
+    });
+
+    it('still takes the Protection typed for this attack over any trait', () => {
+      const { target } = carryOutAttack(brawl, [rex, armoured], {
+        ...strike,
+        target: armoured.id,
+        shotgun: true,
+        protection: 1,
+      });
+
+      expect(target.injuries[0].reductions).toEqual({ endurance: 8, dexterity: 3 });
+    });
   });
 
   describe('with a Stun weapon', () => {

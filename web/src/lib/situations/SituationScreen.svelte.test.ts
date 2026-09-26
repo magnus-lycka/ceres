@@ -518,4 +518,69 @@ describe('attacking', () => {
     await expect.element(screen.getByText('out', { exact: true })).toBeVisible();
     await expect.element(screen.getByRole('button', { name: 'Guard attacks' })).not.toBeInTheDocument();
   });
+
+  describe('weapon traits', () => {
+    const warbot: Actor = {
+      ...sophont('Warbot'),
+      kind: 'robot',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 20,
+      protection: 8,
+    };
+
+    // Doubled by a Shotgun: shown, and said, so it cannot be silently wrong.
+    it('doubles the Protection shown for a Shotgun, says why, and uses it', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), protection: 3 }, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = screen.getByRole('dialog', { name: 'Attack' });
+      await dialog.getByLabelText('Shotgun').click();
+      await expect.element(dialog.getByLabelText('Protection')).toHaveValue(6);
+      await expect.element(dialog.getByText(/doubled/)).toBeVisible();
+      await dialog.getByLabelText('Damage roll').fill('12');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await vi.waitFor(async () => {
+        const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+        expect(guard.injuries[0].reductions).toEqual({ endurance: 6 });
+      });
+    });
+
+    it('halves a robot’s Protection for a stunner, and says why', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [warbot, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = screen.getByRole('dialog', { name: 'Attack' });
+      await expect.element(dialog.getByLabelText('Protection')).toHaveValue(8);
+      await dialog.getByLabelText('Stun').click();
+
+      await expect.element(dialog.getByLabelText('Protection')).toHaveValue(4);
+      await expect.element(dialog.getByText(/halved/)).toBeVisible();
+    });
+
+    it('takes what is typed over any trait', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), protection: 3 }, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = screen.getByRole('dialog', { name: 'Attack' });
+      await dialog.getByLabelText('Shotgun').click();
+      await dialog.getByLabelText('Protection').fill('1');
+      // What was typed stays, and the reason for the computed number goes.
+      await expect.element(dialog.getByLabelText('Protection')).toHaveValue(1);
+      await expect.element(dialog.getByText(/doubled/)).not.toBeInTheDocument();
+      // Changing a trait afterwards must not overwrite what the referee typed.
+      await dialog.getByLabelText('Shotgun').click();
+      await expect.element(dialog.getByLabelText('Protection')).toHaveValue(1);
+      await dialog.getByLabelText('Shotgun').click();
+      await dialog.getByLabelText('Damage roll').fill('12');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await vi.waitFor(async () => {
+        const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+        expect(guard.injuries[0].reductions).toEqual({ endurance: 8, dexterity: 3 });
+      });
+    });
+  });
 });

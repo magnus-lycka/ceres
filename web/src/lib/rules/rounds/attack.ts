@@ -33,6 +33,30 @@ export function resolveAttack({ effect, roll, ap = 0, protection = 0 }: Attack):
   return effect >= 6 ? Math.max(landed, 1) : landed;
 }
 
+/** The weapon traits that change what Protection an attack meets. */
+export type Traits = {
+  /** Pellet ammunition: armour is doubly effective (refs/core/04_equipment.md:827). */
+  shotgun?: boolean;
+  /** A stunner: a robot's Protection is only half effective (refs/robot/50_other_considerations.md:29). */
+  stun?: boolean;
+};
+
+/**
+ * What the target's Protection comes to against this weapon.
+ *
+ * Only a robot's is halved by a stunner: a stunner causes it physical Hits, so
+ * the armour that would have stood in the way of a shock is half as much use
+ * against it. An android's or a biological robot's stays whole, and so do the
+ * hostile-environment and radiation additions; none of those are modelled, and
+ * the referee overtypes Protection for them (RIC-017). A halving that comes out
+ * fractional rounds down.
+ */
+export function protectionAgainst(target: Actor, { shotgun, stun }: Traits): number {
+  let protection = shotgun ? target.protection * 2 : target.protection;
+  if (stun && target.kind === 'robot') protection = Math.floor(protection / 2);
+  return protection;
+}
+
 export type Strike = {
   attacker: ActorId;
   target: ActorId;
@@ -45,6 +69,8 @@ export type Strike = {
   excessTo?: 'strength' | 'dexterity';
   /** A Stun weapon: the damage is stun, not lethal (:366). */
   stun?: boolean;
+  /** A Shotgun with pellet ammunition: armour is doubly effective. */
+  shotgun?: boolean;
 };
 
 /**
@@ -57,11 +83,12 @@ export type Strike = {
 export function carryOutAttack(
   situation: Situation,
   roster: readonly Actor[],
-  { attacker, target, effect, roll, ap, protection, excessTo, stun }: Strike,
+  { attacker, target, effect, roll, ap, protection, excessTo, stun, shotgun }: Strike,
 ): { situation: Situation; target: Actor } {
   const victim = roster.find((actor) => actor.id === target);
   if (!victim) throw new Error(`there is no actor ${target} to attack`);
-  const landed = resolveAttack({ effect, roll, ap, protection: protection ?? victim.protection });
+  const met = protection ?? protectionAgainst(victim, { shotgun, stun });
+  const landed = resolveAttack({ effect, roll, ap, protection: met });
   const hurt = takeDamage(victim, {
     ...(stun ? { stun: landed } : { lethal: landed }),
     at: situation.round,

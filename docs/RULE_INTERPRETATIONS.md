@@ -953,7 +953,10 @@ the app knows"). None of the four exceptions are modelled — no robot
 distinguishes android/biological construction, hostile- or
 radiation-environment protection, or a stunner's sonic-vs-electromagnetic
 type. A referee running one of these cases overtypes the Protection value
-the halving proposes. This is a deliberate scope limit, not an oversight:
+the halving proposes. A halving that comes out fractional rounds the Protection
+down: a Protection of 5 is 2 against a stunner, which favours the attacker by
+half a point, the way Traveller rounds fractions elsewhere. This is a deliberate
+scope limit, not an oversight:
 modelling any of the four means modelling robot options this plan does not
 otherwise need.
 
@@ -968,6 +971,10 @@ a typed number, Smart, and the rest of the Core list) is modelled; AP is
 entered as a plain number, and everything else is the referee's arithmetic
 before the numbers reach the dialog. See `docs/plan-rounds.md`, "Explicitly
 deferred", for the standing list.
+
+When both apply, as with a stun shotgun, the Protection is doubled and then
+halved, which leaves it as it was; the source does not say more, and the referee
+overtypes if the case calls for something else.
 
 ### RIC-019 The Sustained-Damage And Location Cascade Stops Once A Robot Is Wrecked
 

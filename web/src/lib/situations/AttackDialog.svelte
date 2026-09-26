@@ -8,7 +8,7 @@
    */
   import type { Actor, ActorId } from '$lib/schema/actor';
   import { hurtByCharacteristics } from '$lib/rules/rounds/health';
-  import type { Strike } from '$lib/rules/rounds/attack';
+  import { protectionAgainst, type Strike } from '$lib/rules/rounds/attack';
 
   let {
     attacker,
@@ -45,7 +45,19 @@
    */
   let typedProtection = $state<number | null>(null);
   const victim = $derived(candidates.find((candidate) => String(candidate.id) === target));
-  const protection = $derived(typedProtection ?? victim?.protection ?? 0);
+  /** A Shotgun with pellet ammunition: armour is doubly effective. */
+  let shotgun = $state(false);
+  /** What the target's Protection comes to against this weapon, before anything is typed. */
+  const met = $derived(victim ? protectionAgainst(victim, { shotgun, stun }) : 0);
+  const protection = $derived(typedProtection ?? met);
+  /** Why it is not what the target wears, so the number cannot be silently wrong. */
+  const why = $derived.by(() => {
+    if (typedProtection !== null || !victim) return '';
+    const reasons = [];
+    if (shotgun) reasons.push('doubled: Shotgun');
+    if (stun && victim.kind === 'robot') reasons.push('halved: stunner against a robot');
+    return reasons.join('; ');
+  });
 
   /** The target's choice of what takes the excess once END is gone. */
   let excessTo = $state<'strength' | 'dexterity'>('dexterity');
@@ -65,7 +77,8 @@
       effect: checkEffect,
       roll,
       ap,
-      protection,
+      protection: typedProtection ?? undefined,
+      shotgun,
       excessTo: choosesExcess ? excessTo : undefined,
       stun,
     });
@@ -95,6 +108,7 @@
       </label>
     {/if}
     <label><input type="checkbox" bind:checked={stun} /> Stun</label>
+    <label><input type="checkbox" bind:checked={shotgun} /> Shotgun</label>
     <label>AP <input type="number" min="0" bind:value={ap} /></label>
     <label>
       Protection
@@ -104,6 +118,7 @@
         value={protection}
         oninput={(event) => (typedProtection = event.currentTarget.valueAsNumber)}
       />
+      {#if why}<span class="why">{why}</span>{/if}
     </label>
     <div class="buttons">
       <button type="submit">Apply</button>
@@ -122,6 +137,10 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+  }
+  .why {
+    color: var(--muted);
+    font-size: 0.85em;
   }
   .buttons {
     display: flex;
