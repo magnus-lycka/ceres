@@ -227,12 +227,26 @@ class TestAgingRollHandler:
 
 
 class TestAgingCrisisHandler:
+    def test_paid_charges_one_die_times_ten_thousand_credits(self):
+        proj = _projection(characteristics={Chars.STR: 0}, cash=0)
+
+        AgingCrisisHandler(paid=True, medical_roll=3).apply(proj, _any_event())
+
+        assert proj.summary.cash == -30_000
+
     def test_paid_sets_zeroed_characteristics_to_1(self):
         proj = _projection(characteristics={Chars.STR: 0, Chars.DEX: 5, Chars.END: 0})
         AgingCrisisHandler(paid=True, medical_roll=0).apply(proj, _any_event())
         assert proj.summary.characteristics[Chars.STR] == 1
         assert proj.summary.characteristics[Chars.DEX] == 5
         assert proj.summary.characteristics[Chars.END] == 1
+
+    def test_paid_marks_future_qualification_rolls_as_automatic_failures(self):
+        proj = _projection(characteristics={Chars.STR: 0})
+
+        AgingCrisisHandler(paid=True, medical_roll=1).apply(proj, _any_event())
+
+        assert proj.summary.qualification_rolls_automatically_fail is True
 
     def test_not_paid_marks_character_dead(self):
         proj = _projection()

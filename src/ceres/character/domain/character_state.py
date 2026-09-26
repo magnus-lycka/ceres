@@ -65,6 +65,7 @@ class CharacterSummary(BaseModel):
     narrative: list[str] = Field(default_factory=list)
     cash: int = 0
     dead: bool = False
+    qualification_rolls_automatically_fail: bool = Field(default=False, exclude=True)
     parole_threshold: int | None = None
 
     @property

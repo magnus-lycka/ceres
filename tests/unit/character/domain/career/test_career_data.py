@@ -555,6 +555,18 @@ def test_qualification_dm_entry_adds_dm():
     assert p.pending_qualification_dm == 3
 
 
+def test_aging_crisis_forces_later_qualification_to_fail():
+    p = _projection()
+    p.summary.qualification_rolls_automatically_fail = True
+    p.pending_qualification_dm = 2
+
+    ARMY.start_career(p, ARMY.assignment('Support'), event_id=12, qualification_roll=12)
+
+    assert p.summary.current_career is None
+    assert p.summary.problems == ['Failed to qualify for Army.']
+    assert p.pending_qualification_dm == 0
+
+
 def test_benefit_dm_entry_adds_benefit_dm():
     p = _projection_with_career_term()
 

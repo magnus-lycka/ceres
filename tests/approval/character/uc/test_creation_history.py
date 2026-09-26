@@ -600,7 +600,7 @@ def test_two_point_ageing_crisis_does_not_cancel_the_other_characteristic_losses
     assert character.projection.creation_history[-1] == (
         'Ageing at age 38. Ageing roll 2 − 5 terms = -3. '
         'STR reduced from 2 to 0. DEX reduced from 8 to 7. END reduced from 6 to 5. '
-        'Medical care restored STR from 0 to 1.'
+        'Paid Cr10,000 for medical care. Medical care restored STR from 0 to 1.'
     )
 
 
@@ -687,7 +687,7 @@ def test_ageing_minus_six_applies_the_mental_loss_before_resolving_a_physical_cr
     assert character.projection.creation_history[-1] == (
         'Ageing at age 50. Ageing roll 2 − 8 terms = -6. '
         'STR reduced from 2 to 0. DEX reduced from 8 to 6. END reduced from 6 to 4. '
-        'INT reduced from 9 to 8. Medical care restored STR from 0 to 1.'
+        'INT reduced from 9 to 8. Paid Cr10,000 for medical care. Medical care restored STR from 0 to 1.'
     )
 
 
@@ -700,7 +700,7 @@ def test_mental_ageing_crisis_preserves_the_loss_and_recovery():
     assert character.projection.creation_history[-1] == (
         'Ageing at age 50. Ageing roll 2 − 8 terms = -6. '
         'STR reduced from 7 to 5. DEX reduced from 8 to 6. END reduced from 6 to 4. '
-        'INT reduced from 1 to 0. Medical care restored INT from 0 to 1.'
+        'INT reduced from 1 to 0. Paid Cr10,000 for medical care. Medical care restored INT from 0 to 1.'
     )
 
 
@@ -713,7 +713,7 @@ def test_severe_ageing_crisis_keeps_recovery_with_the_losses():
     assert character.projection.creation_history[-1] == (
         'Ageing at age 46. Ageing roll 2 − 7 terms = -5. '
         'STR reduced from 2 to 0. DEX reduced from 8 to 6. END reduced from 6 to 4. '
-        'Medical care restored STR from 0 to 1.'
+        'Paid Cr10,000 for medical care. Medical care restored STR from 0 to 1.'
     )
 
 
@@ -727,7 +727,7 @@ def test_automatic_ageing_losses_keep_the_crisis_outcome_in_the_same_entry():
     assert character.projection.creation_history[-1] == (
         'Ageing at age 34. Ageing roll 2 − 4 terms = -2. '
         'STR reduced from 1 to 0. DEX reduced from 8 to 7. END reduced from 6 to 5. '
-        'Medical care restored STR from 0 to 1.'
+        'Paid Cr10,000 for medical care. Medical care restored STR from 0 to 1.'
     )
 
 
@@ -748,5 +748,6 @@ def test_ageing_crisis_preserves_deterioration_and_subsequent_recovery():
     )
     character.aging_crisis(paid=True, medical_roll=1)
     assert character.projection.creation_history[-1] == (
-        'Ageing at age 34. Ageing roll 4 − 4 terms = 0. STR reduced from 1 to 0. Medical care restored STR from 0 to 1.'
+        'Ageing at age 34. Ageing roll 4 − 4 terms = 0. STR reduced from 1 to 0. '
+        'Paid Cr10,000 for medical care. Medical care restored STR from 0 to 1.'
     )

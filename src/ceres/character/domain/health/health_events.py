@@ -200,6 +200,12 @@ class AgingCrisisHandler(EventHandlerBase):
         if career is None and last_term is not None and deferred_mo is not None and deferred_mo.pending_setup:
             career = last_term.career
         if self.paid:
+            projection.summary.cash -= self.medical_roll * 10_000
+            projection.summary.qualification_rolls_automatically_fail = True
+            projection.record_history(
+                fulfilled_pending.history_id if fulfilled_pending is not None else None,
+                f'Paid Cr{self.medical_roll * 10_000:,} for medical care.',
+            )
             for char in list(projection.summary.characteristics.keys()):
                 if projection.summary.characteristics[char] == 0:
                     projection.summary.characteristics[char] = 1

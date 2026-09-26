@@ -793,6 +793,11 @@ class CareerData(TermData):
             self.start_new_term(projection, assignment, event_id)
             return
 
+        if projection.summary.qualification_rolls_automatically_fail:
+            projection.pending_qualification_dm = 0
+            self.qualification_failed(projection, event_id)
+            return
+
         target = self.qualification.target
         dm = self.qualification_dm(projection)
         dm += projection.pending_qualification_dm
