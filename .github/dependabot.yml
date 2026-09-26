@@ -4,7 +4,19 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    labels: [dependencies, area:tools]
+    groups:
+      patch:
+        update-types: [patch]
+      minor:
+        update-types: [minor]
   - package-ecosystem: npm
     directory: /web
     schedule:
       interval: weekly
+    labels: [dependencies, area:tools, area:web]
+    groups:
+      patch:
+        update-types: [patch]
+      minor:
+        update-types: [minor]
