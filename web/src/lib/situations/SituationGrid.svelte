@@ -120,7 +120,7 @@
 
   const columns: GridColumns<Row> = [
     // Wide enough for "Sindalian Combat Robot": three of those in one fight is normal.
-    { field: 'name', header: 'Name', width: 195, editable: false },
+    { field: 'name', header: 'Name', width: 190, editable: false },
     // Editable, because an actor dropped in on their own arrives with no side
     // and a fight may be split or re-sided as it goes. It is a plain name, not
     // a reference to the Party that may have supplied it.
@@ -132,7 +132,7 @@
     // an actor hurt through Hits has one score rather than three.
     { field: 'max', header: 'Max', width: 70, editable: false },
     { field: 'now', header: 'Now', width: 70, editable: false },
-    { field: 'stun', header: 'Stun', width: 62, editable: false },
+    { field: 'stun', header: 'Stun', width: 74, editable: false },
     {
       id: 'target',
       header: 'Target',

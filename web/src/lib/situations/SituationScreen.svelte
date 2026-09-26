@@ -193,40 +193,37 @@
   }
 </script>
 
-<nav class="back"><a href={resolve('/situation')}>Situations</a></nav>
-
 {#if open}
-  <h2>{open.name}</h2>
-
-  {#if open.state === 'planned'}
-    <div class="bar">
+  <!--
+    One row for everything about the situation itself: the way back, its name
+    as the title, its note, and the one thing that moves it along. Every row
+    above the table is a row the table does not get, in a fight that is mostly
+    the table.
+  -->
+  <div class="bar head">
+    <a href={resolve('/situation')}>‹ Situations</a>
+    <input
+      class="title"
+      type="text"
+      aria-label="Name"
+      value={open.name}
+      disabled={readonly}
+      onchange={(event) => change({ ...open, name: event.currentTarget.value })}
+    />
+    <input
+      class="grow"
+      type="text"
+      aria-label="Note"
+      placeholder="Note"
+      value={open.note}
+      disabled={readonly}
+      onchange={(event) => change({ ...open, note: event.currentTarget.value })}
+    />
+    {#if open.state === 'planned'}
       <button type="button" onclick={() => begin(open)}>Start</button>
-    </div>
-  {:else if open.state === 'current'}
-    <div class="bar">
+    {:else if open.state === 'current'}
       <button type="button" onclick={() => change(end(open))}>End</button>
-    </div>
-  {/if}
-
-  <div class="bar">
-    <label>
-      Name
-      <input
-        type="text"
-        value={open.name}
-        disabled={readonly}
-        onchange={(event) => change({ ...open, name: event.currentTarget.value })}
-      />
-    </label>
-    <label class="grow">
-      Note
-      <input
-        type="text"
-        value={open.note}
-        disabled={readonly}
-        onchange={(event) => change({ ...open, note: event.currentTarget.value })}
-      />
-    </label>
+    {/if}
   </div>
 
   <!--
@@ -360,9 +357,22 @@
   }
   .grow {
     flex: 1;
+    min-width: 8rem;
   }
-  .grow input {
-    flex: 1;
+  /* The name is the title: it reads as one, and turns into a field on hover or focus. */
+  .title {
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.1rem 0.3rem;
+    min-width: 10rem;
+  }
+  .title:hover:not(:disabled),
+  .title:focus {
+    border-color: #cbd5e1;
+    background: var(--surface);
   }
   .hint {
     color: var(--muted);

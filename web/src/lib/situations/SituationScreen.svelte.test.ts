@@ -188,7 +188,7 @@ describe('a situation screen', () => {
 
     const screen = await render(SituationScreen, { id: warehouse.id });
 
-    await expect.element(screen.getByRole('heading', { name: 'Warehouse' })).toBeVisible();
+    await expect.element(screen.getByLabelText('Name')).toHaveValue('Warehouse');
     await expect.element(screen.getByText('Robot Arrest')).not.toBeInTheDocument();
   });
 
