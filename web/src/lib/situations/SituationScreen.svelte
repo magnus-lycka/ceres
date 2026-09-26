@@ -16,6 +16,7 @@
   import { resolve } from '$app/paths';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
   import Workspace from '$lib/Workspace.svelte';
+  import AttackDialog from './AttackDialog.svelte';
   import SetupGrid from '$lib/situations/SetupGrid.svelte';
   import SituationGrid from '$lib/situations/SituationGrid.svelte';
   import { library, refresh } from '$lib/store/session.svelte';
@@ -29,6 +30,7 @@
     setParty,
   } from '$lib/rules/rounds/situation';
   import { beginRound, end, engagedElsewhere, nextRound, start } from '$lib/rules/rounds/lifecycle';
+  import { carryOutAttack, type Strike } from '$lib/rules/rounds/attack';
   import type { Actor, ActorId } from '$lib/schema/actor';
   import type { Party } from '$lib/schema/party';
   import type { Situation, SituationId } from '$lib/schema/situation';
@@ -46,6 +48,9 @@
   let actorToAdd = $state('');
   /** The row the cursor is in on the setup grid, for Remove to act on. */
   let picked = $state<ActorId | null>(null);
+  /** Who is attacking, while the attack dialog is open. */
+  let attacking = $state<ActorId | null>(null);
+  const attackingActor = $derived(roster.find((actor) => actor.id === attacking) ?? null);
   const pickedActor = $derived(roster.find((actor) => actor.id === picked) ?? null);
   const pickedName = $derived(pickedActor?.name ?? '');
 
@@ -110,6 +115,18 @@
       const saved = await library.saveActor(actor);
       roster = roster.map((each) => (each.id === saved.id ? saved : each));
     });
+
+  /** Carry out what the dialog asked for: the target's hurt, and the turn spent. */
+  function strike(attack: Strike) {
+    if (!open) return;
+    const result = carryOutAttack(open, roster, attack);
+    attacking = null;
+    return keep(async () => {
+      const saved = await library.saveActor(result.target);
+      roster = roster.map((each) => (each.id === saved.id ? saved : each));
+      await store(result.situation);
+    });
+  }
 
   const change = (situation: Situation) => keep(async () => void (await store(situation)));
 
@@ -277,6 +294,18 @@
     </div>
   {/if}
 
+  {#if attackingActor}
+    <AttackDialog
+      attacker={attackingActor}
+      candidates={roster.filter(
+        (actor) => actor.id !== attackingActor.id && open.members.some((member) => member.actor === actor.id),
+      )}
+      previous={open.members.find((member) => member.actor === attackingActor.id)?.target ?? null}
+      onapply={strike}
+      oncancel={() => (attacking = null)}
+    />
+  {/if}
+
   <Workspace>
     {#if open.members.length === 0}
       <p class="hint">Nobody in it yet.</p>
@@ -296,6 +325,7 @@
         ondone={(actor: ActorId) => change(act(open, actor))}
         onwait={(actor: ActorId) => change(delay(open, actor))}
         onselect={(actor: ActorId | null) => (picked = actor)}
+        onattack={(actor: ActorId) => (attacking = actor)}
       />
     {/if}
 

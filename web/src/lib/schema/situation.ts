@@ -74,6 +74,11 @@ export const memberSchema = z.object({
   initiative: z.number().int().nullable().default(null),
   acted: z.boolean().default(false),
   waiting: z.boolean().default(false),
+  /**
+   * Who this actor last went for. A fact about this fight and not about the
+   * actor, so it lives on the row, and it is forgotten when the round turns.
+   */
+  target: actorIdSchema.nullable().default(null),
 });
 
 export type Member = z.infer<typeof memberSchema>;

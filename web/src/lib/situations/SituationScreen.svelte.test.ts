@@ -8,7 +8,8 @@ import { render } from 'vitest-browser-svelte';
 import { userEvent } from '@vitest/browser/context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorId, UNSAVED, type Actor } from '$lib/schema/actor';
-import { newSituation } from '$lib/rules/rounds/lifecycle';
+import { beginRound, newSituation, start } from '$lib/rules/rounds/lifecycle';
+import { addActors, setInitiative } from '$lib/rules/rounds/situation';
 import { library } from '$lib/store/session.svelte';
 import SituationScreen from './SituationScreen.svelte';
 
@@ -251,5 +252,214 @@ describe('the detail panel', () => {
     await userEvent.tab();
 
     await vi.waitFor(async () => expect((await library.actors())[0].protection).toBe(3));
+  });
+});
+
+/** A fight already in its first round, the actors acting in the order given. */
+async function fight(...specs: [Actor, number][]) {
+  const actors: Actor[] = [];
+  for (const [who] of specs) actors.push(await library.saveActor(who));
+  let situation = addActors(newSituation('Fight'), actors, 'Everyone', new Set());
+  specs.forEach(([, initiative], index) => {
+    situation = setInitiative(situation, actors[index].id, initiative);
+  });
+  const started = start(situation, []);
+  if (!started.ok) throw new Error('could not start the fight');
+  const stored = await library.saveSituation(beginRound(started.situation));
+  const screen = await render(SituationScreen, { id: stored.id });
+  await vi.waitFor(() => expect(hasTurnButtons(screen.container)).toBe(true));
+  return { screen, actors, situation: stored };
+}
+
+/**
+ * The attack is entered from the Target cell of whoever may act: the dialog
+ * takes what the referee rolled, and the screen does the arithmetic.
+ */
+describe('attacking', () => {
+  it('opens an attack from the Target cell of the actor whose turn it is', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+
+    await expect.element(screen.getByRole('dialog', { name: 'Attack' })).toBeVisible();
+  });
+
+  it('stores the damage, spends the turn, and shows who was gone for', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Target').selectOptions('Guard');
+    await dialog.getByLabelText('Effect').fill('2');
+    await dialog.getByLabelText('Damage roll').fill('7');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+      expect(guard.injuries).toEqual([
+        { when: 1, kind: 'lethal', reductions: { endurance: 8, dexterity: 1 } },
+      ]);
+      const [stored] = await library.situations();
+      expect(stored.members.find((member) => member.target !== null)?.acted).toBe(true);
+    });
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+    await expect.element(screen.getByText('Guard', { exact: true }).first()).toBeVisible();
+  });
+
+  // Only whoever's turn it is may go for someone; the rest are waiting their step.
+  it('offers the attack to the actor whose turn it is and to nobody else', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await expect.element(screen.getByRole('button', { name: 'Rex attacks' })).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: 'Guard attacks' })).not.toBeInTheDocument();
+  });
+
+  it('records a miss as an attack on the target that hurts no one', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill('-1');
+    await dialog.getByLabelText('Damage roll').fill('12');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const [stored] = await library.situations();
+      expect(stored.members.some((member) => member.target !== null && member.acted)).toBe(true);
+    });
+    const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+    expect(guard.injuries).toEqual([]);
+  });
+
+  // "Your previous target will be preselected", and the referee changes it only
+  // when it changes. It has to survive the round turning.
+  it('starts the next attack from the last target, even a round later', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8], [sophont('Sana'), 4]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const first = screen.getByRole('dialog', { name: 'Attack' });
+    await first.getByLabelText('Target').selectOptions('Sana');
+    await first.getByLabelText('Effect').fill('-1');
+    await first.getByRole('button', { name: 'Apply' }).click();
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+
+    await screen.getByRole('button', { name: 'Finish round' }).click();
+    await screen.getByRole('button', { name: 'Begin round 2' }).click();
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+
+    await expect
+      .element(screen.getByRole('dialog', { name: 'Attack' }).getByLabelText('Target'))
+      .toHaveDisplayValue('Sana');
+  });
+
+  it('takes off the Protection the target wears, and shows it', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), protection: 3 }, 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await expect.element(dialog.getByLabelText('Protection')).toHaveValue(3);
+    await dialog.getByLabelText('Effect').fill('0');
+    await dialog.getByLabelText('Damage roll').fill('7');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+      expect(guard.injuries[0].reductions).toEqual({ endurance: 4 });
+    });
+  });
+
+  it('does not offer the attacker as their own target', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+
+    const targets = screen.getByRole('dialog', { name: 'Attack' }).getByLabelText('Target').element();
+    const options = [...targets.querySelectorAll('option')].map((o) => o.textContent?.trim());
+    expect(options).toEqual(['Guard']);
+  });
+
+  // Cover, a called shot: one number overtyped, for this attack only.
+  it('uses the Protection typed for this attack instead of the one worn', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), protection: 3 }, 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill('0');
+    await dialog.getByLabelText('Damage roll').fill('7');
+    await dialog.getByLabelText('Protection').fill('7');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () =>
+      expect((await library.situations())[0].members.some((m) => m.acted)).toBe(true),
+    );
+    const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+    expect(guard.injuries).toEqual([]);
+    expect(guard.protection).toBe(3);
+  });
+
+  it('ignores as much of the Protection as the weapon has AP', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), protection: 3 }, 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill('0');
+    await dialog.getByLabelText('Damage roll').fill('7');
+    await dialog.getByLabelText('AP').fill('2');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+      expect(guard.injuries[0].reductions).toEqual({ endurance: 6 });
+    });
+  });
+
+  // "target's choice of which" (:264): the referee asks, so the dialog does.
+  it('puts the excess on the characteristic the target chooses', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill('0');
+    await dialog.getByLabelText('Damage roll').fill('11');
+    await dialog.getByLabelText('Excess to').selectOptions('STR');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+      expect(guard.injuries[0].reductions).toEqual({ endurance: 8, strength: 3 });
+    });
+  });
+
+  // Something hurt through Hits has no STR or DEX to choose between.
+  it('does not ask an animal which characteristic takes the excess', async () => {
+    const wolf: Actor = {
+      ...sophont('Wolf'),
+      kind: 'animal',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 12,
+    };
+    const { screen } = await fight([sophont('Rex'), 12], [wolf, 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+
+    await expect.element(screen.getByRole('dialog', { name: 'Attack' })).toBeVisible();
+    await expect.element(screen.getByLabelText('Excess to')).not.toBeInTheDocument();
+  });
+
+  it('changes nothing when cancelled', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Damage roll').fill('9');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+    const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+    expect(guard.injuries).toEqual([]);
+    expect((await library.situations())[0].members.some((member) => member.acted)).toBe(false);
+    await expect.element(screen.getByRole('button', { name: 'Rex attacks' })).toBeVisible();
   });
 });

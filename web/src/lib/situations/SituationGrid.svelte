@@ -44,6 +44,7 @@
   import { memberState, turnOrder, type MemberState, type Situation } from '$lib/rules/rounds/situation';
   import { maxVitality, nowVitality, stunCell } from '$lib/rules/rounds/vitality';
   import type { Actor, ActorId } from '$lib/schema/actor';
+  import TargetCell from './TargetCell.svelte';
   import TurnCell from './TurnCell.svelte';
 
   let {
@@ -52,6 +53,7 @@
     ondone,
     onwait,
     onselect,
+    onattack,
   }: {
     situation: Situation;
     /** The actors the rows refer to, for names and the DEX tie-break. */
@@ -60,6 +62,8 @@
     onwait: (actor: ActorId) => void;
     /** The actor whose row the cursor is in, or null when none is. */
     onselect?: (actor: ActorId | null) => void;
+    /** The actor whose Target cell was pressed: the one whose turn it is. */
+    onattack: (actor: ActorId) => void;
   } = $props();
 
   let api = $state<SvGridApi<TableFeatures, Row> | null>(null);
@@ -82,6 +86,8 @@
     now: string;
     /** How much of the loss is stun, and will come back. */
     stun: string;
+    /** The name of who they last went for, or empty. */
+    target: string;
     state: MemberState;
   };
 
@@ -99,6 +105,7 @@
       party: member.party,
       initiative: member.initiative,
       ...vitality(member.actor),
+      target: roster.find((actor) => actor.id === member.target)?.name ?? '',
       state: memberState(situation, member, roster),
     })),
   );
@@ -107,23 +114,40 @@
 
   const columns: GridColumns<Row> = [
     // Wide enough for "Sindalian Combat Robot": three of those in one fight is normal.
-    { field: 'name', header: 'Name', width: 200, editable: false },
+    { field: 'name', header: 'Name', width: 210, editable: false },
     // Editable, because an actor dropped in on their own arrives with no side
     // and a fight may be split or re-sided as it goes. It is a plain name, not
     // a reference to the Party that may have supplied it.
-    { field: 'party', header: 'Party', width: 100, editable: false },
+    { field: 'party', header: 'Party', width: 90, editable: false },
     // The one thing typed here. The referee rolls; the app never does.
-    { field: 'initiative', header: 'Ini', width: 60, editable: false },
+    { field: 'initiative', header: 'Ini', width: 50, editable: false },
     // What the actor is, and what is left of it. Two cells rather than one
     // column per characteristic: the pair reads as a before and an after, and
     // an actor hurt through Hits has one score rather than three.
-    { field: 'max', header: 'Max', width: 80, editable: false },
-    { field: 'now', header: 'Now', width: 80, editable: false },
-    { field: 'stun', header: 'Stun', width: 80, editable: false },
+    { field: 'max', header: 'Max', width: 70, editable: false },
+    { field: 'now', header: 'Now', width: 70, editable: false },
+    { field: 'stun', header: 'Stun', width: 62, editable: false },
+    {
+      id: 'target',
+      header: 'Target',
+      width: 110,
+      editable: false,
+      cell: (ctx: Cell) =>
+        renderComponent(TargetCell, {
+          attacker: ctx.row.original.name,
+          target: ctx.row.original.target,
+          // Only whoever's turn it is may go for someone, and only in a round.
+          offered:
+            situation.state === 'current' &&
+            situation.phase === 'round' &&
+            ctx.row.original.state === 'ready',
+          onattack: () => onattack(ctx.row.original.id),
+        }),
+    },
     {
       id: 'turn',
       header: 'Turn',
-      width: 140,
+      width: 130,
       editable: false,
       cell: (ctx: Cell) =>
         renderComponent(TurnCell, {

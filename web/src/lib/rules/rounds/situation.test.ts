@@ -15,6 +15,7 @@ import { actorId, type Actor } from '$lib/schema/actor';
 import {
   act,
   addActors,
+  attack,
   delay,
   emptySituation,
   memberState,
@@ -259,6 +260,31 @@ describe('whose turn it is', () => {
     const situation = ready([rin, 12], [sana, 8]);
     expect(roundComplete(situation)).toBe(false);
     expect(roundComplete(act(delay(situation, rin.id), sana.id))).toBe(true);
+  });
+});
+
+/**
+ * An attack is the one action the tracker records. It spends the turn, and it
+ * remembers who was gone for: a hit, a miss and a dodge all leave the attacker
+ * having attacked that person, and "who did they go for" is worth reading off
+ * the table.
+ */
+describe('an attack', () => {
+  it('spends the attacker turn and records who they went for', () => {
+    const situation = attack(ready([rin, 12], [sana, 8]), rin.id, sana.id);
+
+    expect(memberState(situation, find(situation, rin), roster)).toBe('acted');
+    expect(find(situation, rin).target).toBe(sana.id);
+    expect(find(situation, sana).target).toBeNull();
+  });
+
+  // Unlike the turn beside it, who they went for stays: the next attack starts
+  // from the last target, and the referee changes it only when it changes.
+  it('is remembered when the round turns, though the turn is not', () => {
+    const after = newRound(attack(ready([rin, 12], [sana, 8]), rin.id, sana.id));
+
+    expect(find(after, rin).target).toBe(sana.id);
+    expect(memberState(after, find(after, rin), roster)).not.toBe('acted');
   });
 });
 

@@ -52,7 +52,7 @@ function fight() {
 }
 
 function show(situation = fight()) {
-  return render(SituationGrid, { situation, roster, ondone: vi.fn(), onwait: vi.fn() });
+  return render(SituationGrid, { situation, roster, ondone: vi.fn(), onwait: vi.fn(), onattack: vi.fn() });
 }
 
 /** The rendered rows, top to bottom, by the name in each. */
@@ -106,6 +106,7 @@ describe('SituationGrid', () => {
       roster,
       ondone,
       onwait: vi.fn(),
+      onattack: vi.fn(),
     });
     await userEvent.click(screen.getByRole('button', { name: 'Done' }).first());
     expect(ondone).toHaveBeenCalledWith(rin.id);
@@ -118,6 +119,7 @@ describe('SituationGrid', () => {
       roster,
       ondone: vi.fn(),
       onwait,
+      onattack: vi.fn(),
     });
     await userEvent.click(screen.getByRole('button', { name: 'Wait' }).first());
     expect(onwait).toHaveBeenCalledWith(rin.id);
@@ -197,6 +199,7 @@ describe('health', () => {
       roster: [wounded, sana],
       ondone: vi.fn(),
       onwait: vi.fn(),
+      onattack: vi.fn(),
     });
   };
 
@@ -240,6 +243,7 @@ describe('health', () => {
       roster: [...roster, beast],
       ondone: vi.fn(),
       onwait: vi.fn(),
+      onattack: vi.fn(),
     });
     expect(cell(screen.container, 'Wolf', 'max')).toBe('20');
     expect(cell(screen.container, 'Wolf', 'now')).toBe('14');

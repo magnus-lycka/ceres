@@ -75,6 +75,7 @@ export function addActors(
         initiative: null,
         acted: false,
         waiting: false,
+        target: null,
       })),
     ],
   };
@@ -148,6 +149,15 @@ export function act(situation: Situation, actor: ActorId): Situation {
     situation,
     (member) => member.actor === actor,
     (member) => ({ ...member, acted: true }),
+  );
+}
+
+/** An attack spends the attacker's turn and remembers who they went for. */
+export function attack(situation: Situation, attacker: ActorId, target: ActorId): Situation {
+  return update(
+    situation,
+    (member) => member.actor === attacker,
+    (member) => ({ ...member, acted: true, target }),
   );
 }
 

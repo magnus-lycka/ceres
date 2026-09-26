@@ -28,7 +28,7 @@
     min-width: 0;
   }
   .panels {
-    flex: 0 0 26rem;
+    flex: 0 0 24rem;
     position: sticky;
     top: 1rem;
     max-height: calc(100vh - 2rem);

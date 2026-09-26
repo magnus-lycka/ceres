@@ -1108,10 +1108,11 @@ tail differs by kind (STR-or-DEX for a sophont, the location cascade for a
 robot, neither for an animal). Opened from the round table's **Target**
 column on the acting (green) actor's row, pre-filled with that actor's
 previous target if they have one; the target cell shows the latest target's
-name once the dialog closes and is cleared for everyone at the start of each
-new round. A toolbar **Other** button opens the same dialog with no attacker,
-for falls, fire and vacuum — no turn spent, no reaction possible, matching the
-NiceGUI prototype's Other source.
+name once the dialog closes. It is kept from round to round, so the next
+attack starts from it and the referee changes it only when the target changes.
+A toolbar **Other** button opens the same dialog with no attacker, for falls,
+fire and vacuum — no turn spent, no reaction possible, matching the NiceGUI
+prototype's Other source.
 
 ### Layout
 
