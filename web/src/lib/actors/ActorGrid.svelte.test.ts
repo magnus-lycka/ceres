@@ -262,4 +262,40 @@ describe('ActorGrid tags', () => {
     expect(cell!.querySelector('input')).toBeNull();
     await expect.element(screen.getByRole('dialog', { name: 'Tags for Rin' })).toBeVisible();
   });
+
+  /**
+   * What a number cell hands back is a number. The grid gives the component its
+   * own row, so a string here would go straight into the actor and be refused by
+   * the schema, or worse, stored. The number editor changed shape between SvGrid
+   * versions (a spinner, then a text field with a decimal keypad), and nothing
+   * else pinned this.
+   */
+  describe('editing a number', () => {
+    const edit = async (typed: string) => {
+      const onedit = vi.fn();
+      const screen = await render(ActorGrid, {
+        actors: [actor(actorId(1), 'Rin')],
+        onselect: vi.fn(),
+        onedit,
+      });
+      await userEvent.dblClick(screen.container.querySelector<HTMLElement>('td[data-col-id="strength"]')!);
+      await userEvent.fill(screen.getByRole('textbox'), typed);
+      await userEvent.keyboard('{Enter}');
+      return onedit;
+    };
+
+    it('reports what was typed as a number', async () => {
+      const onedit = await edit('9');
+
+      await vi.waitFor(() => expect(onedit).toHaveBeenCalled());
+      expect(onedit.mock.calls.at(-1)![0].strength).toBe(9);
+    });
+
+    it('refuses text in a number cell and keeps the number that was there', async () => {
+      const onedit = await edit('abc');
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      for (const [row] of onedit.mock.calls) expect(row.strength).toBe(8);
+    });
+  });
 });

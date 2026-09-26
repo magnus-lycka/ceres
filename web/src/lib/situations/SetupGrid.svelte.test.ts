@@ -79,7 +79,8 @@ describe('SetupGrid', () => {
     const screen = await show({ oninitiative });
     const cell = rowFor(screen.container, 'Sana').querySelector<HTMLElement>('td[data-col-id="initiative"]');
     await userEvent.dblClick(cell!);
-    await userEvent.fill(screen.getByRole('spinbutton'), '15');
+    // SvGrid's number editor is a text field with a decimal keypad, not a spinner.
+    await userEvent.fill(screen.getByRole('textbox'), '15');
     await userEvent.keyboard('{Enter}');
     expect(oninitiative).toHaveBeenCalledWith(sana.id, 15);
   });
