@@ -73,6 +73,7 @@ from ceres.character.domain.health.health_events import (
     AgingRollHandler,
     DoubleInjuryTableHandler,
     PendingAgingChoice,
+    PendingAgingChoiceMental,
     PendingAgingCrisis,
     PendingAgingRoll,
     PendingCharacteristicChoice,
@@ -495,14 +496,19 @@ class CharacterDriver:
         pending = self._find(PendingAgingRoll)
         return self._add(Event(fulfills=pending.pending_id, handler=AgingRollHandler(roll=roll)))
 
-    def aging_choice(self, characteristic: Chars, amount: int = 1) -> CharacterDriver:
+    def aging_physical_options(self) -> list[Chars]:
+        return list(self._find(PendingAgingChoice).options)
+
+    def aging_choice(self, characteristic: Chars) -> CharacterDriver:
         pending = self._find(PendingAgingChoice)
-        return self._add(
-            Event(
-                fulfills=pending.pending_id,
-                handler=CharacteristicChoiceHandler(characteristic=characteristic, amount=amount),
-            )
-        )
+        return self._add(pending.event_from_form({'characteristic': characteristic.value}))
+
+    def aging_mental_options(self) -> list[Chars]:
+        return list(self._find(PendingAgingChoiceMental).options)
+
+    def aging_mental_choice(self, characteristic: Chars) -> CharacterDriver:
+        pending = self._find(PendingAgingChoiceMental)
+        return self._add(pending.event_from_form({'characteristic': characteristic.value}))
 
     def aging_crisis(self, paid: bool, medical_roll: int) -> CharacterDriver:
         pending = self._find(PendingAgingCrisis)

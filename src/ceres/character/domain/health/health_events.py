@@ -10,6 +10,15 @@ from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event, EventHandlerBase, PendingInputBase
 
 
+def _reduce_characteristic(
+    projection: CharacterProjection, char: Chars, amount: int, history_id: int | str | None
+) -> None:
+    before = projection.summary.characteristics.get(char, 0)
+    after = max(0, before - amount)
+    projection.summary.characteristics[char] = after
+    projection.record_history(history_id, f'{char} reduced from {before} to {after}.')
+
+
 class CharacteristicChoiceHandler(EventHandlerBase):
     kind: Literal['characteristic_choice'] = 'characteristic_choice'
     characteristic: Chars
@@ -19,33 +28,27 @@ class CharacteristicChoiceHandler(EventHandlerBase):
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
         char = self.characteristic
-        current = projection.summary.characteristics.get(char, 0)
-        projection.summary.characteristics[char] = max(0, current - self.amount)
-        if fulfilled_pending is not None:
-            projection.record_history(
-                fulfilled_pending.history_id,
-                f'{char} reduced from {current} to {projection.summary.characteristics[char]}.',
-            )
+        if isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and char not in (
+            fulfilled_pending.options
+        ):
+            raise ReplayError(f'{char} is not available for this ageing choice')
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        _reduce_characteristic(projection, char, self.amount, history_id)
         if isinstance(fulfilled_pending, PendingNearlyKilled):
             for other in (Chars.STR, Chars.DEX, Chars.END):
                 if other != char:
-                    before = projection.summary.characteristics.get(other, 0)
-                    projection.summary.characteristics[other] = max(
-                        0, projection.summary.characteristics.get(other, 0) - 2
-                    )
-                    projection.record_history(
-                        fulfilled_pending.history_id,
-                        f'{other} reduced from {before} to {projection.summary.characteristics[other]}.',
-                    )
-        elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and not (
-            check_aging_crisis(projection, event.id, fulfilled_pending.history_id)
-        ):
+                    _reduce_characteristic(projection, other, 2, history_id)
+        elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)):
             remaining = [
                 pending
                 for pending in projection.pending_inputs
                 if isinstance(pending, (PendingAgingChoice, PendingAgingChoiceMental))
             ]
-            if not remaining:
+            for pending in remaining:
+                pending.options = [option for option in pending.options if option != char]
+                if isinstance(pending, PendingAgingChoice):
+                    pending.instruction = f'Aging: choose {" or ".join(pending.options)} to reduce by {pending.amount}'
+            if not remaining and not check_aging_crisis(projection, event.id, history_id):
                 complete_aging(projection, event.id)
 
 
@@ -91,18 +94,16 @@ class AgingRollHandler(EventHandlerBase):
                 pending_idx += 1
         elif effective == -2:
             for char in (Chars.STR, Chars.DEX, Chars.END):
-                before = projection.summary.characteristics.get(char, 0)
-                projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 1)
-                projection.record_history(
-                    history_id, f'{char} reduced from {before} to {projection.summary.characteristics[char]}.'
-                )
+                _reduce_characteristic(projection, char, 1, history_id)
             if not check_aging_crisis(projection, event.id, history_id):
                 complete_aging(projection, event.id)
         elif effective == -3:
             projection.queue_deferred(
                 PendingAgingChoice(
                     pending_id=(event.id, pending_idx),
+                    history_id=history_id,
                     instruction='Aging: choose STR, DEX, or END to reduce by 2',
+                    amount=2,
                     options=[Chars.STR, Chars.DEX, Chars.END],
                 )
             )
@@ -111,6 +112,7 @@ class AgingRollHandler(EventHandlerBase):
                 projection.queue_deferred(
                     PendingAgingChoice(
                         pending_id=(event.id, pending_idx),
+                        history_id=history_id,
                         instruction='Aging: choose STR, DEX, or END to reduce by 1',
                         options=[Chars.STR, Chars.DEX, Chars.END],
                     )
@@ -121,7 +123,9 @@ class AgingRollHandler(EventHandlerBase):
                 projection.queue_deferred(
                     PendingAgingChoice(
                         pending_id=(event.id, pending_idx),
+                        history_id=history_id,
                         instruction='Aging: choose STR, DEX, or END to reduce by 2',
+                        amount=2,
                         options=[Chars.STR, Chars.DEX, Chars.END],
                     )
                 )
@@ -129,30 +133,27 @@ class AgingRollHandler(EventHandlerBase):
             projection.queue_deferred(
                 PendingAgingChoice(
                     pending_id=(event.id, pending_idx),
+                    history_id=history_id,
                     instruction='Aging: choose STR, DEX, or END to reduce by 1',
                     options=[Chars.STR, Chars.DEX, Chars.END],
                 )
             )
         elif effective == -5:
             for char in (Chars.STR, Chars.DEX, Chars.END):
-                before = projection.summary.characteristics.get(char, 0)
-                projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-                projection.record_history(
-                    history_id, f'{char} reduced from {before} to {projection.summary.characteristics[char]}.'
-                )
+                _reduce_characteristic(projection, char, 2, history_id)
             if not check_aging_crisis(projection, event.id, history_id):
                 complete_aging(projection, event.id)
         else:  # <= -6
             for char in (Chars.STR, Chars.DEX, Chars.END):
-                projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-            if not check_aging_crisis(projection, event.id):
-                projection.queue_deferred(
-                    PendingAgingChoiceMental(
-                        pending_id=(event.id, 0),
-                        instruction='Aging: choose INT or SOC to reduce by 1',
-                        options=[Chars.INT, Chars.SOC],
-                    )
+                _reduce_characteristic(projection, char, 2, history_id)
+            projection.queue_deferred(
+                PendingAgingChoiceMental(
+                    pending_id=(event.id, 0),
+                    history_id=history_id,
+                    instruction='Aging: choose INT, EDU, or SOC to reduce by 1',
+                    options=[Chars.INT, Chars.EDU, Chars.SOC],
                 )
+            )
 
 
 class InjuryTableHandler(EventHandlerBase):
@@ -446,12 +447,15 @@ class PendingAgingRoll(PendingInputBase):
 class PendingAgingChoice(PendingInputBase):
     kind: Literal['aging_choice'] = 'aging_choice'
     options: list[Chars] = Field(default_factory=list)
+    amount: int = 1
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
 
         return Event(
             fulfills=self.pending_id,
-            handler=CharacteristicChoiceHandler(characteristic=Chars(form_str(form, 'characteristic', Chars.STR))),
+            handler=CharacteristicChoiceHandler(
+                characteristic=Chars(form_str(form, 'characteristic', Chars.STR)), amount=self.amount
+            ),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:

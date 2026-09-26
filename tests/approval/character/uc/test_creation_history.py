@@ -1,5 +1,7 @@
 """Creation history through real career decisions and replay."""
 
+import pytest
+
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import (
     Admin,
@@ -13,6 +15,7 @@ from ceres.character.domain.skills import (
     SpaceScience,
 )
 from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.errors import ReplayError
 from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2, CharacterDriver
 
 
@@ -521,7 +524,7 @@ def test_ageing_remains_in_progress_after_only_one_of_two_choices():
     character = merchant_at_ageing().aging_roll(3).aging_choice(Chars.STR)
     assert character.projection.creation_history[-1] == (
         'Ageing at age 34. Ageing roll 3 − 4 terms = -1. STR reduced from 7 to 6. '
-        'In progress: Aging: choose STR, DEX, or END to reduce by 1'
+        'In progress: Aging: choose DEX or END to reduce by 1'
     )
     character.aging_choice(Chars.END)
     assert character.projection.creation_history[-1] == (
@@ -555,6 +558,149 @@ def test_severe_ageing_records_two_points_lost_from_each_physical_characteristic
     assert character.projection.creation_history[-1] == (
         'Ageing at age 46. Ageing roll 2 − 7 terms = -5. '
         'STR reduced from 7 to 5. DEX reduced from 8 to 6. END reduced from 6 to 4.'
+    )
+
+
+def test_ageing_minus_three_applies_the_two_point_choice_and_two_one_point_choices():
+    character = merchant_in_term(5).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(6)
+    character.aging_roll(2).aging_choice(Chars.DEX).aging_choice(Chars.STR).aging_choice(Chars.END)
+
+    assert character.projection.summary.characteristics == {
+        Chars.STR: 6,
+        Chars.DEX: 6,
+        Chars.END: 5,
+        Chars.INT: 9,
+        Chars.EDU: 10,
+        Chars.SOC: 5,
+    }
+
+
+def test_ageing_minus_three_history_stays_pending_until_all_losses_are_resolved():
+    character = merchant_in_term(5).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(6)
+    character.aging_roll(2).aging_choice(Chars.DEX)
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 38. Ageing roll 2 − 5 terms = -3. DEX reduced from 8 to 6. '
+        'In progress: Aging: choose STR or END to reduce by 1 '
+        'Aging: choose STR or END to reduce by 1'
+    )
+    character.aging_choice(Chars.STR).aging_choice(Chars.END)
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 38. Ageing roll 2 − 5 terms = -3. '
+        'DEX reduced from 8 to 6. STR reduced from 7 to 6. END reduced from 6 to 5.'
+    )
+
+
+def test_two_point_ageing_crisis_does_not_cancel_the_other_characteristic_losses():
+    character = (
+        merchant_in_term(5, '2869A5').survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(6)
+    )
+    character.aging_roll(2).aging_choice(Chars.STR).aging_choice(Chars.DEX).aging_choice(Chars.END)
+    character.aging_crisis(paid=True, medical_roll=1)
+
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 38. Ageing roll 2 − 5 terms = -3. '
+        'STR reduced from 2 to 0. DEX reduced from 8 to 7. END reduced from 6 to 5. '
+        'Medical care restored STR from 0 to 1.'
+    )
+
+
+def test_ageing_choices_require_distinct_physical_characteristics():
+    character = merchant_in_term(5).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(6)
+    character.aging_roll(2).aging_choice(Chars.DEX)
+    assert character.aging_physical_options() == [Chars.STR, Chars.END]
+    character.aging_choice(Chars.STR)
+    assert character.aging_physical_options() == [Chars.END]
+
+
+def test_ageing_rejects_a_repeated_characteristic_choice():
+    character = merchant_at_ageing().aging_roll(3).aging_choice(Chars.STR)
+
+    with pytest.raises(ReplayError, match='not available'):
+        character.aging_choice(Chars.STR)
+
+
+def test_ageing_minus_four_applies_two_two_point_choices_and_one_one_point_choice():
+    character = merchant_in_term(6).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(7)
+    character.aging_roll(2).aging_choice(Chars.END).aging_choice(Chars.STR).aging_choice(Chars.DEX)
+
+    assert character.projection.summary.characteristics == {
+        Chars.STR: 5,
+        Chars.DEX: 7,
+        Chars.END: 4,
+        Chars.INT: 9,
+        Chars.EDU: 10,
+        Chars.SOC: 5,
+    }
+
+
+def test_ageing_minus_four_history_keeps_the_remaining_two_point_choice_visible():
+    character = merchant_in_term(6).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(7)
+    character.aging_roll(2).aging_choice(Chars.END)
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 42. Ageing roll 2 − 6 terms = -4. END reduced from 6 to 4. '
+        'In progress: Aging: choose STR or DEX to reduce by 2 '
+        'Aging: choose STR or DEX to reduce by 1'
+    )
+    character.aging_choice(Chars.STR).aging_choice(Chars.DEX)
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 42. Ageing roll 2 − 6 terms = -4. '
+        'END reduced from 6 to 4. STR reduced from 7 to 5. DEX reduced from 8 to 7.'
+    )
+
+
+def test_ageing_minus_six_allows_education_as_a_mental_characteristic():
+    character = merchant_in_term(8).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(5)
+    character.aging_roll(2)
+    assert character.aging_mental_options() == [Chars.INT, Chars.EDU, Chars.SOC]
+    character.aging_mental_choice(Chars.EDU)
+    assert character.projection.summary.characteristics == {
+        Chars.STR: 5,
+        Chars.DEX: 6,
+        Chars.END: 4,
+        Chars.INT: 9,
+        Chars.EDU: 9,
+        Chars.SOC: 5,
+    }
+
+
+def test_ageing_minus_six_records_physical_losses_while_waiting_for_the_mental_choice():
+    character = merchant_in_term(8).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(5)
+    character.aging_roll(2)
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 50. Ageing roll 2 − 8 terms = -6. '
+        'STR reduced from 7 to 5. DEX reduced from 8 to 6. END reduced from 6 to 4. '
+        'In progress: Aging: choose INT, EDU, or SOC to reduce by 1'
+    )
+    character.aging_mental_choice(Chars.EDU)
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 50. Ageing roll 2 − 8 terms = -6. '
+        'STR reduced from 7 to 5. DEX reduced from 8 to 6. END reduced from 6 to 4. EDU reduced from 10 to 9.'
+    )
+
+
+def test_ageing_minus_six_applies_the_mental_loss_before_resolving_a_physical_crisis():
+    character = (
+        merchant_in_term(8, '2869A5').survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(5)
+    )
+    character.aging_roll(2).aging_mental_choice(Chars.INT).aging_crisis(paid=True, medical_roll=1)
+
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 50. Ageing roll 2 − 8 terms = -6. '
+        'STR reduced from 2 to 0. DEX reduced from 8 to 6. END reduced from 6 to 4. '
+        'INT reduced from 9 to 8. Medical care restored STR from 0 to 1.'
+    )
+
+
+def test_mental_ageing_crisis_preserves_the_loss_and_recovery():
+    character = (
+        merchant_in_term(8, '7861A5').survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(5)
+    )
+    character.aging_roll(2).aging_mental_choice(Chars.INT).aging_crisis(paid=True, medical_roll=1)
+
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 50. Ageing roll 2 − 8 terms = -6. '
+        'STR reduced from 7 to 5. DEX reduced from 8 to 6. END reduced from 6 to 4. '
+        'INT reduced from 1 to 0. Medical care restored INT from 0 to 1.'
     )
 
 
