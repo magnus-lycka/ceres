@@ -33,7 +33,8 @@ class ConnectionKindChoiceHandler(EventHandlerBase):
             source = f'Life event roll {fulfilled_pending.roll}'
         else:
             source = 'unknown'
-        projection.add_connection(self.connection_kind, origin=f'Life event: {source}')
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        projection.add_connection(self.connection_kind, origin=f'Life event: {source}', history_id=history_id)
         narratives = {
             4: {
                 ConnectionKind.RIVAL: 'Life event: relationship ended, gained a rival',
@@ -47,7 +48,7 @@ class ConnectionKindChoiceHandler(EventHandlerBase):
         if isinstance(fulfilled_pending, PendingLifeEventChoice) and (
             narrative := narratives.get(fulfilled_pending.roll, {}).get(self.connection_kind)
         ):
-            projection.summary.narrative.append(narrative)
+            projection.extend_history(history_id, narrative)
 
 
 class LifeEventHandler(EventHandlerBase):
@@ -99,6 +100,7 @@ class LifeEventHandler(EventHandlerBase):
                     PendingLifeEventChoice(
                         pending_id=(event.id, 0),
                         roll=4,
+                        history_id=history_id,
                         instruction='Ending relationship: gain a rival or enemy?',
                         options=[ConnectionKind.RIVAL, ConnectionKind.ENEMY],
                     )
@@ -107,11 +109,13 @@ class LifeEventHandler(EventHandlerBase):
                     _queue_advancement(projection, career, event.id, 1)
             case 5 | 6:
                 source = 'Life event: improved relationship' if self.roll == 5 else 'Life event: new relationship'
-                projection.add_connection(ConnectionKind.ALLY, origin=source)
+                projection.add_connection(ConnectionKind.ALLY, origin=source, history_id=history_id)
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 7:
-                projection.add_connection(ConnectionKind.CONTACT, origin='Life event: new contact')
+                projection.add_connection(
+                    ConnectionKind.CONTACT, origin='Life event: new contact', history_id=history_id
+                )
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 8:
@@ -153,6 +157,7 @@ class LifeEventHandler(EventHandlerBase):
                     projection.summary.career_terms[-1].require_muster_out().benefit_roll_dms.append(
                         BenefitRollDm(amount=2)
                     )
+                    projection.record_history(history_id, 'Awarded DM+2 to one future Benefit roll.')
                 if career is not None:
                     _queue_advancement(projection, career, event.id)
             case 11:

@@ -389,6 +389,12 @@ class CharacterDriver:
         pending = self._find(PendingLifeEventUnusual)
         return self._add(Event(fulfills=pending.pending_id, handler=LifeEventUnusualHandler(roll=roll)))
 
+    def life_event_connection(self, kind: ConnectionKind) -> CharacterDriver:
+        from ceres.character.domain.life_events import PendingLifeEventChoice
+
+        pending = self._find(PendingLifeEventChoice)
+        return self._add(pending.event_from_form({'connection_kind': kind.value}))
+
     def move_homeworld(self, world: TravellerMapWorld) -> CharacterDriver:
         from ceres.character.domain.homeworld.homeworld_events import (
             HomeworldChangedHandler,

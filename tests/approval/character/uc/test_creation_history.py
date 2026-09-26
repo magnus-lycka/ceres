@@ -1,6 +1,6 @@
 """Creation history through real career decisions and replay."""
 
-from ceres.character.domain.characteristics import Chars
+from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Engineer, Level, Mechanic, Pilot
 from ceres.character.domain.sophont import VILANI
 from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2, CharacterDriver
@@ -18,8 +18,10 @@ def merchant(ucp='7869A5'):
 
 def merchant_in_term(number, ucp='7869A5'):
     character = merchant(ucp)
-    for _ in range(number - 1):
-        character.survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(5)
+    for term in range(1, number):
+        character.survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(max(5, term + 1))
+        if term >= 4:
+            character.aging_roll(12)
         character.reenlist(True)
     return character
 
@@ -90,8 +92,8 @@ def test_repeated_training_keeps_distinct_occurrences_and_speciality_levels():
     ]
 
 
-def test_muster_out_choice_remains_pending_until_the_actual_benefit_is_chosen():
-    character = (
+def navy_at_muster_out():
+    return (
         CharacterDriver()
         .start(VILANI, MOCK_WORLD)
         .ucp('7869A5')
@@ -102,13 +104,22 @@ def test_muster_out_choice_remains_pending_until_the_actual_benefit_is_chosen():
         .commission(False)
         .advancement(4)
         .reenlist(False)
-        .muster_out('benefits', 1)
     )
+
+
+def test_muster_out_choice_remains_pending_until_the_actual_benefit_is_chosen():
+    character = navy_at_muster_out().muster_out('benefits', 1)
     assert character.projection.creation_history[-1] == (
         'Muster out (Navy). In progress: Choose one benefit: Personal Vehicle or Ship Share'
     )
     character.benefit_choice(1)
     assert character.projection.creation_history[-1] == 'Muster out (Navy). Gained Ship Share.'
+
+
+def test_chosen_characteristic_benefit_records_the_actual_increase():
+    character = navy_at_muster_out().muster_out('benefits', 3).benefit_choice(0)
+
+    assert character.projection.creation_history[-1] == 'Muster out (Navy). EDU increased from 10 to 11.'
 
 
 def test_automatic_promotion_records_rank_and_reward_while_training_remains_outstanding():
@@ -180,6 +191,45 @@ def test_cash_award_records_the_amount_as_a_separate_completed_occurrence():
     assert character.projection.creation_history[-1] == 'Muster out (Merchant): Gained Cr1,000.'
 
 
+def test_direct_item_benefit_is_a_completed_history_occurrence():
+    character = merchant().survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7)
+    character.advancement(5).reenlist(False).muster_out('benefits', 5)
+
+    assert character.projection.creation_history[-1] == 'Muster out (Merchant): Gained Ship Share.'
+
+
+def test_characteristic_benefit_records_the_actual_increase():
+    character = merchant().survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7)
+    character.advancement(5).reenlist(False).muster_out('benefits', 2)
+
+    assert character.projection.creation_history[-1] == 'Muster out (Merchant): INT increased from 9 to 10.'
+
+
+def test_characteristic_benefit_at_the_limit_does_not_claim_an_increase():
+    character = merchant('786FA5').survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7)
+    character.advancement(5).reenlist(False).muster_out('benefits', 2)
+
+    assert character.projection.creation_history[-1] == 'Muster out (Merchant): INT remains at 15 (maximum reached).'
+
+
+def test_multiple_benefits_from_one_roll_are_all_recorded_in_one_entry():
+    character = (
+        CharacterDriver()
+        .start(VILANI, MOCK_WORLD)
+        .ucp('7869A5')
+        .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        .career('Citizen', 'Corporate', roll=9)
+        .survive(7)
+        .term_event(7)
+        .life_event(3)
+        .advancement(4)
+        .reenlist(False)
+        .muster_out('benefits', 6)
+    )
+
+    assert character.projection.creation_history[-1] == 'Muster out (Citizen): Gained Ship Share. Gained Ship Share.'
+
+
 def test_war_mishap_shows_ejection_while_the_skill_choice_is_still_outstanding():
     character = merchant().survive(2).mishap(3)
 
@@ -232,6 +282,48 @@ def test_life_event_injury_is_visible_while_awaiting_the_injury_roll():
     assert character.projection.creation_history == [
         'Term 1 event (Merchant): Life Event. Life event: sickness or injury '
         'In progress: Roll 1D on Injury table (sickness/injury)'
+    ]
+
+
+def test_relationship_life_event_keeps_the_named_ally_in_the_same_entry():
+    character = merchant().survive(7).term_event(7).life_event(5)
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: relationship strengthened (ally gained) '
+        'In progress: Name this Ally (Life event: improved relationship)'
+    ]
+    character.name_connection('Vessa', 'Spouse')
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: relationship strengthened (ally gained) Ally: Vessa — Spouse.'
+    ]
+
+
+def test_contact_life_event_keeps_the_name_with_its_story():
+    character = merchant().survive(7).term_event(7).life_event(7).name_connection('Dara')
+
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: new contact made Contact: Dara.'
+    ]
+
+
+def test_good_fortune_records_the_deferred_bonus_amount():
+    character = merchant().survive(7).term_event(7).life_event(10)
+
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: good fortune (benefit roll bonus) '
+        'Awarded DM+2 to one future Benefit roll.'
+    ]
+
+
+def test_ended_relationship_keeps_the_choice_and_name_with_the_story():
+    character = merchant().survive(7).term_event(7).life_event(4)
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: ending of a relationship '
+        'In progress: Ending relationship: gain a rival or enemy?'
+    ]
+    character.life_event_connection(ConnectionKind.ENEMY).name_connection('Vessa')
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: ending of a relationship '
+        'Life event: relationship ended, gained an enemy Enemy: Vessa.'
     ]
 
 
@@ -323,6 +415,29 @@ def test_ageing_records_all_three_automatic_reductions():
     assert character.projection.creation_history[-1] == (
         'Ageing at age 34. Ageing roll 2 − 4 terms = -2. '
         'STR reduced from 7 to 6. DEX reduced from 8 to 7. END reduced from 6 to 5.'
+    )
+
+
+def test_severe_ageing_records_two_points_lost_from_each_physical_characteristic():
+    character = merchant_in_term(7).survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(5)
+    character.aging_roll(2)
+
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 46. Ageing roll 2 − 7 terms = -5. '
+        'STR reduced from 7 to 5. DEX reduced from 8 to 6. END reduced from 6 to 4.'
+    )
+
+
+def test_severe_ageing_crisis_keeps_recovery_with_the_losses():
+    character = (
+        merchant_in_term(7, '2869A5').survive(7).term_event(9).skill_roll(Chars.EDU, modified_roll=7).advancement(8)
+    )
+    character.aging_roll(2).aging_crisis(paid=True, medical_roll=1)
+
+    assert character.projection.creation_history[-1] == (
+        'Ageing at age 46. Ageing roll 2 − 7 terms = -5. '
+        'STR reduced from 2 to 0. DEX reduced from 8 to 6. END reduced from 6 to 4. '
+        'Medical care restored STR from 0 to 1.'
     )
 
 

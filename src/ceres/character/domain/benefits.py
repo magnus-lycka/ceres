@@ -34,9 +34,12 @@ class CharacteristicIncrease(BaseModel):
     def exceptional(self) -> bool:
         return False
 
-    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> str:
         current = projection.summary.characteristics.get(self.char, 0)
         projection.summary.characteristics[self.char] = min(15, current + self.amount)
+        if projection.summary.characteristics[self.char] == current:
+            return f'{self.char} remains at {current} (maximum reached).'
+        return f'{self.char} increased from {current} to {projection.summary.characteristics[self.char]}.'
 
 
 class ItemBenefit(BaseModel):

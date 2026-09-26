@@ -135,8 +135,12 @@ class AgingRollHandler(EventHandlerBase):
             )
         elif effective == -5:
             for char in (Chars.STR, Chars.DEX, Chars.END):
+                before = projection.summary.characteristics.get(char, 0)
                 projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 2)
-            if not check_aging_crisis(projection, event.id):
+                projection.record_history(
+                    history_id, f'{char} reduced from {before} to {projection.summary.characteristics[char]}.'
+                )
+            if not check_aging_crisis(projection, event.id, history_id):
                 complete_aging(projection, event.id)
         else:  # <= -6
             for char in (Chars.STR, Chars.DEX, Chars.END):

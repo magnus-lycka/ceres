@@ -276,7 +276,7 @@ def test_advanced_training_roll_then_select_existing_skill(client, education, ro
     assert view['pending']['instruction'].startswith('Advancement:')
 
 
-def test_training_history_is_returned_on_submit_and_resume_and_undo(client):
+def test_training_history_is_returned_on_submit_resume_and_undo_rechoice(client):
     from tests.unit.character.helpers import MOCK_WORLD
 
     view = client.post('/api/characters', json={'name': 'Student'}).json()
@@ -304,7 +304,14 @@ def test_training_history_is_returned_on_submit_and_resume_and_undo(client):
     ]
     assert view['history'] == expected
     assert client.get(url).json()['history'] == expected
-    assert client.post(url + '/undo').json()['history'] == incomplete
+    view = client.post(url + '/undo').json()
+    assert view['history'] == incomplete
+    choose({'roll': '7'})
+    assert len(view['history']) == 1
+    assert 'Passed the EDU check (8 against 8+).' in view['history'][0]
+    assert 'Failed' not in view['history'][0]
+    assert 'In progress:' in view['history'][0]
+    assert client.get(url).json()['history'] == view['history']
 
 
 def test_required_relocation_supplies_a_world_picker_and_accepts_a_world(tmp_path, monkeypatch):
