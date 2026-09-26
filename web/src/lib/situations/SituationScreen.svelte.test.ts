@@ -462,4 +462,60 @@ describe('attacking', () => {
     expect((await library.situations())[0].members.some((member) => member.acted)).toBe(false);
     await expect.element(screen.getByRole('button', { name: 'Rex attacks' })).toBeVisible();
   });
+
+  // Stun: END only, and what END cannot take is the rounds out (:366).
+  it('puts a target out with a Stun weapon, and says for how long', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill('0');
+    await dialog.getByLabelText('Damage roll').fill('10');
+    await dialog.getByLabelText('Stun').click();
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+      expect(guard.injuries).toEqual([{ when: 1, kind: 'stun', reductions: { endurance: 8 } }]);
+    });
+    // Out for this round and the next, and not offered anything to do.
+    await expect.element(screen.getByText('out 2')).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: 'Guard attacks' })).not.toBeInTheDocument();
+    await expect.element(screen.getByText(/Everyone has acted/)).toBeVisible();
+  });
+
+  it('counts the stun down as the rounds turn, and gives the turn back', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Damage roll').fill('10');
+    await dialog.getByLabelText('Stun').click();
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    await expect.element(screen.getByText('out 2')).toBeVisible();
+
+    await screen.getByRole('button', { name: 'Finish round' }).click();
+    await screen.getByRole('button', { name: 'Begin round 2' }).click();
+    await expect.element(screen.getByText('out 1')).toBeVisible();
+
+    await screen.getByRole('button', { name: 'Finish round' }).click();
+    await screen.getByRole('button', { name: 'Begin round 3' }).click();
+    await expect.element(screen.getByText(/^out/)).not.toBeInTheDocument();
+    await vi.waitFor(() => expect(hasTurnButtons(screen.container)).toBe(true));
+    // Both of them are owed a turn again, Guard included.
+    expect(screen.container.querySelectorAll('tbody button').length).toBeGreaterThanOrEqual(4);
+  });
+
+  // Nothing about a lethal hit needs stun: an actor knocked out cannot act, and
+  // the table says so rather than offering them a turn.
+  it('shows an actor who has been knocked out as out of action', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Damage roll').fill('20');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await expect.element(screen.getByText('out', { exact: true })).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: 'Guard attacks' })).not.toBeInTheDocument();
+  });
 });

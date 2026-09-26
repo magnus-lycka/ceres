@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { actorId, type Actor } from '../../schema/actor';
 import { current, isDead } from './health';
-import { addActors, emptySituation, memberState } from './situation';
+import { act, addActors, emptySituation, memberState } from './situation';
 import { carryOutAttack, resolveAttack } from './attack';
 
 describe('the damage an attack lands', () => {
@@ -158,5 +158,80 @@ describe('carrying out an attack', () => {
     expect(() =>
       carryOutAttack(brawl, roster, { attacker: rex.id, target: actorId(99), effect: 0, roll: 5 }),
     ).toThrow(/no actor 99/);
+  });
+
+  describe('with a Stun weapon', () => {
+    it('takes the damage off END as stun, and puts the target out for the overflow', () => {
+      const { situation, target } = carryOutAttack(brawl, roster, {
+        attacker: rex.id,
+        target: guard.id,
+        effect: 0,
+        roll: 10,
+        stun: true,
+      });
+
+      expect(target.injuries).toEqual([{ when: 3, kind: 'stun', reductions: { endurance: 8 } }]);
+      // Hit in round 3 before acting, two rounds of overflow: out until round 5.
+      expect(situation.members[1].incapacitatedUntil).toBe(5);
+    });
+
+    it('counts from the next round when the target has already acted', () => {
+      const { situation } = carryOutAttack(act(brawl, guard.id), roster, {
+        attacker: rex.id,
+        target: guard.id,
+        effect: 0,
+        roll: 10,
+        stun: true,
+      });
+
+      expect(situation.members[1].incapacitatedUntil).toBe(6);
+    });
+
+    it('puts no one out when the stun does not use up their END, or misses', () => {
+      const light = carryOutAttack(brawl, roster, {
+        attacker: rex.id,
+        target: guard.id,
+        effect: 0,
+        roll: 5,
+        stun: true,
+      });
+      expect(light.situation.members[1].incapacitatedUntil).toBeNull();
+
+      const miss = carryOutAttack(brawl, roster, {
+        attacker: rex.id,
+        target: guard.id,
+        effect: -1,
+        roll: 12,
+        stun: true,
+      });
+      expect(miss.situation.members[1].incapacitatedUntil).toBeNull();
+      expect(miss.target.injuries).toEqual([]);
+    });
+
+    // A stunner causes a robot physical Hits: lasting, and nothing to be out for.
+    it('does lasting Hits damage to a robot, and puts it out for no rounds', () => {
+      const bot: Actor = {
+        ...guard,
+        id: actorId(3),
+        name: 'Warbot',
+        kind: 'robot',
+        strength: null,
+        dexterity: null,
+        endurance: null,
+        hits: 20,
+      };
+      const fight = { ...addActors(emptySituation(), [rex, bot], 'Everyone'), round: 3 };
+
+      const { situation, target } = carryOutAttack(fight, [rex, bot], {
+        attacker: rex.id,
+        target: bot.id,
+        effect: 0,
+        roll: 12,
+        stun: true,
+      });
+
+      expect(target.injuries).toEqual([{ when: 3, kind: 'lethal', reductions: { hits: 12 } }]);
+      expect(situation.members[1].incapacitatedUntil).toBeNull();
+    });
   });
 });

@@ -16,12 +16,13 @@
  * See `docs/plan-rounds.md`, "Actors, Parties and Situation membership".
  */
 import type { Actor, ActorId } from '$lib/schema/actor';
+import { isDead, isDestroyed, isUnconscious } from './health';
 import { situationSchema, type Member, type Situation } from '$lib/schema/situation';
 
 export type { Member, Situation };
 
 /** Whether an actor may act now, has yet to be reached, or is finished. */
-export type MemberState = 'pending' | 'ready' | 'acted';
+export type MemberState = 'pending' | 'ready' | 'acted' | 'out';
 
 /**
  * A fight with nobody in it yet.
@@ -76,6 +77,7 @@ export function addActors(
         acted: false,
         waiting: false,
         target: null,
+        incapacitatedUntil: null,
       })),
     ],
   };
@@ -161,6 +163,25 @@ export function attack(situation: Situation, attacker: ActorId, target: ActorId)
   );
 }
 
+/**
+ * Stun puts an actor out for a number of rounds (:366).
+ *
+ * The count starts with the round of the hit when their turn in it is still to
+ * come, and with the next one when they have already acted (RIC-022). A later
+ * hit replaces the wait only when it makes it longer; durations do not add.
+ */
+export function incapacitate(situation: Situation, actor: ActorId, rounds: number): Situation {
+  if (rounds <= 0) return situation;
+  return update(
+    situation,
+    (member) => member.actor === actor,
+    (member) => {
+      const until = situation.round + rounds + (member.acted ? 1 : 0);
+      return { ...member, incapacitatedUntil: Math.max(member.incapacitatedUntil ?? 0, until) };
+    },
+  );
+}
+
 /** Let the turn pass without spending it, so the actor may act later. */
 export function delay(situation: Situation, actor: ActorId): Situation {
   return update(
@@ -214,7 +235,11 @@ export function turnOrder(situation: Situation, roster: readonly Actor[]): Membe
  * an actor who is still able to act.
  */
 function currentStep(situation: Situation, roster: readonly Actor[]): Member | null {
-  return turnOrder(situation, roster).find((member) => !member.acted && !member.waiting) ?? null;
+  return (
+    turnOrder(situation, roster).find(
+      (member) => !member.acted && !member.waiting && ableToAct(situation, member, roster),
+    ) ?? null
+  );
 }
 
 /**
@@ -225,6 +250,7 @@ function currentStep(situation: Situation, roster: readonly Actor[]): Member | n
  * about position in the order.
  */
 export function memberState(situation: Situation, member: Member, roster: readonly Actor[]): MemberState {
+  if (!ableToAct(situation, member, roster)) return 'out';
   if (member.acted) return 'acted';
   const step = currentStep(situation, roster);
   if (step === null) return 'ready';
@@ -238,7 +264,20 @@ function sameStep(member: Member, step: Member, roster: readonly Actor[]): boole
   return member.initiative === step.initiative && dexterity(member) === dexterity(step);
 }
 
+/**
+ * Whether an actor may take a turn at all: not stunned into the next round,
+ * and not unconscious, dead or destroyed. The turn passes on without whoever
+ * cannot.
+ */
+export function ableToAct(situation: Situation, member: Member, roster: readonly Actor[]): boolean {
+  if (member.incapacitatedUntil !== null && situation.round < member.incapacitatedUntil) return false;
+  const actor = roster.find((each) => each.id === member.actor);
+  return !actor || !(isDead(actor) || isDestroyed(actor) || isUnconscious(actor));
+}
+
 /** True once no one is still owed a turn. */
-export function roundComplete(situation: Situation): boolean {
-  return situation.members.every((member) => member.acted || member.waiting);
+export function roundComplete(situation: Situation, roster: readonly Actor[]): boolean {
+  return situation.members.every(
+    (member) => member.acted || member.waiting || !ableToAct(situation, member, roster),
+  );
 }

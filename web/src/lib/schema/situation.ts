@@ -79,6 +79,12 @@ export const memberSchema = z.object({
    * actor, so it lives on the row, and it is forgotten when the round turns.
    */
   target: actorIdSchema.nullable().default(null),
+  /**
+   * The first round they may act in again after stun put them out, or null.
+   * An absolute round number rather than a countdown, so nothing has to tick
+   * it down and the round turning cannot get it wrong.
+   */
+  incapacitatedUntil: z.number().int().nullable().default(null),
 });
 
 export type Member = z.infer<typeof memberSchema>;

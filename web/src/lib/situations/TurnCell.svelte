@@ -11,11 +11,14 @@
 
   let {
     state,
+    outFor = null,
     offered = true,
     ondone,
     onwait,
   }: {
     state: MemberState;
+    /** Rounds still to sit out, counting this one, when stun is why they are out. */
+    outFor?: number | null;
     /** False while the fight has not started, or is already over. */
     offered?: boolean;
     ondone: () => void;
@@ -25,6 +28,8 @@
 
 {#if !offered}
   <span class="spent"></span>
+{:else if state === 'out'}
+  <span class="spent">{outFor ? `out ${outFor}` : 'out'}</span>
 {:else if state === 'acted'}
   <span class="spent">done</span>
 {:else}

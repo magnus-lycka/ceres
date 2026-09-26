@@ -30,6 +30,15 @@
 {/if}
 
 <style>
+  button,
+  .spent {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   button {
     background: var(--surface);
     border: 1px solid #cbd5e1;

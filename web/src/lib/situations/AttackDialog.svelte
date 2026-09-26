@@ -33,6 +33,9 @@
   const target = $derived(chosen ?? String(previous ?? candidates[0]?.id ?? ''));
   /** The check's Effect: named for what it is, because `effect` is a rune. */
   let checkEffect = $state(0);
+  /** A Stun weapon: END only, and never lethal. */
+  let stun = $state(false);
+
   /** Protection the weapon ignores. */
   let ap = $state(0);
   /**
@@ -64,6 +67,7 @@
       ap,
       protection,
       excessTo: choosesExcess ? excessTo : undefined,
+      stun,
     });
   }
 </script>
@@ -90,6 +94,7 @@
         </select>
       </label>
     {/if}
+    <label><input type="checkbox" bind:checked={stun} /> Stun</label>
     <label>AP <input type="number" min="0" bind:value={ap} /></label>
     <label>
       Protection

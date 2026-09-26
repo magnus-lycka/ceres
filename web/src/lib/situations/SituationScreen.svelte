@@ -286,7 +286,7 @@
         </button>
       {:else}
         <strong>Round {open.round}</strong>
-        {#if roundComplete(open)}
+        {#if roundComplete(open, roster)}
           <span class="hint">Everyone has acted or is waiting.</span>
         {/if}
         <button type="button" class="cross" onclick={() => change(nextRound(open))}> Finish round </button>

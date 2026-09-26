@@ -1040,6 +1040,31 @@ inclusive wording: destroyed at Hits ≤ −starting Hits, for both kinds. The
 words differ by kind — dead / wrecked at 0, destroyed at −X — and are in
 `CONTEXT.md`.
 
+### RIC-022 Stun Incapacitation Counts The Round Of The Hit Only If The Target Has Not Yet Acted
+
+A Stun weapon that reduces END to 0 leaves the target "incapacitated and unable
+to perform any actions for a number of rounds by which the damage exceeded their
+END" (`refs/core/03_combat.md:366`). The text does not say where the count
+starts, and the answer decides whether a one-round stun does anything to someone
+who acts early in the round.
+
+Ceres counts from the round of the hit **when the target's turn in it is still
+to come**, and from the next round when they have already acted. Someone who has
+acted has nothing left in this round to lose; someone who has not loses it, and
+that is one of the rounds they are out for. A one-round stun therefore costs a
+target who has not yet acted exactly their coming turn, and a target who has
+already acted their next one.
+
+Example: END 8 hit by 10 stun, two rounds of overflow, in round 3. A target who
+has not acted is out for rounds 3 and 4 and acts again in round 5. One who has
+already acted is out for rounds 4 and 5 and acts again in round 6. Someone who is
+only waiting has not acted.
+
+The wait is stored as the first round they may act in again. A later hit
+replaces it only when that reaches further; durations never add (RIC-011). An
+actor who is stunned, unconscious, dead, wrecked or destroyed is out of action:
+the turn passes on without them and they do not keep the round open.
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

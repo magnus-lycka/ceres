@@ -89,6 +89,8 @@
     /** The name of who they last went for, or empty. */
     target: string;
     state: MemberState;
+    /** Rounds still to sit out, counting this one, or null. */
+    outFor: number | null;
   };
 
   /** The health cells for one row, or dashes when the actor cannot be found. */
@@ -107,6 +109,10 @@
       ...vitality(member.actor),
       target: roster.find((actor) => actor.id === member.target)?.name ?? '',
       state: memberState(situation, member, roster),
+      outFor:
+        member.incapacitatedUntil !== null && member.incapacitatedUntil > situation.round
+          ? member.incapacitatedUntil - situation.round
+          : null,
     })),
   );
 
@@ -114,7 +120,7 @@
 
   const columns: GridColumns<Row> = [
     // Wide enough for "Sindalian Combat Robot": three of those in one fight is normal.
-    { field: 'name', header: 'Name', width: 210, editable: false },
+    { field: 'name', header: 'Name', width: 195, editable: false },
     // Editable, because an actor dropped in on their own arrives with no side
     // and a fight may be split or re-sided as it goes. It is a plain name, not
     // a reference to the Party that may have supplied it.
@@ -130,7 +136,7 @@
     {
       id: 'target',
       header: 'Target',
-      width: 110,
+      width: 140,
       editable: false,
       cell: (ctx: Cell) =>
         renderComponent(TargetCell, {
@@ -152,6 +158,7 @@
       cell: (ctx: Cell) =>
         renderComponent(TurnCell, {
           state: ctx.row.original.state,
+          outFor: ctx.row.original.outFor,
           // Turns are taken inside a round, and only there. Before the round
           // begins nobody has one to spend; a plan has not reached them and a
           // record is past them.
@@ -205,7 +212,8 @@
     background: var(--success-bg);
   }
 
-  .grid :global(tr.turn-acted > td) {
+  .grid :global(tr.turn-acted > td),
+  .grid :global(tr.turn-out > td) {
     background: var(--subtle-bg);
     color: var(--muted);
   }

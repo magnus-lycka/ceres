@@ -18,6 +18,7 @@ import {
   attack,
   delay,
   emptySituation,
+  incapacitate,
   memberState,
   newRound,
   removeActor,
@@ -258,8 +259,8 @@ describe('whose turn it is', () => {
 
   it('is over once everyone has acted or delayed', () => {
     const situation = ready([rin, 12], [sana, 8]);
-    expect(roundComplete(situation)).toBe(false);
-    expect(roundComplete(act(delay(situation, rin.id), sana.id))).toBe(true);
+    expect(roundComplete(situation, roster)).toBe(false);
+    expect(roundComplete(act(delay(situation, rin.id), sana.id), roster)).toBe(true);
   });
 });
 
@@ -285,6 +286,110 @@ describe('an attack', () => {
 
     expect(find(after, rin).target).toBe(sana.id);
     expect(memberState(after, find(after, rin), roster)).not.toBe('acted');
+  });
+});
+
+/**
+ * Whoever cannot act does not hold the table up. Stunned, unconscious, dead or
+ * destroyed, they are out for the round, and the turn passes on without them.
+ */
+describe('who is out of action', () => {
+  const round3 = () => ({ ...ready([rin, 12], [sana, 8], [bo, 4]), round: 3 });
+  const felled = (who: Actor, reductions: Record<string, number>): Actor => ({
+    ...who,
+    injuries: [{ when: 1, kind: 'lethal', reductions }],
+  });
+
+  it('includes someone stunned, until the round they may act again', () => {
+    const stunned = incapacitate(round3(), sana.id, 2);
+
+    expect(memberState(stunned, find(stunned, sana), roster)).toBe('out');
+    expect(memberState({ ...stunned, round: 4 }, find(stunned, sana), roster)).toBe('out');
+    expect(memberState({ ...stunned, round: 5 }, find(stunned, sana), roster)).not.toBe('out');
+  });
+
+  it('includes someone unconscious, dead or destroyed', () => {
+    const down = round3();
+    const asleep = [rin, felled(sana, { strength: 8 }), bo];
+    expect(memberState(down, find(down, sana), asleep)).toBe('out');
+
+    const dead = [rin, felled(sana, { strength: 8, dexterity: 8, endurance: 8 }), bo];
+    expect(memberState(down, find(down, sana), dead)).toBe('out');
+  });
+
+  // Hits has no "unconscious" at zero: a dead animal or a wrecked robot is out
+  // for a different reason than someone who has fallen asleep.
+  it('includes an animal at zero Hits and a robot that is wrecked', () => {
+    const wolf: Actor = { ...bo, kind: 'animal', strength: null, dexterity: null, endurance: null, hits: 10 };
+    const down = round3();
+
+    const dead = { ...wolf, injuries: [{ when: 1, kind: 'lethal' as const, reductions: { hits: 10 } }] };
+    expect(memberState(down, find(down, bo), [rin, sana, dead])).toBe('out');
+
+    const wrecked = { ...dead, kind: 'robot' as const };
+    expect(memberState(down, find(down, bo), [rin, sana, wrecked])).toBe('out');
+  });
+
+  it('lets the turn pass on without them', () => {
+    const stunned = act(incapacitate(round3(), sana.id, 2), rin.id);
+
+    // Rin has acted and Sana is out, so it is Bo's turn.
+    expect(memberState(stunned, find(stunned, bo), roster)).toBe('ready');
+  });
+
+  it('does not keep the round open', () => {
+    const stunned = incapacitate(round3(), sana.id, 2);
+    const everyoneElse = act(act(stunned, rin.id), bo.id);
+
+    expect(roundComplete(everyoneElse, roster)).toBe(true);
+    expect(roundComplete(stunned, roster)).toBe(false);
+  });
+});
+
+/**
+ * Stun (:366) takes an actor out for a number of rounds. The count starts with
+ * the round of the hit, but only if their turn in it is still to come: someone
+ * who has already acted has nothing left in this round to lose, so their rounds
+ * out are the ones after it (docs/RULE_INTERPRETATIONS.md, RIC-022).
+ */
+describe('being incapacitated', () => {
+  const round3 = () => ({ ...ready([rin, 12], [sana, 8]), round: 3 });
+
+  it('loses the current round too, for someone who has not acted yet', () => {
+    const situation = incapacitate(round3(), sana.id, 2);
+
+    // Out for rounds 3 and 4; able to act again in round 5.
+    expect(find(situation, sana).incapacitatedUntil).toBe(5);
+  });
+
+  it('starts with the next round, for someone who has already acted', () => {
+    const situation = incapacitate(act(round3(), sana.id), sana.id, 2);
+
+    // Nothing left to lose in round 3; out for rounds 4 and 5.
+    expect(find(situation, sana).incapacitatedUntil).toBe(6);
+  });
+
+  it('counts someone who is waiting as not having acted', () => {
+    const situation = incapacitate(delay(round3(), sana.id), sana.id, 1);
+
+    expect(find(situation, sana).incapacitatedUntil).toBe(4);
+  });
+
+  // "durations do not add together" (RIC-011): a later hit only matters if it
+  // reaches further than the wait already running.
+  it('is extended by a later hit only when that reaches further', () => {
+    const first = incapacitate(round3(), sana.id, 3);
+    expect(find(first, sana).incapacitatedUntil).toBe(6);
+
+    const shorter = incapacitate({ ...first, round: 4 }, sana.id, 1);
+    expect(find(shorter, sana).incapacitatedUntil).toBe(6);
+
+    const longer = incapacitate({ ...first, round: 4 }, sana.id, 4);
+    expect(find(longer, sana).incapacitatedUntil).toBe(8);
+  });
+
+  it('does nothing for a hit that overflowed nothing', () => {
+    expect(find(incapacitate(round3(), sana.id, 0), sana).incapacitatedUntil).toBeNull();
   });
 });
 

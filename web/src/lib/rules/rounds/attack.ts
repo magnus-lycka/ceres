@@ -7,7 +7,7 @@
  */
 import type { Actor, ActorId } from '../../schema/actor';
 import { takeDamage } from './damage';
-import { attack, type Situation } from './situation';
+import { attack, incapacitate, type Situation } from './situation';
 
 export type Attack = {
   /** The attack check's Effect: the roll and modifiers, less 8. */
@@ -43,6 +43,8 @@ export type Strike = {
   protection?: number;
   /** Which of STR or DEX takes the excess once END is gone: the target's choice. */
   excessTo?: 'strength' | 'dexterity';
+  /** A Stun weapon: the damage is stun, not lethal (:366). */
+  stun?: boolean;
 };
 
 /**
@@ -55,13 +57,18 @@ export type Strike = {
 export function carryOutAttack(
   situation: Situation,
   roster: readonly Actor[],
-  { attacker, target, effect, roll, ap, protection, excessTo }: Strike,
+  { attacker, target, effect, roll, ap, protection, excessTo, stun }: Strike,
 ): { situation: Situation; target: Actor } {
   const victim = roster.find((actor) => actor.id === target);
   if (!victim) throw new Error(`there is no actor ${target} to attack`);
-  const lethal = resolveAttack({ effect, roll, ap, protection: protection ?? victim.protection });
+  const landed = resolveAttack({ effect, roll, ap, protection: protection ?? victim.protection });
+  const hurt = takeDamage(victim, {
+    ...(stun ? { stun: landed } : { lethal: landed }),
+    at: situation.round,
+    excessTo,
+  });
   return {
-    situation: attack(situation, attacker, target),
-    target: takeDamage(victim, { lethal, at: situation.round, excessTo }),
+    situation: incapacitate(attack(situation, attacker, target), target, hurt.incapacitatedFor),
+    target: hurt.actor,
   };
 }

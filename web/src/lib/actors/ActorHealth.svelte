@@ -298,6 +298,14 @@
   input {
     width: 4rem;
   }
+  /* Injury points are small numbers, and the add row is the widest thing in the
+     panel: it has to fit beside the grid without the button wrapping. */
+  .add input {
+    width: 3rem;
+  }
+  .add button {
+    white-space: nowrap;
+  }
   .barred {
     color: #9ca3af;
   }

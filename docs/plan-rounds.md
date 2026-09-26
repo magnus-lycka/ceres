@@ -1158,7 +1158,9 @@ Magnus can look at"):
 1. **Actor attributes** — Protection, Movement, Speed all kinds; Endurance,
    INT robots only; `checkKind` restated; `isDestroyed` added. Visible in the
    panels built in step 0.
-2. **Round table columns, Target cell, the attack dialog's non-robot path** —
+2. **Round table columns, Target cell, the attack dialog's non-robot path**
+   (built in slices: 2a the attack itself, 2b stun and who can act, 2c
+   reactions and weapon traits, 2d Other) —
    reaction DM hints, weapon traits, Effect, damage, a negative Effect ending
    the exchange as a miss with the turn still spent. Incapacitation and the
    injury's round stamp land on `Member`. **First step where a fight can
