@@ -91,6 +91,9 @@
     state: MemberState;
     /** Rounds still to sit out, counting this one, or null. */
     outFor: number | null;
+    /** DM-1 each on the actions still to come this round, and on next round's. */
+    reactions: number;
+    nextReactions: number;
   };
 
   /** The health cells for one row, or dashes when the actor cannot be found. */
@@ -109,6 +112,8 @@
       ...vitality(member.actor),
       target: roster.find((actor) => actor.id === member.target)?.name ?? '',
       state: memberState(situation, member, roster),
+      reactions: member.reactions,
+      nextReactions: member.nextReactions,
       outFor:
         member.incapacitatedUntil !== null && member.incapacitatedUntil > situation.round
           ? member.incapacitatedUntil - situation.round
@@ -159,6 +164,8 @@
         renderComponent(TurnCell, {
           state: ctx.row.original.state,
           outFor: ctx.row.original.outFor,
+          reactions: ctx.row.original.reactions,
+          nextReactions: ctx.row.original.nextReactions,
           // Turns are taken inside a round, and only there. Before the round
           // begins nobody has one to spend; a plan has not reached them and a
           // record is past them.

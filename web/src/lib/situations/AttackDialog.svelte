@@ -21,6 +21,7 @@
     attacker,
     candidates,
     previous,
+    attackerReactions = 0,
     onapply,
     oncancel,
   }: {
@@ -29,6 +30,8 @@
     candidates: Actor[];
     /** Who they went for last time, so the next attack starts from them. */
     previous: ActorId | null;
+    /** Reactions the attacker has taken, each DM-1 on this roll. */
+    attackerReactions?: number;
     onapply: (strike: Strike) => void;
     oncancel: () => void;
   } = $props();
@@ -80,7 +83,7 @@
 
   /** The DMs the app knows of: a reminder before the roll, never applied to it. */
   const modifiers = $derived(
-    victim ? knownModifiers({ defender: victim, reaction, attack: kind, shotgun }) : [],
+    victim ? knownModifiers({ defender: victim, reaction, attack: kind, shotgun, attackerReactions }) : [],
   );
   const known = $derived(totalOf(modifiers));
 
@@ -112,6 +115,7 @@
       shotgun,
       excessTo: choosesExcess ? excessTo : undefined,
       stun,
+      reaction,
     });
   }
 </script>

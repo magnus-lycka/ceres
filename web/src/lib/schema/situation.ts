@@ -85,6 +85,14 @@ export const memberSchema = z.object({
    * it down and the round turning cannot get it wrong.
    */
   incapacitatedUntil: z.number().int().nullable().default(null),
+  /**
+   * How many reactions count against the actions still to come this round: each
+   * is DM-1 on their next set of actions (refs/core/03_combat.md:192). Spent
+   * when they act.
+   */
+  reactions: z.number().int().nonnegative().default(0),
+  /** The same, for reactions taken after they had acted: they cost next round's actions (RIC-013). */
+  nextReactions: z.number().int().nonnegative().default(0),
 });
 
 export type Member = z.infer<typeof memberSchema>;

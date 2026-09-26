@@ -12,6 +12,8 @@
   let {
     state,
     outFor = null,
+    reactions = 0,
+    nextReactions = 0,
     offered = true,
     ondone,
     onwait,
@@ -19,6 +21,10 @@
     state: MemberState;
     /** Rounds still to sit out, counting this one, when stun is why they are out. */
     outFor?: number | null;
+    /** Reactions costing the actions still to come this round: DM-1 each. */
+    reactions?: number;
+    /** Reactions taken after acting, which cost next round's. */
+    nextReactions?: number;
     /** False while the fight has not started, or is already over. */
     offered?: boolean;
     ondone: () => void;
@@ -31,11 +37,14 @@
 {:else if state === 'out'}
   <span class="spent">{outFor ? `out ${outFor}` : 'out'}</span>
 {:else if state === 'acted'}
-  <span class="spent">done</span>
+  <span class="spent">done{nextReactions > 0 ? ` · next DM−${nextReactions}` : ''}</span>
 {:else}
   <div class="actions">
     <button type="button" tabindex={-1} onclick={() => ondone()}>Done</button>
     <button type="button" tabindex={-1} onclick={() => onwait()}>Wait</button>
+    {#if reactions > 0}<span class="penalty" title="Reactions cost these actions DM-1 each"
+        >DM−{reactions}</span
+      >{/if}
   </div>
 {/if}
 
@@ -57,6 +66,12 @@
 
   button:hover {
     background: var(--selected-bg);
+  }
+
+  .penalty {
+    color: var(--danger);
+    align-self: center;
+    white-space: nowrap;
   }
 
   .spent {

@@ -109,6 +109,30 @@ describe('the DM a Dodge puts on the attack', () => {
   });
 });
 
+describe('the attacker’s own reactions', () => {
+  // "every time a Traveller performs a Reaction, they will suffer DM-1 on their
+  // next set of actions" (:192): a known DM on the roll about to be made.
+  it('cost the attacker DM-1 each, whatever the defender does', () => {
+    expect(
+      knownModifiers({ defender: sophont(8), reaction: null, attack: 'ranged', attackerReactions: 2 }),
+    ).toEqual([{ label: 'Your reactions', dm: -2 }]);
+  });
+
+  it('come after what the defender’s reaction costs, and are absent when there are none', () => {
+    const rows = knownModifiers({
+      defender: sophont(12),
+      reaction: 'dodge',
+      attack: 'ranged',
+      attackerReactions: 1,
+    });
+
+    expect(rows.map((row) => row.label)).toEqual(['Dodge (DEX DM)', 'Your reactions']);
+    expect(
+      knownModifiers({ defender: sophont(8), reaction: null, attack: 'ranged', attackerReactions: 0 }),
+    ).toEqual([]);
+  });
+});
+
 describe('adding up what is known', () => {
   it('sums the known DMs', () => {
     expect(

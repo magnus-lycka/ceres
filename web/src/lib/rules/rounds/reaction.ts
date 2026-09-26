@@ -33,6 +33,8 @@ type Situation = {
   attack: AttackKind;
   /** A Shotgun with pellet ammunition ignores Dodge modifiers (refs/core/04_equipment.md:827). */
   shotgun?: boolean;
+  /** Reactions the attacker has taken that count against the roll they are about to make. */
+  attackerReactions?: number;
 };
 
 /**
@@ -48,14 +50,25 @@ function dodge(defender: Actor): Modifier {
   return { label: 'Dodge (DEX DM)', dm: dm > 0 ? -dm : 0 };
 }
 
-/** The DMs the app knows of, for the reaction chosen. Nothing here is ever applied to a roll. */
-export function knownModifiers({ defender, reaction, attack, shotgun }: Situation): Modifier[] {
+/** What the defender's reaction, if any, costs the attacker. */
+function defendersReaction({ defender, reaction, attack, shotgun }: Situation): Modifier[] {
   // A reaction the attack does not allow is no reaction at all.
   if (reaction === null || !reactionsAgainst(attack).includes(reaction)) return [];
   if (reaction === 'dive') return [{ label: 'Dive for cover', dm: -2 }];
   if (reaction === 'parry') return [{ label: 'Parry (Melee skill)', dm: null }];
   if (shotgun) return [{ label: 'Dodge (ignored by a Shotgun)', dm: 0 }];
   return [dodge(defender)];
+}
+
+/**
+ * The DMs the app knows of: what the defender's reaction costs the attacker, and
+ * DM-1 for each reaction the attacker has taken themselves (:192). Nothing here
+ * is ever applied to a roll.
+ */
+export function knownModifiers(situation: Situation): Modifier[] {
+  const rows = defendersReaction(situation);
+  const own = situation.attackerReactions ?? 0;
+  return own > 0 ? [...rows, { label: 'Your reactions', dm: -own }] : rows;
 }
 
 /**

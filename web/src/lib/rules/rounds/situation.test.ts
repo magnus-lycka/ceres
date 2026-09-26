@@ -21,6 +21,7 @@ import {
   incapacitate,
   memberState,
   newRound,
+  react,
   removeActor,
   roundComplete,
   setInitiative,
@@ -390,6 +391,60 @@ describe('being incapacitated', () => {
 
   it('does nothing for a hit that overflowed nothing', () => {
     expect(find(incapacitate(round3(), sana.id, 0), sana).incapacitatedUntil).toBeNull();
+  });
+});
+
+/**
+ * "every time a Traveller performs a Reaction, they will suffer DM-1 on their
+ * next set of actions" (refs/core/03_combat.md:192). RIC-013 reads "next" as the
+ * next set not yet spent: a reaction before they have acted this round costs this
+ * round's actions, one after they have acted costs next round's.
+ */
+describe('a reaction', () => {
+  const round2 = () => ({ ...ready([rin, 12], [sana, 8]), round: 2 });
+
+  it('costs the actions still to come this round, for someone who has not acted', () => {
+    const situation = react(round2(), sana.id);
+
+    expect(find(situation, sana)).toMatchObject({ reactions: 1, nextReactions: 0 });
+  });
+
+  it('costs next round’s actions instead, for someone who has already acted', () => {
+    const situation = react(act(round2(), sana.id), sana.id);
+
+    expect(find(situation, sana)).toMatchObject({ reactions: 0, nextReactions: 1 });
+  });
+
+  // "Dodge two shots, take DM-2." (handouts/combat_cards.typ)
+  it('adds up: every reaction is a further DM-1', () => {
+    const situation = react(react(round2(), sana.id), sana.id);
+
+    expect(find(situation, sana).reactions).toBe(2);
+  });
+
+  it('is spent by acting, and by attacking', () => {
+    expect(find(act(react(round2(), sana.id), sana.id), sana).reactions).toBe(0);
+    expect(find(attack(react(round2(), sana.id), sana.id, rin.id), sana).reactions).toBe(0);
+  });
+
+  it('does not spend what was carried to next round by acting now', () => {
+    const after = act(react(act(round2(), sana.id), sana.id), sana.id);
+
+    expect(find(after, sana).nextReactions).toBe(1);
+  });
+
+  it('turns the carried penalty into this round’s when the round turns', () => {
+    const next = newRound(react(act(round2(), sana.id), sana.id));
+
+    expect(find(next, sana)).toMatchObject({ reactions: 1, nextReactions: 0 });
+  });
+
+  // RIC-013: the penalty attaches to the next set not yet spent. Someone who
+  // never got a turn this round (out, say) still has it for their next.
+  it('stays until it is spent, if the actor never acted this round', () => {
+    const next = newRound(react(round2(), sana.id));
+
+    expect(find(next, sana).reactions).toBe(1);
   });
 });
 

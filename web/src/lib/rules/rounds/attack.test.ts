@@ -193,6 +193,46 @@ describe('carrying out an attack', () => {
     ).toThrow(/no actor 99/);
   });
 
+  // Recorded when the attack is applied, hit or miss: the reaction was taken
+  // whatever came of the attack.
+  describe('with a reaction', () => {
+    const strike = { attacker: rex.id, target: guard.id, effect: 0, roll: 5 };
+
+    it('costs the target DM-1 on the actions they have still to take', () => {
+      const dodged = carryOutAttack(brawl, roster, { ...strike, reaction: 'dodge' });
+      expect(dodged.situation.members[1]).toMatchObject({ reactions: 1, nextReactions: 0 });
+
+      const parried = carryOutAttack(brawl, roster, { ...strike, reaction: 'parry' });
+      expect(parried.situation.members[1].reactions).toBe(1);
+    });
+
+    it('is recorded on a miss too', () => {
+      const { situation } = carryOutAttack(brawl, roster, { ...strike, effect: -1, reaction: 'dodge' });
+
+      expect(situation.members[1].reactions).toBe(1);
+    });
+
+    it('costs next round’s actions when the target has already acted', () => {
+      const { situation } = carryOutAttack(act(brawl, guard.id), roster, { ...strike, reaction: 'dodge' });
+
+      expect(situation.members[1]).toMatchObject({ reactions: 0, nextReactions: 1 });
+    });
+
+    // Diving for cover forfeits their next actions entirely; it is not also a
+    // DM-1 on actions they will not take.
+    it('is not a DM-1 reaction, when the reaction is diving for cover', () => {
+      const { situation } = carryOutAttack(brawl, roster, { ...strike, reaction: 'dive' });
+
+      expect(situation.members[1]).toMatchObject({ reactions: 0, nextReactions: 0 });
+    });
+
+    it('costs nothing when there is no reaction', () => {
+      const { situation } = carryOutAttack(brawl, roster, strike);
+
+      expect(situation.members[1]).toMatchObject({ reactions: 0, nextReactions: 0 });
+    });
+  });
+
   describe('with weapon traits', () => {
     const armoured = { ...guard, protection: 3 };
     const plated: Actor = {

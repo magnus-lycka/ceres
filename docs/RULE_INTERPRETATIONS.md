@@ -846,6 +846,14 @@ actions, while one taken after they have acted penalises next round's. The
 penalty attaches to the next unspent action set rather than always to the
 following round.
 
+Ceres keeps two counts on each actor's row in a situation: reactions that cost
+the actions still to come this round, and reactions taken after they acted, which
+cost next round's. Acting spends the first, and the round turning adds the second
+to it. A penalty that has not been spent stays until it is: someone who never got
+a turn in the round, because they were stunned or unconscious, still has it for
+their next one. Diving for cover is not counted here, since it costs the actions
+themselves (`refs/core/03_combat.md:208`).
+
 ### RIC-014 The Ambush DM Applies To Initiative Only, And Only In Round One
 
 `refs/core/03_combat.md:44` states the ambush modifier in two sentences that are

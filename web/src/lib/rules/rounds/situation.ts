@@ -78,6 +78,8 @@ export function addActors(
         waiting: false,
         target: null,
         incapacitatedUntil: null,
+        reactions: 0,
+        nextReactions: 0,
       })),
     ],
   };
@@ -145,12 +147,12 @@ export function setPartyInitiative(
   );
 }
 
-/** Finish an actor's turn. */
+/** Finish an actor's turn, which spends whatever their reactions cost it. */
 export function act(situation: Situation, actor: ActorId): Situation {
   return update(
     situation,
     (member) => member.actor === actor,
-    (member) => ({ ...member, acted: true }),
+    (member) => ({ ...member, acted: true, reactions: 0 }),
   );
 }
 
@@ -159,7 +161,23 @@ export function attack(situation: Situation, attacker: ActorId, target: ActorId)
   return update(
     situation,
     (member) => member.actor === attacker,
-    (member) => ({ ...member, acted: true, target }),
+    (member) => ({ ...member, acted: true, target, reactions: 0 }),
+  );
+}
+
+/**
+ * A reaction costs DM-1 on their next set of actions. That is the next set not
+ * yet spent (RIC-013): this round's if they have not acted, next round's if
+ * they have.
+ */
+export function react(situation: Situation, actor: ActorId): Situation {
+  return update(
+    situation,
+    (member) => member.actor === actor,
+    (member) =>
+      member.acted
+        ? { ...member, nextReactions: member.nextReactions + 1 }
+        : { ...member, reactions: member.reactions + 1 },
   );
 }
 
@@ -196,7 +214,14 @@ export function newRound(situation: Situation): Situation {
   return {
     ...situation,
     round: situation.round + 1,
-    members: situation.members.map((member) => ({ ...member, acted: false, waiting: false })),
+    members: situation.members.map((member) => ({
+      ...member,
+      acted: false,
+      waiting: false,
+      // Reactions taken after acting now cost this round; any not yet spent stay.
+      reactions: member.reactions + member.nextReactions,
+      nextReactions: 0,
+    })),
   };
 }
 

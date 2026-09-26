@@ -298,6 +298,7 @@
         (actor) => actor.id !== attackingActor.id && open.members.some((member) => member.actor === actor.id),
       )}
       previous={open.members.find((member) => member.actor === attackingActor.id)?.target ?? null}
+      attackerReactions={open.members.find((member) => member.actor === attackingActor.id)?.reactions ?? 0}
       onapply={strike}
       oncancel={() => (attacking = null)}
     />

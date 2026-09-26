@@ -1161,8 +1161,8 @@ Magnus can look at"):
 2. **Round table columns, Target cell, the attack dialog's non-robot path**
    (built in slices: 2a the attack itself, 2b stun and who can act, 2c the
    Shotgun and Stun-against-robot Protection traits, 2d the reaction reminder
-   with its known DMs, 2e reaction consequences and the prone condition, 2f
-   Other) —
+   with its known DMs, 2e reaction consequences and the prone condition (2e-1 the DM-1
+   penalty, 2e-2 Dive and prone), 2f Other) —
    reaction DM hints, weapon traits, Effect, damage, a negative Effect ending
    the exchange as a miss with the turn still spent. Incapacitation and the
    injury's round stamp land on `Member`. **First step where a fight can

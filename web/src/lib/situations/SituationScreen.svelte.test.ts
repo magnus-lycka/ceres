@@ -681,5 +681,67 @@ describe('attacking', () => {
         expect(guard.injuries[0].reductions).toEqual({ endurance: 7 });
       });
     });
+
+    // The cost lands on the defender, and it shows where they take their turn.
+    it('puts the penalty on the defender’s row when a Dodge is applied', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await vi.waitFor(async () => {
+        const [stored] = await library.situations();
+        expect(stored.members.map((member) => member.reactions)).toContain(1);
+      });
+      await expect.element(screen.getByText('DM−1')).toBeVisible();
+    });
+
+    it('is spent when the defender acts', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+      await expect.element(screen.getByText('DM−1')).toBeVisible();
+
+      await screen.getByRole('button', { name: 'Done' }).click();
+
+      await expect.element(screen.getByText('DM−1')).not.toBeInTheDocument();
+    });
+
+    // Already acted: the reaction costs next round's actions, and says so.
+    it('is carried to next round for a defender who has already acted', async () => {
+      const { screen } = await fight([sophont('Guard'), 12], [sophont('Rex'), 8]);
+      await screen.getByRole('button', { name: 'Done' }).first().click();
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Target').selectOptions('Guard');
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await expect.element(screen.getByText(/next DM−1/)).toBeVisible();
+    });
+
+    // The other half of the same rule: what a reaction cost the defender is a DM
+    // on their own roll, and it is in front of them when they make it.
+    it('reminds someone who has reacted that it costs them on their own roll', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const first = attackDialog(screen);
+      await first.getByLabelText('Reaction').selectOptions('Dodge');
+      await first.getByLabelText('Effect').fill('-1');
+      await first.getByRole('button', { name: 'Apply' }).click();
+
+      await screen.getByRole('button', { name: 'Guard attacks' }).click();
+
+      const second = attackDialog(screen);
+      await expect.element(second.getByText('Your reactions')).toBeVisible();
+      await expect.element(second.getByText('−1', { exact: true }).first()).toBeVisible();
+    });
   });
 });

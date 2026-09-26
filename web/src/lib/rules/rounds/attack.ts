@@ -7,7 +7,8 @@
  */
 import type { Actor, ActorId } from '../../schema/actor';
 import { takeDamage } from './damage';
-import { attack, incapacitate, type Situation } from './situation';
+import { attack, incapacitate, react, type Situation } from './situation';
+import type { Reaction } from './reaction';
 
 export type Attack = {
   /** The attack check's Effect: the roll and modifiers, less 8. */
@@ -71,6 +72,8 @@ export type Strike = {
   stun?: boolean;
   /** A Shotgun with pellet ammunition: armour is doubly effective. */
   shotgun?: boolean;
+  /** What the target did about it. Recorded whether the attack hit or missed. */
+  reaction?: Reaction | null;
 };
 
 /**
@@ -83,7 +86,7 @@ export type Strike = {
 export function carryOutAttack(
   situation: Situation,
   roster: readonly Actor[],
-  { attacker, target, effect, roll, ap, protection, excessTo, stun, shotgun }: Strike,
+  { attacker, target, effect, roll, ap, protection, excessTo, stun, shotgun, reaction }: Strike,
 ): { situation: Situation; target: Actor } {
   const victim = roster.find((actor) => actor.id === target);
   if (!victim) throw new Error(`there is no actor ${target} to attack`);
@@ -94,8 +97,11 @@ export function carryOutAttack(
     at: situation.round,
     excessTo,
   });
+  const struck = incapacitate(attack(situation, attacker, target), target, hurt.incapacitatedFor);
   return {
-    situation: incapacitate(attack(situation, attacker, target), target, hurt.incapacitatedFor),
+    // A Dodge or a Parry costs the target DM-1 on their next actions. Diving for
+    // cover costs them those actions instead, which is not recorded yet.
+    situation: reaction === 'dodge' || reaction === 'parry' ? react(struck, target) : struck,
     target: hurt.actor,
   };
 }
