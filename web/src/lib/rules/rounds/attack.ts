@@ -114,3 +114,34 @@ function withReaction(
   if (reaction === 'dive') return dive(situation, target);
   return situation;
 }
+
+export type Harm = {
+  target: ActorId;
+  /** The damage as it lands: no Effect, no AP and no Protection, as armour does not stop a fall. */
+  damage: number;
+  /** Stun rather than lethal: END only, and never lethal (:366). */
+  stun?: boolean;
+  /** Which of STR or DEX takes the excess once END is gone: the target's choice. */
+  excessTo?: 'strength' | 'dexterity';
+};
+
+/**
+ * Injury with nobody to blame: a fall, a fire, a hull breach. The referee enters
+ * the damage as it lands (refs/core/03_combat.md:400: armour does not protect
+ * against a fall). No one's turn is spent and no target recorded, because no one
+ * acted; a stun that puts the target out is counted as for any other hit.
+ */
+export function harm(
+  situation: Situation,
+  roster: readonly Actor[],
+  { target, damage, stun, excessTo }: Harm,
+): { situation: Situation; target: Actor } {
+  const victim = roster.find((actor) => actor.id === target);
+  if (!victim) throw new Error(`there is no actor ${target} to hurt`);
+  const hurt = takeDamage(victim, {
+    ...(stun ? { stun: damage } : { lethal: damage }),
+    at: situation.round,
+    excessTo,
+  });
+  return { situation: incapacitate(situation, target, hurt.incapacitatedFor), target: hurt.actor };
+}

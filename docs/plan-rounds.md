@@ -1162,7 +1162,7 @@ Magnus can look at"):
    (built in slices: 2a the attack itself, 2b stun and who can act, 2c the
    Shotgun and Stun-against-robot Protection traits, 2d the reaction reminder
    with its known DMs, 2e reaction consequences and the prone condition (2e-1 the DM-1
-   penalty, 2e-2 Dive and prone; both built), 2f Other) —
+   penalty, 2e-2 Dive and prone; both built), 2f Other; built, and with it step 2) —
    reaction DM hints, weapon traits, Effect, damage, a negative Effect ending
    the exchange as a miss with the turn still spent. Incapacitation and the
    injury's round stamp land on `Member`. **First step where a fight can

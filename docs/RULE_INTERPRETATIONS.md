@@ -1122,6 +1122,22 @@ round's if it is not, and leaves them prone. Prone lasts until the referee says
 the actor has got up, which is a Minor Action nobody tracks, and quarters
 Movement while it does (`:162`).
 
+### RIC-024 Damage With No Attacker Lands As The Referee Enters It
+
+Falls, fire, vacuum and similar hazards have no attack check, so there is no
+Effect to add, no AP to weigh and no reaction to take. The core says only that
+"Armour does not protect against damage sustained from falling"
+(`refs/core/03_combat.md:400`). It says nothing about how armour meets fire or
+vacuum, and those depend on the case.
+
+Ceres therefore takes the damage as the referee enters it and applies none of the
+Protection arithmetic to it: a fall's figure is the whole figure, and for anything
+armour would partly stop, the referee enters what is left. It is applied like any
+other damage from there: END first, then the target's choice of STR or DEX; stun
+overflows into rounds out (RIC-022); a robot takes stun as lasting Hits; it is
+stamped with the round it landed in. No one's turn is spent and no target is
+recorded, since no one acted.
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

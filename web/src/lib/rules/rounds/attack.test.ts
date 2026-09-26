@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { actorId, type Actor } from '../../schema/actor';
 import { current, isDead } from './health';
 import { act, addActors, emptySituation, memberState } from './situation';
-import { carryOutAttack, protectionAgainst, resolveAttack } from './attack';
+import { carryOutAttack, harm, protectionAgainst, resolveAttack } from './attack';
 
 describe('the damage an attack lands', () => {
   // "damage is rolled for, with the Effect of the attack roll added" (:263),
@@ -365,5 +365,47 @@ describe('carrying out an attack', () => {
       expect(target.injuries).toEqual([{ when: 3, kind: 'lethal', reductions: { hits: 12 } }]);
       expect(situation.members[1].incapacitatedUntil).toBeNull();
     });
+  });
+});
+
+/**
+ * Falls, fire, vacuum: injury with nobody to blame. There is no attack check, so
+ * no Effect, no AP and no reaction, and "Armour does not protect against damage
+ * sustained from falling" (refs/core/03_combat.md:400). The referee enters the
+ * damage as it lands; nobody's turn is spent, because nobody acted.
+ */
+describe('harm from something other than an attacker', () => {
+  const armoured = { ...guard, protection: 5 };
+
+  it('lands as given in this round, past any armour, and spends nobody’s turn', () => {
+    const { situation, target } = harm(brawl, [rex, armoured], { target: armoured.id, damage: 6 });
+
+    expect(target.injuries).toEqual([{ when: 3, kind: 'lethal', reductions: { endurance: 6 } }]);
+    for (const member of situation.members) {
+      expect(member).toMatchObject({ acted: false, target: null });
+    }
+  });
+
+  it('can be stun, which puts the target out for the overflow as any stun does', () => {
+    const { situation, target } = harm(brawl, roster, { target: guard.id, damage: 10, stun: true });
+
+    expect(target.injuries).toEqual([{ when: 3, kind: 'stun', reductions: { endurance: 8 } }]);
+    expect(situation.members[1].incapacitatedUntil).toBe(5);
+  });
+
+  it('puts the excess on the characteristic the target chose', () => {
+    const { target } = harm(brawl, roster, { target: guard.id, damage: 10, excessTo: 'strength' });
+
+    expect(target.injuries[0].reductions).toEqual({ endurance: 8, strength: 2 });
+  });
+
+  it('hurts no one for no damage', () => {
+    const { target } = harm(brawl, roster, { target: guard.id, damage: 0 });
+
+    expect(target.injuries).toEqual([]);
+  });
+
+  it('refuses someone who is not there', () => {
+    expect(() => harm(brawl, roster, { target: actorId(99), damage: 3 })).toThrow(/no actor 99/);
   });
 });

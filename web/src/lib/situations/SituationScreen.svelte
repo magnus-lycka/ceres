@@ -17,6 +17,7 @@
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
   import Workspace from '$lib/Workspace.svelte';
   import AttackDialog from './AttackDialog.svelte';
+  import HarmDialog from './HarmDialog.svelte';
   import SetupGrid from '$lib/situations/SetupGrid.svelte';
   import SituationGrid from '$lib/situations/SituationGrid.svelte';
   import { library, refresh } from '$lib/store/session.svelte';
@@ -31,7 +32,7 @@
     setParty,
   } from '$lib/rules/rounds/situation';
   import { beginRound, end, engagedElsewhere, nextRound, start } from '$lib/rules/rounds/lifecycle';
-  import { carryOutAttack, type Strike } from '$lib/rules/rounds/attack';
+  import { carryOutAttack, harm, type Harm, type Strike } from '$lib/rules/rounds/attack';
   import type { Actor, ActorId } from '$lib/schema/actor';
   import type { Party } from '$lib/schema/party';
   import type { Condition, Situation, SituationId } from '$lib/schema/situation';
@@ -49,6 +50,8 @@
   let actorToAdd = $state('');
   /** The row the cursor is in on the setup grid, for Remove to act on. */
   let picked = $state<ActorId | null>(null);
+  /** Whether the dialog for damage with no attacker is open. */
+  let harming = $state(false);
   /** Who is attacking, while the attack dialog is open. */
   let attacking = $state<ActorId | null>(null);
   const attackingActor = $derived(roster.find((actor) => actor.id === attacking) ?? null);
@@ -122,6 +125,18 @@
     if (!open) return;
     const result = carryOutAttack(open, roster, attack);
     attacking = null;
+    return keep(async () => {
+      const saved = await library.saveActor(result.target);
+      roster = roster.map((each) => (each.id === saved.id ? saved : each));
+      await store(result.situation);
+    });
+  }
+
+  /** Damage with nobody to blame: the target is hurt, and no turn is spent. */
+  function hurt(damage: Harm) {
+    if (!open) return;
+    const result = harm(open, roster, damage);
+    harming = false;
     return keep(async () => {
       const saved = await library.saveActor(result.target);
       roster = roster.map((each) => (each.id === saved.id ? saved : each));
@@ -288,8 +303,17 @@
           <span class="hint">Everyone has acted or is waiting.</span>
         {/if}
         <button type="button" class="cross" onclick={() => change(nextRound(open))}> Finish round </button>
+        <button type="button" onclick={() => (harming = true)}>Other</button>
       {/if}
     </div>
+  {/if}
+
+  {#if harming}
+    <HarmDialog
+      candidates={roster.filter((actor) => open.members.some((member) => member.actor === actor.id))}
+      onapply={hurt}
+      oncancel={() => (harming = false)}
+    />
   {/if}
 
   {#if attackingActor}

@@ -828,3 +828,83 @@ describe('attacking', () => {
     });
   });
 });
+
+/**
+ * Falls, fire and vacuum have no attacker. The button opens a dialog with no
+ * attack check in it, and nobody's turn is spent by what it does.
+ */
+describe('damage from something other than an attacker', () => {
+  const harmDialog = (screen: Awaited<ReturnType<typeof fight>>['screen']) =>
+    screen.getByRole('dialog', { name: 'Other damage' });
+
+  it('lands as given on the target, past armour, and spends nobody’s turn', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), protection: 5 }, 8]);
+
+    await screen.getByRole('button', { name: 'Other' }).click();
+    const dialog = harmDialog(screen);
+    await dialog.getByLabelText('Target').selectOptions('Guard');
+    await dialog.getByLabelText('Damage').fill('6');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await vi.waitFor(async () => {
+      const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+      expect(guard.injuries).toEqual([{ when: 1, kind: 'lethal', reductions: { endurance: 6 } }]);
+    });
+    // The situation is saved after the actor, and "nothing changed" leaves nothing
+    // to wait for: give the write time to land before asserting it did not spend a turn.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const [stored] = await library.situations();
+    expect(stored.members.some((member) => member.acted || member.target !== null)).toBe(false);
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'Rex attacks' })).toBeVisible();
+  });
+
+  it('puts a target out with stun, as a Stun weapon does', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Other' }).click();
+    const dialog = harmDialog(screen);
+    await dialog.getByLabelText('Damage').fill('10');
+    await dialog.getByLabelText('Stun').click();
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await expect.element(screen.getByText('out 2')).toBeVisible();
+  });
+
+  it('changes nothing when cancelled', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+    await screen.getByRole('button', { name: 'Other' }).click();
+    await harmDialog(screen).getByLabelText('Damage').fill('9');
+    await harmDialog(screen).getByRole('button', { name: 'Cancel' }).click();
+
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+    const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+    expect(guard.injuries).toEqual([]);
+  });
+
+  // Nothing has been rolled, and nobody can be hurt in a round that has not begun.
+  it('is offered in a round and not before one', async () => {
+    const setup = await open('setup');
+    await expect.element(setup.getByRole('button', { name: 'Other' })).not.toBeInTheDocument();
+  });
+
+  it('asks which characteristic takes the excess only of someone who has a choice', async () => {
+    const wolf: Actor = {
+      ...sophont('Wolf'),
+      kind: 'animal',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 12,
+    };
+    const { screen } = await fight([sophont('Rex'), 12], [wolf, 8]);
+
+    await screen.getByRole('button', { name: 'Other' }).click();
+    const dialog = harmDialog(screen);
+    await expect.element(dialog.getByLabelText('Excess to')).toBeVisible();
+    await dialog.getByLabelText('Target').selectOptions('Wolf');
+
+    await expect.element(dialog.getByLabelText('Excess to')).not.toBeInTheDocument();
+  });
+});
