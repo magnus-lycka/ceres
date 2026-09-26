@@ -5,6 +5,14 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:1105',
+        changeOrigin: true,
+      },
+    },
+  },
   // Rolldown prints a plugin-timing breakdown on every build; useful when
   // profiling, noise in a pre-commit gate.
   build: { rollupOptions: { checks: { pluginTimings: false } } },
