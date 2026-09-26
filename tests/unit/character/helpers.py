@@ -395,6 +395,32 @@ class CharacterDriver:
         pending = self._find(PendingLifeEventChoice)
         return self._add(pending.event_from_form({'connection_kind': kind.value}))
 
+    def life_event_psi(self, roll: int) -> CharacterDriver:
+        from ceres.character.domain.psionics import PendingLifeEventPsionicsRoll
+
+        pending = self._find(PendingLifeEventPsionicsRoll)
+        return self._add(pending.event_from_form({'roll': str(roll)}))
+
+    def alien_science(self, skill: AnySkill) -> CharacterDriver:
+        from ceres.character.domain.life_events import PendingLifeEventAlienScience
+
+        pending = self._find(PendingLifeEventAlienScience)
+        return self._add(pending.event_from_form({'skill': skill.model_dump_json()}))
+
+    def crime_consequence(self, consequence: Literal['lose_benefit', 'prison']) -> CharacterDriver:
+        from ceres.character.domain.life_events import LifeEventCrimeLoseBenefitRoll, LifeEventCrimeTakePrisoner
+
+        return self.career_choice(
+            LifeEventCrimeLoseBenefitRoll if consequence == 'lose_benefit' else LifeEventCrimeTakePrisoner
+        )
+
+    def betrayed_by(self, name: str, new_kind: ConnectionKind) -> CharacterDriver:
+        from ceres.character.domain.life_events import PendingLifeEventBetrayalConvert
+
+        pending = self._find(PendingLifeEventBetrayalConvert)
+        index = next(i for i, connection in enumerate(self.projection.summary.connections) if connection.name == name)
+        return self._add(pending.event_from_form({'betrayal_choice': f'{index}|{new_kind.value}'}))
+
     def move_homeworld(self, world: TravellerMapWorld) -> CharacterDriver:
         from ceres.character.domain.homeworld.homeworld_events import (
             HomeworldChangedHandler,

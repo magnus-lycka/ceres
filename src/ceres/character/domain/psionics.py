@@ -167,12 +167,11 @@ class PsiStrengthTestHandler(EventHandlerBase):
             raw_roll=self.roll,
             terms_served=projection.summary.terms_started_in_pre_and_careers,
         )
-        if psi >= 9:
-            projection.summary.narrative.append(f'Psionic experience: PSI {psi} — qualifies to take the Psion career')
-        elif psi > 0:
-            projection.summary.narrative.append(f'Psionic experience: PSI {psi} — no significant psionic talent')
-        else:
-            projection.summary.narrative.append('Psionic experience: no Psionic Strength remaining')
+        outcome = f'PSI {psi}' if psi > 0 else 'no Psionic Strength remaining'
+        projection.extend_history(
+            fulfilled_pending.history_id if fulfilled_pending is not None else None,
+            f'Psionic experience: {outcome}',
+        )
 
 
 class PendingLifeEventPsionicsRoll(PendingInputBase):

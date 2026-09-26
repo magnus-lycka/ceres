@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Literal, cast
 
-from ceres.character.domain.benefits import AnyBenefit
+from ceres.character.domain.benefits import CharacteristicIncrease, ItemBenefit
 from ceres.character.domain.character_state import CharacterProjection
 from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str, literal
 from ceres.character.mechanism.errors import ReplayError
@@ -34,7 +34,8 @@ class MusterOutHandler(EventHandlerBase):
             outcomes = []
             for _ in range(row.count):
                 outcome = row.benefit.apply(projection, event.id)
-                outcomes.append(outcome or f'Gained {row.benefit.display_label}.')
+                if outcome is not None:
+                    outcomes.append(outcome)
         benefit_choice_added = (
             sum(isinstance(pending, PendingBenefitChoice) for pending in projection.pending_inputs)
             > benefit_choice_count
@@ -70,9 +71,7 @@ class BenefitChoiceHandler(EventHandlerBase):
         if not (0 <= self.choice_index < len(options)):
             raise ReplayError(f'choice_index {self.choice_index} out of range for {len(options)} options')
         outcome = options[self.choice_index].apply(projection, event.id)
-        projection.record_history(
-            fulfilled_pending.history_id, outcome or f'Gained {options[self.choice_index].display_label}.'
-        )
+        projection.record_history(fulfilled_pending.history_id, outcome)
         if fulfilled_pending.is_muster_out:
             if fulfilled_pending.muster_out_remaining > 0:
                 projection.queue_deferred(PendingMusterOut(pending_id=(event.id, 0)))
@@ -111,7 +110,7 @@ class PendingMusterOut(PendingInputBase):
 
 class PendingBenefitChoice(PendingInputBase):
     kind: Literal['benefit_choice_pending'] = 'benefit_choice_pending'
-    benefit_options: list[AnyBenefit]
+    benefit_options: list[CharacteristicIncrease | ItemBenefit]
     muster_out_remaining: int = 0
     is_muster_out: bool = False
 

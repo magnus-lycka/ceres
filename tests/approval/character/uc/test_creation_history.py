@@ -1,7 +1,17 @@
 """Creation history through real career decisions and replay."""
 
 from ceres.character.domain.characteristics import Chars, ConnectionKind
-from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, Engineer, Level, Mechanic, Pilot
+from ceres.character.domain.skills import (
+    Admin,
+    Athletics,
+    Carouse,
+    Drive,
+    Engineer,
+    Level,
+    Mechanic,
+    Pilot,
+    SpaceScience,
+)
 from ceres.character.domain.sophont import VILANI
 from tests.unit.character.helpers import MOCK_WORLD, MOCK_WORLD_2, CharacterDriver
 
@@ -230,6 +240,24 @@ def test_multiple_benefits_from_one_roll_are_all_recorded_in_one_entry():
     assert character.projection.creation_history[-1] == 'Muster out (Citizen): Gained Ship Share. Gained Ship Share.'
 
 
+def test_combined_benefit_records_the_characteristic_change_and_the_item():
+    character = (
+        CharacterDriver()
+        .start(VILANI, MOCK_WORLD)
+        .ucp('7869AB')
+        .background_skills([Admin(), Athletics(), Carouse(), Drive()])
+        .career('Noble', 'Administrator', roll=12)
+        .survive(7)
+        .term_event(7)
+        .life_event(3)
+        .advancement(4)
+        .reenlist(False)
+        .muster_out('benefits', 7)
+    )
+
+    assert character.projection.creation_history[-1] == 'Muster out (Noble): SOC increased from 11 to 12. Gained Yacht.'
+
+
 def test_war_mishap_shows_ejection_while_the_skill_choice_is_still_outstanding():
     character = merchant().survive(2).mishap(3)
 
@@ -325,6 +353,108 @@ def test_ended_relationship_keeps_the_choice_and_name_with_the_story():
         'Term 1 event (Merchant): Life Event. Life event: ending of a relationship '
         'Life event: relationship ended, gained an enemy Enemy: Vessa.'
     ]
+
+
+def test_betrayal_without_friends_keeps_the_chosen_enemy_with_the_story():
+    character = merchant().survive(7).term_event(7).life_event(8)
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: betrayal '
+        'In progress: Betrayal: no contacts or allies — gain a rival or enemy?'
+    ]
+    character.life_event_connection(ConnectionKind.ENEMY).name_connection('Dara')
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: betrayal Life event: betrayal, gained an enemy Enemy: Dara.'
+    ]
+
+
+def test_betrayal_of_a_named_contact_records_the_conversion_without_rewriting_the_past():
+    character = merchant().survive(7).term_event(6).name_connection('Vessa', 'Supplier')
+    original = character.projection.creation_history[0]
+    character.advancement(5).reenlist(True).survive(7).term_event(7).life_event(8)
+    assert character.projection.creation_history[-1] == (
+        'Term 2 event (Merchant): Life Event. Life event: betrayal '
+        'In progress: Betrayal: choose a Contact or Ally to convert to a Rival or Enemy'
+    )
+    character.betrayed_by('Vessa', ConnectionKind.RIVAL)
+    assert character.projection.creation_history == [
+        original,
+        'Term 2 event (Merchant): Life Event. Life event: betrayal Contact Vessa became Rival Vessa.',
+    ]
+    connection = character.projection.summary.connections[0]
+    assert (connection.name, connection.note, connection.kind, connection.term) == (
+        'Vessa',
+        'Supplier',
+        ConnectionKind.RIVAL,
+        1,
+    )
+
+
+def test_crime_does_not_claim_a_lost_benefit_until_that_consequence_is_chosen():
+    character = merchant().survive(7).term_event(7).life_event(11)
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: crime In progress: Crime: choose a consequence'
+    ]
+    character.crime_consequence('lose_benefit')
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: crime Lost one Benefit roll.'
+    ]
+
+
+def test_crime_records_prison_as_a_future_obligation_not_a_lost_benefit():
+    character = merchant().survive(7).term_event(7).life_event(11).crime_consequence('prison')
+
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: crime Must take the Prisoner career next term.'
+    ]
+
+
+def test_alien_encounter_keeps_both_the_science_and_contact_outcomes():
+    character = merchant().survive(7).term_event(7).life_event(12).unusual_event(2)
+    assert len(character.projection.creation_history) == 1
+    assert 'In progress:' in character.projection.creation_history[0]
+    assert 'Choose a science skill' in character.projection.creation_history[0]
+    assert 'Name this Contact' in character.projection.creation_history[0]
+    character.alien_science(SpaceScience(planetology=Level(value=1)))
+    assert 'In progress: Name this Contact' in character.projection.creation_history[0]
+    character.name_connection('Krrik', 'Aslan researcher')
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: unusual event — see sub-table '
+        'Unusual event: alien encounter — gained contact and a science skill '
+        'Space Science (Planetology) increased from 0 to 1. Contact: Krrik — Aslan researcher.'
+    ]
+
+
+def test_psionic_encounter_records_strength_without_claiming_a_talent_or_qualification():
+    character = merchant().survive(7).term_event(7).life_event(12).unusual_event(1)
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: unusual event — see sub-table '
+        'Unusual event: psionic experience — may test Psionic Strength '
+        'In progress: Roll 2D for Psionic Strength test'
+    ]
+    character.life_event_psi(4)
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: unusual event — see sub-table '
+        'Unusual event: psionic experience — may test Psionic Strength Psionic experience: PSI 3'
+    ]
+
+
+def test_high_psionic_strength_does_not_claim_a_passed_career_qualification():
+    character = merchant().survive(7).term_event(7).life_event(12).unusual_event(1).life_event_psi(10)
+
+    assert character.projection.creation_history == [
+        'Term 1 event (Merchant): Life Event. Life event: unusual event — see sub-table '
+        'Unusual event: psionic experience — may test Psionic Strength Psionic experience: PSI 9'
+    ]
+
+
+def test_exhausted_psionic_potential_completes_the_same_encounter():
+    character = merchant_in_term(3).survive(7).term_event(7).life_event(12).unusual_event(1).life_event_psi(2)
+
+    assert character.projection.creation_history[-1] == (
+        'Term 3 event (Merchant): Life Event. Life event: unusual event — see sub-table '
+        'Unusual event: psionic experience — may test Psionic Strength '
+        'Psionic experience: no Psionic Strength remaining'
+    )
 
 
 def test_life_event_injury_records_the_chosen_characteristic_loss():

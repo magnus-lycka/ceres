@@ -74,9 +74,10 @@ class LifeEventHandler(EventHandlerBase):
             5: 'Life event: relationship strengthened (ally gained)',
             6: 'Life event: new relationship (ally gained)',
             7: 'Life event: new contact made',
+            8: 'Life event: betrayal',
             9: 'Life event: travel (qualification DM ahead)',
             10: 'Life event: good fortune (benefit roll bonus)',
-            11: 'Life event: crime (lost a benefit roll)',
+            11: 'Life event: crime',
             12: 'Life event: unusual event — see sub-table',
         }
         if narrative := narratives.get(self.roll):
@@ -124,6 +125,7 @@ class LifeEventHandler(EventHandlerBase):
                     projection.queue_deferred(
                         PendingLifeEventBetrayalConvert(
                             pending_id=(event.id, 0),
+                            history_id=history_id,
                             instruction='Betrayal: choose a Contact or Ally to convert to a Rival or Enemy',
                         )
                     )
@@ -132,6 +134,7 @@ class LifeEventHandler(EventHandlerBase):
                         PendingLifeEventChoice(
                             pending_id=(event.id, 0),
                             roll=8,
+                            history_id=history_id,
                             instruction='Betrayal: no contacts or allies — gain a rival or enemy?',
                             options=[ConnectionKind.RIVAL, ConnectionKind.ENEMY],
                         )
@@ -165,7 +168,11 @@ class LifeEventHandler(EventHandlerBase):
                     PendingChoices(
                         pending_id=(event.id, 0),
                         instruction='Crime: choose a consequence',
-                        choices=[LifeEventCrimeLoseBenefitRoll(), LifeEventCrimeTakePrisoner()],
+                        history_id=history_id,
+                        choices=[
+                            LifeEventCrimeLoseBenefitRoll(history_id=history_id),
+                            LifeEventCrimeTakePrisoner(history_id=history_id),
+                        ],
                     )
                 )
                 if career is not None:
@@ -186,18 +193,25 @@ class LifeEventUnusualHandler(EventHandlerBase):
             raise ReplayError(f'Life event unusual roll must be 1-6, got {self.roll}')
         career = projection.get_current_career() if projection.summary.current_career is not None else None
         if self.roll == 1:
-            projection.summary.narrative.append('Unusual event: psionic experience — may test Psionic Strength')
+            history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+            projection.extend_history(history_id, 'Unusual event: psionic experience — may test Psionic Strength')
             projection.queue_deferred(
-                PendingLifeEventPsionicsRoll(pending_id=(event.id, 0), instruction='Roll 2D for Psionic Strength test')
+                PendingLifeEventPsionicsRoll(
+                    pending_id=(event.id, 0), history_id=history_id, instruction='Roll 2D for Psionic Strength test'
+                )
             )
             if career is not None:
                 _queue_advancement(projection, career, event.id, 1)
         elif self.roll == 2:
-            projection.add_connection(ConnectionKind.CONTACT, origin='Unusual event: alien contact')
-            projection.summary.narrative.append('Unusual event: alien encounter — gained contact and a science skill')
+            history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+            projection.add_connection(
+                ConnectionKind.CONTACT, origin='Unusual event: alien contact', history_id=history_id
+            )
+            projection.extend_history(history_id, 'Unusual event: alien encounter — gained contact and a science skill')
             projection.queue_deferred(
                 PendingLifeEventAlienScience(
                     pending_id=(event.id, 0),
+                    history_id=history_id,
                     instruction='Choose a science skill gained from alien encounter',
                 )
             )
@@ -230,29 +244,41 @@ class BetrayalConvertHandler(EventHandlerBase):
         if self.connection_index >= len(projection.summary.connections):
             raise ReplayError(f'Connection index {self.connection_index} out of range')
         old = projection.summary.connections[self.connection_index]
-        projection.summary.connections[self.connection_index] = make_connection(
+        new = make_connection(
             self.new_kind,
+            term=old.term,
             origin=f'Betrayal: {old.origin}',
+            name=old.name,
+            note=old.note,
+        )
+        projection.summary.connections[self.connection_index] = new
+        projection.record_history(
+            fulfilled_pending.history_id if fulfilled_pending is not None else None,
+            f'{old.display_name} {old.name} became {new.display_name} {new.name}.',
         )
 
 
 class LifeEventCrimeLoseBenefitRoll(ChoiceBase):
     kind: Literal['life_event_crime_lose_benefit_roll'] = 'life_event_crime_lose_benefit_roll'
     label: str = 'Lose one Benefit roll'
+    history_id: int | str | None = None
 
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         if projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+            projection.record_history(self.history_id, 'Lost one Benefit roll.')
 
 
 class LifeEventCrimeTakePrisoner(ChoiceBase):
     kind: Literal['life_event_crime_take_prisoner'] = 'life_event_crime_take_prisoner'
     label: str = 'Take the Prisoner career next term'
+    history_id: int | str | None = None
 
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         from ceres.character.domain.career.prisoner import PRISONER
 
         projection.forced_next_career = PRISONER
+        projection.record_history(self.history_id, 'Must take the Prisoner career next term.')
         if projection.summary.career_terms:
             projection.summary.career_terms[
                 -1
@@ -352,4 +378,4 @@ class PendingLifeEventAlienScience(PendingInputBase):
         ]
 
     def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
-        projection.grant_skill(event.skill)
+        projection.grant_skill(event.skill, history_id=self.history_id)

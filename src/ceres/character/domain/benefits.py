@@ -52,8 +52,9 @@ class ItemBenefit(BaseModel):
     def display_label(self) -> str:
         return self.label
 
-    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> str:
         projection.summary.add_muster_out_benefit(self)
+        return f'Gained {self.display_label}.'
 
 
 class ChoiceBenefit(BaseModel):
@@ -96,9 +97,8 @@ class CombinedBenefit(BaseModel):
     def exceptional(self) -> bool:
         return any(b.exceptional for b in self.benefits)
 
-    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> None:
-        for sub_benefit in self.benefits:
-            sub_benefit.apply(projection, event_id)
+    def apply(self, projection: _BenefitProjection, event_id: int = 0) -> str:
+        return ' '.join(sub_benefit.apply(projection, event_id) for sub_benefit in self.benefits)
 
 
 AnyBenefit = Annotated[

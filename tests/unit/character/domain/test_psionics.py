@@ -735,13 +735,14 @@ class TestPendingPsionicInstituteTrainingFormHandling:
 
 
 class TestPsiStrengthTestHandlerNarrative:
-    def test_psi_between_one_and_eight_logs_no_significant_talent(self) -> None:
+    def test_positive_psi_logs_strength_without_dismissing_training_potential(self) -> None:
         projection = CharacterProjection(character_id=1, summary=_summary())
         handler = PsiStrengthTestHandler(roll=4)
 
         handler.apply(projection, Event(handler=handler))
 
-        assert any('no significant' in n for n in projection.summary.narrative)
+        # Core p228: any positive PSI permits training; strength does not determine learned talents.
+        assert projection.summary.narrative == ['Psionic experience: PSI 4']
 
     def test_psi_zero_logs_no_psionic_strength_remaining(self) -> None:
         projection = CharacterProjection(character_id=1, summary=_summary())
