@@ -16,6 +16,8 @@ updates:
       interval: weekly
     labels: [dependencies, area:tools, area:web]
     groups:
+      vitest:
+        patterns: ["vitest", "vitest-*", "@vitest/*"]
       patch:
         update-types: [patch]
       minor:
