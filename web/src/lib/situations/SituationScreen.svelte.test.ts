@@ -25,6 +25,11 @@ function sophont(name: string): Actor {
     hits: null,
     injuries: [],
     criticals: {},
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
   };
 }
 
@@ -227,12 +232,24 @@ describe('the detail panel', () => {
     await pickRow(screen.container, 'Rin');
     await expect.element(screen.getByRole('heading', { name: 'Health — Rin' })).toBeVisible();
 
-    await screen.getByRole('spinbutton').first().fill('2');
+    // The first field of the injury row, which is STR for a sophont.
+    await userEvent.fill(screen.container.querySelector<HTMLInputElement>('tr.add input')!, '2');
     await screen.getByRole('button', { name: 'Add injury' }).click();
 
     await vi.waitFor(async () => {
       const [rin] = await library.actors();
       expect(rin.injuries).toEqual([{ when: null, kind: 'lethal', reductions: { strength: 2 } }]);
     });
+  });
+
+  it('stores a corrected Protection', async () => {
+    const screen = await open('round');
+    await vi.waitFor(() => expect(hasTurnButtons(screen.container)).toBe(true));
+    await pickRow(screen.container, 'Rin');
+
+    await screen.getByLabelText('Protection').fill('3');
+    await userEvent.tab();
+
+    await vi.waitFor(async () => expect((await library.actors())[0].protection).toBe(3));
   });
 });

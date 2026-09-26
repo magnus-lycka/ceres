@@ -35,6 +35,11 @@ function warbot(criticals: Actor['criticals'] = {}, hits = 20): Actor {
     hits,
     injuries: [],
     criticals,
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
   };
 }
 

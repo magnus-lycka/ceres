@@ -24,6 +24,11 @@ function sophont(extra: Partial<Actor> = {}): Actor {
     hits: null,
     injuries: [],
     criticals: {},
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
     ...extra,
   };
 }

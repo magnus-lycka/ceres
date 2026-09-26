@@ -28,6 +28,11 @@ const rin = {
   hits: null,
   injuries: [],
   criticals: {},
+  protection: 0,
+  movement: null,
+  speed: null,
+  enduranceHours: null,
+  int: null,
 };
 
 const warbot = {

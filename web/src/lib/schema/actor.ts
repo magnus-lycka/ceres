@@ -41,6 +41,26 @@ export const partyId = (value: number) => partyIdSchema.parse(value);
  */
 export const UNSAVED = 0;
 
+/**
+ * The Speed Band ladder, lowest first. A band is stored as its position here,
+ * which is the Speed Band Number the rules use: Slow is 3. Mirrors
+ * `ceres.make.vehicle.speed.SpeedBand`.
+ */
+export const speedBands = [
+  'Stopped',
+  'Idle',
+  'Very Slow',
+  'Slow',
+  'Medium',
+  'High',
+  'Fast',
+  'Very Fast',
+  'Subsonic',
+  'Supersonic',
+  'Hypersonic',
+  'Orbital',
+] as const;
+
 export const actorKinds = ['sophont', 'animal', 'robot'] as const;
 export type ActorKind = (typeof actorKinds)[number];
 
@@ -117,6 +137,36 @@ export const actorDefinition = {
   dexterity: z.number().int().nullable().default(null),
   endurance: z.number().int().nullable().default(null),
   hits: z.number().int().nullable().default(null),
+  /**
+   * What is taken off each hit before it lands. Every kind has it: sophonts
+   * wear armour and animals have the Armour trait. Zero is unarmoured, not
+   * unknown.
+   */
+  protection: z.number().int().nonnegative().default(0),
+  /**
+   * How far it moves on foot in one Minor Action, in metres. Fractional on
+   * purpose: prone quarters it, and 6 m becomes 1.5. Null is unset, not zero.
+   */
+  movement: z.number().nonnegative().nullable().default(null),
+  /**
+   * Its Speed Band, as the Speed Band Number the rules use. A different
+   * quantity from Movement: a robot with vehicle speed movement has both.
+   */
+  speed: z
+    .number()
+    .int()
+    .min(0)
+    .max(speedBands.length - 1)
+    .nullable()
+    .default(null),
+  /**
+   * A robot's Endurance: hours of operation. Not the sophont's END, which is
+   * the `endurance` above and is eroded by injury; this is only ever halved
+   * by a Power critical, so it may come out fractional (12.5 hours).
+   */
+  enduranceHours: z.number().nonnegative().nullable().default(null),
+  /** A robot's INT, as a system attribute a Brain critical reduces. */
+  int: z.number().int().nonnegative().nullable().default(null),
 };
 
 const base = z.object({
@@ -146,14 +196,18 @@ type KindChecked = {
   dexterity: number | null;
   endurance: number | null;
   hits: number | null;
+  enduranceHours: number | null;
+  int: number | null;
   injuries?: Injury[];
   criticals?: Partial<Record<CriticalLocation, Critical>>;
 };
 
 /**
- * A sophont is hurt through STR/DEX/END; anything else through Hits. The
- * check is the same rule the Python model enforces, so a bundle validated by
- * CI is a bundle the application will also accept.
+ * A sophont is hurt through STR/DEX/END; anything else through Hits, and only
+ * a robot has hours of endurance and an INT to lose. The check is applied to
+ * both the stored and the proposal schema, so a bundle validated by CI is a
+ * bundle the application will also accept. (`ceres.rounds.library.models`
+ * predates the attributes and does not check them: see docs/plan-rounds.md.)
  *
  * Named and applied to both schemas rather than written inline, because a
  * proposal that CI accepted and the application then refused would be the
@@ -176,6 +230,12 @@ export function checkKind(actor: KindChecked, ctx: z.RefinementCtx): void {
     ctx.addIssue({
       code: 'custom',
       message: 'a robot cannot retain stun damage; an electromagnetic stunner causes physical Hits',
+    });
+  }
+  if (actor.kind !== 'robot' && (actor.enduranceHours !== null || actor.int !== null)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: `a ${actor.kind} has no hours of endurance or INT; those are a robot's systems`,
     });
   }
   const criticals = Object.values(actor.criticals ?? {});

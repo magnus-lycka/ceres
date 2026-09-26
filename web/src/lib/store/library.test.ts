@@ -24,6 +24,11 @@ function actor(name: string, id = actorId(0)): Actor {
     hits: null,
     injuries: [],
     criticals: {},
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
   };
 }
 
@@ -33,6 +38,20 @@ let library: Library;
 beforeEach(() => {
   files = new MemoryFileStore();
   library = new Library(files);
+});
+
+describe('actors saved before they had attributes', () => {
+  // Files already on disk have no Protection, Movement or Speed. They must
+  // load, as unarmoured and unset, rather than vanish into the unreadable list.
+  it('load with the defaults, and are not reported unreadable', async () => {
+    const old = { id: 4, name: 'Old Rin', kind: 'sophont', strength: 8, dexterity: 8, endurance: 8 };
+    await files.write('actors/4.json', JSON.stringify(old), 'x');
+
+    const [rin] = await library.actors();
+
+    expect(rin).toMatchObject({ name: 'Old Rin', protection: 0, movement: null, speed: null });
+    expect(library.problems).toEqual([]);
+  });
 });
 
 describe('saving', () => {

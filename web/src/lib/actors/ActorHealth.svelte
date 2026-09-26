@@ -12,7 +12,7 @@
    * the injuries record, so editing them would mean reverse-engineering the
    * lines that produced them.
    */
-  import type { Actor, CriticalLocation, Injury, Stat } from '$lib/schema/actor';
+  import { speedBands, type Actor, type CriticalLocation, type Injury, type Stat } from '$lib/schema/actor';
   import {
     current,
     currentHits,
@@ -82,6 +82,14 @@
    */
   const severities = [0, 1, 2, 3, 4, 5, 6] as const;
 
+  /** A cleared field is unset, not zero. */
+  const optional = (typed: string) => (typed === '' ? null : Number(typed));
+
+  /** Change what the actor is; committed when the field is, not per keystroke. */
+  function set(fields: Partial<Actor>) {
+    onchange({ ...actor, ...fields });
+  }
+
   function write(location: CriticalLocation, severity: number, note: string) {
     onchange(setCritical(actor, location, severity, note));
   }
@@ -99,6 +107,64 @@
   </p>
 
   <div class="panels">
+    <div class="panel">
+      <h3>Attributes</h3>
+      <div class="attributes">
+        <label
+          >Protection
+          <input
+            type="number"
+            min="0"
+            value={actor.protection}
+            onchange={(event) => set({ protection: Number(event.currentTarget.value) })}
+          /></label
+        >
+        <label
+          >Movement (m) <input
+            type="number"
+            min="0"
+            step="0.5"
+            value={actor.movement ?? ''}
+            onchange={(event) => set({ movement: optional(event.currentTarget.value) })}
+          /></label
+        >
+        <label>
+          Speed
+          <select
+            value={actor.speed ?? ''}
+            onchange={(event) => {
+              const chosen = event.currentTarget.value;
+              set({ speed: chosen === '' ? null : Number(chosen) });
+            }}
+          >
+            <option value="">—</option>
+            {#each speedBands as name, band (band)}
+              <option value={band}>{name}</option>
+            {/each}
+          </select>
+        </label>
+        {#if actor.kind === 'robot'}
+          <label
+            >Endurance (hours) <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={actor.enduranceHours ?? ''}
+              onchange={(event) => set({ enduranceHours: optional(event.currentTarget.value) })}
+            /></label
+          >
+          <label
+            >INT <input
+              type="number"
+              min="0"
+              value={actor.int ?? ''}
+              onchange={(event) => set({ int: optional(event.currentTarget.value) })}
+            /></label
+          >
+        {/if}
+      </div>
+    </div>
+
     <div class="panel">
       <h3>Injuries</h3>
       {#if actor.kind === 'robot'}<p class="hint">Stunners cause physical Hits to robots.</p>{/if}
@@ -245,6 +311,16 @@
     background: var(--error-bg);
   }
   /* The panel sits in a column of its own, so the note takes what is left of it. */
+  .attributes {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+  .attributes label {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
   .note {
     width: 100%;
     min-width: 8rem;

@@ -15,6 +15,11 @@ function actor(id: ActorId, name: string, tags: string[] = []): Actor {
     hits: null,
     injuries: [],
     criticals: {},
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
   };
 }
 
@@ -52,6 +57,19 @@ describe('id sequence', () => {
 });
 
 describe('duplicate', () => {
+  // What the actor is comes along; what has happened to it does not.
+  it('keeps what the original is, and leaves behind what happened to it', () => {
+    const hurtGuard = {
+      ...actor(actorId(1), 'Guard'),
+      protection: 5,
+      movement: 6,
+      speed: 1,
+      injuries: [{ when: null, kind: 'lethal' as const, reductions: { strength: 2 } }],
+    };
+    const copy = duplicate(hurtGuard, actorId(2), [hurtGuard]);
+    expect(copy).toMatchObject({ protection: 5, movement: 6, speed: 1, injuries: [], criticals: {} });
+  });
+
   it('numbers the copy so it is distinguishable from its original', () => {
     expect(duplicate(actor(actorId(1), 'Wolf'), actorId(2), [actor(actorId(1), 'Wolf')]).name).toBe('Wolf 1');
   });

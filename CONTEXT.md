@@ -151,9 +151,9 @@ The word for an actor reaching the end of what its Hits or characteristics can
 absorb, which differs by kind: a sophont is Dead (characteristics exhausted,
 one threshold only); an animal is Dead at Hits ≤ 0 and Destroyed at Hits ≤
 −starting Hits; a robot is Wrecked at Hits ≤ 0 ("potentially repairable") and
-Destroyed at Hits ≤ −2×starting Hits. One underlying state — out of the fight
-for good — with kind-appropriate words, and for animals and robots a second,
-further threshold the word alone distinguishes.
+Destroyed at Hits ≤ −starting Hits, exactly as an animal is. One underlying
+state — out of the fight for good — with kind-appropriate words, and for
+animals and robots a second, further threshold the word alone distinguishes.
 
 ## Collisions between domains
 

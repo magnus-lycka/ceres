@@ -84,5 +84,10 @@ export function newActor(kind: ActorKind, id: ActorId): Actor {
     hits: physical ? null : 10,
     injuries: [],
     criticals: {},
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
   };
 }

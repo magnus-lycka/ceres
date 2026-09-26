@@ -106,6 +106,18 @@ export function isDead(actor: Actor): boolean {
 }
 
 /**
+ * Beyond use or repair: Hits at or below minus the starting Hits, which is
+ * damage of twice the starting Hits (RIC-021). An animal's body is then of no
+ * value, and a robot is scrap; before this a robot is merely wrecked, an
+ * animal merely dead. One rule for both, and lethal damage only, as for death
+ * (RIC-012). A sophont has no second threshold.
+ */
+export function isDestroyed(actor: Actor): boolean {
+  const hits = lethalHits(actor);
+  return hits !== null && hits <= -(actor.hits ?? 0);
+}
+
+/**
  * Record an injury that happened outside any fight — last session, offscreen,
  * or a correction. It carries no round, because there is no round here.
  *
@@ -145,7 +157,8 @@ export function removeInjury(actor: Actor, index: number): Actor {
  * about the situation, and the damage total already says it.
  */
 export function healthSummary(actor: Actor): string {
-  if (isDead(actor)) return 'dead';
+  if (isDestroyed(actor)) return 'destroyed';
+  if (isDead(actor)) return actor.kind === 'robot' ? 'wrecked' : 'dead';
   const states: string[] = [];
   if (isUnconscious(actor)) states.push('unconscious');
   if (stunPoints(actor) > 0) states.push(`stunned ${stunPoints(actor)}`);

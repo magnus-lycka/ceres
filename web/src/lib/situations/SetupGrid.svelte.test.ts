@@ -26,6 +26,11 @@ function actor(id: number, name: string): Actor {
     hits: null,
     injuries: [],
     criticals: {},
+    protection: 0,
+    movement: null,
+    speed: null,
+    enduranceHours: null,
+    int: null,
   };
 }
 

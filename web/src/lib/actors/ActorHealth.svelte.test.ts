@@ -6,6 +6,7 @@
  * actor. The rules behind the numbers are covered in `rules/rounds`.
  */
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from '@vitest/browser/context';
 import { describe, expect, it, vi } from 'vitest';
 import { actorId, type Actor } from '$lib/schema/actor';
 import ActorHealth from './ActorHealth.svelte';
@@ -22,6 +23,11 @@ const warbot: Actor = {
   hits: 20,
   injuries: [],
   criticals: {},
+  protection: 0,
+  movement: null,
+  speed: null,
+  enduranceHours: null,
+  int: null,
 };
 
 const rin: Actor = {
@@ -36,6 +42,77 @@ const rin: Actor = {
 };
 
 describe('ActorHealth', () => {
+  // What decides how a hit lands and how far they get, so it is on the panel
+  // for every kind, not only the ones with a critical record.
+  it('shows Protection, Movement and Speed, the speed by name', async () => {
+    const guard: Actor = { ...rin, protection: 5, movement: 6, speed: 1 };
+    const screen = await render(ActorHealth, { actor: guard, onchange: vi.fn() });
+
+    await expect.element(screen.getByLabelText('Protection')).toHaveValue(5);
+    await expect.element(screen.getByLabelText('Movement (m)')).toHaveValue(6);
+    await expect.element(screen.getByLabelText('Speed')).toHaveDisplayValue('Idle');
+  });
+
+  // A robot's Endurance is hours of operation, not the END a sophont's damage
+  // erodes; offering it to a sophont would put two Endurances on one panel.
+  it('shows hours of endurance and INT for a robot, and only for a robot', async () => {
+    const bot: Actor = { ...warbot, enduranceHours: 40, int: 5 };
+    const robot = await render(ActorHealth, { actor: bot, onchange: vi.fn() });
+    await expect.element(robot.getByLabelText('Endurance (hours)')).toHaveValue(40);
+    await expect.element(robot.getByLabelText('INT')).toHaveValue(5);
+    robot.unmount();
+
+    const sophont = await render(ActorHealth, { actor: rin, onchange: vi.fn() });
+    await expect.element(sophont.getByLabelText('Endurance (hours)')).not.toBeInTheDocument();
+    await expect.element(sophont.getByLabelText('INT')).not.toBeInTheDocument();
+  });
+
+  it('reports a changed Protection to the caller as a changed actor', async () => {
+    const onchange = vi.fn();
+    const screen = await render(ActorHealth, { actor: rin, onchange });
+
+    await screen.getByLabelText('Protection').fill('4');
+    await userEvent.tab();
+
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ id: rin.id, protection: 4 }));
+  });
+
+  it('stores a chosen Speed as its band number, and unsets it with the dash', async () => {
+    const onchange = vi.fn();
+    const screen = await render(ActorHealth, { actor: { ...rin, speed: 1 }, onchange });
+
+    await screen.getByLabelText('Speed').selectOptions('Medium');
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ speed: 4 }));
+
+    await screen.getByLabelText('Speed').selectOptions('—');
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ speed: null }));
+  });
+
+  // Blank is unset, not zero: a Movement of 0 says something a blank does not.
+  it('commits Movement, hours and INT as numbers, and a blank as unset', async () => {
+    const onchange = vi.fn();
+    const screen = await render(ActorHealth, {
+      actor: { ...warbot, movement: 6, enduranceHours: 40, int: 5 },
+      onchange,
+    });
+
+    await screen.getByLabelText('Movement (m)').fill('1.5');
+    await userEvent.tab();
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ movement: 1.5 }));
+
+    await screen.getByLabelText('Movement (m)').fill('');
+    await userEvent.tab();
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ movement: null }));
+
+    await screen.getByLabelText('Endurance (hours)').fill('12.5');
+    await userEvent.tab();
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ enduranceHours: 12.5 }));
+
+    await screen.getByLabelText('INT').fill('3');
+    await userEvent.tab();
+    expect(onchange).toHaveBeenLastCalledWith(expect.objectContaining({ int: 3 }));
+  });
+
   it('keeps a critical record for a robot', async () => {
     const screen = await render(ActorHealth, { actor: warbot, onchange: vi.fn() });
     await expect.element(screen.getByText('Criticals')).toBeVisible();

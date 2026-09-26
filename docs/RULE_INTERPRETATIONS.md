@@ -983,7 +983,7 @@ effect at the table.
 Ceres stops prompting for further locations once cumulative damage on a given
 resolution brings the robot's Hits to ≤ 0. The damage total itself keeps
 accumulating past that point, because it still decides whether the robot is
-merely wrecked or, past twice its starting Hits, irreparably destroyed
+merely wrecked or, at twice its starting Hits in damage, irreparably destroyed
 (`:145`); only the location-by-location bookkeeping stops. A location roll
 that would decide something real — whether *this* attack itself is what wrecks
 the robot — still happens; only the ones beyond that point are skipped.
@@ -1017,18 +1017,28 @@ vehicle-speed movement might be in use. A Power critical that separately reads
 both Endurance and whichever of Movement/Speed applies; the two clauses are
 independent.
 
-### RIC-021 Robot Wrecked/Destroyed And Animal Dead/Destroyed Use Different Thresholds
+### RIC-021 Robot And Animal Destruction Share One Threshold: Hits At Or Below Minus Starting Hits
 
-Both use a second, harsher threshold beyond the first — but not the same one.
-An animal is dead at Hits ≤ 0 and its body is destroyed at Hits ≤ −starting
-Hits, "a negative equal to or less than its starting Hits" (`refs/core/03_combat.md`,
-animal rules). A robot is wrecked at Hits ≤ 0, "potentially repairable," and
-irreparably destroyed only past **twice** its starting Hits (`refs/robot/
-50_other_considerations.md:145`): "if a robot suffers damage beyond twice its
-initial Hits, it is totally destroyed." The doubling is not a typo or an
-inconsistency to reconcile — it is what each source states, and the robot's
-threshold is twice as forgiving as the animal's. See `CONTEXT.md`,
-"Wrecked/Destroyed/Dead".
+Both kinds have a first threshold at Hits 0 — an animal is dead, a robot is
+wrecked and "potentially repairable" — and a second, harsher one, at which
+nothing can be recovered. The second is the same for both.
+
+An animal's body is destroyed when its Hits fall to "a negative equal to or
+less than its starting Hits" (`refs/core/03_combat.md`, animal rules): Hits ≤
+−starting Hits. A robot is destroyed when it has taken twice its starting Hits
+in damage (`refs/robot/50_other_considerations.md:145`: "Once a robot has taken
+twice its original Hits in damage, it is completely destroyed"). Damage of
+twice starting Hits is Hits of −starting Hits, so the two statements are one
+rule.
+
+The robot text is not perfectly consistent: `:19` says "damage beyond twice its
+initial Hits", which read strictly would leave exactly twice still repairable,
+while `:145` says a robot that has taken twice its Hits is destroyed, and
+`handouts/robot_combat_cards.typ` says "cumulative damage equals twice
+starting Hits". Ceres follows `:145` and the card, and the animal rule's
+inclusive wording: destroyed at Hits ≤ −starting Hits, for both kinds. The
+words differ by kind — dead / wrecked at 0, destroyed at −X — and are in
+`CONTEXT.md`.
 
 ## Rule Interpretations for robots
 

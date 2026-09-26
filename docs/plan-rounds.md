@@ -1021,6 +1021,18 @@ per Traveller convention (`docs/RULE_INTERPRETATIONS.md`).
   characteristics is restated to say: hurt through Hits, not characteristics,
   but a robot carries INT as a system attribute criticals can reduce.
 
+Step 1 (built) adds `protection`, `movement`, `speed`, `enduranceHours` and
+`int` to the Actor schema in `web/src/lib/schema/actor.ts`, with `speed` stored
+as its Speed Band Number and named from the `speedBands` ladder, and
+`isDestroyed` with the kind-specific words in `health.ts`. The robot's hours are
+`enduranceHours` rather than `endurance` because that field is already the
+sophont's END; the panel labels both "Endurance". **Known drift:**
+`ceres.rounds.library.models` (superseded, see the top of this document) does
+not have these fields or the kind rule that keeps robot systems off other kinds,
+and `speedBands` is a third copy of `ceres.make.vehicle.speed.SpeedBand`. Python
+ignores unknown fields on read, so nothing breaks; mirror them only if the
+Python reader is kept.
+
 ### Criticals: the seven-location record
 
 `Critical` and `Injury` are different things (see `CONTEXT.md`): an Injury is
@@ -1082,9 +1094,9 @@ the word varying by kind:
 - **Animal**: dead at Hits ≤ 0; destroyed at Hits ≤ −starting Hits
   (`refs/core/03_combat.md`, animal rules).
 - **Robot**: wrecked at Hits ≤ 0, "potentially repairable"; destroyed at
-  Hits ≤ −2×starting Hits (`refs/robot/50_other_considerations.md:145`) — note
-  the robot threshold is twice starting Hits, not equal to it, unlike the
-  animal one.
+  Hits ≤ −starting Hits, which is damage of twice starting Hits
+  (`refs/robot/50_other_considerations.md:145`). The same threshold as an
+  animal's.
 
 `isDestroyed` does not exist in `$lib/rules/rounds` today and is added
 alongside `isDead`/`isUnconscious` in `health.ts`.
