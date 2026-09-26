@@ -57,7 +57,7 @@ import {
   type CriticalLocation,
 } from '../../schema/actor';
 
-const UNDAMAGED: Critical = { severity: 0, note: '' };
+const UNDAMAGED: Critical = { severity: 0, note: '', taken: {} };
 
 /** What the record says about one location, whether or not it has been hit. */
 export function criticalAt(actor: Actor, location: CriticalLocation): Critical {
@@ -84,8 +84,12 @@ export function criticalRows(actor: Actor): CriticalRow[] {
  * editing the record, including repairing between situations.
  */
 export function setCritical(actor: Actor, location: CriticalLocation, severity: number, note: string): Actor {
-  const { [location]: _replaced, ...rest } = actor.criticals;
-  const criticals = severity > 0 || note ? { ...rest, [location]: { severity, note } } : rest;
+  const { [location]: previous, ...rest } = actor.criticals;
+  // What the location took off stays with it: editing the severity or the note
+  // must not forget it, and a record that took something off is not empty.
+  const taken = previous?.taken ?? {};
+  const kept = severity > 0 || note || Object.keys(taken).length > 0;
+  const criticals = kept ? { ...rest, [location]: { severity, note, taken } } : rest;
   return { ...actor, criticals };
 }
 

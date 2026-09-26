@@ -333,6 +333,26 @@ describe('who is out of action', () => {
     expect(memberState(down, find(down, bo), [rin, sana, wrecked])).toBe('out');
   });
 
+  // A robot has no unconscious to fall into: what stops it acting is a critical
+  // that shuts it down or destroys its brain. One that is only immobilised can
+  // still fire (docs/plan-rounds.md), so it keeps its turn.
+  it('includes a robot that has shut down or lost its brain, and not one that is only immobilised', () => {
+    const robot = (location: 'power' | 'brain' | 'locomotion', severity: number): Actor => ({
+      ...bo,
+      kind: 'robot',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 20,
+      criticals: { [location]: { severity, note: '', taken: {} } },
+    });
+    const down = round3();
+
+    expect(memberState(down, find(down, bo), [rin, sana, robot('power', 5)])).toBe('out');
+    expect(memberState(down, find(down, bo), [rin, sana, robot('brain', 6)])).toBe('out');
+    expect(memberState(down, find(down, bo), [rin, sana, robot('locomotion', 5)])).not.toBe('out');
+  });
+
   it('lets the turn pass on without them', () => {
     const stunned = act(incapacitate(round3(), sana.id, 2), rin.id);
 

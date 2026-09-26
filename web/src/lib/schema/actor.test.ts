@@ -66,9 +66,9 @@ describe('actor schema', () => {
   it('accepts criticals on a robot', () => {
     const hurt = actorSchema.parse({
       ...robot,
-      criticals: { brain: { severity: 2, note: 'DM−2 to all skills' } },
+      criticals: { brain: { severity: 2, note: 'DM−2 to all skills', taken: {} } },
     });
-    expect(hurt.criticals.brain).toEqual({ severity: 2, note: 'DM−2 to all skills' });
+    expect(hurt.criticals.brain).toEqual({ severity: 2, note: 'DM−2 to all skills', taken: {} });
   });
 
   // A robot's Endurance is hours of operation and its INT is a system that a
@@ -93,10 +93,11 @@ describe('actor schema', () => {
     expect(result.error?.issues[0].message).toContain('physical Hits');
   });
 
-  it('defaults a critical to undamaged and unannotated', () => {
+  it('defaults a critical to undamaged, unannotated and having taken nothing off', () => {
     expect(actorSchema.parse({ ...robot, criticals: { brain: {} } }).criticals.brain).toEqual({
       severity: 0,
       note: '',
+      taken: {},
     });
   });
 
@@ -104,6 +105,28 @@ describe('actor schema', () => {
     const result = actorSchema.safeParse({ ...animal, criticals: { brain: { severity: 2 } } });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0].message).toContain('critical');
+  });
+
+  // Each critical keeps what it took off, so current Protection, Speed and the
+  // rest are the base less the sum, and a repair can put back exactly that.
+  it('records what a critical took off, and none when nothing was', () => {
+    const hurt = actorSchema.parse({
+      ...robot,
+      criticals: { armour: { severity: 2, taken: { protection: 4 } }, brain: { severity: 1 } },
+    });
+
+    expect(hurt.criticals.armour?.taken).toEqual({ protection: 4 });
+    expect(hurt.criticals.brain?.taken).toEqual({});
+  });
+
+  it('rejects a critical that took off less than nothing, or something it cannot take', () => {
+    expect(
+      actorSchema.safeParse({ ...robot, criticals: { armour: { severity: 1, taken: { protection: -1 } } } })
+        .success,
+    ).toBe(false);
+    expect(
+      actorSchema.safeParse({ ...robot, criticals: { armour: { severity: 1, taken: { hits: 2 } } } }).success,
+    ).toBe(false);
   });
 
   it('rejects a severity outside 0–6', () => {

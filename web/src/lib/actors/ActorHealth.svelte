@@ -12,7 +12,14 @@
    * the injuries record, so editing them would mean reverse-engineering the
    * lines that produced them.
    */
-  import { speedBands, type Actor, type CriticalLocation, type Injury, type Stat } from '$lib/schema/actor';
+  import {
+    speedBands,
+    type Actor,
+    type CriticalLocation,
+    type Injury,
+    type RobotAttribute,
+    type Stat,
+  } from '$lib/schema/actor';
   import {
     current,
     currentHits,
@@ -24,6 +31,8 @@
     stunStat,
   } from '$lib/rules/rounds/health';
   import { criticalRows, setCritical } from '$lib/rules/rounds/criticals';
+  import { criticalEffect } from '$lib/rules/rounds/criticalEffects';
+  import { currentAttribute } from '$lib/rules/rounds/robotState';
 
   let {
     actor,
@@ -91,6 +100,16 @@
    */
   const severities = [0, 1, 2, 3, 4, 5, 6] as const;
 
+  /**
+   * What is left of an attribute once criticals have taken from it, or null when
+   * nothing has: the base stays what it is and stays editable, and this sits
+   * beside it.
+   */
+  function left(attribute: RobotAttribute): number | null {
+    const now = currentAttribute(actor, attribute);
+    return now !== null && now !== actor[attribute] ? now : null;
+  }
+
   /** A cleared field is unset, not zero. */
   const optional = (typed: string) => (typed === '' ? null : Number(typed));
 
@@ -128,6 +147,7 @@
             onchange={(event) => set({ protection: Number(event.currentTarget.value) })}
           /></label
         >
+        {#if left('protection') !== null}<span class="hint">now {left('protection')}</span>{/if}
         <label
           >Movement (m) <input
             type="number"
@@ -137,6 +157,7 @@
             onchange={(event) => set({ movement: optional(event.currentTarget.value) })}
           /></label
         >
+        {#if left('movement') !== null}<span class="hint">now {left('movement')} m</span>{/if}
         {#if prone && actor.movement !== null}
           <span class="hint">prone: {actor.movement / 4} m</span>
         {/if}
@@ -155,6 +176,7 @@
             {/each}
           </select>
         </label>
+        {#if left('speed') !== null}<span class="hint">now {speedBands[left('speed') ?? 0]}</span>{/if}
         {#if actor.kind === 'robot'}
           <label
             >Endurance (hours) <input
@@ -165,6 +187,7 @@
               onchange={(event) => set({ enduranceHours: optional(event.currentTarget.value) })}
             /></label
           >
+          {#if left('enduranceHours') !== null}<span class="hint">now {left('enduranceHours')} h</span>{/if}
           <label
             >INT <input
               type="number"
@@ -173,6 +196,7 @@
               onchange={(event) => set({ int: optional(event.currentTarget.value) })}
             /></label
           >
+          {#if left('int') !== null}<span class="hint">now {left('int')}</span>{/if}
         {/if}
       </div>
     </div>
@@ -260,6 +284,7 @@
                     value={row.note}
                     onchange={(event) => write(row.location, row.severity, event.currentTarget.value)}
                   />
+                  <div class="effect">{criticalEffect(row.location, row.severity)?.text ?? ''}</div>
                 </td>
               </tr>
             {/each}
@@ -340,6 +365,10 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+  }
+  .effect {
+    color: var(--muted);
+    font-size: 0.85em;
   }
   .note {
     width: 100%;

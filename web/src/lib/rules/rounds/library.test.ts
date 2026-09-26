@@ -106,7 +106,7 @@ describe('duplicate', () => {
       endurance: null,
       hits: 20,
       injuries: [{ when: null, kind: 'lethal', reductions: { hits: 8 } }],
-      criticals: { power: { severity: 3, note: 'Speed −1 m/band' } },
+      criticals: { power: { severity: 3, note: 'Speed −1 m/band', taken: {} } },
     };
     const copy = duplicate(source, actorId(2), [source]);
     expect(copy.injuries).toEqual([]);

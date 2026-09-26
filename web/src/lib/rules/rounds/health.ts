@@ -9,6 +9,7 @@
  * RIC-011 (stun and lethal reduce one shared END score) and RIC-012 (stun can
  * never complete a kill) are the two that shape this file.
  */
+import { isInoperable } from './robotState';
 import type { Actor, Injury, Stat } from '../../schema/actor';
 
 /** The three physical characteristics, in UCP order. */
@@ -161,6 +162,7 @@ export function healthSummary(actor: Actor): string {
   if (isDead(actor)) return actor.kind === 'robot' ? 'wrecked' : 'dead';
   const states: string[] = [];
   if (isUnconscious(actor)) states.push('unconscious');
+  if (isInoperable(actor)) states.push('inoperable');
   if (stunPoints(actor) > 0) states.push(`stunned ${stunPoints(actor)}`);
   return states.join(', ');
 }

@@ -1167,7 +1167,10 @@ Magnus can look at"):
    the exchange as a miss with the turn still spent. Incapacitation and the
    injury's round stamp land on `Member`. **First step where a fight can
    actually be run.**
-3. **The effects table and the robot path** — location prompts, the cascade,
+3. **The effects table and the robot path** (built in slices: 3a the effects table
+   as data, what a critical took off, the robot's current attributes and when it
+   cannot act, shown in the panel; 3b the flow that asks for one roll at a time;
+   3c sustained damage and stopping at wrecked; 3d the crit colour column) — location prompts, the cascade,
    discard/reroll, stop at wrecked, the criticals colour indicator.
 4. **Repair** — lowering a severity restores what it took.
 

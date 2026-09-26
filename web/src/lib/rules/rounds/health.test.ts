@@ -253,6 +253,16 @@ describe('healthSummary', () => {
     expect(healthSummary(warbot(20, [hurt('lethal', { hits: 20 })]))).toBe('wrecked');
   });
 
+  // Nothing wrong with its Hits, but it does nothing: shut down, or brainless.
+  it('says a robot is inoperable when a critical has shut it down, and wrecked when that is worse', () => {
+    const shutDown = { ...warbot(20), criticals: { power: { severity: 5, note: '', taken: {} } } };
+    expect(healthSummary(shutDown)).toBe('inoperable');
+    expect(healthSummary(warbot(20))).toBe('');
+
+    const both = { ...shutDown, injuries: [hurt('lethal', { hits: 20 })] };
+    expect(healthSummary(both)).toBe('wrecked');
+  });
+
   it('says destroyed, for either, once past that', () => {
     expect(healthSummary(beast(20, [hurt('lethal', { hits: 40 })]))).toBe('destroyed');
     expect(healthSummary(warbot(20, [hurt('lethal', { hits: 40 })]))).toBe('destroyed');

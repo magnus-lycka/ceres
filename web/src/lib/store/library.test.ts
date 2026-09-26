@@ -80,7 +80,7 @@ describe('saving', () => {
       endurance: null,
       hits: 20,
       injuries: [{ when: null, kind: 'lethal', reductions: { hits: 8 } }],
-      criticals: { power: { severity: 3, note: 'Speed −1 m/band' } },
+      criticals: { power: { severity: 3, note: 'Speed −1 m/band', taken: {} } },
     };
     const saved = await library.saveActor(hurt);
     expect(await library.actor(saved.id)).toEqual(saved);

@@ -17,6 +17,7 @@
  */
 import type { Actor, ActorId } from '$lib/schema/actor';
 import { isDead, isDestroyed, isUnconscious } from './health';
+import { isInoperable } from './robotState';
 import { situationSchema, type Condition, type Member, type Situation } from '$lib/schema/situation';
 
 export type { Member, Situation };
@@ -321,13 +322,13 @@ function sameStep(member: Member, step: Member, roster: readonly Actor[]): boole
 
 /**
  * Whether an actor may take a turn at all: not stunned into the next round,
- * and not unconscious, dead or destroyed. The turn passes on without whoever
+ * and not unconscious, dead, destroyed, or a robot that has shut down. The turn passes on without whoever
  * cannot.
  */
 export function ableToAct(situation: Situation, member: Member, roster: readonly Actor[]): boolean {
   if (member.incapacitatedUntil !== null && situation.round < member.incapacitatedUntil) return false;
   const actor = roster.find((each) => each.id === member.actor);
-  return !actor || !(isDead(actor) || isDestroyed(actor) || isUnconscious(actor));
+  return !actor || !(isDead(actor) || isDestroyed(actor) || isUnconscious(actor) || isInoperable(actor));
 }
 
 /** True once no one is still owed a turn. */

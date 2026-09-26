@@ -87,6 +87,10 @@ export type Injury = z.infer<typeof injurySchema>;
  * Where a robot critical landed, in the order the 2D location table rolls
  * them (handouts/robot_combat_cards.typ, Card 2).
  */
+/** What a critical can take something off. */
+export const robotAttributes = ['protection', 'movement', 'speed', 'enduranceHours', 'int'] as const;
+export type RobotAttribute = (typeof robotAttributes)[number];
+
 export const criticalLocations = [
   'power',
   'weapon',
@@ -110,6 +114,14 @@ export type CriticalLocation = (typeof criticalLocations)[number];
 export const criticalSchema = z.object({
   severity: z.number().int().min(0).max(6).default(0),
   note: z.string().default(''),
+  /**
+   * What this location's criticals took off the robot: Protection, Movement,
+   * Speed, Endurance hours, INT. Current values are the base less the sum over
+   * every location, so nothing is replayed to answer a question, and repairing a
+   * location gives back exactly what it took. A halving is stored as the amount
+   * that went, since what it comes to depends on what was left.
+   */
+  taken: z.partialRecord(z.enum(robotAttributes), z.number().nonnegative()).default({}),
 });
 export type Critical = z.infer<typeof criticalSchema>;
 export const WORST_SEVERITY = 6;

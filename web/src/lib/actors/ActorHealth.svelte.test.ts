@@ -130,6 +130,56 @@ describe('ActorHealth', () => {
     await expect.element(unset.getByText(/prone:/)).not.toBeInTheDocument();
   });
 
+  // The table's own sentence for the severity the row is at, so the referee does
+  // not have to look it up in the handbook to know what the number means.
+  it('says what each critical does, in the table’s words', async () => {
+    const hurt: Actor = {
+      ...warbot,
+      criticals: {
+        armour: { severity: 2, note: '', taken: { protection: 3 } },
+        brain: { severity: 4, note: '', taken: { int: 3 } },
+      },
+    };
+    const screen = await render(ActorHealth, { actor: hurt, onchange: vi.fn() });
+
+    await expect.element(screen.getByText('Protection -1D')).toBeVisible();
+    await expect.element(screen.getByText('Robot INT halved')).toBeVisible();
+    // Undamaged rows say nothing.
+    expect(screen.container.querySelectorAll('.effect:not(:empty)')).toHaveLength(2);
+  });
+
+  // The base is what the robot is and stays editable; what is left of it is
+  // shown beside it once a critical has taken something off.
+  it('shows what is left of an attribute a critical has reduced, and nothing when none has', async () => {
+    const hurt: Actor = {
+      ...warbot,
+      protection: 8,
+      movement: 6,
+      criticals: { armour: { severity: 2, note: '', taken: { protection: 5 } } },
+    };
+    const screen = await render(ActorHealth, { actor: hurt, onchange: vi.fn() });
+
+    await expect.element(screen.getByText('now 3')).toBeVisible();
+    expect(screen.container.textContent).not.toContain('now 6');
+  });
+
+  it('names what is left of Speed as a band, and shows hours and metres with their units', async () => {
+    const hurt: Actor = {
+      ...warbot,
+      movement: 6,
+      speed: 4,
+      enduranceHours: 40,
+      criticals: {
+        power: { severity: 3, note: '', taken: { speed: 1, movement: 1, enduranceHours: 30 } },
+      },
+    };
+    const screen = await render(ActorHealth, { actor: hurt, onchange: vi.fn() });
+
+    await expect.element(screen.getByText('now Slow')).toBeVisible();
+    await expect.element(screen.getByText('now 5 m')).toBeVisible();
+    await expect.element(screen.getByText('now 10 h')).toBeVisible();
+  });
+
   it('keeps a critical record for a robot', async () => {
     const screen = await render(ActorHealth, { actor: warbot, onchange: vi.fn() });
     await expect.element(screen.getByText('Criticals')).toBeVisible();
@@ -150,7 +200,7 @@ describe('ActorHealth', () => {
     await screen.getByLabelText('brain severity').selectOptions('S3');
 
     expect(onchange).toHaveBeenCalledTimes(1);
-    expect(onchange.mock.calls[0][0].criticals.brain).toEqual({ severity: 3, note: '' });
+    expect(onchange.mock.calls[0][0].criticals.brain).toEqual({ severity: 3, note: '', taken: {} });
   });
 
   it('offers robots physical damage rather than recoverable stun', async () => {

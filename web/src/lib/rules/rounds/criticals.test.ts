@@ -43,7 +43,7 @@ function warbot(criticals: Actor['criticals'] = {}, hits = 20): Actor {
   };
 }
 
-const at = (severity: number, note = '') => ({ severity, note });
+const at = (severity: number, note = '') => ({ severity, note, taken: {} });
 
 describe('the combat record', () => {
   // The card prints seven rows whether or not anything has been hit, in the
@@ -59,24 +59,41 @@ describe('the combat record', () => {
       'options',
       'brain',
     ]);
-    expect(rows.at(-1)).toEqual({ location: 'brain', severity: 2, note: 'DM−2 to all skills' });
-    expect(rows[0]).toEqual({ location: 'power', severity: 0, note: '' });
+    expect(rows.at(-1)).toEqual({ location: 'brain', severity: 2, note: 'DM−2 to all skills', taken: {} });
+    expect(rows[0]).toEqual({ location: 'power', severity: 0, note: '', taken: {} });
   });
 
   it('reads an undamaged location as severity 0 with no note', () => {
-    expect(criticalAt(warbot(), 'options')).toEqual({ severity: 0, note: '' });
+    expect(criticalAt(warbot(), 'options')).toEqual({ severity: 0, note: '', taken: {} });
+  });
+  // What a location took off is the record of why the robot is as it is: editing
+  // the severity or the note must not forget it, and a location that took
+  // something off is not an empty record even at severity 0.
+  it('keeps what a location took off when its severity or note is edited', () => {
+    const hurt = { ...warbot(), criticals: { armour: { severity: 2, note: '', taken: { protection: 4 } } } };
+
+    expect(setCritical(hurt, 'armour', 3, 'Protection −1D').criticals.armour).toEqual({
+      severity: 3,
+      note: 'Protection −1D',
+      taken: { protection: 4 },
+    });
+    expect(setCritical(hurt, 'armour', 0, '').criticals.armour).toEqual({
+      severity: 0,
+      note: '',
+      taken: { protection: 4 },
+    });
   });
 });
 
 describe('editing a row directly', () => {
   it('records a severity and the note the referee looked up', () => {
     const edited = setCritical(warbot(), 'armour', 2, 'Protection −1D');
-    expect(edited.criticals.armour).toEqual({ severity: 2, note: 'Protection −1D' });
+    expect(edited.criticals.armour).toEqual({ severity: 2, note: 'Protection −1D', taken: {} });
   });
 
   it('keeps a note on an otherwise undamaged location', () => {
     const edited = setCritical(warbot(), 'options', 0, 'no options fitted');
-    expect(edited.criticals.options).toEqual({ severity: 0, note: 'no options fitted' });
+    expect(edited.criticals.options).toEqual({ severity: 0, note: 'no options fitted', taken: {} });
   });
 
   it('drops the row entirely when there is nothing left to say', () => {
@@ -86,7 +103,7 @@ describe('editing a row directly', () => {
 
   it('leaves the other locations alone', () => {
     const edited = setCritical(warbot({ power: at(3, 'Speed −1') }), 'brain', 1, '');
-    expect(criticalAt(edited, 'power')).toEqual({ severity: 3, note: 'Speed −1' });
+    expect(criticalAt(edited, 'power')).toEqual({ severity: 3, note: 'Speed −1', taken: {} });
   });
 });
 
@@ -115,7 +132,7 @@ describe('applying a critical', () => {
 
   it('keeps the note already written against the location', () => {
     const hurt = applyCritical(warbot({ weapon: at(1, 'left autocannon') }), 'weapon', 3).actor;
-    expect(hurt.criticals.weapon).toEqual({ severity: 3, note: 'left autocannon' });
+    expect(hurt.criticals.weapon).toEqual({ severity: 3, note: 'left autocannon', taken: {} });
   });
 
   // "Chassis: S1 Suffer 1D ... S6 Suffer 6D" — the one location whose effect
