@@ -68,6 +68,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npx svelte-kit sync
+      - run: npx playwright install --with-deps chromium
       - run: npm test
 
   web-build:
