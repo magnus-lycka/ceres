@@ -908,3 +908,132 @@ describe('damage from something other than an attacker', () => {
     await expect.element(dialog.getByLabelText('Excess to')).not.toBeInTheDocument();
   });
 });
+
+/**
+ * A precise hit on a robot damages a system. What it does depends on rolls only
+ * the referee can make, so the screen asks for them, one at a time, and applies
+ * each answer before it asks the next.
+ */
+describe('a critical hit on a robot', () => {
+  const warbot: Actor = {
+    ...sophont('Warbot'),
+    kind: 'robot',
+    strength: null,
+    dexterity: null,
+    endurance: null,
+    hits: 30,
+    protection: 8,
+    movement: 6,
+    speed: 4,
+  };
+
+  const strike = async (effect: string, target: Actor = warbot) => {
+    const { screen } = await fight([sophont('Rex'), 12], [target, 8]);
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill(effect);
+    await dialog.getByLabelText('Damage roll').fill('10');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    return screen;
+  };
+
+  it('asks for the location, applies what the table says, and records it', async () => {
+    const screen = await strike('6');
+
+    const dialog = screen.getByRole('dialog', { name: 'Critical hit' });
+    await expect.element(dialog.getByText('Attack critical, Severity 1')).toBeVisible();
+    await dialog.getByLabelText('Roll').fill('6');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await expect.element(dialog.getByText('Armour, Severity 1: Protection -1')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Done' }).click();
+
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+    await vi.waitFor(async () => {
+      const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+      expect(bot.criticals.armour).toMatchObject({ severity: 1, taken: { protection: 1 } });
+    });
+  });
+
+  const critical = (screen: Awaited<ReturnType<typeof strike>>) =>
+    screen.getByRole('dialog', { name: 'Critical hit' });
+  const roll = async (screen: Awaited<ReturnType<typeof strike>>, value: string) => {
+    await critical(screen).getByLabelText('Roll').fill(value);
+    await critical(screen).getByRole('button', { name: 'Apply' }).click();
+  };
+
+  it('asks for the dice an effect costs after the location', async () => {
+    const screen = await strike('7');
+    await roll(screen, '6');
+
+    await expect.element(critical(screen).getByText('Armour, Severity 2: Protection -1D')).toBeVisible();
+    await roll(screen, '4');
+    await critical(screen).getByRole('button', { name: 'Done' }).click();
+
+    await vi.waitFor(async () => {
+      const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+      expect(bot.criticals.armour).toMatchObject({ severity: 2, taken: { protection: 4 } });
+    });
+  });
+
+  it('asks which of Movement and Speed a failing locomotion costs, when there is a choice', async () => {
+    const screen = await strike('6');
+    await roll(screen, '8');
+
+    await expect
+      .element(
+        critical(screen)
+          .getByText(/Speed reduced by 1m or one Speed Band/)
+          .first(),
+      )
+      .toBeVisible();
+    await critical(screen).getByRole('button', { name: 'Speed' }).click();
+
+    await vi.waitFor(async () => {
+      const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+      expect(bot.criticals.locomotion?.taken).toEqual({ speed: 1 });
+    });
+  });
+
+  it('says so when a roll is not one the dice can make, and asks again', async () => {
+    const screen = await strike('6');
+    await roll(screen, '13');
+
+    await expect.element(critical(screen).getByText(/not a roll those dice can make/)).toBeVisible();
+    await expect.element(critical(screen).getByText('Attack critical, Severity 1')).toBeVisible();
+    const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+    expect(bot.criticals).toEqual({});
+  });
+
+  it('shows a robot whose power supply has gone as out of action, with the chassis it wrecked', async () => {
+    const screen = await strike('10');
+    await roll(screen, '3');
+
+    // Power Severity 5 steps the Chassis up to 1, which suffers 1D.
+    await expect
+      .element(
+        critical(screen)
+          .getByText(/Chassis, Severity 1: Robot suffers 1D damage/)
+          .first(),
+      )
+      .toBeVisible();
+    await roll(screen, '4');
+    await critical(screen).getByRole('button', { name: 'Done' }).click();
+
+    await expect.element(screen.getByText('out', { exact: true })).toBeVisible();
+    await vi.waitFor(async () => {
+      const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+      expect(bot.criticals.power?.severity).toBe(5);
+      expect(bot.criticals.chassis?.severity).toBe(1);
+    });
+  });
+
+  it('is not asked for below Effect 6, nor of anything but a robot', async () => {
+    const low = await strike('5');
+    await expect.element(low.getByRole('dialog')).not.toBeInTheDocument();
+    low.unmount();
+
+    const person = await strike('9', sophont('Guard'));
+    await expect.element(person.getByRole('dialog')).not.toBeInTheDocument();
+  });
+});

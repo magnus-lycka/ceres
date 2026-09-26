@@ -245,6 +245,47 @@ describe('carrying out an attack', () => {
     });
   });
 
+  /**
+   * "If the attack has Effect 6+ and inflicts damage after Protection: Severity =
+   * attack Effect - 5" (refs/robot/50_other_considerations.md:117). Only a robot
+   * has systems to take one; the flow that works it out is `robotCriticals`.
+   */
+  describe('an attack critical', () => {
+    const bot: Actor = {
+      ...guard,
+      id: actorId(3),
+      name: 'Warbot',
+      kind: 'robot',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 20,
+    };
+    const fight = { ...addActors(emptySituation(), [rex, bot], 'Everyone'), round: 3 };
+    const shot = (effect: number, target: Actor = bot) =>
+      carryOutAttack(fight, [rex, target], { attacker: rex.id, target: target.id, effect, roll: 4 })
+        .criticalSeverity;
+
+    it('is Effect less 5 against a robot, from Effect 6', () => {
+      expect(shot(6)).toBe(1);
+      expect(shot(8)).toBe(3);
+    });
+
+    it('is capped at the worst there is', () => {
+      expect(shot(20)).toBe(6);
+    });
+
+    it('is nothing below Effect 6, and nothing for a miss', () => {
+      expect(shot(5)).toBe(0);
+      expect(shot(0)).toBe(0);
+      expect(shot(-3)).toBe(0);
+    });
+
+    it('is nothing when the target is not a robot', () => {
+      expect(shot(8, guard)).toBe(0);
+    });
+  });
+
   describe('with weapon traits', () => {
     const armoured = { ...guard, protection: 3 };
     const plated: Actor = {

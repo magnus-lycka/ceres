@@ -6,6 +6,7 @@
  * same for a sophont, an animal and a robot (refs/core/03_combat.md:263-280).
  */
 import type { Actor, ActorId } from '../../schema/actor';
+import { attackCriticalSeverity } from './criticals';
 import { takeDamage } from './damage';
 import { attack, dive, incapacitate, react, type Situation } from './situation';
 import type { Reaction } from './reaction';
@@ -87,7 +88,7 @@ export function carryOutAttack(
   situation: Situation,
   roster: readonly Actor[],
   { attacker, target, effect, roll, ap, protection, excessTo, stun, shotgun, reaction }: Strike,
-): { situation: Situation; target: Actor } {
+): { situation: Situation; target: Actor; criticalSeverity: number } {
   const victim = roster.find((actor) => actor.id === target);
   if (!victim) throw new Error(`there is no actor ${target} to attack`);
   const met = protection ?? protectionAgainst(victim, { shotgun, stun });
@@ -98,7 +99,13 @@ export function carryOutAttack(
     excessTo,
   });
   const struck = incapacitate(attack(situation, attacker, target), target, hurt.incapacitatedFor);
-  return { situation: withReaction(struck, target, reaction), target: hurt.actor };
+  return {
+    situation: withReaction(struck, target, reaction),
+    target: hurt.actor,
+    // Only a robot has systems to take one. "Effect 6+ and inflicts damage after Protection": an
+    // Effect of 6 or more always inflicts at least 1 (:278), so the second condition always holds.
+    criticalSeverity: victim.kind === 'robot' ? attackCriticalSeverity(effect) : 0,
+  };
 }
 
 /**

@@ -17,6 +17,7 @@
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
   import Workspace from '$lib/Workspace.svelte';
   import AttackDialog from './AttackDialog.svelte';
+  import CriticalDialog from './CriticalDialog.svelte';
   import HarmDialog from './HarmDialog.svelte';
   import SetupGrid from '$lib/situations/SetupGrid.svelte';
   import SituationGrid from '$lib/situations/SituationGrid.svelte';
@@ -33,6 +34,7 @@
   } from '$lib/rules/rounds/situation';
   import { beginRound, end, engagedElsewhere, nextRound, start } from '$lib/rules/rounds/lifecycle';
   import { carryOutAttack, harm, type Harm, type Strike } from '$lib/rules/rounds/attack';
+  import { answer, startFlow, type Choice, type Flow } from '$lib/rules/rounds/robotCriticals';
   import type { Actor, ActorId } from '$lib/schema/actor';
   import type { Party } from '$lib/schema/party';
   import type { Condition, Situation, SituationId } from '$lib/schema/situation';
@@ -50,6 +52,8 @@
   let actorToAdd = $state('');
   /** The row the cursor is in on the setup grid, for Remove to act on. */
   let picked = $state<ActorId | null>(null);
+  /** A critical hit on a robot being worked through, one question at a time. */
+  let critical = $state<Flow | null>(null);
   /** Whether the dialog for damage with no attacker is open. */
   let harming = $state(false);
   /** Who is attacking, while the attack dialog is open. */
@@ -125,10 +129,26 @@
     if (!open) return;
     const result = carryOutAttack(open, roster, attack);
     attacking = null;
+    const round = open.round;
     return keep(async () => {
       const saved = await library.saveActor(result.target);
       roster = roster.map((each) => (each.id === saved.id ? saved : each));
       await store(result.situation);
+      // A precise hit on a robot damages a system, which takes rolls only the referee can make.
+      if (result.criticalSeverity > 0)
+        critical = startFlow(saved, { round, severity: result.criticalSeverity });
+    });
+  }
+
+  /** One more question answered: the robot as it now stands is kept, so nothing is left half done. */
+  function proceed(value: number | Choice) {
+    if (!critical) return;
+    const next = answer(critical, value);
+    if (next === critical) return;
+    critical = next;
+    return keep(async () => {
+      const saved = await library.saveActor(next.actor);
+      roster = roster.map((each) => (each.id === saved.id ? saved : each));
     });
   }
 
@@ -306,6 +326,10 @@
         <button type="button" onclick={() => (harming = true)}>Other</button>
       {/if}
     </div>
+  {/if}
+
+  {#if critical}
+    <CriticalDialog flow={critical} onanswer={proceed} ondone={() => (critical = null)} />
   {/if}
 
   {#if harming}

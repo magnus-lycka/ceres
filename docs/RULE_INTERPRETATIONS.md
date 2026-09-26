@@ -936,8 +936,10 @@ severity, capped at 6 — not a critical rolled against Effect or earned by a
 sustained-damage threshold, so the repeat-hit rule
 (`new Severity = max(rolled, old + 1)`, `:118`) does not apply to it: the step
 is the rule, not a floor under a roll. "+1D" is the same step, sized by a die
-roll rather than fixed at one. Reaching a newly-stepped Chassis severity
-applies that severity's own effect — "Suffer nD" at the severity just
+roll rather than fixed at one. A step that finds the Chassis already at
+Severity 6 cannot raise it, and by the repeat-hit rule ("once a location is
+already Severity 6, the robot sustains 6D damage every time") inflicts 6D instead.
+Reaching a newly-stepped Chassis severity applies that severity's own effect — "Suffer nD" at the severity just
 reached — which is ordinary Chassis damage and can itself cross further
 sustained-damage thresholds.
 
@@ -1013,24 +1015,26 @@ criticals are "ignored, not re-rolled"
 second, distinct answer — discard rather than reroll — and the referee picks
 the one the case calls for.
 
-### RIC-020 Locomotion And Power Criticals That Read "1m Or One Speed Band" Default To Movement
+### RIC-020 A Failing Power Supply Costs Movement And Speed; A Failing Locomotion Costs Movement, Unless There Is A Choice
 
-Several Locomotion and Power severities reduce "Speed... by 1m or one Speed
-Band" (`refs/robot/50_other_considerations.md:137,141`) without stating which
-applies, or who decides. Ceres tracks the two as separate attributes,
-Movement (metres per Minor Action) and Speed (Speed Band) — see `CONTEXT.md`
-— so the rule's "or" has to resolve to one of them.
+Power Severity 1 and Locomotion Severities 1 to 4 read "Speed reduced by 1m or one
+Speed Band" (`refs/robot/50_other_considerations.md:137,141`) without saying
+which applies, or who decides. Ceres tracks the two as separate attributes,
+Movement (metres per Minor Action) and Speed (Speed Band) — see `CONTEXT.md` —
+so the "or" has to resolve.
 
-Most robots have no means of trading between the two: the choice is only real
-for a robot with the vehicle speed movement modification, which "can
-typically turn it off and operate at more walking speed"
-(`refs/robot/08_locomotion_modifications.md:45-53`) and therefore genuinely
-has both a Movement rate and a Speed Band in play. Ceres reduces Movement by
-default, and asks only when the robot's Speed is above Idle — the signal that
-vehicle-speed movement might be in use. A Power critical that separately reads
-"Endurance halved" and a Speed-or-Movement reduction on the same row reduces
-both Endurance and whichever of Movement/Speed applies; the two clauses are
-independent.
+- **Power costs both.** A failing power supply slows the whole robot, so Power
+  Severity 1 takes 1 m off Movement and one band off Speed.
+- **Locomotion costs Movement, and asks only when there is a real choice.** Most
+  robots cannot trade one for the other. The choice is real for a robot with the
+  vehicle speed movement modification, which "can typically turn it off and
+  operate at more walking speed"
+  (`refs/robot/08_locomotion_modifications.md:45-53`) and so has both a Movement
+  rate and a Speed Band in play. Ceres takes Movement, and asks which only when the
+  robot's Speed is above Idle, the signal that vehicle speed movement may be in
+  use.
+
+Neither takes more than is left, and a Speed that was never set has none to lose.
 
 ### RIC-021 Robot And Animal Destruction Share One Threshold: Hits At Or Below Minus Starting Hits
 
