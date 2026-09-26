@@ -31,8 +31,16 @@
    * test asserting selection keeps off row backgrounds; this is what it was
    * protecting.
    */
-  import { SvGrid, renderComponent, type CellContext, type GridColumns } from '@svgrid/grid';
+  import {
+    SvGrid,
+    renderComponent,
+    type CellContext,
+    type GridColumns,
+    type SvGridApi,
+    type TableFeatures,
+  } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
+  import '$lib/grid/scrollbar.css';
   import { memberState, turnOrder, type MemberState, type Situation } from '$lib/rules/rounds/situation';
   import { maxVitality, nowVitality, stunCell } from '$lib/rules/rounds/vitality';
   import type { Actor, ActorId } from '$lib/schema/actor';
@@ -43,13 +51,18 @@
     roster,
     ondone,
     onwait,
+    onselect,
   }: {
     situation: Situation;
     /** The actors the rows refer to, for names and the DEX tie-break. */
     roster: Actor[];
     ondone: (actor: ActorId) => void;
     onwait: (actor: ActorId) => void;
+    /** The actor whose row the cursor is in, or null when none is. */
+    onselect?: (actor: ActorId | null) => void;
   } = $props();
+
+  let api = $state<SvGridApi<TableFeatures, Row> | null>(null);
 
   /**
    * One row per member, in turn order, flattened for the grid.
@@ -93,13 +106,14 @@
   type Cell = CellContext<Row>;
 
   const columns: GridColumns<Row> = [
-    { field: 'name', header: 'Name', editable: false },
+    // Wide enough for "Sindalian Combat Robot": three of those in one fight is normal.
+    { field: 'name', header: 'Name', width: 200, editable: false },
     // Editable, because an actor dropped in on their own arrives with no side
     // and a fight may be split or re-sided as it goes. It is a plain name, not
     // a reference to the Party that may have supplied it.
-    { field: 'party', header: 'Party', editable: false },
+    { field: 'party', header: 'Party', width: 100, editable: false },
     // The one thing typed here. The referee rolls; the app never does.
-    { field: 'initiative', header: 'Ini', width: 80, editable: false },
+    { field: 'initiative', header: 'Ini', width: 60, editable: false },
     // What the actor is, and what is left of it. Two cells rather than one
     // column per characteristic: the pair reads as a before and an after, and
     // an actor hurt through Hits has one score rather than three.
@@ -135,6 +149,11 @@
     containerHeight="auto"
     enableRowSummaries={false}
     rowClass={({ row }) => `turn-${row.state}`}
+    onApiReady={(ready) => (api = ready)}
+    onActiveCellChange={(cell) => {
+      const row = cell && cell.rowIndex >= 0 ? (api?.getData()[cell.rowIndex] ?? null) : null;
+      onselect?.(row?.id ?? null);
+    }}
   />
 </div>
 

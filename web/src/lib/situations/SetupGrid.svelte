@@ -18,6 +18,7 @@
    */
   import { SvGrid, type GridColumns, type SvGridApi, type TableFeatures } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
+  import '$lib/grid/scrollbar.css';
   import { afterPaste, isPasteKey } from '$lib/grid/pasted';
   import type { Situation } from '$lib/schema/situation';
   import type { Actor, ActorId } from '$lib/schema/actor';

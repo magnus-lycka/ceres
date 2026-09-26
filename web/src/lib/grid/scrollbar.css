@@ -1,0 +1,11 @@
+/*
+ * SvGrid sizes its shell to the header and the rows, then lays the horizontal
+ * scrollbar over the shell's bottom edge, so a grid wider than its space hides
+ * the lower half of its last row behind it. Reserve the scrollbar's height, and
+ * only when there is a scrollbar.
+ *
+ * Every grid has this, but only one beside a panel is narrow enough to show it.
+ */
+.sv-grid-shell:has(.sv-grid-scrollbar-horizontal) {
+  padding-bottom: 16px;
+}

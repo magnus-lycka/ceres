@@ -13,6 +13,7 @@
   import ActorGrid from '$lib/actors/ActorGrid.svelte';
   import ActorSource from '$lib/characters/ActorSource.svelte';
   import ActorHealth from '$lib/actors/ActorHealth.svelte';
+  import Workspace from '$lib/Workspace.svelte';
   import { tick } from 'svelte';
   import { library, refresh } from '$lib/store/session.svelte';
   import {
@@ -172,19 +173,29 @@
   deleting a row. Paste a block from a spreadsheet with ⌘V. Drag-select a range and ⌘C to copy one out.
 </p>
 
-<ActorGrid bind:this={grid} {actors} onselect={(id) => (selectedId = id)} onedit={edited} ontags={replace} />
-
-{#if selected}
-  <ActorHealth actor={selected} onchange={replace} />
-  <ActorSource
-    actor={selected}
-    onchange={(updated) => {
-      actors = actors.map((actor) => (actor.id === updated.id ? updated : actor));
-    }}
+<Workspace>
+  <ActorGrid
+    bind:this={grid}
+    {actors}
+    onselect={(id) => (selectedId = id)}
+    onedit={edited}
+    ontags={replace}
   />
-{:else}
-  <p class="hint">Click a row to edit its health.</p>
-{/if}
+
+  {#snippet panels()}
+    {#if selected}
+      <ActorHealth actor={selected} onchange={replace} />
+      <ActorSource
+        actor={selected}
+        onchange={(updated) => {
+          actors = actors.map((actor) => (actor.id === updated.id ? updated : actor));
+        }}
+      />
+    {:else}
+      <p class="hint">Click a row to edit its health.</p>
+    {/if}
+  {/snippet}
+</Workspace>
 
 <style>
   .bar {

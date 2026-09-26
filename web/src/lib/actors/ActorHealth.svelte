@@ -244,7 +244,9 @@
   .record .hurt {
     background: var(--error-bg);
   }
+  /* The panel sits in a column of its own, so the note takes what is left of it. */
   .note {
-    width: 18rem;
+    width: 100%;
+    min-width: 8rem;
   }
 </style>

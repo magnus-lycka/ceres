@@ -19,6 +19,7 @@
    */
   import { SvGrid, type GridColumns, type SvGridApi, type TableFeatures } from '@svgrid/grid';
   import '@svgrid/grid/themes/excel.css';
+  import '$lib/grid/scrollbar.css';
   import { afterPaste, isPasteKey } from '$lib/grid/pasted';
   import { cellForClipboard, provideTagsForm, tagsColumn } from '$lib/tags/tagsColumn';
   import TagPicker from '$lib/tags/TagPicker.svelte';
