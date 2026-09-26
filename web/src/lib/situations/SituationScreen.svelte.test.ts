@@ -583,4 +583,103 @@ describe('attacking', () => {
       });
     });
   });
+
+  /**
+   * The reaction is chosen before the roll, so what it costs the attacker is
+   * in front of the referee when they roll. The table is a reminder: the Effect
+   * typed afterwards already includes it, and nothing here changes it.
+   */
+  describe('reactions', () => {
+    const options = (dialog: ReturnType<typeof attackDialog>) =>
+      [...dialog.getByLabelText('Reaction').element().querySelectorAll('option')].map((o) =>
+        o.textContent?.trim(),
+      );
+    const attackDialog = (screen: Awaited<ReturnType<typeof fight>>['screen']) =>
+      screen.getByRole('dialog', { name: 'Attack' });
+
+    it('offers the reactions the attack allows, which depend on whether it is melee or ranged', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      expect(options(dialog)).toEqual(['—', 'Dodge', 'Dive for cover']);
+
+      await dialog.getByLabelText('Melee').click();
+      expect(options(dialog)).toEqual(['—', 'Dodge', 'Parry']);
+    });
+
+    it('shows what a Dodge costs the attacker, from the target’s DEX', async () => {
+      const guard = { ...sophont('Guard'), dexterity: 12 };
+      const { screen } = await fight([sophont('Rex'), 12], [guard, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+
+      await expect.element(dialog.getByText('Dodge (DEX DM)')).toBeVisible();
+      await expect.element(dialog.getByText('−2', { exact: true }).first()).toBeVisible();
+    });
+
+    // No DEX in the model for a robot: the reminder says it does not know.
+    it('says a DM is unknown for a target with no DEX, and that the total is not the whole of it', async () => {
+      const warbot: Actor = {
+        ...sophont('Warbot'),
+        kind: 'robot',
+        strength: null,
+        dexterity: null,
+        endurance: null,
+        hits: 20,
+      };
+      const { screen } = await fight([sophont('Rex'), 12], [warbot, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+
+      await expect.element(dialog.getByText('?', { exact: true }).first()).toBeVisible();
+      await expect.element(dialog.getByText(/Not every DM is known/)).toBeVisible();
+    });
+
+    it('says a Shotgun ignores a Dodge', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), dexterity: 12 }, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+      await dialog.getByLabelText('Shotgun').click();
+
+      await expect.element(dialog.getByText('Dodge (ignored by a Shotgun)')).toBeVisible();
+    });
+
+    it('drops a reaction the attack no longer allows when it turns melee', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dive for cover');
+      await expect.element(dialog.getByText('Dive for cover', { exact: true }).nth(1)).toBeVisible();
+
+      await dialog.getByLabelText('Melee').click();
+
+      await expect.element(dialog.getByLabelText('Reaction')).toHaveValue('');
+      await expect.element(dialog.getByRole('table')).not.toBeInTheDocument();
+    });
+
+    // The point of it being a reminder: the Effect typed already has it in.
+    it('never changes the damage: the Effect typed is the Effect used', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), dexterity: 12 }, 8]);
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Reaction').selectOptions('Dodge');
+      await dialog.getByLabelText('Effect').fill('0');
+      await dialog.getByLabelText('Damage roll').fill('7');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await vi.waitFor(async () => {
+        const guard = (await library.actors()).find((actor) => actor.name === 'Guard')!;
+        expect(guard.injuries[0].reductions).toEqual({ endurance: 7 });
+      });
+    });
+  });
 });

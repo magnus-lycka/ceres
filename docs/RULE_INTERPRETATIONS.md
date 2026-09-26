@@ -1072,6 +1072,34 @@ replaces it only when that reaches further; durations never add (RIC-011). An
 actor who is stunned, unconscious, dead, wrecked or destroyed is out of action:
 the turn passes on without them and they do not keep the round open.
 
+### RIC-023 The Reaction Reminder Shows The DMs Ceres Holds, And Says When It Cannot Know One
+
+A Dodge "will inflict a penalty equal to their DEX DM or Athletics (dexterity),
+whichever is higher, to their attacker's attack roll"
+(`refs/core/03_combat.md:196`). Diving for cover inflicts DM−2 (`:204`, DM−1
+against a prone target when there is no cover to dive behind), and a parry
+inflicts the defender's Melee skill as a negative DM (`:212`).
+
+The referee rolls, and the Effect they type already includes all of this, so
+Ceres never applies it. Before the roll the attack dialog shows the DMs it can
+know, as a reminder, with three readings:
+
+- **A Dodge is the DEX DM, at the DEX the defender has left.** Damage impairs a
+  characteristic and the impaired DM counts until it is healed (`:267`). Ceres
+  holds no skills, so the row is labelled "Dodge (DEX DM)": Athletics
+  (dexterity) may be higher, and the label says the number is a floor and not the
+  final figure.
+- **A DEX DM that is negative gives the attacker nothing.** The rule speaks of a
+  penalty; a poor dodger does not help whoever is shooting at them.
+- **What cannot be known is shown as unknown.** A parry needs Melee skill, and an
+  animal or a robot has no DEX in the model. The row shows "?", and the total
+  says it is not the whole of it, rather than adding a guess.
+
+A Shotgun using pellet ammunition "ignores Dodge dice modifiers"
+(`refs/core/04_equipment.md:827`), so its row reads as ignored, at 0. Diving for
+cover is offered only against ranged attacks (`:190`), and a parry only against
+melee ones; a reaction the attack does not allow is dropped.
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

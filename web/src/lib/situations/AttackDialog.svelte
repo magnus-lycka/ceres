@@ -9,6 +9,13 @@
   import type { Actor, ActorId } from '$lib/schema/actor';
   import { hurtByCharacteristics } from '$lib/rules/rounds/health';
   import { protectionAgainst, type Strike } from '$lib/rules/rounds/attack';
+  import {
+    knownModifiers,
+    reactionsAgainst,
+    totalOf,
+    type AttackKind,
+    type Reaction,
+  } from '$lib/rules/rounds/reaction';
 
   let {
     attacker,
@@ -45,6 +52,18 @@
    */
   let typedProtection = $state<number | null>(null);
   const victim = $derived(candidates.find((candidate) => String(candidate.id) === target));
+  /** Melee or ranged: which reactions the target has depends on it. */
+  let kind = $state<AttackKind>('ranged');
+  /** What the target does about it, before anything is rolled. */
+  let chosenReaction = $state<Reaction | ''>('');
+  const reaction = $derived<Reaction | null>(chosenReaction === '' ? null : chosenReaction);
+  // A reaction the attack no longer allows is dropped, not merely hidden: left
+  // in the state it would leave the box blank with nothing selected.
+  $effect.pre(() => {
+    if (chosenReaction !== '' && !reactionsAgainst(kind).includes(chosenReaction)) chosenReaction = '';
+  });
+  const reactionNames: Record<Reaction, string> = { dodge: 'Dodge', dive: 'Dive for cover', parry: 'Parry' };
+
   /** A Shotgun with pellet ammunition: armour is doubly effective. */
   let shotgun = $state(false);
   /** What the target's Protection comes to against this weapon, before anything is typed. */
@@ -58,6 +77,18 @@
     if (stun && victim.kind === 'robot') reasons.push('halved: stunner against a robot');
     return reasons.join('; ');
   });
+
+  /** The DMs the app knows of: a reminder before the roll, never applied to it. */
+  const modifiers = $derived(
+    victim ? knownModifiers({ defender: victim, reaction, attack: kind, shotgun }) : [],
+  );
+  const known = $derived(totalOf(modifiers));
+
+  /** A DM as it is written on the table: a real minus sign, and ? for what cannot be known. */
+  function written(dm: number | null): string {
+    if (dm === null) return '?';
+    return dm < 0 ? `−${-dm}` : dm > 0 ? `+${dm}` : '0';
+  }
 
   /** The target's choice of what takes the excess once END is gone. */
   let excessTo = $state<'strength' | 'dexterity'>('dexterity');
@@ -96,6 +127,41 @@
         {/each}
       </select>
     </label>
+    <fieldset class="kind">
+      <legend>Attack</legend>
+      <label><input type="radio" name="kind" value="ranged" bind:group={kind} /> Ranged</label>
+      <label><input type="radio" name="kind" value="melee" bind:group={kind} /> Melee</label>
+    </fieldset>
+    <label>
+      Reaction
+      <select bind:value={chosenReaction}>
+        <option value="">—</option>
+        {#each reactionsAgainst(kind) as each (each)}
+          <option value={each}>{reactionNames[each]}</option>
+        {/each}
+      </select>
+    </label>
+    {#if modifiers.length > 0}
+      <table class="known" aria-label="Known DMs">
+        <tbody>
+          {#each modifiers as modifier (modifier.label)}
+            <tr>
+              <td>{modifier.label}</td>
+              <td class="dm">{written(modifier.dm)}</td>
+            </tr>
+          {/each}
+          <tr class="total">
+            <td>Known DMs</td>
+            <td class="dm">{written(known.dm)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="why">
+        A reminder for your roll. The Effect you type already includes it.{known.complete
+          ? ''
+          : ' Not every DM is known here.'}
+      </p>
+    {/if}
     <label>Effect <input type="number" bind:value={checkEffect} /></label>
     <label>Damage roll <input type="number" min="0" bind:value={roll} /></label>
     {#if choosesExcess}
@@ -137,6 +203,31 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+  }
+  .kind {
+    display: flex;
+    gap: 0.75rem;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .kind legend {
+    float: left;
+    padding: 0;
+    margin-right: 0.5rem;
+  }
+  .known {
+    border-collapse: collapse;
+  }
+  .known td {
+    padding: 0.1rem 0.5rem;
+  }
+  .known .dm {
+    text-align: right;
+  }
+  .known .total td {
+    border-top: 1px solid #cbd5e1;
+    font-weight: 600;
   }
   .why {
     color: var(--muted);
