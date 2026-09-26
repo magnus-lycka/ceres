@@ -21,14 +21,24 @@ class CharacteristicChoiceHandler(EventHandlerBase):
         char = self.characteristic
         current = projection.summary.characteristics.get(char, 0)
         projection.summary.characteristics[char] = max(0, current - self.amount)
+        if fulfilled_pending is not None:
+            projection.record_history(
+                fulfilled_pending.history_id,
+                f'{char} reduced from {current} to {projection.summary.characteristics[char]}.',
+            )
         if isinstance(fulfilled_pending, PendingNearlyKilled):
             for other in (Chars.STR, Chars.DEX, Chars.END):
                 if other != char:
+                    before = projection.summary.characteristics.get(other, 0)
                     projection.summary.characteristics[other] = max(
                         0, projection.summary.characteristics.get(other, 0) - 2
                     )
+                    projection.record_history(
+                        fulfilled_pending.history_id,
+                        f'{other} reduced from {before} to {projection.summary.characteristics[other]}.',
+                    )
         elif isinstance(fulfilled_pending, (PendingAgingChoice, PendingAgingChoiceMental)) and not (
-            check_aging_crisis(projection, event.id)
+            check_aging_crisis(projection, event.id, fulfilled_pending.history_id)
         ):
             remaining = [
                 pending
@@ -50,13 +60,20 @@ class AgingRollHandler(EventHandlerBase):
             raise ReplayError(f'Aging roll must be 2-12, got {self.roll}')
 
         effective = self.roll - projection.summary.terms_started_in_pre_and_careers
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        projection.record_history(
+            history_id,
+            f'Ageing roll {self.roll} − {projection.summary.terms_started_in_pre_and_careers} terms = {effective}.',
+        )
         pending_idx = 0
         if effective >= 1:
+            projection.record_history(history_id, 'No deterioration.')
             complete_aging(projection, event.id)
         elif effective == 0:
             projection.queue_deferred(
                 PendingAgingChoice(
                     pending_id=(event.id, pending_idx),
+                    history_id=history_id,
                     instruction='Aging: choose STR, DEX, or END to reduce by 1',
                     options=[Chars.STR, Chars.DEX, Chars.END],
                 )
@@ -66,6 +83,7 @@ class AgingRollHandler(EventHandlerBase):
                 projection.queue_deferred(
                     PendingAgingChoice(
                         pending_id=(event.id, pending_idx),
+                        history_id=history_id,
                         instruction='Aging: choose STR, DEX, or END to reduce by 1',
                         options=[Chars.STR, Chars.DEX, Chars.END],
                     )
@@ -73,8 +91,12 @@ class AgingRollHandler(EventHandlerBase):
                 pending_idx += 1
         elif effective == -2:
             for char in (Chars.STR, Chars.DEX, Chars.END):
+                before = projection.summary.characteristics.get(char, 0)
                 projection.summary.characteristics[char] = max(0, projection.summary.characteristics.get(char, 0) - 1)
-            if not check_aging_crisis(projection, event.id):
+                projection.record_history(
+                    history_id, f'{char} reduced from {before} to {projection.summary.characteristics[char]}.'
+                )
+            if not check_aging_crisis(projection, event.id, history_id):
                 complete_aging(projection, event.id)
         elif effective == -3:
             projection.queue_deferred(
@@ -138,7 +160,9 @@ class InjuryTableHandler(EventHandlerBase):
     ) -> None:
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Injury table roll must be 1-6, got {self.roll}')
-        _apply_injury_table_result(projection, self.roll, event.id)
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        projection.record_history(history_id, f'Injury roll {self.roll}.')
+        _apply_injury_table_result(projection, self.roll, event.id, history_id)
 
 
 class DoubleInjuryTableHandler(EventHandlerBase):
@@ -174,6 +198,10 @@ class AgingCrisisHandler(EventHandlerBase):
             for char in list(projection.summary.characteristics.keys()):
                 if projection.summary.characteristics[char] == 0:
                     projection.summary.characteristics[char] = 1
+                    projection.record_history(
+                        fulfilled_pending.history_id if fulfilled_pending is not None else None,
+                        f'Medical care restored {char} from 0 to 1.',
+                    )
             projection.pending_reenlist = None
             if career:
                 muster_out_setup(projection, event.id, 0, clear_career=True)
@@ -181,6 +209,10 @@ class AgingCrisisHandler(EventHandlerBase):
                 projection.clear_current_career()
         else:
             projection.summary.dead = True
+            projection.record_history(
+                fulfilled_pending.history_id if fulfilled_pending is not None else None,
+                'Died in the ageing crisis.',
+            )
             projection.clear_current_career()
             if deferred_mo is not None:
                 deferred_mo.pending_setup = False
@@ -190,8 +222,11 @@ class AgingCrisisHandler(EventHandlerBase):
 # ── Health helper functions ───────────────────────────────────────────────────
 
 
-def _apply_injury_table_result(projection: CharacterProjection, roll: int, event_id: int) -> None:
+def _apply_injury_table_result(
+    projection: CharacterProjection, roll: int, event_id: int, history_id: int | str | None = None
+) -> None:
     if roll == 6:
+        projection.record_history(history_id, 'Lightly injured; no permanent damage.')
         return
     from ceres.character.domain.career.career_events import (
         PendingAdvancement,
@@ -236,6 +271,7 @@ def _apply_injury_table_result(projection: CharacterProjection, roll: int, event
                 'the other two physical characteristics are each reduced by 2'
             ),
         )
+    pending.history_id = history_id
     projection.insert_before_type(
         pending,
         PendingAdvancement,
@@ -283,12 +319,15 @@ def complete_aging(projection: CharacterProjection, source_event_id: int) -> Non
     projection.pending_reenlist = None
 
 
-def check_aging_crisis(projection: CharacterProjection, source_event_id: int) -> bool:
+def check_aging_crisis(
+    projection: CharacterProjection, source_event_id: int, history_id: int | str | None = None
+) -> bool:
     if any(v == 0 for v in projection.summary.characteristics.values()):
         projection.cancel_pending(PendingAgingChoice, PendingAgingChoiceMental)
         projection.queue_deferred(
             PendingAgingCrisis(
                 pending_id=(source_event_id, 0),
+                history_id=history_id,
                 instruction='Aging crisis: pay for medical care or die?',
             )
         )

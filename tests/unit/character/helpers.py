@@ -77,6 +77,7 @@ from ceres.character.domain.health.health_events import (
     PendingAgingRoll,
     PendingCharacteristicChoice,
     PendingDoubleInjuryRoll,
+    PendingNearlyKilled,
 )
 from ceres.character.domain.homeworld.homeworld_events import (
     HomeworldChangeKeptHandler,
@@ -370,6 +371,33 @@ class CharacterDriver:
         pending = self._find(PendingTermEvent)
         return self._add(Event(fulfills=pending.pending_id, handler=TermEventHandler(roll=roll)))
 
+    def life_event(self, roll: int) -> CharacterDriver:
+        from ceres.character.domain.life_events import LifeEventHandler, PendingLifeEvent
+
+        pending = self._find(PendingLifeEvent)
+        return self._add(Event(fulfills=pending.pending_id, handler=LifeEventHandler(roll=roll)))
+
+    def injury_roll(self, roll: int) -> CharacterDriver:
+        from ceres.character.domain.health.health_events import InjuryTableHandler, PendingInjuryTable
+
+        pending = self._find(PendingInjuryTable)
+        return self._add(Event(fulfills=pending.pending_id, handler=InjuryTableHandler(roll=roll)))
+
+    def unusual_event(self, roll: int) -> CharacterDriver:
+        from ceres.character.domain.life_events import LifeEventUnusualHandler, PendingLifeEventUnusual
+
+        pending = self._find(PendingLifeEventUnusual)
+        return self._add(Event(fulfills=pending.pending_id, handler=LifeEventUnusualHandler(roll=roll)))
+
+    def move_homeworld(self, world: TravellerMapWorld) -> CharacterDriver:
+        from ceres.character.domain.homeworld.homeworld_events import (
+            HomeworldChangedHandler,
+            PendingHomeworldChangeRequired,
+        )
+
+        pending = self._find(PendingHomeworldChangeRequired)
+        return self._add(Event(fulfills=pending.pending_id, handler=HomeworldChangedHandler(new_homeworld=world)))
+
     def commission(self, attempt: bool, roll: int = 0) -> CharacterDriver:
         pending = self._find(PendingCommissionChoice)
         return self._add(Event(fulfills=pending.pending_id, handler=CommissionHandler(attempt=attempt, roll=roll)))
@@ -537,6 +565,10 @@ class CharacterDriver:
         """Resolve a PendingSkillChoice (e.g. from a mishap or life event)."""
         pending = self._find(PendingSkillChoice)
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
+
+    def nearly_killed(self, characteristic: Chars, roll: int) -> CharacterDriver:
+        pending = self._find(PendingNearlyKilled)
+        return self._add(pending.event_from_form({'characteristic': characteristic.value, 'roll': str(roll)}))
 
     def choose_characteristic(self, characteristic: Chars, amount: int = 1) -> CharacterDriver:
         """Resolve a PendingCharacteristicChoice (e.g. from a mishap or injury)."""

@@ -67,6 +67,11 @@ class ConnectionNameHandler(EventHandlerBase):
         conn = projection.summary.connections[self.connection_index]
         conn.name = self.name
         conn.note = self.note
+        if fulfilled_pending is not None:
+            projection.record_history(
+                fulfilled_pending.history_id,
+                f'{conn.display_name}: {self.name}' + (f' — {self.note}' if self.note else '') + '.',
+            )
 
 
 class PendingConnectionName(PendingInputBase):

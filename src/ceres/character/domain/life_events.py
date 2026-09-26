@@ -65,6 +65,7 @@ class LifeEventHandler(EventHandlerBase):
         if not (2 <= self.roll <= 12):
             raise ReplayError(f'Life event roll must be 2-12, got {self.roll}')
         career = projection.get_current_career() if projection.summary.current_career is not None else None
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
         narratives = {
             2: 'Life event: sickness or injury',
             3: 'Life event: birth or death in the family',
@@ -78,12 +79,13 @@ class LifeEventHandler(EventHandlerBase):
             12: 'Life event: unusual event — see sub-table',
         }
         if narrative := narratives.get(self.roll):
-            projection.summary.narrative.append(narrative)
+            projection.extend_history(history_id, narrative)
         match self.roll:
             case 2:
                 projection.queue_deferred(
                     PendingInjuryTable(
                         pending_id=(event.id, 0),
+                        history_id=history_id,
                         instruction='Roll 1D on Injury table (sickness/injury)',
                     )
                 )
@@ -134,9 +136,11 @@ class LifeEventHandler(EventHandlerBase):
                     _queue_advancement(projection, career, event.id, 1)
             case 9:
                 projection.pending_qualification_dm += 2
+                projection.record_history(history_id, 'Gained DM+2 to the next qualification roll.')
                 projection.queue_deferred(
                     PendingHomeworldChangeRequired(
                         pending_id=(event.id, 0),
+                        history_id=history_id,
                         instruction='You move to another world. Select your new homeworld.',
                         reason='Life Event 9: You move to another world.',
                         source_kind='life_event_move',
@@ -162,7 +166,7 @@ class LifeEventHandler(EventHandlerBase):
                 if career is not None:
                     _queue_advancement(projection, career, event.id, 1)
             case 12:
-                projection.queue_deferred(PendingLifeEventUnusual(pending_id=(event.id, 0)))
+                projection.queue_deferred(PendingLifeEventUnusual(pending_id=(event.id, 0), history_id=history_id))
 
 
 class LifeEventUnusualHandler(EventHandlerBase):
@@ -201,7 +205,9 @@ class LifeEventUnusualHandler(EventHandlerBase):
                 5: 'Unusual event: contacted by shadowy government agency',
                 6: 'Unusual event: encountered Ancient technology',
             }[self.roll]
-            projection.summary.narrative.append(narrative)
+            projection.extend_history(
+                fulfilled_pending.history_id if fulfilled_pending is not None else None, narrative
+            )
             if career is not None:
                 _queue_advancement(projection, career, event.id)
 

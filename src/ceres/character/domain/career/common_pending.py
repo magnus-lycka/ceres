@@ -20,10 +20,12 @@ def append_increment_existing_skill_pending(
     projection: CharacterProjection,
     pending_id: tuple[int, int],
     instruction: str,
+    history_id: int | str | None = None,
 ) -> None:
     projection.queue_deferred(
         PendingSkillChoice(
             pending_id=pending_id,
+            history_id=history_id,
             instruction=instruction,
             options=list(projection.summary.skills),
         )
@@ -162,11 +164,16 @@ class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
         ]
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
+        result = 'Passed' if event.modified_roll >= self.threshold else 'Failed'
+        projection.record_history(
+            self.history_id, f'{result} the EDU check ({event.modified_roll} against {self.threshold}+).'
+        )
         if event.modified_roll >= self.threshold:
             append_increment_existing_skill_pending(
                 projection,
                 (event.id, 0),
                 'Advanced training: increase any existing skill by one level',
+                history_id=self.history_id,
             )
 
 

@@ -29,6 +29,7 @@ class MusterOutHandler(EventHandlerBase):
                 raise ReplayError('Cash may only be taken a maximum of 3 times')
             projection.summary.cash += row.cash
             projection.summary.record_muster_out_cash_roll()
+            projection.start_history(event.id, f'Muster out ({career.name}): Gained Cr{row.cash:,}.')
         else:
             for _ in range(row.count):
                 row.benefit.apply(projection, event.id)
@@ -36,6 +37,9 @@ class MusterOutHandler(EventHandlerBase):
             sum(isinstance(pending, PendingBenefitChoice) for pending in projection.pending_inputs)
             > benefit_choice_count
         )
+        if benefit_choice_added:
+            projection.start_history(event.id, f'Muster out ({career.name}).')
+            projection.update_last_pending(history_id=event.id)
         muster_out = projection.summary.career_terms[-1].require_muster_out()
         muster_out.rolls_remaining -= 1
         if muster_out.rolls_remaining == 0:
@@ -62,6 +66,7 @@ class BenefitChoiceHandler(EventHandlerBase):
         if not (0 <= self.choice_index < len(options)):
             raise ReplayError(f'choice_index {self.choice_index} out of range for {len(options)} options')
         options[self.choice_index].apply(projection, event.id)
+        projection.record_history(fulfilled_pending.history_id, f'Gained {options[self.choice_index].display_label}.')
         if fulfilled_pending.is_muster_out:
             if fulfilled_pending.muster_out_remaining > 0:
                 projection.queue_deferred(PendingMusterOut(pending_id=(event.id, 0)))

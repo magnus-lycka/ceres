@@ -212,7 +212,7 @@ class GainConnectionEntry(CareerTableEntry):
     connection: ConnectionKind
 
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
-        projection.add_connection(self.connection, origin=self.text)
+        projection.add_connection(self.connection, origin=self.text, history_id=event.id)
         return pending_idx
 
 
@@ -290,6 +290,7 @@ class SkillChoiceEntry(CareerTableEntry):
         projection.queue_immediate(
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
+                history_id=event.id,
                 instruction=f'Choose one skill at level {self.level}',
                 options=cast(Any, options),
                 level=self.level,
@@ -323,6 +324,7 @@ class RollMishapEntry(CareerTableEntry):
         projection.queue_immediate(
             PendingMishap(
                 pending_id=(event.id, pending_idx),
+                history_id=event.id,
                 instruction=instruction,
                 stay_in_career=not self.leave,
             ),
@@ -338,7 +340,9 @@ class LifeEventEntry(CareerTableEntry):
         from ceres.character.domain.life_events import PendingLifeEvent
 
         projection.queue_immediate(
-            PendingLifeEvent(pending_id=(event.id, pending_idx), instruction='Roll 2D on Life Events table'),
+            PendingLifeEvent(
+                pending_id=(event.id, pending_idx), history_id=event.id, instruction='Roll 2D on Life Events table'
+            ),
         )
         return pending_idx + 1
 
@@ -486,6 +490,7 @@ class BenefitDmEntry(CareerTableEntry):
 
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         projection.add_benefit_dm(self.amount)
+        projection.record_history(event.id, f'Awarded DM{self.amount:+d} to one future Benefit roll.')
         return pending_idx
 
 

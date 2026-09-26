@@ -21,6 +21,7 @@ def handle_advanced_training(
     projection.queue_deferred(
         PendingAdvancedTrainingSkillRoll(
             pending_id=(event_id, pending_idx),
+            history_id=event_id,
             instruction=instruction,
             options=[Chars.EDU],
             threshold=threshold,

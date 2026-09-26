@@ -106,6 +106,28 @@ def test_choose_existing_betrayer_preserves_identity_and_other_friends(betrayal_
     ]
 
 
+@pytest.mark.parametrize('betrayal_client', [True], indirect=True)
+def test_betrayal_history_names_the_changed_relationship_and_completed_consequences(betrayal_client):
+    client, url = betrayal_client
+    offered = choose(client, url, {'roll': '3'})
+    assert 'In progress: Resolve the betrayal' in offered['history'][-1]
+    resolved = choose(client, url, {'connection_index': '0', 'relationship': 'enemy', 'roll': '7'})
+    assert resolved['history'][-1].endswith(
+        'Contact Vessa Koh became Enemy Vessa Koh. Prison roll 7: no forced prison career. Left Rogue.'
+    )
+    assert len(resolved['history']) == len(offered['history'])
+
+
+def test_betrayal_history_records_an_unexpected_enemy_and_forced_prison(betrayal_client):
+    client, url = betrayal_client
+    choose(client, url, {'roll': '3'})
+    resolved = choose(client, url, {'relationship': 'enemy', 'roll': '2', 'name': 'Vessa'})
+
+    assert resolved['history'][-1].endswith(
+        'Gained Enemy Vessa. Prison roll 2: must take Prisoner next term. Left Rogue.'
+    )
+
+
 def test_unexpected_betrayer_name_can_be_left_blank(betrayal_client):
     client, url = betrayal_client
     choose(client, url, {'roll': '3'})

@@ -155,8 +155,8 @@ class PreCareerEventHandler(EventHandlerBase):
         term_event = precareer.events.get(self.roll)
         if term_event is None:
             raise ReplayError(f'No pre-career event entry for roll {self.roll}')
-        projection.summary.narrative.append(
-            f'Term {len(projection.summary.terms)} event ({precareer.name}): {term_event.text}'
+        projection.start_history(
+            event.id, f'Term {len(projection.summary.terms)} event ({precareer.name}): {term_event.text}'
         )
         pending_idx = 0
         if self.roll in (3, 11):

@@ -37,7 +37,7 @@ class SkillChoiceHandler(EventHandlerBase):
         if on_skill_chosen is not None:
             on_skill_chosen(projection, event)
             return
-        projection.grant_skill(self.skill)
+        projection.grant_skill(self.skill, history_id=fulfilled_pending.history_id if fulfilled_pending else None)
         if projection.summary.current_career is not None:
             from ceres.character.domain.career.career_events import career_progress_pending
 

@@ -276,6 +276,37 @@ def test_advanced_training_roll_then_select_existing_skill(client, education, ro
     assert view['pending']['instruction'].startswith('Advancement:')
 
 
+def test_training_history_is_returned_on_submit_and_resume_and_undo(client):
+    from tests.unit.character.helpers import MOCK_WORLD
+
+    view = client.post('/api/characters', json={'name': 'Student'}).json()
+    url = f'/api/characters/{view["id"]}'
+
+    def choose(values):
+        nonlocal view
+        response = client.post(url + '/choices', json={'fulfills': view['pending']['id'], 'values': values})
+        assert response.status_code == 200, response.text
+        view = response.json()
+
+    choose({'sector': MOCK_WORLD.sector_abbreviation, 'hex_code': MOCK_WORLD.hex})
+    choose({'sophont': 'Humaniti'})
+    choose({'STR': '7', 'DEX': '8', 'END': '6', 'INT': '9', 'EDU': '10', 'SOC': '5'})
+    skills = view['pending']['inputs'][0]
+    choose({skills['name']: [option[1] for option in skills['options'][: skills['min_select']]]})
+    choose({'career': 'Merchant', 'assignment': 'Merchant Marine', 'roll': '9'})
+    choose({'roll': '7'})
+    choose({'roll': '9'})
+    incomplete = view['history']
+    choose({'roll': '6'})
+    expected = [
+        'Term 1 event (Merchant): You are given advanced training in a specialist field. '
+        'Failed the EDU check (7 against 8+).'
+    ]
+    assert view['history'] == expected
+    assert client.get(url).json()['history'] == expected
+    assert client.post(url + '/undo').json()['history'] == incomplete
+
+
 def test_required_relocation_supplies_a_world_picker_and_accepts_a_world(tmp_path, monkeypatch):
     from ceres.character.domain.character_start import CharacterCreatedHandler
     from ceres.character.domain.homeworld.homeworld_events import HomeworldChangeRequiredHandler

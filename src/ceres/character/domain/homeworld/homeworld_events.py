@@ -63,6 +63,8 @@ class HomeworldChangedHandler(EventHandlerBase):
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
         projection.summary.homeworld = self.new_homeworld
+        if fulfilled_pending is not None:
+            projection.record_history(fulfilled_pending.history_id, f'Moved to {self.new_homeworld.name}.')
 
 
 class HomeworldChangeKeptHandler(EventHandlerBase):

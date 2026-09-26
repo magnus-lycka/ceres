@@ -7,6 +7,7 @@ from ceres.character.domain.benefits import ItemBenefit
 from ceres.character.domain.career.career_data import AssignmentData, BenefitRollDm, CareerData, CareerTerm
 from ceres.character.domain.characteristics import Chars, ConnectionKind
 from ceres.character.domain.connection import AnyConnection
+from ceres.character.domain.history import CreationHistory
 from ceres.character.domain.psionics_data import Psionics, PsionicTalentSkillModels
 from ceres.character.domain.skills import AnySkill, Level, Skill, level_fields
 from ceres.character.domain.sophont import Sophont
@@ -279,6 +280,46 @@ class CharacterProjection(BaseModel):
 
     _pending_inputs: list[PendingInputBase] = PrivateAttr(default_factory=list)
     _not_gained: list[AnySkill | PsionicTalentSkillModels | Chars] = PrivateAttr(default_factory=list)
+    _history: CreationHistory = PrivateAttr(default_factory=CreationHistory)
+    _history_positions: dict[int | str, int] = PrivateAttr(default_factory=dict)
+    _history_details: set[int] = PrivateAttr(default_factory=set)
+    _history_parents: dict[int | str, int | str] = PrivateAttr(default_factory=dict)
+
+    def start_history(self, occurrence: int | str, description: str, parent: int | str | None = None) -> None:
+        if parent is not None:
+            self._history_parents[occurrence] = self._history_parents.get(parent, parent)
+            self.extend_history(parent, description)
+            return
+        self._history_positions[occurrence] = len(self.summary.narrative)
+        self.summary.narrative.append(description)
+        self._history.start(occurrence, description)
+
+    def record_history(self, occurrence: int | str | None, outcome: str) -> None:
+        # Table entries can also be applied on their own, without a narrative occurrence.
+        if occurrence in self._history_positions or occurrence in self._history_parents:
+            self._history.record(self._history_parents.get(occurrence, occurrence), outcome)
+
+    def extend_history(self, occurrence: int | str | None, description: str) -> None:
+        if occurrence is not None:
+            self._history_details.add(len(self.summary.narrative))
+            self.record_history(occurrence, description)
+        self.summary.narrative.append(description)
+
+    @property
+    def creation_history(self) -> list[str]:
+        for occurrence in self._history_positions:
+            self._history.pending(
+                occurrence,
+                [
+                    p.instruction
+                    for p in self.pending_inputs
+                    if p.history_id is not None and self._history_parents.get(p.history_id, p.history_id) == occurrence
+                ],
+            )
+        result = list(self.summary.narrative)
+        for position, entry in zip(self._history_positions.values(), self._history.render(), strict=True):
+            result[position] = entry
+        return [entry for index, entry in enumerate(result) if index not in self._history_details]
 
     @property
     def pending_inputs(self) -> tuple[PendingInputBase, ...]:
@@ -297,7 +338,7 @@ class CharacterProjection(BaseModel):
     def queue_deferred(self, *pending_inputs: PendingInputBase) -> None:
         self._pending_inputs.extend(pending_inputs)
 
-    def add_connection(self, kind: ConnectionKind, *, origin: str = '') -> None:
+    def add_connection(self, kind: ConnectionKind, *, origin: str = '', history_id: int | str | None = None) -> None:
         from ceres.character.domain.connection import make_connection
         from ceres.character.domain.connection_events import PendingConnectionName
 
@@ -309,6 +350,7 @@ class CharacterProjection(BaseModel):
         self.queue_immediate(
             PendingConnectionName(
                 pending_id=f'connection_name_{conn_idx}',
+                history_id=history_id,
                 connection_index=conn_idx,
                 connection_kind=kind,
                 note_prefill=origin,
@@ -359,8 +401,12 @@ class CharacterProjection(BaseModel):
 
         self.summary.age += 4
         if self.summary.age >= 34:
+            history_id = f'ageing:{event_id}'
+            self.start_history(history_id, f'Ageing at age {self.summary.age}.')
             self.queue_deferred(
-                PendingAgingRoll(pending_id=(event_id, pending_idx), instruction='Roll 2D on Aging table')
+                PendingAgingRoll(
+                    pending_id=(event_id, pending_idx), history_id=history_id, instruction='Roll 2D on Aging table'
+                )
             )
             return True
         return False
@@ -434,9 +480,12 @@ class CharacterProjection(BaseModel):
                         choices.append(cast(AnySkill, _cls(**{field: Level(value=level)})))
         return choices
 
-    def grant_skill(self, skill: AnySkill) -> None:
+    def grant_skill(self, skill: AnySkill, history_id: int | str | None = None) -> None:
         skill_cls = type(skill)
         existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
+        fields = level_fields(skill_cls)
+        selected_field = next((name for name in fields if getattr(skill, name).value > 0), fields[0])
+        before = getattr(existing, selected_field).value if existing is not None else 0
         if existing is None:
             self.summary.skills.append(skill_cls())
             existing = self.summary.skills[-1]
@@ -445,6 +494,9 @@ class CharacterProjection(BaseModel):
             if given > 0:
                 current = getattr(existing, field).value
                 getattr(existing, field).set(max(current, given))
+        after = getattr(existing, selected_field).value
+        outcome = f'increased from {before} to {after}' if after > before else f'remains at {after}'
+        self.record_history(history_id, f'{skill.label()} {outcome}.')
 
     def increment_skill(self, skill: AnySkill) -> None:
         skill_cls = type(skill)

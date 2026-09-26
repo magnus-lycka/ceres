@@ -105,6 +105,7 @@ class RogueBetrayalHandler(EventHandlerBase):
         from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 
         kind = ConnectionKind.RIVAL if self.relationship == 'rival' else ConnectionKind.ENEMY
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
         connections = projection.summary.connections
         if self.connection_index is not None:
             if not 0 <= self.connection_index < len(connections) or not connections[self.connection_index].is_friendly:
@@ -112,6 +113,12 @@ class RogueBetrayalHandler(EventHandlerBase):
             old = connections[self.connection_index]
             connections[self.connection_index] = make_connection(
                 kind, term=old.term, origin=old.origin, name=old.name, note=old.note
+            )
+            changed = connections[self.connection_index]
+            projection.record_history(
+                history_id,
+                f'{old.display_name} {old.name or old.origin} became '
+                f'{changed.display_name} {changed.name or changed.origin}.',
             )
         else:
             if any(connection.is_friendly for connection in connections):
@@ -124,11 +131,17 @@ class RogueBetrayalHandler(EventHandlerBase):
                     name=self.name,
                 )
             )
+            added = connections[-1]
+            projection.record_history(history_id, f'Gained {added.display_name} {added.name or added.origin}.')
         if self.roll == 2:
             set_forced_prison_career(
                 projection, 'Betrayed by a friend. Rolled 2 — must take the Prisoner career next term.'
             )
+            projection.record_history(history_id, 'Prison roll 2: must take Prisoner next term.')
+        else:
+            projection.record_history(history_id, f'Prison roll {self.roll}: no forced prison career.')
         _apply_mishap_ejection(projection, event.id, 0)
+        projection.record_history(history_id, 'Left Rogue.')
 
 
 class PendingRogueBetrayal(PendingInputBase):
@@ -173,7 +186,7 @@ class RogueMishap3Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.queue_deferred(PendingRogueBetrayal(pending_id=(event_id, pending_idx)))
+        projection.queue_deferred(PendingRogueBetrayal(pending_id=(event_id, pending_idx), history_id=event_id))
         return pending_idx + 1
 
 

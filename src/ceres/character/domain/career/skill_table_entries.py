@@ -109,6 +109,7 @@ class SkillTableApplyContext:
     """Carries the event and application mode for a skill table entry apply() call."""
 
     event: Event
+    history_id: int | str | None = None
     level: int | None = None
     _idx: int = field(default=0, init=False)
 
@@ -217,6 +218,7 @@ class Skill(SkillTableEntryBase):
         projection.queue_immediate(
             PendingSkillTableChoice(
                 pending_id=ctx.next_pending_id(),
+                history_id=ctx.history_id,
                 instruction=f'Choose a specialization for {self.skill.name()}',
                 options=[self._marker_instance() if self.specs else self.skill()],
                 level=level,

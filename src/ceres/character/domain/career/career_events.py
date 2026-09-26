@@ -132,8 +132,10 @@ class MishapHandler(EventHandlerBase):
         if mishap:
             if mishap.record_as_problem:
                 projection.summary.problems.append(mishap.text)
-            projection.summary.narrative.append(
-                f'Term {len(projection.summary.terms)} mishap ({career.name}): {mishap.text}'
+            projection.start_history(
+                event.id,
+                f'Term {len(projection.summary.terms)} mishap ({career.name}): {mishap.text}',
+                parent=fulfilled_pending.history_id if fulfilled_pending is not None else None,
             )
             pending_idx = mishap.apply(projection, event, pending_idx)
         defer = mishap is not None and getattr(mishap, 'defer_ejection', False)
@@ -154,6 +156,8 @@ class MishapHandler(EventHandlerBase):
                 projection.summary.career_terms[-1].require_muster_out().pending_setup = True
             else:
                 muster_out_setup(projection, event.id, pending_idx, ejected=True)
+            if mishap is not None:
+                projection.record_history(event.id, f'Left {career.name}.')
 
 
 # ── Term Event ─────────────────────────────────────────────────────────────────
@@ -171,8 +175,8 @@ class TermEventHandler(EventHandlerBase):
         pending_idx = 0
         career_handler_invoked = False
         if term_event:
-            projection.summary.narrative.append(
-                f'Term {len(projection.summary.terms)} event ({career.name}): {term_event.text}'
+            projection.start_history(
+                event.id, f'Term {len(projection.summary.terms)} event ({career.name}): {term_event.text}'
             )
             if projection.summary.career_terms:
                 projection.summary.career_terms[-1].event = term_event.text
@@ -226,7 +230,12 @@ class SkillTableHandler(EventHandlerBase):
         if not (1 <= self.roll <= 6):
             raise ReplayError(f'Skill table roll must be 1-6, got {self.roll}')
         entry = table.entries[self.roll - 1]
-        entry.apply(projection, SkillTableApplyContext(event=event))
+        entry.apply(
+            projection,
+            SkillTableApplyContext(
+                event=event, history_id=fulfilled_pending.history_id if fulfilled_pending is not None else None
+            ),
+        )
 
 
 class SkillTableEntryChosenHandler(EventHandlerBase):
@@ -659,7 +668,7 @@ class PendingSkillTableChoice(_PendingSkillOrPsiChoice):
         return self.level
 
     def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
-        projection.grant_skill(event.skill)
+        projection.grant_skill(event.skill, history_id=self.history_id)
 
     def on_psi_chosen(self, projection: CharacterProjection, event: Event) -> None:
         # _apply_skill_table_entry() already queued PendingPsionicInstituteTraining before

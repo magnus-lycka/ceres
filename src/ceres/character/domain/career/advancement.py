@@ -141,25 +141,35 @@ def rank_bonus_skill(bonus: RankBonus) -> AnySkill:
     return skill_cls(**{active_fields[0]: Level(value=bonus.level)})
 
 
-def _apply_promotion(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
+def _apply_promotion(
+    projection: CharacterProjection, career: CareerData, event_id: int, history_id: int | str | None = None
+) -> None:
     from ceres.character.domain.career.career_events import PendingSkillTable, queue_reenlist_or_aging
 
     new_rank = (projection.summary.rank or 0) + 1
     projection.summary.rank = new_rank
     career.update_current_term_rank(projection)
-    if _apply_rank_bonus(projection, career, new_rank, event_id):
+    projection.record_history(history_id, f'Promoted to rank {" ".join(projection.summary.rank_title).strip()}.')
+    if _apply_rank_bonus(projection, career, new_rank, event_id, history_id):
         return
     tables = career.available_tables(
         projection.summary.characteristics.get(Chars.EDU, 0),
         projection.summary.current_assignment,
     )
     projection.queue_deferred(
-        PendingSkillTable(pending_id=(event_id, 0), instruction='Choose a skill table and roll 1D', options=tables)
+        PendingSkillTable(
+            pending_id=(event_id, 0),
+            history_id=history_id,
+            instruction='Choose a skill table and roll 1D',
+            options=tables,
+        )
     )
     queue_reenlist_or_aging(projection, event_id, 1)
 
 
-def _apply_rank_bonus(projection: CharacterProjection, career: CareerData, rank: int, event_id: int) -> bool:
+def _apply_rank_bonus(
+    projection: CharacterProjection, career: CareerData, rank: int, event_id: int, history_id: int | str | None = None
+) -> bool:
     entry = career.current_ranks(projection).get(rank)
     if not entry or not entry.bonus:
         return False
@@ -177,7 +187,7 @@ def _apply_rank_bonus(projection: CharacterProjection, career: CareerData, rank:
         )
         return True
     if bonus.skill:
-        projection.grant_skill(rank_bonus_skill(bonus))
+        projection.grant_skill(rank_bonus_skill(bonus), history_id=history_id)
     elif bonus.characteristic:
         projection.summary.characteristics[bonus.characteristic] = (
             projection.summary.characteristics.get(bonus.characteristic, 0) + bonus.level
@@ -186,7 +196,7 @@ def _apply_rank_bonus(projection: CharacterProjection, career: CareerData, rank:
 
 
 def apply_auto_advance(projection: CharacterProjection, career: CareerData, event_id: int) -> None:
-    _apply_promotion(projection, career, event_id)
+    _apply_promotion(projection, career, event_id, history_id=event_id)
 
 
 def apply_forced_commission(projection: CharacterProjection, career: CareerData, event_id: int) -> None:

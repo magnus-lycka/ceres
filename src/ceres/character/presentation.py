@@ -60,7 +60,7 @@ def character_view(character_id: int, projection: CharacterProjection) -> Charac
         skills=format_stat_block_skills(summary.skills),
         cash=summary.cash,
         benefits=[benefit.display_label for benefit in summary.benefits],
-        history=list(summary.narrative),
+        history=projection.creation_history,
         connections=[
             f'{connection.display_name}: {connection.name or connection.origin or ""}'
             + (f' — {connection.note}' if connection.note else '')

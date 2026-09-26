@@ -139,6 +139,7 @@ class PendingInputBase(BaseModel):
     kind: str
     instruction: str
     blocking: bool = True
+    history_id: int | str | None = None
 
     @property
     def id(self) -> str:
