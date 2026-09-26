@@ -40,7 +40,7 @@
     "vitest-browser-svelte": "^3.0.0"
   },
   "dependencies": {
-    "@svgrid/grid": "^2.6.2",
+    "@svgrid/grid": "^3.0.5",
     "idb-keyval": "^6.3.0",
     "zod": "^4.4.3"
   },
