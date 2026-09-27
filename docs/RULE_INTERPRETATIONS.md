@@ -1142,6 +1142,40 @@ overflows into rounds out (RIC-022); a robot takes stun as lasting Hits; it is
 stamped with the round it landed in. No one's turn is spent and no target is
 recorded, since no one acted.
 
+### RIC-025 A Location That Cannot Apply Is Rerolled Or Discarded By The Referee, Not Detected
+
+"If the location does not exist, reroll" (`refs/robot/50_other_considerations.md:110`)
+covers a Weapon or Options critical rolled against a robot with none installed.
+A hardened brain is different: "these critical hits are ignored, not re-rolled"
+(`:31`). Ceres does not model which components a robot carries or whether its
+brain is hardened, so it cannot tell either case apart from an ordinary hit; the
+referee says which applies, at the location prompt, before typing any roll.
+
+A reroll needs no state: the app never learnt what was rolled, so nothing is
+undone, and the same question is simply asked again. A discard drops the
+critical outright — it is abandoned, and nothing about the robot changes.
+Both are offered only at a location prompt, since they are about which location
+was rolled, not about the dice an effect afterwards costs.
+
+### RIC-026 Sustained Damage Is Checked After Any Hit, Including One A Critical Inflicts, Until The Robot Is Wrecked
+
+"Every time cumulative damage crosses another 10% of starting Hits, roll a
+location and inflict a Severity 1 critical hit. Critical extra damage can cross
+more thresholds; keep resolving until no new threshold has been crossed."
+Chassis damage from a critical is Hits like any other damage, so Ceres checks
+it the same way: after the initiating hit, and again after any Hits a critical
+itself inflicts (a Chassis critical, or the flat 6D of a location already at
+Severity 6).
+
+Once cumulative damage brings a robot's Hits to 0 or below, it is wrecked and
+takes no further turns, so its criticals decide nothing more at the table. Ceres
+stops asking for further sustained-damage locations from that point in the
+resolution — the damage total still accumulates, since it still decides whether
+the robot is merely wrecked or, past twice its starting Hits, irreparably
+destroyed (RIC-021) — but the location-by-location bookkeeping does not. A
+location roll already in progress (an effect's own dice, mid-resolution) still
+completes; only locations not yet rolled for are dropped.
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

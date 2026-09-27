@@ -6,8 +6,9 @@
  * same for a sophont, an animal and a robot (refs/core/03_combat.md:263-280).
  */
 import type { Actor, ActorId } from '../../schema/actor';
-import { attackCriticalSeverity } from './criticals';
+import { attackCriticalSeverity, sustainedCriticalCount } from './criticals';
 import { takeDamage } from './damage';
+import { cumulativeHitsDamage } from './health';
 import { attack, dive, incapacitate, react, type Situation } from './situation';
 import type { Reaction } from './reaction';
 
@@ -88,7 +89,7 @@ export function carryOutAttack(
   situation: Situation,
   roster: readonly Actor[],
   { attacker, target, effect, roll, ap, protection, excessTo, stun, shotgun, reaction }: Strike,
-): { situation: Situation; target: Actor; criticalSeverity: number } {
+): { situation: Situation; target: Actor; criticalSeverity: number; sustainedThresholds: number } {
   const victim = roster.find((actor) => actor.id === target);
   if (!victim) throw new Error(`there is no actor ${target} to attack`);
   const met = protection ?? protectionAgainst(victim, { shotgun, stun });
@@ -102,6 +103,16 @@ export function carryOutAttack(
   return {
     situation: withReaction(struck, target, reaction),
     target: hurt.actor,
+    // "Every time cumulative damage crosses another 10% of starting Hits":
+    // only a robot has this system to degrade.
+    sustainedThresholds:
+      victim.kind === 'robot'
+        ? sustainedCriticalCount(
+            victim.hits ?? 0,
+            cumulativeHitsDamage(victim),
+            cumulativeHitsDamage(hurt.actor),
+          )
+        : 0,
     // Only a robot has systems to take one. "Effect 6+ and inflicts damage after Protection": an
     // Effect of 6 or more always inflicts at least 1 (:278), so the second condition always holds.
     criticalSeverity: victim.kind === 'robot' ? attackCriticalSeverity(effect) : 0,

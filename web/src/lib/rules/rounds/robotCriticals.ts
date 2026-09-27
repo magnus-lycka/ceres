@@ -17,6 +17,8 @@ import { criticalEffect, type Amount } from './criticalEffects';
 import { takeDamage } from './damage';
 import { severityAfter } from './criticals';
 import { currentAttribute } from './robotState';
+import { cumulativeHitsDamage, isDead } from './health';
+import { sustainedCriticalCount } from './criticals';
 
 /**
  * The location a 2D roll gives (refs/robot/50_other_considerations.md:100-109),
@@ -62,13 +64,16 @@ export type Prompt =
 export type Choice = 'movement' | 'speed';
 
 /** Begin with one critical of this severity, whose location is still to be rolled. */
-export function startFlow(actor: Actor, { round, severity }: { round: number; severity: number }): Flow {
-  return {
-    actor,
-    round,
-    tasks: [{ t: 'location', severity, why: `Attack critical, Severity ${severity}` }],
-    log: [],
-  };
+export function startFlow(
+  actor: Actor,
+  { round, severity = 0, sustained = 0 }: { round: number; severity?: number; sustained?: number },
+): Flow {
+  const tasks: Task[] = [];
+  if (severity > 0) tasks.push({ t: 'location', severity, why: `Attack critical, Severity ${severity}` });
+  for (let i = 0; i < sustained; i += 1) {
+    tasks.push({ t: 'location', severity: 1, why: 'Sustained damage threshold, Severity 1' });
+  }
+  return { actor, round, tasks, log: [] };
 }
 
 /** The question the referee has to answer next, or null when the hit is worked through. */
@@ -188,6 +193,46 @@ function settle(flow: Flow): Flow {
   }
 }
 
+/**
+ * A rolled location does not always apply: the robot has no such weapon or
+ * option (`:110`, "if the location does not exist, reroll"), or a hardened
+ * brain "negates the effects of all critical hits affecting the brain; these
+ * critical hits are ignored, not re-rolled" (`refs/robot/50_other_considerations.md:31`).
+ * Ceres does not model either fact, so the referee says which applies.
+ *
+ * A reroll is nothing more than asking the same question again: the app never
+ * learns what was rolled, so there is no state to undo. Discard drops it: the
+ * critical is abandoned, applying nothing.
+ */
+export function discard(flow: Flow): Flow {
+  const [task, ...rest] = flow.tasks;
+  if (!task || task.t !== 'location') return flow;
+  return { ...flow, tasks: rest, log: [...flow.log, `${task.why} (discarded: does not apply)`] };
+}
+
+/**
+ * Extra Hits damage from a critical is damage like any other: it can itself
+ * cross a sustained-damage threshold. Once it wrecks the robot, no further
+ * location is asked for the rest of this resolution (RIC-019) — the remaining
+ * queued ones are dropped, though the damage already applied stands.
+ */
+function withSustainedFrom(flow: Flow, before: Actor): Flow {
+  if (isDead(flow.actor)) {
+    return { ...flow, tasks: flow.tasks.filter((task) => task.t !== 'location') };
+  }
+  const count = sustainedCriticalCount(
+    flow.actor.hits ?? 0,
+    cumulativeHitsDamage(before),
+    cumulativeHitsDamage(flow.actor),
+  );
+  const queued: Task[] = Array.from({ length: count }, () => ({
+    t: 'location',
+    severity: 1,
+    why: 'Sustained damage threshold, Severity 1',
+  }));
+  return { ...flow, tasks: [...flow.tasks, ...queued] };
+}
+
 /** A roll of dice has been made: carry out what it was for. */
 function rolled(flow: Flow, rest: Task[], task: Extract<Task, { t: 'dice' }>, total: number): Flow {
   const next = { ...flow, tasks: rest };
@@ -198,7 +243,10 @@ function rolled(flow: Flow, rest: Task[], task: Extract<Task, { t: 'dice' }>, to
   if (use.use === 'hits') {
     // Extra damage from a critical ignores Protection, so it is not reduced.
     const actor = takeDamage(next.actor, { lethal: total, at: next.round }).actor;
-    return { ...next, actor, log: [...next.log, `Rolled ${total}: ${total} Hits`] };
+    return withSustainedFrom(
+      { ...next, actor, log: [...next.log, `Rolled ${total}: ${total} Hits`] },
+      next.actor,
+    );
   }
   const actor = takeOff(next.actor, use.location, 'protection', total);
   return { ...next, actor, log: [...next.log, `Rolled ${total}: Protection -${total}`] };

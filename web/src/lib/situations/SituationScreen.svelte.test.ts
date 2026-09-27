@@ -915,13 +915,16 @@ describe('damage from something other than an attacker', () => {
  * each answer before it asks the next.
  */
 describe('a critical hit on a robot', () => {
+  // High enough that none of the small hits below cross a sustained-damage
+  // threshold: these tests are about one critical at a time. Thresholds get
+  // their own tests, below.
   const warbot: Actor = {
     ...sophont('Warbot'),
     kind: 'robot',
     strength: null,
     dexterity: null,
     endurance: null,
-    hits: 30,
+    hits: 200,
     protection: 8,
     movement: 6,
     speed: 4,
@@ -1035,5 +1038,69 @@ describe('a critical hit on a robot', () => {
 
     const person = await strike('9', sophont('Guard'));
     await expect.element(person.getByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  /**
+   * "Every time cumulative damage crosses another 10% of starting Hits, roll a
+   * location and inflict a Severity 1 critical hit." A hit big enough to cross
+   * more than one threshold asks for each in turn.
+   */
+  it('asks for a location for each sustained-damage threshold the hit crosses', async () => {
+    // 10% of 50 is 5: a landed hit of 10 (Effect 0, damage roll 10, no Protection)
+    // crosses exactly two of those steps.
+    const thin: Actor = { ...warbot, hits: 50, protection: 0 };
+    const screen = await strike('0', thin);
+    const dialog = screen.getByRole('dialog', { name: 'Critical hit' });
+
+    // Effect 0, damage 10: two of the 2-Hit steps on a 20-Hit robot.
+    await expect.element(dialog.getByText('Sustained damage threshold, Severity 1')).toBeVisible();
+    await dialog.getByLabelText('Roll').fill('6');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await expect.element(dialog.getByText('Sustained damage threshold, Severity 1')).toBeVisible();
+    await dialog.getByLabelText('Roll').fill('5');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    await dialog.getByRole('button', { name: 'Done' }).click();
+
+    await vi.waitFor(async () => {
+      const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+      expect(bot.criticals.armour).toMatchObject({ severity: 1 });
+      expect(bot.criticals.weapon).toMatchObject({ severity: 1 });
+    });
+  });
+
+  // The referee's own roll and their robot's own build decide this, not the app.
+  it('discards a location that does not apply, without asking for a roll', async () => {
+    const screen = await strike('6');
+    const dialog = screen.getByRole('dialog', { name: 'Critical hit' });
+    await expect.element(dialog.getByRole('button', { name: 'Reroll' })).toBeVisible();
+
+    await dialog.getByRole('button', { name: 'Discard' }).click();
+    await dialog.getByRole('button', { name: 'Done' }).click();
+
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument();
+    const bot = (await library.actors()).find((actor) => actor.name === 'Warbot')!;
+    expect(bot.criticals).toEqual({});
+  });
+
+  it('clears the field to reroll, asking the same question again', async () => {
+    const screen = await strike('6');
+    const dialog = screen.getByRole('dialog', { name: 'Critical hit' });
+
+    await dialog.getByLabelText('Roll').fill('13');
+    await dialog.getByRole('button', { name: 'Reroll' }).click();
+
+    await expect.element(dialog.getByLabelText('Roll')).toHaveValue(null);
+    await expect.element(dialog.getByText('Attack critical, Severity 1')).toBeVisible();
+  });
+
+  it('offers neither Reroll nor Discard once a roll has moved on to what dice a severity costs', async () => {
+    const screen = await strike('7');
+    const dialog = screen.getByRole('dialog', { name: 'Critical hit' });
+    await dialog.getByLabelText('Roll').fill('6');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+
+    await expect.element(dialog.getByRole('button', { name: 'Reroll' })).not.toBeInTheDocument();
+    await expect.element(dialog.getByRole('button', { name: 'Discard' })).not.toBeInTheDocument();
   });
 });

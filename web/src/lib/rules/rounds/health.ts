@@ -88,6 +88,16 @@ export function isUnconscious(actor: Actor): boolean {
 }
 
 /** Hits after lethal damage only — stun can never complete a kill (RIC-012). */
+/**
+ * Cumulative lethal Hits damage taken, which the sustained-damage thresholds
+ * are measured against (Robot Handbook: "every time a robot sustains damage
+ * equal to 10% of its starting Hits"). Stun against a robot is lasting Hits
+ * (RIC-017), so it counts here too.
+ */
+export function cumulativeHitsDamage(actor: Actor): number {
+  return total(actor, 'hits', 'lethal');
+}
+
 function lethalHits(actor: Actor): number | null {
   if (actor.hits === null) return null;
   return actor.hits - total(actor, 'hits', 'lethal');

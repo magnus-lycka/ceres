@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { actorId, type Actor, type Injury, type Stat } from '../../schema/actor';
 import {
   current,
+  cumulativeHitsDamage,
   currentHits,
   healthSummary,
   isDead,
@@ -274,6 +275,23 @@ describe('healthSummary', () => {
  * starting Hits in damage is beyond use or repair: Hits at or below minus the
  * starting Hits (RIC-021). One rule for both; only the word differs.
  */
+// Cumulative Hits damage is what the sustained-damage thresholds are measured
+// against (Robot Handbook, "every time a robot sustains damage equal to 10% of
+// its starting Hits"). Stun against a robot is lasting Hits (RIC-017), so it
+// counts too.
+describe('cumulative Hits damage', () => {
+  it('is what lethal damage has taken off, and nothing while unhurt', () => {
+    expect(cumulativeHitsDamage(warbot(20))).toBe(0);
+    expect(cumulativeHitsDamage(warbot(20, [hurt('lethal', { hits: 12 })]))).toBe(12);
+  });
+
+  it('adds up across more than one hit', () => {
+    const twice = warbot(20, [hurt('lethal', { hits: 5 }), hurt('lethal', { hits: 8 })]);
+
+    expect(cumulativeHitsDamage(twice)).toBe(13);
+  });
+});
+
 describe('destroyed', () => {
   it('is an animal at minus its starting Hits, and not before', () => {
     expect(isDestroyed(beast(20, [hurt('lethal', { hits: 39 })]))).toBe(false);

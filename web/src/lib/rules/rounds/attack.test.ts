@@ -250,6 +250,64 @@ describe('carrying out an attack', () => {
    * attack Effect - 5" (refs/robot/50_other_considerations.md:117). Only a robot
    * has systems to take one; the flow that works it out is `robotCriticals`.
    */
+  /**
+   * "Every time cumulative damage crosses another 10% of starting Hits, roll a
+   * location and inflict a Severity 1 critical" — reported so the screen can
+   * ask for those locations too.
+   */
+  describe('sustained damage thresholds', () => {
+    const bot: Actor = {
+      ...guard,
+      id: actorId(4),
+      name: 'Warbot',
+      kind: 'robot',
+      strength: null,
+      dexterity: null,
+      endurance: null,
+      hits: 20,
+    };
+    const fight = { ...addActors(emptySituation(), [rex, bot], 'Everyone'), round: 3 };
+    const crossed = (roll: number, from: Actor = bot) =>
+      carryOutAttack(fight, [rex, from], { attacker: rex.id, target: from.id, effect: 0, roll })
+        .sustainedThresholds;
+
+    it('is the number of 10%-of-Hits steps this hit crosses', () => {
+      expect(crossed(2)).toBe(1);
+      expect(crossed(9)).toBe(4);
+    });
+
+    it('is measured from what the robot had already taken, not from full health', () => {
+      const already = { ...bot, injuries: [{ when: 1, kind: 'lethal' as const, reductions: { hits: 8 } }] };
+
+      // 10% of 20 is 2: 8 already taken is 4 steps, 12 after is 6 steps, so 2 more.
+      expect(crossed(4, already)).toBe(2);
+    });
+
+    it('is nothing for a sophont, which has no systems to degrade', () => {
+      expect(crossed(9, guard)).toBe(0);
+    });
+
+    it('is nothing for an animal, which has Hits but no systems to degrade', () => {
+      const wolf: Actor = { ...bot, kind: 'animal' };
+
+      expect(crossed(9, wolf)).toBe(0);
+    });
+
+    it('is measured against this robot’s own starting Hits, not any fixed number', () => {
+      const small = { ...bot, hits: 10 };
+
+      // 10% of 10 is 1: a roll of 2 crosses two steps here, one on the 20-Hit robot.
+      expect(crossed(2, small)).toBe(2);
+    });
+
+    it('is nothing for a miss', () => {
+      expect(
+        carryOutAttack(fight, [rex, bot], { attacker: rex.id, target: bot.id, effect: -3, roll: 12 })
+          .sustainedThresholds,
+      ).toBe(0);
+    });
+  });
+
   describe('an attack critical', () => {
     const bot: Actor = {
       ...guard,

@@ -34,7 +34,7 @@
   } from '$lib/rules/rounds/situation';
   import { beginRound, end, engagedElsewhere, nextRound, start } from '$lib/rules/rounds/lifecycle';
   import { carryOutAttack, harm, type Harm, type Strike } from '$lib/rules/rounds/attack';
-  import { answer, startFlow, type Choice, type Flow } from '$lib/rules/rounds/robotCriticals';
+  import { answer, discard, startFlow, type Choice, type Flow } from '$lib/rules/rounds/robotCriticals';
   import type { Actor, ActorId } from '$lib/schema/actor';
   import type { Party } from '$lib/schema/party';
   import type { Condition, Situation, SituationId } from '$lib/schema/situation';
@@ -135,8 +135,13 @@
       roster = roster.map((each) => (each.id === saved.id ? saved : each));
       await store(result.situation);
       // A precise hit on a robot damages a system, which takes rolls only the referee can make.
-      if (result.criticalSeverity > 0)
-        critical = startFlow(saved, { round, severity: result.criticalSeverity });
+      if (result.criticalSeverity > 0 || result.sustainedThresholds > 0) {
+        critical = startFlow(saved, {
+          round,
+          severity: result.criticalSeverity,
+          sustained: result.sustainedThresholds,
+        });
+      }
     });
   }
 
@@ -329,7 +334,12 @@
   {/if}
 
   {#if critical}
-    <CriticalDialog flow={critical} onanswer={proceed} ondone={() => (critical = null)} />
+    <CriticalDialog
+      flow={critical}
+      onanswer={proceed}
+      ondiscard={() => (critical = discard(critical!))}
+      ondone={() => (critical = null)}
+    />
   {/if}
 
   {#if harming}

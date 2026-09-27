@@ -11,14 +11,19 @@
   import type { Choice, Flow } from '$lib/rules/rounds/robotCriticals';
   import { prompt } from '$lib/rules/rounds/robotCriticals';
 
+  /** True while the current question is a location roll: only there does the robot's own build decide. */
+
   let {
     flow,
     onanswer,
+    ondiscard,
     ondone,
   }: {
     flow: Flow;
     /** The referee's answer. It comes back as a new flow, the same one if it was not an answer. */
     onanswer: (value: number | Choice) => void;
+    /** The referee says this location does not apply: a hardened brain, ignored rather than re-rolled. */
+    ondiscard: () => void;
     ondone: () => void;
   } = $props();
 
@@ -87,6 +92,10 @@
             >{asking.kind === 'location' ? '2D' : `${asking.dice}D`}: {range[0]}–{range[1]}</span
           >{/if}
         <button type="submit">Apply</button>
+        {#if asking.kind === 'location'}
+          <button type="button" onclick={() => (typed = '')}>Reroll</button>
+          <button type="button" onclick={() => ondiscard()}>Discard</button>
+        {/if}
         {#if refused}<span class="refused">That is not a roll those dice can make.</span>{/if}
       </form>
     {/if}

@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { actorId, type Actor } from '../../schema/actor';
-import { answer, locationFor, prompt, startFlow } from './robotCriticals';
+import { answer, discard, locationFor, prompt, startFlow } from './robotCriticals';
 import { currentAttribute } from './robotState';
 
 describe('the location a 2D roll gives', () => {
@@ -34,6 +34,10 @@ describe('the location a 2D roll gives', () => {
   });
 });
 
+// High enough that the small Hits damage most of these tests apply never
+// crosses a sustained-damage threshold: they are about one critical at a time.
+// Thresholds and their interaction with further critical damage get their own
+// tests, below, with their own explicit Hits.
 const warbot: Actor = {
   id: actorId(6),
   name: 'Warbot',
@@ -43,7 +47,7 @@ const warbot: Actor = {
   strength: null,
   dexterity: null,
   endurance: null,
-  hits: 20,
+  hits: 200,
   injuries: [],
   criticals: {},
   protection: 8,
@@ -343,5 +347,119 @@ describe('the rows that name a component', () => {
     expect(done.actor.criticals.weapon).toMatchObject({ severity: 2, taken: {} });
     expect(done.actor.protection).toBe(8);
     expect(done.log).toEqual(['Weapon, Severity 2: Random weapon disabled']);
+  });
+});
+
+/**
+ * "Every time cumulative damage crosses another 10% of starting Hits, roll a
+ * location and inflict a Severity 1 critical hit." Each threshold crossed is
+ * its own location roll, queued alongside any attack critical from the same hit.
+ */
+describe('sustained damage thresholds', () => {
+  it('asks for a location, Severity 1, for each threshold crossed', () => {
+    const begun = startFlow(warbot, { round: 2, sustained: 2 });
+
+    expect(prompt(begun)).toEqual({ kind: 'location', why: 'Sustained damage threshold, Severity 1' });
+    const one = answer(begun, 6);
+    expect(one.actor.criticals.armour).toMatchObject({ severity: 1 });
+    expect(prompt(one)).toEqual({ kind: 'location', why: 'Sustained damage threshold, Severity 1' });
+
+    const two = answer(one, 5);
+    expect(two.actor.criticals.weapon).toMatchObject({ severity: 1 });
+    expect(prompt(two)).toBeNull();
+  });
+
+  it('comes after the attack critical from the same hit, when there is one', () => {
+    const begun = startFlow(warbot, { round: 2, severity: 2, sustained: 1 });
+
+    expect(prompt(begun)).toEqual({ kind: 'location', why: 'Attack critical, Severity 2' });
+    // Options, Severity 2 ("disabled") asks nothing further.
+    const after = answer(begun, 10);
+    expect(prompt(after)).toEqual({ kind: 'location', why: 'Sustained damage threshold, Severity 1' });
+  });
+
+  it('asks for nothing when there is neither an attack critical nor a threshold crossed', () => {
+    expect(prompt(startFlow(warbot, { round: 2 }))).toBeNull();
+  });
+});
+
+/**
+ * "Critical extra damage can cross more thresholds; keep resolving until no new
+ * threshold has been crossed." Chassis damage from a critical is Hits like any
+ * other, so it is checked for sustained thresholds too.
+ */
+describe('extra damage from a critical crossing further thresholds', () => {
+  it('queues a further location once the chassis damage it inflicts crosses a threshold', () => {
+    // 10% of 20 is 2. Chassis Severity 3 is 3D; a roll of 6 crosses three steps.
+    const chassisHit: Actor = {
+      ...warbot,
+      hits: 20,
+      criticals: { chassis: { severity: 2, note: '', taken: {} } },
+    };
+    const begun = answer(startFlow(chassisHit, { round: 2, severity: 1 }), 7);
+
+    expect(prompt(begun)).toEqual({
+      kind: 'dice',
+      dice: 3,
+      why: 'Chassis, Severity 3: Robot suffers 3D damage',
+    });
+    const done = answer(begun, 6);
+
+    expect(prompt(done)).toEqual({ kind: 'location', why: 'Sustained damage threshold, Severity 1' });
+  });
+
+  // Hits has no floor, so the crossing count is computed the same way past zero.
+  it('stops asking for locations once that damage wrecks the robot', () => {
+    const almostGone: Actor = {
+      ...warbot,
+      hits: 20,
+      criticals: { chassis: { severity: 5, note: '', taken: {} } },
+    };
+    // Roll 7 is Chassis; the repeat-hit rule takes it from Severity 5 to 6.
+    const begun = answer(startFlow(almostGone, { round: 2, severity: 1, sustained: 2 }), 7);
+
+    expect(prompt(begun)).toEqual({
+      kind: 'dice',
+      dice: 6,
+      why: 'Chassis, Severity 6: Robot suffers 6D damage',
+    });
+    const done = answer(begun, 30);
+
+    expect(done.actor.hits).toBe(20);
+    expect(done.actor.injuries[0]).toMatchObject({ reductions: { hits: 30 } });
+    expect(prompt(done)).toBeNull();
+  });
+});
+
+/**
+ * "If the location does not exist, reroll." "A hardened robot brain negates the
+ * effects of all critical hits affecting the brain; these critical hits are
+ * ignored, not re-rolled" (refs/robot/50_other_considerations.md:31). Ceres does
+ * not model which weapons or options a robot carries, or brain hardening, so the
+ * referee says which of these applies. A reroll is simply asking again; discard
+ * drops the critical.
+ */
+describe('a location that does not apply', () => {
+  it('is dropped by discard, applying nothing further', () => {
+    const begun = startFlow(warbot, { round: 2, severity: 1 });
+
+    expect(prompt(begun)).toEqual({ kind: 'location', why: 'Attack critical, Severity 1' });
+    const done = discard(begun);
+
+    expect(prompt(done)).toBeNull();
+    expect(done.actor.criticals).toEqual({});
+  });
+
+  it('changes nothing on a task that is not a location', () => {
+    const begun = answer(startFlow(warbot, { round: 2, severity: 2 }), 6);
+
+    expect(discard(begun)).toBe(begun);
+  });
+
+  it('changes nothing once the hit is fully worked through', () => {
+    const done = answer(startFlow(warbot, { round: 2, severity: 1 }), 6);
+
+    expect(prompt(done)).toBeNull();
+    expect(discard(done)).toBe(done);
   });
 });

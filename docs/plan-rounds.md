@@ -1170,7 +1170,7 @@ Magnus can look at"):
 3. **The effects table and the robot path** (built in slices: 3a the effects table
    as data, what a critical took off, the robot's current attributes and when it
    cannot act, shown in the panel; 3b the flow that asks for one roll at a time, built for an attack critical;
-   3c sustained damage and stopping at wrecked; 3d the crit colour column) — location prompts, the cascade,
+   3c sustained damage, reroll and discard, and stopping at wrecked (built); 3d the crit colour column) — location prompts, the cascade,
    discard/reroll, stop at wrecked, the criticals colour indicator.
 4. **Repair** — lowering a severity restores what it took.
 
