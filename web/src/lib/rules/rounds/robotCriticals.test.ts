@@ -128,7 +128,9 @@ describe('a location that has already been hit', () => {
 });
 
 /**
- * "Speed reduced by 1m or one Speed Band". Movement is metres and Speed is a
+ * "Movement reduced by 1 m or Speed by one Band" (CONTEXT.md's wording for the
+ * handbook's "Speed reduced by 1m or one Speed Band"). Movement is metres and
+ * Speed is a
  * band, and a robot has both. A failing power supply slows the whole robot, so
  * it costs both; a failing locomotion costs Movement, and asks which only when
  * Speed is above Idle, since that is the only case where there is a choice
@@ -136,7 +138,7 @@ describe('a location that has already been hit', () => {
  */
 describe('losing pace', () => {
   it('costs both Movement and Speed, from the power supply', () => {
-    // 3 on 2D is the power supply; Severity 1 is "Speed reduced by 1m or band".
+    // 3 on 2D is the power supply; Severity 1 costs both Movement and Speed.
     const done = answer(startFlow(warbot, { round: 2, severity: 1 }), 3);
 
     expect(prompt(done)).toBeNull();
@@ -165,7 +167,7 @@ describe('losing pace', () => {
     const begun = answer(startFlow(warbot, { round: 2, severity: 2 }), 9);
     expect(prompt(begun)).toEqual({
       kind: 'pace',
-      why: 'Locomotion, Severity 2: Speed reduced by 1m or one Speed Band',
+      why: 'Locomotion, Severity 2: Movement reduced by 1 m or Speed by one Band',
     });
 
     const byMovement = answer(begun, 'movement');

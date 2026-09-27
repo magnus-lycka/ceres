@@ -18,7 +18,11 @@ export type Amount = { flat: number } | { dice: number };
 export type CriticalEffect = {
   /** As the table words it. */
   text: string;
-  /** "Speed reduced by 1m or one Speed Band": taken from Movement, or from Speed. */
+  /**
+   * "Speed reduced by 1m or one Speed Band." Worded here as Movement and Speed
+   * (CONTEXT.md), the two attributes the table's one word conflates: Locomotion
+   * takes it from either, Power supply from both (RIC-020).
+   */
   pace?: number;
   /** Protection lost. */
   protection?: Amount;
@@ -37,12 +41,13 @@ export type CriticalEffect = {
 };
 
 const CHASSIS_ONE = { chassis: { flat: 1 } } as const;
-const PACE = 'Speed reduced by 1m or one Speed Band';
+const PACE = 'Movement reduced by 1 m or Speed by one Band';
+const PACE_BOTH = 'Movement reduced by 1 m and Speed by one Band';
 
 /** Severities 1 to 6, in order, for each location. */
 const effects: Record<CriticalLocation, CriticalEffect[]> = {
   power: [
-    { text: 'Speed reduced by 1m or band', pace: 1 },
+    { text: PACE_BOTH, pace: 1 },
     { text: 'Remaining Endurance halved', enduranceHalved: true },
     { text: 'Remaining Endurance halved again', enduranceHalved: true },
     { text: 'Remaining Endurance halved again', enduranceHalved: true },

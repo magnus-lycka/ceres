@@ -13,9 +13,17 @@ import { criticalEffect, type CriticalEffect } from './criticalEffects';
 const chassisOne = { chassis: { flat: 1 } };
 const chassisDie = { chassis: { dice: 1 } };
 
-/** [location, severity, what the table says] */
+/**
+ * [location, severity, what the table says]
+ *
+ * Two rows depart from the table's own wording. The table says "Speed reduced
+ * by 1m or one Speed Band" for both Power and Locomotion, but Speed and
+ * Movement are two different attributes in this model (CONTEXT.md): Locomotion
+ * takes it from either, Power from both (RIC-020). Written here as Movement
+ * and Speed so the wording does not contradict the fields beside it.
+ */
 const table: [(typeof criticalLocations)[number], number, CriticalEffect][] = [
-  ['power', 1, { text: 'Speed reduced by 1m or band', pace: 1 }],
+  ['power', 1, { text: 'Movement reduced by 1 m and Speed by one Band', pace: 1 }],
   ['power', 2, { text: 'Remaining Endurance halved', enduranceHalved: true }],
   ['power', 3, { text: 'Remaining Endurance halved again', enduranceHalved: true }],
   ['power', 4, { text: 'Remaining Endurance halved again', enduranceHalved: true }],
@@ -55,10 +63,10 @@ const table: [(typeof criticalLocations)[number], number, CriticalEffect][] = [
   ['chassis', 5, { text: 'Robot suffers 5D damage', damageDice: 5 }],
   ['chassis', 6, { text: 'Robot suffers 6D damage', damageDice: 6 }],
 
-  ['locomotion', 1, { text: 'Speed reduced by 1m or one Speed Band', pace: 1 }],
-  ['locomotion', 2, { text: 'Speed reduced by 1m or one Speed Band', pace: 1 }],
-  ['locomotion', 3, { text: 'Speed reduced by 1m or one Speed Band', pace: 1 }],
-  ['locomotion', 4, { text: 'Speed reduced by 1m or one Speed Band', pace: 1 }],
+  ['locomotion', 1, { text: 'Movement reduced by 1 m or Speed by one Band', pace: 1 }],
+  ['locomotion', 2, { text: 'Movement reduced by 1 m or Speed by one Band', pace: 1 }],
+  ['locomotion', 3, { text: 'Movement reduced by 1 m or Speed by one Band', pace: 1 }],
+  ['locomotion', 4, { text: 'Movement reduced by 1 m or Speed by one Band', pace: 1 }],
   ['locomotion', 5, { text: 'Robot immobilised', immobilised: true }],
   ['locomotion', 6, { text: 'Robot immobilised. Chassis Severity +1', immobilised: true, ...chassisOne }],
 

@@ -986,7 +986,7 @@ describe('a critical hit on a robot', () => {
     await expect
       .element(
         critical(screen)
-          .getByText(/Speed reduced by 1m or one Speed Band/)
+          .getByText(/Movement reduced by 1 m or Speed by one Band/)
           .first(),
       )
       .toBeVisible();
