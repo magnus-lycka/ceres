@@ -46,6 +46,7 @@
   import { maxVitality, nowVitality, stunCell } from '$lib/rules/rounds/vitality';
   import type { Actor, ActorId } from '$lib/schema/actor';
   import ConditionsCell from './ConditionsCell.svelte';
+  import CriticalsCell from './CriticalsCell.svelte';
   import TargetCell from './TargetCell.svelte';
   import TurnCell from './TurnCell.svelte';
 
@@ -91,6 +92,8 @@
     now: string;
     /** How much of the loss is stun, and will come back. */
     stun: string;
+    /** The actor itself, for CriticalsCell: only a robot has systems to show. */
+    actor: Actor | null;
     /** The name of who they last went for, or empty. */
     target: string;
     state: MemberState;
@@ -117,6 +120,7 @@
       party: member.party,
       initiative: member.initiative,
       ...vitality(member.actor),
+      actor: roster.find((each) => each.id === member.actor) ?? null,
       target: roster.find((actor) => actor.id === member.target)?.name ?? '',
       state: memberState(situation, member, roster),
       conditions: member.conditions,
@@ -133,23 +137,31 @@
 
   const columns: GridColumns<Row> = [
     // Wide enough for "Sindalian Combat Robot": three of those in one fight is normal.
-    { field: 'name', header: 'Name', width: 196, editable: false },
+    { field: 'name', header: 'Name', width: 160, editable: false },
     // Editable, because an actor dropped in on their own arrives with no side
     // and a fight may be split or re-sided as it goes. It is a plain name, not
     // a reference to the Party that may have supplied it.
-    { field: 'party', header: 'Party', width: 60, editable: false },
+    { field: 'party', header: 'Party', width: 56, editable: false },
     // The one thing typed here. The referee rolls; the app never does.
-    { field: 'initiative', header: 'Ini', width: 40, editable: false },
+    { field: 'initiative', header: 'Ini', width: 36, editable: false },
     // What the actor is, and what is left of it. Two cells rather than one
     // column per characteristic: the pair reads as a before and an after, and
     // an actor hurt through Hits has one score rather than three.
-    { field: 'max', header: 'Max', width: 56, editable: false },
-    { field: 'now', header: 'Now', width: 56, editable: false },
-    { field: 'stun', header: 'Stun', width: 62, editable: false },
+    { field: 'max', header: 'Max', width: 50, editable: false },
+    { field: 'now', header: 'Now', width: 50, editable: false },
+    { field: 'stun', header: 'Stun', width: 58, editable: false },
+    {
+      id: 'criticals',
+      header: 'Crit',
+      width: 112,
+      editable: false,
+      cell: (ctx: Cell) =>
+        ctx.row.original.actor ? renderComponent(CriticalsCell, { actor: ctx.row.original.actor }) : '',
+    },
     {
       id: 'conditions',
       header: 'Cond',
-      width: 72,
+      width: 66,
       editable: false,
       cell: (ctx: Cell) =>
         renderComponent(ConditionsCell, {
@@ -161,7 +173,7 @@
     {
       id: 'target',
       header: 'Target',
-      width: 130,
+      width: 100,
       editable: false,
       cell: (ctx: Cell) =>
         renderComponent(TargetCell, {
@@ -178,7 +190,7 @@
     {
       id: 'turn',
       header: 'Turn',
-      width: 130,
+      width: 110,
       editable: false,
       cell: (ctx: Cell) =>
         renderComponent(TurnCell, {

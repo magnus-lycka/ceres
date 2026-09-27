@@ -1103,4 +1103,14 @@ describe('a critical hit on a robot', () => {
     await expect.element(dialog.getByRole('button', { name: 'Reroll' })).not.toBeInTheDocument();
     await expect.element(dialog.getByRole('button', { name: 'Discard' })).not.toBeInTheDocument();
   });
+
+  it('shows the Crit column once a critical has landed', async () => {
+    const screen = await strike('6');
+    const dialog = screen.getByRole('dialog', { name: 'Critical hit' });
+    await dialog.getByLabelText('Roll').fill('6');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    await dialog.getByRole('button', { name: 'Done' }).click();
+
+    await expect.element(screen.getByText('1 hit, worst S1')).toBeVisible();
+  });
 });

@@ -1131,12 +1131,18 @@ The round table gains **Target**, **Incap** (folded into the Turn cell rather
 than a separate column) and **Conditions** (prone) as columns, on the "does
 this affect who goes next" test. Protection, Movement and Speed do not appear
 as grid columns — they belong in the detail panel. A robot's criticals show as
-one compact indicator, not seven columns: `sum(severity²)` mapped to a
-continuous red ramp on that cell's *foreground* only (not the row background,
-which already carries dead/unconscious/acted), `red = min(8 × score, 255)`
-composed against the theme's base text colour so it reaches pure red at a
-score of 32 — one Severity 6 alone (36) is already fully red; six Severity 1s
-(6) is barely tinted.
+one compact **Crit** indicator, not seven columns (built, 3d):
+`criticalScore` is `sum(severity²)` over all seven locations (`rules/rounds/
+criticalHeat.ts`), read as "N hit, worst SM", in a continuous foreground-only
+red — never the row background, which already carries dead/unconscious/acted.
+`criticalHeat(score) = min(8 × score, 255)` is the red channel: full red at a
+score of 32, which one Severity 6 alone (36) already exceeds; six Severity 1s
+(6) is barely tinted. Applied via a CSS custom property (`--crit-heat`) rather
+than a computed hex string, so the two themes read it differently without the
+component knowing which theme is active: light mode raises red from black
+(`rgb(var(--crit-heat) 0 0)`), dark mode lowers green and blue from white
+(`rgb(255 calc(255 - var(--crit-heat)) calc(255 - var(--crit-heat)))`), both
+reaching pure red at the same heat value.
 
 ### Repair — not part of this pass
 
@@ -1167,12 +1173,15 @@ Magnus can look at"):
    the exchange as a miss with the turn still spent. Incapacitation and the
    injury's round stamp land on `Member`. **First step where a fight can
    actually be run.**
-3. **The effects table and the robot path** (built in slices: 3a the effects table
-   as data, what a critical took off, the robot's current attributes and when it
-   cannot act, shown in the panel; 3b the flow that asks for one roll at a time, built for an attack critical;
-   3c sustained damage, reroll and discard, and stopping at wrecked (built); 3d the crit colour column) — location prompts, the cascade,
-   discard/reroll, stop at wrecked, the criticals colour indicator.
-4. **Repair** — lowering a severity restores what it took.
+3. **The effects table and the robot path.** Built, in slices:
+   - **3a** — the effects table as data, what a critical took off, the robot's
+     current attributes and when it cannot act, shown in the panel.
+   - **3b** — the flow that asks for one roll at a time, for an attack critical.
+   - **3c** — sustained damage (including damage a critical itself inflicts),
+     reroll and discard, stopping at wrecked.
+   - **3d** — the Crit colour indicator.
+4. **Repair** — lowering a severity restores what it took. Not started; see
+   "Repair — not part of this pass", above.
 
 ## Explicitly deferred
 

@@ -80,3 +80,15 @@ select,
 textarea {
   accent-color: var(--link);
 }
+
+/*
+ * The robot criticals heat: --crit-heat is the red channel value (0-255) a
+ * component sets inline. Foreground only, so it never competes with a row's
+ * dead/unconscious/acted background (rules/rounds/criticalHeat.ts).
+ */
+.crit-heat {
+  color: rgb(var(--crit-heat) 0 0);
+}
+:root[data-theme='dark'] .crit-heat {
+  color: rgb(255 calc(255 - var(--crit-heat)) calc(255 - var(--crit-heat)));
+}
