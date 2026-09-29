@@ -27,6 +27,12 @@
             "cost": "Cr18,000"
           },
           {
+            "name": "Increased Armour (+10)",
+            "col2": "-4",
+            "col3": "—",
+            "cost": "Cr6,000"
+          },
+          {
             "name": "Agility Enhancement (1)",
             "col2": "—",
             "col3": "—",

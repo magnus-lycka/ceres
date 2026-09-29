@@ -20,6 +20,12 @@
             "col2": "—",
             "col3": "—",
             "cost": "Cr9,000"
+          },
+          {
+            "name": "Decreased Resiliency (-2 Hits)",
+            "col2": "—",
+            "col3": "—",
+            "cost": "-Cr1,000"
           }
         ]
       },

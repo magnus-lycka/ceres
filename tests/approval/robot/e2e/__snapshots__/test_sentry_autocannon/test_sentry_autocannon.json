@@ -1,7 +1,7 @@
 {
   "data": {
-    "name": "Domestic Servant",
-    "tl": 8,
+    "name": "Sentry Autocannon",
+    "tl": 12,
     "robot_notes": [],
     "detail_sections": [
       {
@@ -10,28 +10,22 @@
         "col3_header": "Bandwidth",
         "rows": [
           {
-            "name": "Size 3 (Dog)",
+            "name": "Size 5 (Human)",
+            "col2": "+16",
+            "col3": "—",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "No Locomotion",
             "col2": "+4",
             "col3": "—",
-            "cost": "Cr400"
+            "cost": "—"
           },
           {
-            "name": "Wheels chassis",
-            "col2": "—",
+            "name": "Increased Armour (+24)",
+            "col2": "-8",
             "col3": "—",
-            "cost": "Cr400"
-          },
-          {
-            "name": "Speed modification (-1)",
-            "col2": "—",
-            "col3": "—",
-            "cost": "-Cr80"
-          },
-          {
-            "name": "Decreased Resiliency (-2 Hits)",
-            "col2": "—",
-            "col3": "—",
-            "cost": "-Cr200"
+            "cost": "Cr12,000"
           }
         ]
       },
@@ -41,10 +35,35 @@
         "col3_header": "Bandwidth",
         "rows": [
           {
-            "name": "Primitive (clean) (INT 1)",
+            "name": "Advanced (INT 8)",
+            "col2": "—",
+            "col3": "+2",
+            "cost": "Cr10,000"
+          },
+          {
+            "name": "Brain Hardening (/fib)",
             "col2": "—",
             "col3": "—",
-            "cost": "Cr100"
+            "cost": "Cr5,000"
+          }
+        ]
+      },
+      {
+        "title": "Skills",
+        "col2_header": "Slots",
+        "col3_header": "Bandwidth",
+        "rows": [
+          {
+            "name": "Heavy Weapons (Vehicle) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
+          },
+          {
+            "name": "Tactics (Military) 1",
+            "col2": "—",
+            "col3": "-1",
+            "cost": "Cr1,000"
           }
         ]
       },
@@ -55,13 +74,13 @@
         "rows": [
           {
             "name": "Removed manipulator",
-            "col2": "+1",
+            "col2": "+2",
             "col3": "—",
-            "cost": "-Cr160"
+            "cost": "-Cr200"
           },
           {
             "name": "Removed manipulator",
-            "col2": "+1",
+            "col2": "+2",
             "col3": "—",
             "cost": "—"
           }
@@ -74,12 +93,6 @@
         "rows": [
           {
             "name": "Visual Spectrum Sensor",
-            "col2": "—",
-            "col3": "—",
-            "cost": "—"
-          },
-          {
-            "name": "Voder Speaker",
             "col2": "—",
             "col3": "—",
             "cost": "—"
@@ -103,22 +116,34 @@
             "cost": "—"
           },
           {
-            "name": "Domestic Cleaning Equipment (small)",
-            "col2": "-1",
+            "name": "Drone Interface",
+            "col2": "—",
             "col3": "—",
-            "cost": "Cr100"
+            "cost": "—"
           },
           {
-            "name": "Recon Sensor (improved)",
+            "name": "Recon Sensor (advanced)",
             "col2": "-1",
             "col3": "—",
-            "cost": "Cr100"
+            "cost": "Cr20,000"
           },
           {
-            "name": "Storage Compartment (4 Slots)",
-            "col2": "-4",
+            "name": "PRIS Sensor",
+            "col2": "—",
             "col3": "—",
-            "cost": "Cr200"
+            "cost": "Cr2,000"
+          },
+          {
+            "name": "Thermal Sensor",
+            "col2": "—",
+            "col3": "—",
+            "cost": "Cr500"
+          },
+          {
+            "name": "Weapon Mount (vehicle)",
+            "col2": "-15",
+            "col3": "—",
+            "cost": "Cr10,000"
           }
         ]
       },
@@ -130,20 +155,20 @@
           {
             "name": "Remaining",
             "col2": "0",
-            "col3": "—",
+            "col3": "0",
             "cost": "—"
           },
           {
             "name": "Zero-slot options and Zero-BW skill packages",
-            "col2": "5/16",
-            "col3": "—",
+            "col2": "7/22",
+            "col3": "0/2",
             "cost": "—"
           },
           {
             "name": "Total",
             "col2": "—",
             "col3": "—",
-            "cost": "Cr860"
+            "cost": "Cr62,300"
           }
         ]
       }
@@ -156,31 +181,31 @@
         "columns": [
           [
             "Robot",
-            "Domestic Servant"
+            "Sentry Autocannon"
           ],
           [
             "Size",
-            "3"
+            "5"
           ],
           [
             "Hits",
-            "6"
+            "20"
           ],
           [
             "Locomotion",
-            "Wheels"
+            "None"
           ],
           [
             "Speed",
-            "4m"
+            "0m"
           ],
           [
             "TL",
-            "8"
+            "12"
           ],
           [
             "Cost",
-            "Cr860"
+            "Cr62,300"
           ]
         ],
         "notes": []
@@ -188,14 +213,14 @@
       {
         "section": "Skills",
         "label": "Skills",
-        "value": "Profession (Domestic Cleaner) 2, Recon 1",
+        "value": "Heavy Weapons (Vehicle) 1, Recon 3, Tactics (Military) 1",
         "columns": [],
         "notes": []
       },
       {
         "section": "Attacks",
         "label": "Attacks",
-        "value": "—",
+        "value": "Light Autocannon (6D, Auto 3, 500 rounds; 360° turreted vehicle mount)",
         "columns": [],
         "notes": []
       },
@@ -209,34 +234,34 @@
       {
         "section": "Endurance",
         "label": "Endurance",
-        "value": "79 hours",
+        "value": "324 hours",
         "columns": [],
         "notes": []
       },
       {
         "section": "Traits",
         "label": "Traits",
-        "value": "Armour (+2), Small (-2)",
+        "value": "Armour (+28), Hardened, IR Vision, IR/UV Vision",
         "columns": [],
         "notes": []
       },
       {
         "section": "Programming",
         "label": "Programming",
-        "value": "Primitive (clean) (INT 1)",
+        "value": "Advanced (INT 8)",
         "columns": [],
         "notes": []
       },
       {
         "section": "Options",
         "label": "Options",
-        "value": "Auditory Sensor, Domestic Cleaning Equipment (small), Recon Sensor (improved), Storage Compartment (4 Slots), Transceiver 5km (improved), Visual Spectrum Sensor, Voder Speaker, Wireless Data Link",
+        "value": "Auditory Sensor, Drone Interface, PRIS Sensor, Recon Sensor (advanced), Thermal Sensor, Transceiver 5km (improved), Visual Spectrum Sensor, Weapon Mount (vehicle), Wireless Data Link",
         "columns": [],
         "notes": []
       }
     ]
   },
   "annotations": {
-    "cost": "Ceres Cr860 vs source Cr500 — source uses editorial rounding; Ceres: BCC=Cr800, capped manipulator removal credit (20% BCC = -Cr160)"
+    "weapons": "The attack is free text: Ceres validates the vehicle mount but does not model or price the autocannon, ammunition, fire control, or autoloader"
   }
 }

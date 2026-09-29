@@ -21,7 +21,14 @@ from .chassis import (
 )
 from .locomotion import LocomotionUnion, ThrusterLocomotion, WalkerLocomotion
 from .manipulators import LegOrManipulator, Manipulator
-from .options import AgilityEnhancement, Efficiency, VehicleSpeedModification, default_suite
+from .options import (
+    AgilityEnhancement,
+    DecreasedResiliency,
+    Efficiency,
+    IncreasedArmour,
+    VehicleSpeedModification,
+    default_suite,
+)
 from .parts import RobotPartMixin
 from .skills import skill_name
 from .spec import RobotDetailRow, RobotDetailSection, RobotSpec, RobotSpecRow, RobotSpecSection
@@ -436,11 +443,13 @@ class Robot(RobotBase):
                 )
             )
         speed_cost = self.base_chassis_cost * self.locomotion.speed_cost_fraction
-        if speed_cost > 0:
+        if speed_cost != 0:
+            speed_delta = self.locomotion.speed_increase or -self.locomotion.speed_reduction
+            speed_cost_label = format_credits(speed_cost) if speed_cost > 0 else f'-{format_credits(-speed_cost)}'
             cs.rows.append(
                 RobotDetailRow(
-                    name=f'Speed modification (+{self.locomotion.speed_increase})',
-                    cost=format_credits(speed_cost),
+                    name=f'Speed modification ({speed_delta:+d})',
+                    cost=speed_cost_label,
                 )
             )
         for opt in self.options:
@@ -450,6 +459,23 @@ class Robot(RobotBase):
                         name='Vehicle Speed Modification',
                         col2=f'-{opt.slots}',
                         cost=format_credits(opt.cost),
+                    )
+                )
+        for opt in self.options:
+            if isinstance(opt, IncreasedArmour):
+                cs.rows.append(
+                    RobotDetailRow(
+                        name=f'Increased Armour (+{opt.additional})',
+                        col2=f'-{opt.slots}',
+                        cost=format_credits(opt.cost),
+                    )
+                )
+        for opt in self.options:
+            if isinstance(opt, DecreasedResiliency):
+                cs.rows.append(
+                    RobotDetailRow(
+                        name=f'Decreased Resiliency (-{opt.hit_reduction} Hits)',
+                        cost=f'-{format_credits(-opt.cost)}',
                     )
                 )
         for opt in self.options:
@@ -642,6 +668,14 @@ class Robot(RobotBase):
                 col3=zero_bw_str,
             )
         )
+        excess_zero_slots = max(0, zero_slot_count - zero_slot_quota)
+        if excess_zero_slots:
+            fin.rows.append(
+                RobotDetailRow(
+                    name='Excess zero-slot options',
+                    col2=f'-{excess_zero_slots}',
+                )
+            )
         if self._raw_cost < entry.basic_cost:
             fin.rows.append(
                 RobotDetailRow(

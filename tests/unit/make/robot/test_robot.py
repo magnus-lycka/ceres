@@ -478,6 +478,40 @@ class TestOptions:
         assert any('Basic Cost' in str(n) for n in notes)
 
 
+class TestChassisDetailSection:
+    def test_increased_armour_shows_its_protection_slots_and_cost(self):
+        from ceres.make.robot import RobotSize
+        from ceres.make.robot.options import IncreasedArmour
+
+        robot = make_robot(
+            tl=12,
+            size=RobotSize.SIZE_5,
+            options=[IncreasedArmour(additional=24)],
+        )
+
+        chassis = next(section for section in robot.build_spec().detail_sections if section.title == 'Chassis')
+        armour = next(row for row in chassis.rows if row.name == 'Increased Armour (+24)')
+        assert (armour.col2, armour.cost) == ('-8', 'Cr12,000')
+
+    def test_decreased_resiliency_shows_its_hits_and_cost_saving(self):
+        from ceres.make.robot.options import DecreasedResiliency
+
+        robot = make_robot(options=[DecreasedResiliency(hit_reduction=2)])
+
+        chassis = next(section for section in robot.build_spec().detail_sections if section.title == 'Chassis')
+        resiliency = next(row for row in chassis.rows if row.name == 'Decreased Resiliency (-2 Hits)')
+        assert (resiliency.col2, resiliency.cost) == ('—', '-Cr200')
+
+    def test_speed_reduction_shows_its_cost_saving(self):
+        from ceres.make.robot import WheelsLocomotion
+
+        robot = make_robot(locomotion=WheelsLocomotion(speed_reduction=2))
+
+        chassis = next(section for section in robot.build_spec().detail_sections if section.title == 'Chassis')
+        speed = next(row for row in chassis.rows if row.name == 'Speed modification (-2)')
+        assert speed.cost == '-Cr160'
+
+
 class TestFinalisationDetailSection:
     def test_finalisation_section_present(self):
         robot = make_robot()
@@ -508,6 +542,15 @@ class TestFinalisationDetailSection:
         fin = next(s for s in spec.detail_sections if s.title == 'Finalisation')
         remaining = next(r for r in fin.rows if r.name == 'Remaining')
         assert remaining.col3 == '—'
+
+    def test_excess_zero_slot_options_show_the_slots_they_consume(self):
+        from ceres.make.robot.options import VisualSpectrumSensor
+
+        robot = make_robot(options=[VisualSpectrumSensor() for _ in range(17)])
+
+        fin = next(section for section in robot.build_spec().detail_sections if section.title == 'Finalisation')
+        excess = next(row for row in fin.rows if row.name == 'Excess zero-slot options')
+        assert excess.col2 == '-1'
 
     def test_finalisation_total_row_shows_cost(self):
         robot = make_robot()

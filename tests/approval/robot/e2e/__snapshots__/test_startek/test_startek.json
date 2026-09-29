@@ -27,6 +27,12 @@
             "cost": "Cr19,000"
           },
           {
+            "name": "Increased Armour (+6)",
+            "col2": "-2",
+            "col3": "—",
+            "cost": "Cr3,000"
+          },
+          {
             "name": "Efficiency",
             "col2": "—",
             "col3": "—",

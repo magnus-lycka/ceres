@@ -19,6 +19,7 @@ from tests.approval.robot.e2e.test_marshal import build_marshal
 from tests.approval.robot.e2e.test_mimer import build_mimer
 from tests.approval.robot.e2e.test_munin import build_munin
 from tests.approval.robot.e2e.test_rhino import build_rhino
+from tests.approval.robot.e2e.test_sentry_autocannon import build_sentry_autocannon
 from tests.approval.robot.e2e.test_startek import build_startek
 from tests.approval.robot.e2e.test_utility_droid import build_utility_droid
 from tests.approval.robot.e2e.test_wush import build_wush
@@ -44,6 +45,7 @@ _ROBOTS = sorted(
         ('test_mimer', build_mimer),
         ('test_munin', build_munin),
         ('test_rhino', build_rhino),
+        ('test_sentry_autocannon', build_sentry_autocannon),
         ('test_startek', build_startek),
         ('test_utility_droid', build_utility_droid),
         ('test_wush', build_wush),
