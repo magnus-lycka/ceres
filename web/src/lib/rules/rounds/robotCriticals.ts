@@ -17,7 +17,7 @@ import { criticalEffect, type Amount } from './criticalEffects';
 import { takeDamage } from './damage';
 import { severityAfter } from './criticals';
 import { currentAttribute } from './robotState';
-import { cumulativeHitsDamage, isDead } from './health';
+import { cumulativeHitsDamage, isDestroyed } from './health';
 import { sustainedCriticalCount } from './criticals';
 
 /**
@@ -217,7 +217,10 @@ export function discard(flow: Flow): Flow {
  * queued ones are dropped, though the damage already applied stands.
  */
 function withSustainedFrom(flow: Flow, before: Actor): Flow {
-  if (isDead(flow.actor)) {
+  // Wrecked is not the end for a robot: criticals keep piling up damage on it
+  // up to twice its starting Hits, which is what decides wrecked from destroyed
+  // (RIC-021). Only once it is destroyed does nothing more happen to it.
+  if (isDestroyed(flow.actor)) {
     return { ...flow, tasks: flow.tasks.filter((task) => task.t !== 'location') };
   }
   const count = sustainedCriticalCount(

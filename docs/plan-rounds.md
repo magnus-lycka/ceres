@@ -1057,16 +1057,20 @@ severity mechanics (`severityAfter`, `attackCriticalSeverity`,
   "+1D" and rolling 3 becomes Chassis S5; rolling 4+ is capped at S6. Reaching
   a newly-stepped chassis severity applies that row's "Suffer nD" at the
   severity just reached, which can itself cross further sustained thresholds.
-- **Discard/reroll** (RIC-019): a location that cannot apply — no weapon or
+- **Discard/reroll** (RIC-025): a location that cannot apply — no weapon or
   option installed (neither is modelled; see "Explicitly deferred"), or a
   hardened brain, which the handbook says is *ignored, not re-rolled*
   (`:31`) — is answered on the same prompt: "doesn't apply — reroll" for a
   missing component, "doesn't apply — discard" for a hardened brain. The app
   does not know which applies; the referee says.
-- **Stop at wrecked** (RIC-019): once a robot's Hits reach ≤ 0, no further
-  location prompts are made for the rest of that resolution — remaining damage
-  still accumulates toward Destroyed, but a wrecked robot takes no turns, so
-  its criticals change nothing at the table.
+- **Stop at destroyed** (RIC-019, RIC-026): once a robot's cumulative damage
+  reaches twice its starting Hits, no further location prompts are made for
+  the rest of that resolution. Corrected after play from an earlier reading
+  that stopped at wrecked (Hits ≤ 0): wrecked is not the end, and criticals
+  are themselves part of how a robot keeps taking damage toward destroyed, so
+  stopping early cut off the only mechanism that carries it there. Remaining
+  damage still accumulates past destroyed; only the location-by-location
+  bookkeeping stops.
 - **Locomotion "1m or one Speed Band"** (RIC-020): Locomotion and Power
   criticals that read "1m or one Speed Band" reduce Movement by default; the
   app asks only when the robot's Speed is above Idle, since that is the only
@@ -1178,7 +1182,7 @@ Magnus can look at"):
      current attributes and when it cannot act, shown in the panel.
    - **3b** — the flow that asks for one roll at a time, for an attack critical.
    - **3c** — sustained damage (including damage a critical itself inflicts),
-     reroll and discard, stopping at wrecked.
+     reroll and discard, stopping at destroyed (corrected after play).
    - **3d** — the Crit colour indicator.
 4. **Repair** — lowering a severity restores what it took. Not started; see
    "Repair — not part of this pass", above.

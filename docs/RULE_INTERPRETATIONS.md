@@ -986,24 +986,27 @@ When both apply, as with a stun shotgun, the Protection is doubled and then
 halved, which leaves it as it was; the source does not say more, and the referee
 overtypes if the case calls for something else.
 
-### RIC-019 The Sustained-Damage And Location Cascade Stops Once A Robot Is Wrecked
+### RIC-019 The Sustained-Damage And Location Cascade Stops Once A Robot Is Destroyed
 
 "Every time cumulative damage crosses another 10% of starting Hits, roll a
 location... keep resolving until no new threshold has been crossed"
 (`refs/robot/50_other_considerations.md:119`, restated in
-`handouts/robot_combat_cards.typ`). Taken as literally as possible, one large
-hit against a robot already near destroyed can demand a dozen or more
-location rolls whose outcome changes nothing: a robot at Hits ≤ 0 is wrecked
-and takes no further turns (`:145`), so no critical rolled against it has any
-effect at the table.
+`handouts/robot_combat_cards.typ`).
 
-Ceres stops prompting for further locations once cumulative damage on a given
-resolution brings the robot's Hits to ≤ 0. The damage total itself keeps
-accumulating past that point, because it still decides whether the robot is
-merely wrecked or, at twice its starting Hits in damage, irreparably destroyed
-(`:145`); only the location-by-location bookkeeping stops. A location roll
-that would decide something real — whether *this* attack itself is what wrecks
-the robot — still happens; only the ones beyond that point are skipped.
+Ceres originally stopped this at Hits ≤ 0 — wrecked — reasoning that a robot
+which takes no further turns has nothing left for a critical to change at the
+table. Using it corrected that: wrecked is not the end. A robot keeps taking
+damage, and criticals are themselves a source of it — a Chassis critical's own
+dice, and a location already at Severity 6 inflicting a flat 6D on every
+further hit (`:118`) — up to twice its starting Hits, which is what decides
+wrecked from irreparably destroyed (RIC-021, `:145`). Stopping the cascade at
+wrecked cut off exactly the mechanism that carries a robot the rest of the way
+there, and left "how do you ever reach destroyed?" with no good answer.
+
+Ceres now stops prompting for further locations only once cumulative damage on
+a given resolution brings the robot to destroyed. Past that point nothing
+further happens to it — no repair, nothing more to damage — so there is
+nothing left for a critical to decide.
 
 Separately, a location that cannot apply — a Weapon or Options critical
 rolled against a robot with none installed, per "If the location does not
@@ -1157,7 +1160,7 @@ critical outright — it is abandoned, and nothing about the robot changes.
 Both are offered only at a location prompt, since they are about which location
 was rolled, not about the dice an effect afterwards costs.
 
-### RIC-026 Sustained Damage Is Checked After Any Hit, Including One A Critical Inflicts, Until The Robot Is Wrecked
+### RIC-026 Sustained Damage Is Checked After Any Hit, Including One A Critical Inflicts
 
 "Every time cumulative damage crosses another 10% of starting Hits, roll a
 location and inflict a Severity 1 critical hit. Critical extra damage can cross
@@ -1165,16 +1168,9 @@ more thresholds; keep resolving until no new threshold has been crossed."
 Chassis damage from a critical is Hits like any other damage, so Ceres checks
 it the same way: after the initiating hit, and again after any Hits a critical
 itself inflicts (a Chassis critical, or the flat 6D of a location already at
-Severity 6).
-
-Once cumulative damage brings a robot's Hits to 0 or below, it is wrecked and
-takes no further turns, so its criticals decide nothing more at the table. Ceres
-stops asking for further sustained-damage locations from that point in the
-resolution — the damage total still accumulates, since it still decides whether
-the robot is merely wrecked or, past twice its starting Hits, irreparably
-destroyed (RIC-021) — but the location-by-location bookkeeping does not. A
-location roll already in progress (an effect's own dice, mid-resolution) still
-completes; only locations not yet rolled for are dropped.
+Severity 6). This is how a robot already wrecked keeps taking damage toward
+destroyed — see RIC-019 for where the cascade actually stops, and why it is
+destroyed rather than wrecked.
 
 ## Rule Interpretations for robots
 

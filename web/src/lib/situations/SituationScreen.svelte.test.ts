@@ -1113,4 +1113,19 @@ describe('a critical hit on a robot', () => {
 
     await expect.element(screen.getByText('1 hit, worst S1')).toBeVisible();
   });
+
+  it('shows how many rounds ago an injury landed, once a fight is running', async () => {
+    const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+    await screen.getByRole('button', { name: 'Rex attacks' }).click();
+    const dialog = screen.getByRole('dialog', { name: 'Attack' });
+    await dialog.getByLabelText('Effect').fill('0');
+    await dialog.getByLabelText('Damage roll').fill('3');
+    await dialog.getByRole('button', { name: 'Apply' }).click();
+    await screen.getByRole('button', { name: 'Finish round' }).click();
+    await screen.getByRole('button', { name: 'Begin round 2' }).click();
+
+    await pickRow(screen.container, 'Guard');
+
+    await expect.element(screen.getByTitle('1 rounds ago')).toBeVisible();
+  });
 });

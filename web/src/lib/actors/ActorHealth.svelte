@@ -29,19 +29,24 @@
     removeInjury,
     stunPoints,
     stunStat,
+    updateInjury,
   } from '$lib/rules/rounds/health';
   import { criticalRows, setCritical } from '$lib/rules/rounds/criticals';
+  import { roundsAgo } from '$lib/rules/rounds/health';
   import { criticalEffect } from '$lib/rules/rounds/criticalEffects';
   import { currentAttribute } from '$lib/rules/rounds/robotState';
 
   let {
     actor,
     prone = false,
+    currentRound,
     onchange,
   }: {
     actor: Actor;
     /** On the ground in the situation being run: Movement is quartered (refs/core/03_combat.md:162). */
     prone?: boolean;
+    /** The situation's current round, for how long ago each injury landed. Absent outside a fight. */
+    currentRound?: number;
     onchange: (updated: Actor) => void;
   } = $props();
 
@@ -62,9 +67,16 @@
   const selectedKind = $derived<Injury['kind']>(actor.kind === 'robot' ? 'lethal' : kind);
 
   /** Recoverable stun only reduces one stat, so the form offers only that one. */
-  const editable = $derived<Stat[]>(
-    selectedKind === 'stun' ? [stunStat(actor)] : columns.map(([stat]) => stat),
-  );
+  const editable = $derived<Stat[]>(editableFor(selectedKind));
+
+  /**
+   * Which stats an injury of this kind may legally carry points on — shared
+   * between the add row and editing an existing injury in place, so a stun
+   * entry can never grow a second stat.
+   */
+  function editableFor(kind: Injury['kind']): Stat[] {
+    return kind === 'stun' ? [stunStat(actor)] : columns.map(([stat]) => stat);
+  }
 
   function points(stat: Stat): number {
     return entry[stat] ?? 0;
@@ -204,55 +216,79 @@
     <div class="panel">
       <h3>Injuries</h3>
       {#if actor.kind === 'robot'}<p class="hint">Stunners cause physical Hits to robots.</p>{/if}
-      <table>
-        <thead>
-          <tr>
-            <th>Kind</th>
-            {#each columns as [stat, header] (stat)}<th>{header}</th>{/each}
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each actor.injuries as injury, index (index)}
+      <div class="scroll">
+        <table>
+          <thead>
             <tr>
-              <td>{actor.kind === 'robot' ? 'physical' : injury.kind}</td>
-              {#each columns as [stat] (stat)}
-                <td>{injury.reductions[stat] ? `-${injury.reductions[stat]}` : '—'}</td>
-              {/each}
-              <td><button onclick={() => onchange(removeInjury(actor, index))}>Remove</button></td>
+              <th>Kind</th>
+              {#each columns as [stat, header] (stat)}<th>{header}</th>{/each}
+              {#if currentRound !== undefined}<th title="Rounds since the injury">Ago</th>{/if}
+              <th></th>
             </tr>
-          {:else}
-            <tr><td colspan={columns.length + 2}>Unhurt.</td></tr>
-          {/each}
-          <tr class="add">
-            <td>
-              <select
-                aria-label="Injury kind"
-                value={selectedKind}
-                onchange={(event) => (kind = event.currentTarget.value as Injury['kind'])}
-              >
-                <option value="lethal">{actor.kind === 'robot' ? 'physical' : 'lethal'}</option>
-                {#if actor.kind !== 'robot'}<option value="stun">stun</option>{/if}
-              </select>
-            </td>
-            {#each columns as [stat] (stat)}
-              <td>
-                {#if editable.includes(stat)}
-                  <input
-                    type="number"
-                    min="0"
-                    value={points(stat)}
-                    oninput={(event) => (entry = { ...entry, [stat]: Number(event.currentTarget.value) })}
-                  />
-                {:else}
-                  <span class="barred" title="Stun only reduces {stunStat(actor)}">—</span>
+          </thead>
+          <tbody>
+            {#each actor.injuries as injury, index (index)}
+              <tr>
+                <td>{actor.kind === 'robot' ? 'physical' : injury.kind}</td>
+                {#each columns as [stat] (stat)}
+                  <td>
+                    {#if editableFor(injury.kind).includes(stat)}
+                      <input
+                        type="number"
+                        min="0"
+                        aria-label="{actor.kind === 'robot' ? 'physical' : injury.kind} {stat} points"
+                        value={injury.reductions[stat] ?? 0}
+                        onchange={(event) =>
+                          onchange(updateInjury(actor, index, stat, Number(event.currentTarget.value)))}
+                      />
+                    {:else}
+                      <span class="barred" title="Stun only reduces {stunStat(actor)}">—</span>
+                    {/if}
+                  </td>
+                {/each}
+                {#if currentRound !== undefined}
+                  <td
+                    title={roundsAgo(injury.when, currentRound) !== null
+                      ? `${roundsAgo(injury.when, currentRound)} rounds ago`
+                      : 'No round recorded'}>{roundsAgo(injury.when, currentRound) ?? '—'}</td
+                  >
                 {/if}
-              </td>
+                <td><button onclick={() => onchange(removeInjury(actor, index))}>Remove</button></td>
+              </tr>
+            {:else}
+              <tr><td colspan={columns.length + (currentRound !== undefined ? 3 : 2)}>Unhurt.</td></tr>
             {/each}
-            <td><button onclick={add}>Add injury</button></td>
-          </tr>
-        </tbody>
-      </table>
+            <tr class="add">
+              <td>
+                <select
+                  aria-label="Injury kind"
+                  value={selectedKind}
+                  onchange={(event) => (kind = event.currentTarget.value as Injury['kind'])}
+                >
+                  <option value="lethal">{actor.kind === 'robot' ? 'physical' : 'lethal'}</option>
+                  {#if actor.kind !== 'robot'}<option value="stun">stun</option>{/if}
+                </select>
+              </td>
+              {#each columns as [stat] (stat)}
+                <td>
+                  {#if editable.includes(stat)}
+                    <input
+                      type="number"
+                      min="0"
+                      value={points(stat)}
+                      oninput={(event) => (entry = { ...entry, [stat]: Number(event.currentTarget.value) })}
+                    />
+                  {:else}
+                    <span class="barred" title="Stun only reduces {stunStat(actor)}">—</span>
+                  {/if}
+                </td>
+              {/each}
+              {#if currentRound !== undefined}<td></td>{/if}
+              <td><button onclick={add}>Add injury</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     {#if actor.kind === 'robot'}
@@ -322,6 +358,11 @@
   .hint {
     margin: 0 0 0.35rem;
     color: var(--muted);
+  }
+  /* The panel has a fixed width; a sophont's three characteristics plus Ago and
+     Remove do not always fit it, so the table scrolls rather than clips. */
+  .scroll {
+    overflow-x: auto;
   }
   table {
     border-collapse: collapse;

@@ -161,12 +161,43 @@ export function removeInjury(actor: Actor, index: number): Actor {
 }
 
 /**
+ * Change how many points of an existing injury sit on one stat — first aid
+ * healing some of it, or a correction — without deleting and re-adding the
+ * injury, which would lose its `when` (RIC: first-aid window).
+ */
+export function updateInjury(actor: Actor, index: number, stat: Stat, points: number): Actor {
+  return {
+    ...actor,
+    injuries: actor.injuries.map((injury, position) => {
+      if (position !== index) return injury;
+      const reductions = { ...injury.reductions };
+      if (points > 0) {
+        reductions[stat] = points;
+      } else {
+        delete reductions[stat];
+      }
+      return { ...injury, reductions };
+    }),
+  };
+}
+
+/**
  * A short description of what is wrong with an actor, or '' when nothing is.
  *
  * Only states that decide whether an actor takes a turn appear here. How far
  * past dead something is — beyond repair, beyond eating — changes nothing
  * about the situation, and the damage total already says it.
  */
+/**
+ * How long ago an injury landed, for the first-aid window: "must be initiated
+ * within one minute of the injury" (:506), which is ten rounds at six seconds
+ * each. An injury with no round recorded — healed and re-entered, or carried
+ * out of a fight — has nothing to measure against.
+ */
+export function roundsAgo(when: number | null, currentRound: number): number | null {
+  return when === null ? null : currentRound - when;
+}
+
 export function healthSummary(actor: Actor): string {
   if (isDestroyed(actor)) return 'destroyed';
   if (isDead(actor)) return actor.kind === 'robot' ? 'wrecked' : 'dead';

@@ -410,8 +410,11 @@ describe('extra damage from a critical crossing further thresholds', () => {
     expect(prompt(done)).toEqual({ kind: 'location', why: 'Sustained damage threshold, Severity 1' });
   });
 
-  // Hits has no floor, so the crossing count is computed the same way past zero.
-  it('stops asking for locations once that damage wrecks the robot', () => {
+  // Wrecked is not the end: a robot keeps taking criticals up to twice its
+  // starting Hits in damage, which is what decides wrecked from destroyed
+  // (RIC-021). Criticals are how that damage keeps piling up, so stopping at
+  // wrecked would make destroyed all but unreachable through this mechanism.
+  it('keeps asking for locations once the robot is wrecked, not yet destroyed', () => {
     const almostGone: Actor = {
       ...warbot,
       hits: 20,
@@ -425,10 +428,30 @@ describe('extra damage from a critical crossing further thresholds', () => {
       dice: 6,
       why: 'Chassis, Severity 6: Robot suffers 6D damage',
     });
+    // 30 damage on 20 Hits: wrecked (Hits -10), but destroyed needs 40 (RIC-021).
     const done = answer(begun, 30);
 
     expect(done.actor.hits).toBe(20);
     expect(done.actor.injuries[0]).toMatchObject({ reductions: { hits: 30 } });
+    expect(prompt(done)).toEqual({ kind: 'location', why: 'Sustained damage threshold, Severity 1' });
+  });
+
+  // Once destroyed, nothing more can happen to it: no repair, no further
+  // criticals. This is the one place the cascade actually stops.
+  it('stops asking for locations once the robot is destroyed', () => {
+    const almostDestroyed: Actor = {
+      ...warbot,
+      hits: 20,
+      injuries: [{ when: 1, kind: 'lethal', reductions: { hits: 18 } }],
+      criticals: { chassis: { severity: 5, note: '', taken: {} } },
+    };
+    const begun = answer(startFlow(almostDestroyed, { round: 2, severity: 1, sustained: 2 }), 7);
+
+    expect(prompt(begun)).toMatchObject({ kind: 'dice', dice: 6 });
+    // 18 already taken, 22 more is 40 total on 20 Hits: exactly destroyed.
+    const done = answer(begun, 22);
+
+    expect(done.actor.injuries.reduce((sum, injury) => sum + (injury.reductions.hits ?? 0), 0)).toBe(40);
     expect(prompt(done)).toBeNull();
   });
 });

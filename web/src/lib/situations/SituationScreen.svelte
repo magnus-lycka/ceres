@@ -397,6 +397,7 @@
           prone={open.members.some(
             (member) => member.actor === pickedActor.id && member.conditions.includes('prone'),
           )}
+          currentRound={open.state === 'current' ? open.round : undefined}
           onchange={correct}
         />
       {/if}

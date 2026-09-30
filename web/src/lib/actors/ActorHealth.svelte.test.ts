@@ -180,6 +180,81 @@ describe('ActorHealth', () => {
     await expect.element(screen.getByText('now 10 h')).toBeVisible();
   });
 
+  // "First aid... must be initiated within one minute of the injury" (:506):
+  // the referee needs to see how long ago an injury landed to judge that.
+  it('shows how many rounds ago each injury landed, given the current round', async () => {
+    const hurt: Actor = {
+      ...rin,
+      injuries: [
+        { when: 2, kind: 'lethal', reductions: { strength: 2 } },
+        { when: null, kind: 'lethal', reductions: { dexterity: 1 } },
+      ],
+    };
+
+    const screen = await render(ActorHealth, { actor: hurt, currentRound: 5, onchange: vi.fn() });
+
+    await expect.element(screen.getByText('Ago', { exact: true })).toBeVisible();
+    await expect.element(screen.getByTitle('3 rounds ago')).toHaveTextContent('3');
+    // The injury with no round recorded gets a dash, not a fabricated "ago".
+    const cells = [...screen.container.querySelectorAll('tbody tr td:last-child')].map(
+      (td) => td.textContent,
+    );
+    expect(cells).not.toContain(null);
+    expect(screen.container.querySelector('table')?.textContent).not.toContain('null rounds ago');
+  });
+
+  // No current round to compare against, as on the Actors library page: the
+  // column says nothing rather than a number with no round to be ago of.
+  it('says nothing about rounds ago when there is no current round', async () => {
+    const hurt: Actor = { ...rin, injuries: [{ when: 2, kind: 'lethal', reductions: { strength: 2 } }] };
+
+    const screen = await render(ActorHealth, { actor: hurt, onchange: vi.fn() });
+
+    expect(screen.container.textContent).not.toContain('Ago');
+  });
+
+  it('heals an existing injury in place, keeping its round rather than deleting and re-adding it', async () => {
+    const onchange = vi.fn();
+    const hurt: Actor = { ...rin, injuries: [{ when: 2, kind: 'lethal', reductions: { strength: 2 } }] };
+    const screen = await render(ActorHealth, { actor: hurt, currentRound: 5, onchange });
+
+    await screen.getByLabelText('lethal strength points').fill('1');
+    await userEvent.tab();
+
+    expect(onchange).toHaveBeenCalledTimes(1);
+    expect(onchange.mock.calls[0][0].injuries).toEqual([
+      { when: 2, kind: 'lethal', reductions: { strength: 1 } },
+    ]);
+  });
+
+  // Healing a stat down to zero points drops it, rather than leaving a stale
+  // zero entry that would show as an injury with nothing wrong.
+  it('drops a stat from an injury once it is healed to zero', async () => {
+    const onchange = vi.fn();
+    const hurt: Actor = {
+      ...rin,
+      injuries: [{ when: 2, kind: 'lethal', reductions: { strength: 2, dexterity: 1 } }],
+    };
+    const screen = await render(ActorHealth, { actor: hurt, onchange });
+
+    await screen.getByLabelText('lethal dexterity points').fill('0');
+    await userEvent.tab();
+
+    expect(onchange.mock.calls[0][0].injuries).toEqual([
+      { when: 2, kind: 'lethal', reductions: { strength: 2 } },
+    ]);
+  });
+
+  // Stun only ever touches one stat (:mid-body), so an existing stun injury
+  // must not offer editing on the stats it cannot legally reduce.
+  it('only offers the stun stat as editable on an existing stun injury', async () => {
+    const hurt: Actor = { ...rin, injuries: [{ when: 2, kind: 'stun', reductions: { endurance: 2 } }] };
+    const screen = await render(ActorHealth, { actor: hurt, onchange: vi.fn() });
+
+    await expect.element(screen.getByLabelText('stun endurance points')).toBeVisible();
+    expect(screen.container.querySelector('[aria-label="stun strength points"]')).toBeNull();
+  });
+
   it('keeps a critical record for a robot', async () => {
     const screen = await render(ActorHealth, { actor: warbot, onchange: vi.fn() });
     await expect.element(screen.getByText('Criticals')).toBeVisible();

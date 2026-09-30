@@ -12,11 +12,13 @@ import {
   cumulativeHitsDamage,
   currentHits,
   healthSummary,
+  roundsAgo,
   isDead,
   isDestroyed,
   isUnconscious,
   recordInjury,
   removeInjury,
+  updateInjury,
   stunPoints,
   stunStat,
 } from './health';
@@ -207,6 +209,29 @@ describe('recording an injury outside a fight', () => {
   });
 });
 
+describe('editing an existing injury in place', () => {
+  it('lowers one stat of the injury, keeping its round and kind', () => {
+    const rin = recordInjury(sophont(), 'lethal', { strength: 2, endurance: 4 });
+    const healed = updateInjury(rin, 0, 'endurance', 1);
+    expect(healed.injuries).toEqual([
+      { when: null, kind: 'lethal', reductions: { strength: 2, endurance: 1 } },
+    ]);
+  });
+
+  it('drops the stat from the record rather than keeping a stale zero', () => {
+    const rin = recordInjury(sophont(), 'lethal', { strength: 2, endurance: 4 });
+    const healed = updateInjury(rin, 0, 'endurance', 0);
+    expect(healed.injuries).toEqual([{ when: null, kind: 'lethal', reductions: { strength: 2 } }]);
+  });
+
+  it('leaves other injuries untouched', () => {
+    const one = recordInjury(sophont(), 'lethal', { strength: 2 });
+    const two = recordInjury(one, 'lethal', { dexterity: 1 });
+    const healed = updateInjury(two, 1, 'dexterity', 0);
+    expect(healed.injuries[0]).toEqual({ when: null, kind: 'lethal', reductions: { strength: 2 } });
+  });
+});
+
 describe('stun only ever reduces one stat', () => {
   it('is END for a sophont and Hits for an animal', () => {
     expect(stunStat(sophont())).toBe('endurance');
@@ -279,6 +304,26 @@ describe('healthSummary', () => {
 // against (Robot Handbook, "every time a robot sustains damage equal to 10% of
 // its starting Hits"). Stun against a robot is lasting Hits (RIC-017), so it
 // counts too.
+/**
+ * How long ago an injury landed, so the referee can tell whether first aid
+ * ("within one minute of the injury", :506) is still possible. An injury with
+ * no round recorded — healed and re-entered, or carried out of a fight — has
+ * nothing to measure against.
+ */
+describe('roundsAgo', () => {
+  it('is the difference between now and when it landed', () => {
+    expect(roundsAgo(2, 5)).toBe(3);
+  });
+
+  it('is nothing for the round it lands in', () => {
+    expect(roundsAgo(5, 5)).toBe(0);
+  });
+
+  it('is unknown for an injury with no round recorded', () => {
+    expect(roundsAgo(null, 5)).toBeNull();
+  });
+});
+
 describe('cumulative Hits damage', () => {
   it('is what lethal damage has taken off, and nothing while unhurt', () => {
     expect(cumulativeHitsDamage(warbot(20))).toBe(0);
