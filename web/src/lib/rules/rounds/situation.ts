@@ -83,6 +83,7 @@ export function addActors(
         nextReactions: 0,
         conditions: [],
         forfeitsNext: false,
+        forfeiting: false,
       })),
     ],
   };
@@ -248,6 +249,7 @@ export function newRound(situation: Situation): Situation {
       // A dive forgoes the turn this round brings, and spends the forfeit.
       acted: member.forfeitsNext,
       forfeitsNext: false,
+      forfeiting: member.forfeitsNext,
       waiting: false,
       // Reactions taken after acting now cost this round; any not yet spent stay.
       reactions: member.reactions + member.nextReactions,

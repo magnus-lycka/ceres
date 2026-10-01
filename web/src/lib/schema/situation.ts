@@ -101,6 +101,12 @@ export const memberSchema = z.object({
   conditions: z.array(z.enum(['prone'])).default([]),
   /** Diving for cover forgoes their next actions: this is set when those are next round's. */
   forfeitsNext: z.boolean().default(false),
+  /**
+   * True for exactly the round a dive's forfeit lands: `acted` alone cannot
+   * tell this round's forfeit apart from an ordinary spent turn, and that
+   * blocked a player at the table with no visible reason why.
+   */
+  forfeiting: z.boolean().default(false),
 });
 export const conditions = ['prone'] as const;
 export type Condition = (typeof conditions)[number];

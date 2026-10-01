@@ -14,6 +14,7 @@
     outFor = null,
     reactions = 0,
     nextReactions = 0,
+    forfeiting = false,
     offered = true,
     ondone,
     onwait,
@@ -25,6 +26,12 @@
     reactions?: number;
     /** Reactions taken after acting, which cost next round's. */
     nextReactions?: number;
+    /**
+     * This round's turn was forgone to a dive for cover, not spent at the
+     * table — true for exactly the round the forfeit lands, since `acted`
+     * alone looks the same either way.
+     */
+    forfeiting?: boolean;
     /** False while the fight has not started, or is already over. */
     offered?: boolean;
     ondone: () => void;
@@ -36,6 +43,10 @@
   <span class="spent"></span>
 {:else if state === 'out'}
   <span class="spent">{outFor ? `out ${outFor}` : 'out'}</span>
+{:else if state === 'acted' && forfeiting}
+  <span class="spent" title="Dove for cover and forfeited this round's turn (refs/core/03_combat.md:208)"
+    >forfeit</span
+  >
 {:else if state === 'acted'}
   <span class="spent">done{nextReactions > 0 ? ` · next DM−${nextReactions}` : ''}</span>
 {:else}

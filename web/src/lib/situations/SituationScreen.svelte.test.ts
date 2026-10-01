@@ -814,6 +814,34 @@ describe('attacking', () => {
       await expect.element(second.getByText('Prone target')).toBeVisible();
     });
 
+    // A dive after already acting forgoes the next round's turn instead
+    // (RIC-013). `acted` alone looks the same as an ordinary spent turn, which
+    // blocked a player at the table with no visible reason why — so the row
+    // must say "forfeit" rather than "done" for that round.
+    it('marks a forgone turn as a forfeit, not plain done, once the forfeit lands', async () => {
+      const { screen } = await fight([sophont('Rex'), 12], [sophont('Guard'), 8]);
+
+      // Guard acts first, out of turn order, the way the referee may at the table.
+      const guardRow = [...screen.container.querySelectorAll<HTMLElement>('td[data-col-id="name"]')]
+        .find((td) => td.textContent?.trim() === 'Guard')
+        ?.closest('tr');
+      await userEvent.click(
+        [...guardRow!.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Done')!,
+      );
+
+      await screen.getByRole('button', { name: 'Rex attacks' }).click();
+      const dialog = attackDialog(screen);
+      await dialog.getByLabelText('Target').selectOptions('Guard');
+      await dialog.getByLabelText('Reaction').selectOptions('Dive for cover');
+      await dialog.getByLabelText('Effect').fill('-1');
+      await dialog.getByRole('button', { name: 'Apply' }).click();
+
+      await screen.getByRole('button', { name: 'Finish round' }).click();
+      await screen.getByRole('button', { name: 'Begin round 2' }).click();
+
+      await expect.element(screen.getByText('forfeit')).toBeVisible();
+    });
+
     it('shows a prone actor’s Movement as it is on the ground in the detail panel', async () => {
       const { screen } = await fight([sophont('Rex'), 12], [{ ...sophont('Guard'), movement: 6 }, 8]);
       await screen.getByRole('button', { name: 'Rex attacks' }).click();

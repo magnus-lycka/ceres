@@ -496,6 +496,20 @@ describe('diving for cover', () => {
     expect(memberState(next, find(next, sana), roster)).toBe('acted');
   });
 
+  // A forfeited turn looks exactly like a spent one from stored state alone —
+  // both are `acted: true` from the round's first moment — so a referee
+  // reading the table has no way to tell "forfeited this round" from "already
+  // took their turn" without this flag (raised after it blocked a player at
+  // the table without explanation).
+  it('marks the forfeited round, so it can be told apart from an ordinary acted turn', () => {
+    const forfeiting = newRound(dive(act(round2(), sana.id), sana.id));
+    expect(find(forfeiting, sana).forfeiting).toBe(true);
+
+    // The round after, the forfeit is spent and the flag clears.
+    const after = newRound(forfeiting);
+    expect(find(after, sana).forfeiting).toBe(false);
+  });
+
   it('is on the ground once, however often they dive', () => {
     expect(find(dive(dive(round2(), sana.id), sana.id), sana).conditions).toEqual(['prone']);
   });

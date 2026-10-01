@@ -104,6 +104,8 @@
     nextReactions: number;
     /** Lasting states such as prone, shown as tags. */
     conditions: Condition[];
+    /** This round's turn is forgone to a dive for cover, not merely already spent. */
+    forfeiting: boolean;
   };
 
   /** The health cells for one row, or dashes when the actor cannot be found. */
@@ -124,6 +126,7 @@
       target: roster.find((actor) => actor.id === member.target)?.name ?? '',
       state: memberState(situation, member, roster),
       conditions: member.conditions,
+      forfeiting: member.forfeiting,
       reactions: member.reactions,
       nextReactions: member.nextReactions,
       outFor:
@@ -198,6 +201,7 @@
           outFor: ctx.row.original.outFor,
           reactions: ctx.row.original.reactions,
           nextReactions: ctx.row.original.nextReactions,
+          forfeiting: ctx.row.original.forfeiting,
           // Turns are taken inside a round, and only there. Before the round
           // begins nobody has one to spend; a plan has not reached them and a
           // record is past them.
