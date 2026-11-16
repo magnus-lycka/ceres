@@ -74,6 +74,28 @@ class PrecareerSkillChoice(PrecareerEntryBase):
         return pending_idx + 1
 
 
+class PrankGoneWrongEntry(CareerTableEntry):
+    """Pre-career event 4: a SOC 8+ roll decides between a Rival and an Enemy.
+
+    The roll is queued ahead of graduation because a natural 2 cancels it.
+    `text` is the story for the creation history; the rule itself (Core p.17)
+    is the pending roll's instruction and `PreCareerPrankRollHandler`.
+    """
+
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerPrankRoll
+
+        projection.queue_immediate(
+            PendingPreCareerPrankRoll(
+                pending_id=(event.id, pending_idx),
+                history_id=event.id,
+                instruction='Roll SOC 8+ to gain a Rival instead of an Enemy; '
+                'on a roll of 2 you also fail to graduate and must take the Prisoner career next term',
+            )
+        )
+        return pending_idx + 1
+
+
 def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
     skill_cls = type(skill)
     cls = cast(type[Any], skill_cls)
@@ -92,7 +114,9 @@ class PreCareerData(TermData):
     events: ClassVar[dict[int, CareerTableEntry]] = {
         2: NoEffectEntry(text='Approached by an illegal psionic group.'),
         3: NoEffectEntry(text='Your time in education is not happy and you fail to graduate.'),
-        4: NoEffectEntry(text='A prank goes wrong and someone gets hurt.'),
+        4: PrankGoneWrongEntry(
+            text='A supposedly harmless prank went wrong and someone got hurt, physically or emotionally.',
+        ),
         5: GainSkillEntry(
             text='Taking advantage of youth, you party as much as you study.',
             skill=Carouse(),
@@ -148,6 +172,15 @@ class PreCareerData(TermData):
     def is_available(self, summary: CharacterSummary) -> bool:
         """Return True if this precareer is available for the given character."""
         return True
+
+    @property
+    def entry_summary(self) -> str:
+        """Player-facing entry requirement, e.g. 'EDU 6+' or 'Automatic'."""
+        if self.entry_requirement is not None:
+            return self.entry_requirement
+        if self.entry is not None:
+            return f'{self.entry.characteristic.value} {self.entry.target}+'
+        return 'Automatic'
 
     def prepare_entry(self, projection: CharacterProjection, roll: int, terms_started: int) -> bool:
         """Apply pre-career-specific entry preparation and return whether entry succeeds."""

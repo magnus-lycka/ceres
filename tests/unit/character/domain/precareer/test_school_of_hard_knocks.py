@@ -4,8 +4,19 @@ from ceres.character.domain.character_state import CharacterProjection, Characte
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
-from ceres.character.domain.skills import Carouse, GunCombat
+from ceres.character.domain.skills import (
+    Athletics,
+    Carouse,
+    Deception,
+    Drive,
+    Gambler,
+    GunCombat,
+    Melee,
+    Persuade,
+    Stealth,
+)
 from ceres.character.domain.sophont import VILANI
+from ceres.character.input_specs import Select
 from ceres.character.mechanism.event_base import Event
 from tests.unit.character.helpers import MOCK_WORLD
 
@@ -87,7 +98,24 @@ class TestSchoolOfHardKnocksGraduation:
         choices = [p for p in proj.pending_inputs if isinstance(p, PendingPreCareerSkillChoice)]
         assert len(choices) == 4
 
-    def test_adds_commission_dm_problem(self):
+    def test_sets_lasting_advancement_dm(self):
         proj = _proj()
         _SOHK.make_term().apply_graduation(proj, _event(), honours=False)
-        assert any('promotion' in p.lower() for p in proj.summary.problems)
+        assert proj.lasting_advancement_dm == -2
+        assert proj.summary.problems == []
+
+    def test_level_0_choices_offer_only_skills_not_held(self):
+        proj = _proj()
+        proj.grant_skill(Stealth())
+        _SOHK.make_term().apply_graduation(proj, _event(), honours=False)
+        choice = next(p for p in proj.pending_inputs if isinstance(p, PendingPreCareerSkillChoice))
+        (spec,) = choice.input_specs(proj)
+        assert isinstance(spec, Select)
+        assert 'Stealth' not in [label for label, _value in spec.options]
+
+    def test_no_level_0_choice_when_every_listed_skill_is_held(self):
+        proj = _proj()
+        for skill in (Athletics(), Deception(), Drive(), Gambler(), Melee(), Persuade(), Stealth()):
+            proj.grant_skill(skill)
+        _SOHK.make_term().apply_graduation(proj, _event(), honours=False)
+        assert not any(isinstance(p, PendingPreCareerSkillChoice) for p in proj.pending_inputs)

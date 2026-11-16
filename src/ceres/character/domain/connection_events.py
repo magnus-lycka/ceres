@@ -70,7 +70,7 @@ class ConnectionNameHandler(EventHandlerBase):
         if fulfilled_pending is not None:
             projection.record_history(
                 fulfilled_pending.history_id,
-                f'{conn.display_name}: {self.name}' + (f' — {self.note}' if self.note else '') + '.',
+                f'{conn.display_name}: {self.name}' + (f' — {self.note.rstrip(".")}' if self.note else '') + '.',
             )
 
 

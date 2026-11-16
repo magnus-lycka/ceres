@@ -790,7 +790,53 @@
               ]
             }
           ],
-          "precareer_options": [],
+          "precareer_options": [
+            {
+              "name": "University",
+              "entry_requirement": "EDU 6+",
+              "curricula": []
+            },
+            {
+              "name": "Army Academy",
+              "entry_requirement": "END 7+",
+              "curricula": []
+            },
+            {
+              "name": "Marine Academy",
+              "entry_requirement": "END 8+",
+              "curricula": []
+            },
+            {
+              "name": "Navy Academy",
+              "entry_requirement": "INT 8+",
+              "curricula": []
+            },
+            {
+              "name": "Colonial Upbringing",
+              "entry_requirement": "Automatic if homeworld is TL8-",
+              "curricula": []
+            },
+            {
+              "name": "Merchant Academy (Business)",
+              "entry_requirement": "INT 9+",
+              "curricula": []
+            },
+            {
+              "name": "Merchant Academy (Shipboard)",
+              "entry_requirement": "INT 9+",
+              "curricula": []
+            },
+            {
+              "name": "School of Hard Knocks",
+              "entry_requirement": "Automatic if SOC 6-",
+              "curricula": []
+            },
+            {
+              "name": "Spacer Community",
+              "entry_requirement": "Automatic if homeworld size code 0; INT 4+, DM+1 if DEX 8+",
+              "curricula": []
+            }
+          ],
           "can_finish": false
         }
       ],
@@ -851,6 +897,9 @@
         "roll": "9"
       },
       [
+        {
+          "text": "Applied automatically to a commission roll: SOC DM +1; event DM +2; total DM +3."
+        },
         {
           "name": "choice",
           "label": "Commission",

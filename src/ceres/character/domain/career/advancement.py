@@ -32,8 +32,7 @@ class AdvancementHandler(EventHandlerBase):
         if assignment is None:
             raise ReplayError('No current assignment')
         dm = characteristic_dm(projection.summary.characteristics.get(assignment.advancement.characteristic, 0))
-        dm += projection.pending_advancement_dm
-        projection.pending_advancement_dm = 0
+        dm += projection.take_advancement_dm()
         success = (self.roll + dm) >= assignment.advancement.target
         terms_in_career = len(career.prior_terms(projection.summary.career_terms, assignment))
         if self.roll == 12:
@@ -60,8 +59,7 @@ class CommissionHandler(EventHandlerBase):
             return
         if career.commission is None:
             raise ReplayError(f'{career.name} does not support commission')
-        dm = career.commission_dm(projection) + projection.pending_advancement_dm
-        projection.pending_advancement_dm = 0
+        dm = career.commission_dm(projection) + projection.take_advancement_dm()
         if self.roll + dm < career.commission.target:
             projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
             return
@@ -74,6 +72,8 @@ class AdvancementDmChoiceHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
+        if outcome := getattr(fulfilled_pending, 'advancement_dm_outcome', None):
+            projection.continue_history(fulfilled_pending.history_id if fulfilled_pending else None, outcome)
         projection.pending_advancement_dm += 4
         if projection.summary.current_career is not None:
             career = projection.get_current_career()
@@ -92,12 +92,8 @@ class PendingAdvancement(PendingInputBase):
             raise ReplayError('No current assignment')
         characteristic = assignment.advancement.characteristic
         dm = characteristic_dm(projection.summary.characteristics.get(characteristic, 0))
-        event_dm = projection.pending_advancement_dm
         return [
-            InfoText(
-                text=f'Applied automatically: {characteristic} DM {dm:+d}; '
-                f'event DM {event_dm:+d}; total DM {dm + event_dm:+d}.'
-            ),
+            InfoText(text=f'Applied automatically: {_applied_dms(projection, characteristic, dm)}'),
             NumberEntry(name='roll', label='2D roll (2–12, before DMs)', min=2, max=12),
         ]
 
@@ -115,7 +111,15 @@ class PendingCommissionChoice(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=CommissionHandler(attempt=False))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        career = projection.get_current_career()
+        if career.commission is None:
+            raise ReplayError(f'{career.name} does not support commission')
+        characteristic = career.commission.characteristic
+        dm = characteristic_dm(projection.summary.characteristics.get(characteristic, 0))
+        later_terms_dm = career.commission_dm(projection) - dm
+        applied = _applied_dms(projection, characteristic, dm, later_terms_dm)
         return [
+            InfoText(text=f'Applied automatically to a commission roll: {applied}'),
             Select(
                 name='choice',
                 label='Commission',
@@ -123,6 +127,20 @@ class PendingCommissionChoice(PendingInputBase):
             ),
             NumberEntry(name='roll', label='Commission roll (2D, if attempting)', min=2, max=12),
         ]
+
+
+def _applied_dms(projection: CharacterProjection, characteristic: Chars, dm: int, later_terms_dm: int = 0) -> str:
+    """The DMs an advancement or commission roll gets without the player adding them, and their total."""
+    event_dm = projection.pending_advancement_dm
+    lasting_dm = projection.lasting_advancement_dm  # RIC-029
+    parts = [f'{characteristic} DM {dm:+d}']
+    if later_terms_dm:
+        parts.append(f'DM {later_terms_dm:+d} for terms after the first')
+    parts.append(f'event DM {event_dm:+d}')
+    if lasting_dm:
+        parts.append(f'DM {lasting_dm:+d} until you leave a career by choice')
+    parts.append(f'total DM {dm + later_terms_dm + event_dm + lasting_dm:+d}.')
+    return '; '.join(parts)
 
 
 def rank_bonus_skill(bonus: RankBonus) -> AnySkill:
@@ -146,12 +164,22 @@ def _apply_promotion(
 ) -> None:
     from ceres.character.domain.career.career_events import PendingSkillTable, queue_reenlist_or_aging
 
-    new_rank = (projection.summary.rank or 0) + 1
+    # No career's rank table lists anything past its own top entry — the
+    # rules give a successful advancement roll's reward as the extra skill
+    # table roll (:474), not an unbounded rank number, and nothing defines
+    # what a rank past the table even means (no title, no further bonus).
+    # Once there, a later success grants that roll same as any other, but
+    # must not re-promote (no history line) or re-grant a top rank's bonus.
+    old_rank = projection.summary.rank or 0
+    max_rank = max(career.current_ranks(projection), default=0)
+    new_rank = min(old_rank + 1, max_rank)
+    promoted = new_rank > old_rank
     projection.summary.rank = new_rank
     career.update_current_term_rank(projection)
-    projection.record_history(history_id, f'Promoted to rank {" ".join(projection.summary.rank_title).strip()}.')
-    if _apply_rank_bonus(projection, career, new_rank, event_id, history_id):
-        return
+    if promoted:
+        projection.record_history(history_id, f'Promoted to rank {" ".join(projection.summary.rank_title).strip()}.')
+        if _apply_rank_bonus(projection, career, new_rank, event_id, history_id):
+            return
     tables = career.available_tables(
         projection.summary.characteristics.get(Chars.EDU, 0),
         projection.summary.current_assignment,

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Annotated, Any, cast, overload
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PrivateAttr, SerializeAsAny, model_validator
@@ -197,6 +198,10 @@ class CharacterSummary(BaseModel):
                 return max(getattr(skill, f).value for f in fields)
         return default
 
+    def skills_not_held(self, skills: Iterable[AnySkill]) -> list[AnySkill]:
+        """Those of `skills` the Traveller does not hold at any level, level 0 included."""
+        return [skill for skill in skills if self.skill_level(type(skill)) is None]
+
     def diff(self, other: CharacterSummary) -> list[str]:
         changes: list[str] = []
 
@@ -272,7 +277,9 @@ class CharacterProjection(BaseModel):
 
     character_id: int
     summary: CharacterSummary
-    pending_advancement_dm: int = 0
+    pending_advancement_dm: int = 0  # applies to the next advancement or commission roll only
+    # Applies to every advancement and commission roll until a career is left by choice (RIC-029).
+    lasting_advancement_dm: int = 0
     pending_qualification_dm: int = 0
     auto_qualify_careers: list[type[CareerData]] = Field(default_factory=list)
     pending_reenlist: bool | None = None  # stores reenlist decision during aging chain
@@ -299,6 +306,11 @@ class CharacterProjection(BaseModel):
         # Table entries can also be applied on their own, without a narrative occurrence.
         if occurrence in self._history_positions or occurrence in self._history_parents:
             self._history.record(self._history_parents.get(occurrence, occurrence), outcome)
+
+    def continue_history(self, occurrence: int | str | None, clause: str) -> None:
+        """Finish the occurrence's story with how it turned out, as part of the same sentence."""
+        if occurrence in self._history_positions or occurrence in self._history_parents:
+            self._history.continue_sentence(self._history_parents.get(occurrence, occurrence), clause)
 
     def extend_history(self, occurrence: int | str | None, description: str) -> None:
         if occurrence is not None:
@@ -370,6 +382,15 @@ class CharacterProjection(BaseModel):
 
     def add_advancement_dm(self, amount: int) -> None:
         self.pending_advancement_dm += amount
+
+    def take_advancement_dm(self) -> int:
+        """Return the DM for an advancement or commission roll being made now, using up the one-roll part."""
+        dm = self.pending_advancement_dm + self.lasting_advancement_dm
+        self.pending_advancement_dm = 0
+        return dm
+
+    def leave_career_by_choice(self) -> None:
+        self.lasting_advancement_dm = 0
 
     def add_qualification_dm(self, amount: int) -> None:
         self.pending_qualification_dm += amount
@@ -499,7 +520,7 @@ class CharacterProjection(BaseModel):
         outcome = f'increased from {before} to {after}' if after > before else f'remains at {after}'
         self.record_history(history_id, f'{skill.label()} {outcome}.')
 
-    def increment_skill(self, skill: AnySkill) -> None:
+    def increment_skill(self, skill: AnySkill, history_id: int | str | None = None) -> None:
         skill_cls = type(skill)
         existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
         fields = level_fields(skill_cls)
@@ -510,11 +531,13 @@ class CharacterProjection(BaseModel):
             if target_field:
                 getattr(new_skill, target_field).set(1)
             self.summary.skills.append(new_skill)
+            self.record_history(history_id, f'{skill.label()} increased from 0 to 1.')
             return
         if (active_field is not None or len(fields) == 1) and target_field:
             current = getattr(existing, target_field).value
             if current < 4:
                 getattr(existing, target_field).set(current + 1)
+                self.record_history(history_id, f'{skill.label()} increased from {current} to {current + 1}.')
 
     def check_skill_choice(
         self,

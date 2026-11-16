@@ -20,5 +20,9 @@ class CreationHistory:
     def record(self, occurrence: int | str, outcome: str) -> None:
         self._entries[occurrence] += ' ' + outcome
 
+    def continue_sentence(self, occurrence: int | str, clause: str) -> None:
+        """Carry the entry's last sentence on with `clause`, e.g. '... his protégé' + 'and teaches you tactics.'"""
+        self._entries[occurrence] = f'{self._entries[occurrence].removesuffix(".")} {clause}'
+
     def pending(self, occurrence: int | str, instructions: list[str]) -> None:
         self._pending[occurrence] = instructions

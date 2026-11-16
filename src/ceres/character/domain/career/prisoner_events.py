@@ -53,8 +53,7 @@ def apply_prisoner_advancement(projection: CharacterProjection, event: Event, ca
     char = assignment.advancement.characteristic
     target = assignment.advancement.target
     dm = characteristic_dm(projection.summary.characteristics.get(char, 0))
-    dm += projection.pending_advancement_dm
-    projection.pending_advancement_dm = 0
+    dm += projection.take_advancement_dm()
     effective = event.roll + dm
     parole_threshold = projection.summary.parole_threshold or 0
     freed = effective > parole_threshold

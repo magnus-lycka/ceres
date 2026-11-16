@@ -33,6 +33,7 @@ from ceres.character.domain.career.career_data import (
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
+    CAREER_ENDED,
     PendingChoices,
     _apply_mishap_ejection,
     career_progress_pending,
@@ -141,7 +142,7 @@ class RogueBetrayalHandler(EventHandlerBase):
         else:
             projection.record_history(history_id, f'Prison roll {self.roll}: no forced prison career.')
         _apply_mishap_ejection(projection, event.id, 0)
-        projection.record_history(history_id, 'Left Rogue.')
+        projection.record_history(history_id, CAREER_ENDED)
 
 
 class PendingRogueBetrayal(PendingInputBase):
@@ -262,10 +263,14 @@ class RogueEvent3Handler(CareerHandlerBase):
 class RogueEvent6Backstab(ChoiceBase):
     kind: Literal['rogue_event_6_backstab'] = 'rogue_event_6_backstab'
     label: str = 'Backstab (DM+2 advancement, gain Enemy)'
+    history_id: int | None = None
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.add_connection(ConnectionKind.ENEMY, origin='A fellow rogue you betrayed')
+        projection.record_history(self.history_id, 'You backstab them.')
+        projection.add_connection(
+            ConnectionKind.ENEMY, origin='A fellow rogue you betrayed', history_id=self.history_id
+        )
         projection.pending_advancement_dm += 2
         projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
@@ -273,10 +278,14 @@ class RogueEvent6Backstab(ChoiceBase):
 class RogueEvent6Refuse(ChoiceBase):
     kind: Literal['rogue_event_6_refuse'] = 'rogue_event_6_refuse'
     label: str = 'Refuse (gain Contact)'
+    history_id: int | None = None
 
     def handle(self, projection: CharacterProjection, event) -> None:
         career = projection.get_current_career()
-        projection.add_connection(ConnectionKind.CONTACT, origin='A fellow rogue you worked alongside')
+        projection.record_history(self.history_id, 'You refuse.')
+        projection.add_connection(
+            ConnectionKind.CONTACT, origin='A fellow rogue you worked alongside', history_id=self.history_id
+        )
         projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 
@@ -288,9 +297,10 @@ class RogueEvent6Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
+                history_id=event_id,
                 instruction='Backstab the fellow rogue (DM+2 to next advancement, gain Enemy) '
                 'or refuse (gain a Contact instead)?',
-                choices=[RogueEvent6Backstab(), RogueEvent6Refuse()],
+                choices=[RogueEvent6Backstab(history_id=event_id), RogueEvent6Refuse(history_id=event_id)],
             )
         )
         return pending_idx + 1
@@ -542,9 +552,11 @@ class Rogue(CareerData):
             skill=Gambler(level=Level(value=1)),
         ),
         11: SkillChoiceEntry(
-            text='A crime lord considers you his protege.',
-            options=[Tactics(), AdvancementDmOption()],
+            text='A crime lord considers you his protégé.',
+            options=[Tactics(military=Level(value=1)), AdvancementDmOption()],
             level=1,
+            skill_outcome='and teaches you tactics.',
+            advancement_dm_outcome='and tries to get you promoted.',
         ),
         12: AutoAdvanceEntry(
             text='You commit a legendary crime. You are automatically promoted.',

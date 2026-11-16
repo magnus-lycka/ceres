@@ -135,6 +135,36 @@ class CareerSkillRollPendingBase(PendingInputBase):
         ]
 
 
+class CareerChanceRollPendingBase(PendingInputBase):
+    """Base for a career event's plain, unmodified dice roll — no skill, no DM.
+
+    Subclass and set kind, instruction, dice (how many D6 are rolled; default
+    2) and override resolve(). Distinct from `CareerSkillRollPendingBase`:
+    some career events are a flat "roll 2D, on a natural 2 ..." with nothing
+    to modify the roll — offering a skill to pick for one of these once asked
+    for a choice with no options to make it from, which the web form could
+    never be submitted past.
+    """
+
+    dice: int = 2
+
+    def event_from_form(self, form: Mapping[str, str]) -> Any:
+        from ceres.character.domain.career.career_events import ChanceRollHandler
+
+        roll = form_int(form, 'roll', 0)
+        return Event(fulfills=self.pending_id, handler=ChanceRollHandler(roll=roll))
+
+    def input_specs(self, projection: CharacterProjection) -> list[Any]:
+        return [
+            NumberEntry(
+                name='roll',
+                label=f'Roll ({self.dice}D, no modifiers)',
+                min=self.dice,
+                max=self.dice * 6,
+            ),
+        ]
+
+
 class PendingAdvancedTrainingSkillRoll(CareerSkillRollPendingBase):
     """Shared pending for 'advanced training: roll EDU 8+ to increase an existing skill' events."""
 

@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import ClassVar, Literal
 
 from ceres.character.domain.benefits import (
@@ -75,7 +76,9 @@ from ceres.character.domain.skills import (
     Tactics,
     VaccSuit,
 )
-from ceres.character.mechanism.event_base import ChoiceBase, Event
+from ceres.character.input_specs import InputSpec, NumberEntry, Select, form_int, form_str
+from ceres.character.mechanism.errors import ReplayError
+from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandlerBase, PendingInputBase
 
 # ── Career-specific pending input types ──────────────────────────────────────
 
@@ -202,27 +205,86 @@ class PendingAgentEvent3SkillRoll(CareerSkillRollPendingBase):
             projection.queue_deferred(
                 PendingMishap(
                     pending_id=(event.id, 0),
-                    instruction='Investigation went wrong: roll 1D on Mishap table '
-                    '(you are not ejected from this career)',
+                    instruction=(
+                        'The investigation goes wrong: roll 1D on the Mishap table. '
+                        "This ends your Agent career and loses this term's Benefit roll."
+                    ),
                 )
             )
 
 
-class PendingAgentEvent8SkillRoll(CareerSkillRollPendingBase):
-    kind: Literal['agent_event_8_skill_roll'] = 'agent_event_8_skill_roll'
+def _cover_careers() -> dict[str, CareerData]:
+    """The careers an Agent can go undercover in, by name."""
+    from ceres.character.domain.career.citizen import CITIZEN
+    from ceres.character.domain.career.rogue import ROGUE
 
-    def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        if event.modified_roll >= 8:
-            projection.summary.problems.append(
-                'Undercover mission success: roll on Rogue or Citizen Events table and '
-                'make one roll on any Specialist skill table for that career (apply manually — '
-                'cross-career table automation not yet implemented).'
+    return {career.name: career for career in (ROGUE, CITIZEN)}
+
+
+class AgentUndercoverHandler(EventHandlerBase):
+    """The undercover mission: a cover career and the Deception 8+ roll made in it (RIC-030)."""
+
+    kind: Literal['agent_undercover'] = 'agent_undercover'
+    cover: CareerData
+    modified_roll: int
+
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        from ceres.character.domain.career.career_events import PendingSkillTable, PendingTermEvent
+
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        cover = self.cover.name
+        # The cover career's own event or mishap text follows this introduction, as it is written there.
+        projection.continue_history(history_id, f'as a {cover.lower()}:')
+        if self.modified_roll >= 8:
+            projection.queue_deferred(
+                PendingTermEvent(
+                    pending_id=(event.id, 0),
+                    history_id=history_id,
+                    instruction=f'Undercover: roll 2D on the {cover} Events table',
+                    table_career=self.cover,
+                ),
+                PendingSkillTable(
+                    pending_id=(event.id, 1),
+                    history_id=history_id,
+                    instruction=f'Undercover: choose a {cover} specialist skill table and roll 1D',
+                    options=self.cover.specialist_tables(),
+                    table_career=self.cover,
+                ),
             )
         else:
-            projection.summary.problems.append(
-                'Undercover mission failed: roll on Rogue or Citizen Mishap table '
-                '(apply manually — cross-career table automation not yet implemented).'
+            projection.queue_deferred(
+                PendingMishap(
+                    pending_id=(event.id, 0),
+                    history_id=history_id,
+                    instruction=(
+                        f'Your cover is blown: roll 1D on the {cover} Mishap table. '
+                        "This ends your Agent career and loses this term's Benefit roll."
+                    ),
+                    table_career=self.cover,
+                )
             )
+
+
+class PendingAgentEvent8Undercover(PendingInputBase):
+    kind: Literal['agent_event_8_undercover'] = 'agent_event_8_undercover'
+    instruction: str = 'Choose a cover career and roll Deception 8+.'
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        cover = _cover_careers().get(form_str(form, 'cover', ''))
+        if cover is None:
+            raise ReplayError('Choose Rogue or Citizen as the cover career')
+        return Event(
+            fulfills=self.pending_id,
+            handler=AgentUndercoverHandler(cover=cover, modified_roll=form_int(form, 'modified_roll', 0)),
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [
+            Select(name='cover', label='Cover career', options=[(name, name) for name in _cover_careers()]),
+            NumberEntry(name='modified_roll', label='Modified roll (2D + Deception level + DMs)', min=2, max=20),
+        ]
 
 
 class PendingAgentEvent11SkillChoice(CareerSkillChoicePendingBase):
@@ -324,13 +386,7 @@ class AgentEvent8Handler(CareerHandlerBase):
 
     @staticmethod
     def handle(projection: CharacterProjection, event_id: int, pending_idx: int) -> int:
-        projection.queue_deferred(
-            PendingAgentEvent8SkillRoll(
-                pending_id=(event_id, pending_idx),
-                instruction='Roll Deception 8+ for the undercover mission',
-                options=[Deception()],
-            )
-        )
+        projection.queue_deferred(PendingAgentEvent8Undercover(pending_id=(event_id, pending_idx), history_id=event_id))
         return pending_idx + 1
 
 
@@ -558,11 +614,7 @@ class Agent(CareerData):
             text='Life Event. Roll on the Life Events table.',
         ),
         8: AgentEvent8Handler(
-            text=(
-                'You go undercover to investigate an enemy. Roll Deception 8+. If you succeed, roll immediately on '
-                'the Rogue or Citizen Events table and make one roll on any Specialist skill table for that career. '
-                'If you fail, roll immediately on the Rogue or Citizen Mishap table.'
-            ),
+            text='To investigate an enemy, you go undercover.',
         ),
         9: AdvancementDmEntry(
             text='You go above and beyond the call of duty. Gain DM+2 to your next advancement roll.',

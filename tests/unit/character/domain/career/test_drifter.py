@@ -4,6 +4,7 @@ from ceres.character.domain.career import DRIFTER
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
+    ChanceRollHandler,
     MishapHandler,
     PendingAdvancement,
     PendingCareerChoice,
@@ -157,13 +158,19 @@ class TestDrifterMishap5:
         base = _enter_drifter('Wanderer')
         return [*base, Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=6))]
 
-    def test_mishap_5_creates_2d_roll_pending(self):
+    # Betrayed by a friend names no skill and no DM — "Roll 2D — on a natural
+    # 2, must take Prisoner next term" — so the form must ask for nothing but
+    # the 2D total, not a skill with no options to choose it from (that made
+    # the web form impossible to submit; the same defect reported live for
+    # Merchant's Legal trouble).
+    def test_mishap_5_asks_for_the_roll_only_no_skill(self):
         base = self._setup_to_mishap()
         events = [*base, Event(fulfills=(base[-1].id, 0), handler=MishapHandler(roll=5))]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingDrifterMishap5SkillRoll)), None)
         assert pending is not None
-        assert pending.options == []
+        specs = pending.input_specs(projection)
+        assert [spec.name for spec in specs] == ['roll']
 
     def test_mishap_5_adds_rival_on_any_roll(self):
         for roll in (2, 7):
@@ -172,7 +179,7 @@ class TestDrifterMishap5:
             events = [
                 *base,
                 mishap,
-                Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=roll)),
+                Event(fulfills=(mishap.id, 0), handler=ChanceRollHandler(roll=roll)),
             ]
             projection = replay(1, events)
             rivals = [c for c in projection.summary.connections if isinstance(c, Rival)]
@@ -184,7 +191,7 @@ class TestDrifterMishap5:
         events = [
             *base,
             mishap,
-            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
+            Event(fulfills=(mishap.id, 0), handler=ChanceRollHandler(roll=2)),
         ]
         projection = replay(1, events)
         # No muster-out rolls (lose_current_term=True, 1 term, rank 0), so forced_next_career
@@ -199,7 +206,7 @@ class TestDrifterMishap5:
         events = [
             *base,
             mishap,
-            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            Event(fulfills=(mishap.id, 0), handler=ChanceRollHandler(roll=7)),
         ]
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingCareerChoice)), None)
@@ -212,7 +219,7 @@ class TestDrifterMishap5:
         events = [
             *base,
             mishap,
-            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            Event(fulfills=(mishap.id, 0), handler=ChanceRollHandler(roll=7)),
         ]
         projection = replay(1, events)
         assert projection.summary.current_career is None
@@ -223,7 +230,7 @@ class TestDrifterMishap5:
         events = [
             *base,
             mishap,
-            Event(fulfills=(mishap.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            Event(fulfills=(mishap.id, 0), handler=ChanceRollHandler(roll=7)),
         ]
         projection = replay(1, events)
         assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
@@ -362,6 +369,9 @@ class TestDrifterEvent9:
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
 
+    # Risky adventure is a flat "roll 1D" sub-table with no skill named, so the
+    # form must ask for nothing but the roll — see the Merchant Legal trouble
+    # and Drifter mishap 5 fixes for the same web-form defect this once had.
     def test_accept_creates_1d_roll_pending(self):
         base = self._setup_to_event()
         events = [
@@ -374,7 +384,8 @@ class TestDrifterEvent9:
         projection = replay(1, events)
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingDrifterEvent9RollSkillRoll)), None)
         assert pending is not None
-        assert pending.options == []
+        specs = pending.input_specs(projection)
+        assert [spec.name for spec in specs] == ['roll']
 
     def test_1d_roll_low_creates_injury_or_prison_choice(self):
         base = self._setup_to_event()
@@ -385,7 +396,7 @@ class TestDrifterEvent9:
         events = [
             *base,
             choice,
-            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=1)),
+            Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=1)),
         ]
         projection = replay(1, events)
         pending = next(
@@ -404,7 +415,7 @@ class TestDrifterEvent9:
         events = [
             *base,
             choice,
-            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
+            Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=2)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
@@ -415,7 +426,7 @@ class TestDrifterEvent9:
             fulfills=(base[-1].id, 0),
             handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
         )
-        roll_event = Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=1))
+        roll_event = Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=1))
         events = [
             *base,
             choice,
@@ -434,7 +445,7 @@ class TestDrifterEvent9:
             fulfills=(base[-1].id, 0),
             handler=CareerChoiceHandler(choice=DrifterEvent9Accept.model_fields['kind'].default),
         )
-        roll_event = Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=2))
+        roll_event = Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=2))
         events = [
             *base,
             choice,
@@ -457,7 +468,7 @@ class TestDrifterEvent9:
         events = [
             *base,
             choice,
-            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=3)),
+            Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=3)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingInjuryTable) for p in projection.pending_inputs)
@@ -471,7 +482,7 @@ class TestDrifterEvent9:
         events = [
             *base,
             choice,
-            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=5)),
+            Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=5)),
         ]
         projection = replay(1, events)
         assert projection.summary.career_terms[-1].require_muster_out().extra_rolls == 1
@@ -485,7 +496,7 @@ class TestDrifterEvent9:
         events = [
             *base,
             choice,
-            Event(fulfills=(choice.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=4)),
+            Event(fulfills=(choice.id, 0), handler=ChanceRollHandler(roll=4)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)

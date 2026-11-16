@@ -193,6 +193,23 @@ class TestPreCareerEntryHandler:
         handler.apply(proj, _any_event())
         assert any(isinstance(p, PendingCareerChoice) for p in proj.pending_inputs)
 
+    def test_failed_entry_offers_no_second_precareer_attempt_this_term(self):
+        # Core p.16: on a failed entry roll "the Traveller must immediately attempt entry
+        # into a career ... only one attempt can be made for entry to one of these
+        # precareer options in any one term."
+        from ceres.character.domain.career.career_events import PendingCareerChoice
+        from ceres.character.domain.precareer.military_academy import ArmyAcademyPreCareer
+        from ceres.character.domain.precareer.precareer_events import PreCareerEntryHandler
+        from ceres.character.input_specs import CareerChoice
+
+        proj = self._proj()
+        handler = PreCareerEntryHandler(precareer=ArmyAcademyPreCareer(), roll=2)
+        handler.apply(proj, _any_event())
+        pending = next(p for p in proj.pending_inputs if isinstance(p, PendingCareerChoice))
+        (spec,) = pending.input_specs(proj)
+        assert isinstance(spec, CareerChoice)
+        assert spec.precareer_options == []
+
     def test_graduation_requirement_queues_graduation(self):
         from ceres.character.domain.precareer.precareer_events import PendingPreCareerGraduation, PreCareerEntryHandler
         from ceres.character.domain.precareer.school_of_hard_knocks import SchoolOfHardKnocksPreCareer
@@ -248,10 +265,17 @@ class TestPreCareerEventHandler:
         PreCareerEventHandler(roll=2).apply(proj, _any_event())
         assert any('PSI' in p for p in proj.summary.problems)
 
-    def test_roll_4_adds_soc_problem(self):
+    def test_event_4_soc_roll_queued_before_graduation(self):
+        """Event 4's SOC roll can cancel graduation, so it must be resolved first."""
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerPrankRoll
+
         proj = self._proj_with_precareer()
+        proj.queue_deferred(PendingPreCareerGraduation(pending_id=(1, 0), instruction='Roll 2D on graduation'))
+
         PreCareerEventHandler(roll=4).apply(proj, _any_event())
-        assert any('SOC' in p for p in proj.summary.problems)
+
+        pending_types = [type(p) for p in proj.pending_inputs]
+        assert pending_types.index(PendingPreCareerPrankRoll) < pending_types.index(PendingPreCareerGraduation)
 
     def test_event_6_connections_roll_queued_before_graduation(self):
         """Event 6 creates PendingConnectionsRoll; it must be resolved before PendingPreCareerGraduation."""
@@ -328,3 +352,25 @@ class TestPreCareerGraduationHandler:
         PreCareerGraduationHandler(roll=10).apply(proj, _any_event())
         assert proj.summary.current_precareer_term is None
         assert any(isinstance(t, PreCareerTerm) and t.completed and t.graduated for t in proj.summary.terms)
+
+
+class TestPendingPreCareerPrankRoll:
+    def _pending(self):
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerPrankRoll
+
+        return PendingPreCareerPrankRoll(pending_id=(1, 0), instruction='Roll SOC 8+')
+
+    def test_event_from_form_carries_the_roll(self):
+        from ceres.character.domain.precareer.precareer_events import PreCareerPrankRollHandler
+
+        event = self._pending().event_from_form({'roll': '9'})
+        assert isinstance(event.handler, PreCareerPrankRollHandler)
+        assert event.handler.roll == 9
+        assert event.fulfills == (1, 0)
+
+    def test_input_specs_asks_for_the_unmodified_2d_roll(self):
+        specs = self._pending().input_specs(_projection())
+        assert len(specs) == 1
+        spec = specs[0]
+        assert isinstance(spec, NumberEntry) and spec.name == 'roll'
+        assert (spec.min, spec.max) == (2, 12)

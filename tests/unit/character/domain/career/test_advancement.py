@@ -14,13 +14,13 @@ from ceres.character.domain.career.advancement import (
     rank_bonus_skill,
 )
 from ceres.character.domain.career.career_data import AdvancementDmOption, RankBonus
-from ceres.character.domain.career.career_events import PendingRankBonusChoice, SkillChoiceHandler
+from ceres.character.domain.career.career_events import PendingRankBonusChoice, PendingSkillTable, SkillChoiceHandler
 from ceres.character.domain.career.skill_table_entries import Psi as PsiEntry
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.skills import Admin, Athletics, Carouse, Drive, GunCombat, Level, Medic
 from ceres.character.domain.sophont import VILANI
-from ceres.character.input_specs import NumberEntry, Select
+from ceres.character.input_specs import InfoText, NumberEntry, Select
 from ceres.character.mechanism.errors import ReplayError
 from ceres.character.mechanism.event_base import Event
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
@@ -163,6 +163,21 @@ class TestPendingAdvancement:
         assert roll.name == 'roll'
         assert roll.label == '2D roll (2–12, before DMs)'
 
+    def test_input_specs_names_a_lasting_dm_apart_from_the_event_dm(self):
+        projection = _projection_in_army_support()
+        projection.pending_advancement_dm = 1
+        projection.lasting_advancement_dm = -2
+        specs = PendingAdvancement(pending_id=(1, 0), instruction='Roll').input_specs(projection)
+        info = next(spec for spec in specs if isinstance(spec, InfoText))
+        assert info.text == (
+            'Applied automatically: EDU DM -3; event DM +1; DM -2 until you leave a career by choice; total DM -4.'
+        )
+
+    def test_input_specs_omits_the_lasting_dm_when_there_is_none(self):
+        specs = PendingAdvancement(pending_id=(1, 0), instruction='Roll').input_specs(_projection_in_army_support())
+        info = next(spec for spec in specs if isinstance(spec, InfoText))
+        assert info.text == 'Applied automatically: EDU DM -3; event DM +0; total DM -3.'
+
 
 class TestPendingCommissionChoice:
     def test_event_from_form_attempt(self):
@@ -185,9 +200,42 @@ class TestPendingCommissionChoice:
         assert event.handler.attempt is False
 
     def test_input_specs_returns_select_and_roll(self):
-        specs = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission?').input_specs(_projection())
+        specs = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission?').input_specs(
+            _projection_in_army_support()
+        )
         assert any(isinstance(s, Select) and s.name == 'choice' for s in specs)
         assert any(isinstance(s, NumberEntry) and s.name == 'roll' for s in specs)
+
+    @staticmethod
+    def _info(projection: CharacterProjection) -> str:
+        specs = PendingCommissionChoice(pending_id=(1, 0), instruction='Commission?').input_specs(projection)
+        return next(spec for spec in specs if isinstance(spec, InfoText)).text
+
+    def test_input_specs_lists_the_dms_applied_to_a_commission_roll(self):
+        assert self._info(_projection_in_army_support()) == (
+            'Applied automatically to a commission roll: SOC DM -3; event DM +0; total DM -3.'
+        )
+
+    def test_input_specs_names_a_lasting_dm_apart_from_the_event_dm(self):
+        projection = _projection_in_army_support()
+        projection.pending_advancement_dm = 1
+        projection.lasting_advancement_dm = -2
+        assert self._info(projection) == (
+            'Applied automatically to a commission roll: SOC DM -3; event DM +1; '
+            'DM -2 until you leave a career by choice; total DM -4.'
+        )
+
+    def test_input_specs_names_the_dm_for_terms_after_the_first(self):
+        # Core: "there is DM-1 applied to commission rolls for every term after the first."
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        projection = _projection_in_army_support()
+        for _ in range(2):
+            projection.summary.terms.append(CareerTerm(career=ARMY, assignment=ARMY.assignment('Support')))
+        assert self._info(projection) == (
+            'Applied automatically to a commission roll: SOC DM -3; DM -2 for terms after the first; '
+            'event DM +0; total DM -5.'
+        )
 
 
 class TestCommissionHandler:
@@ -219,6 +267,56 @@ class TestCommissionHandler:
             CommissionHandler(attempt=True, roll=12).apply(
                 projection, Event(id=12, handler=CommissionHandler(attempt=True, roll=12))
             )
+
+
+class TestAdvancementHandler:
+    # No career's rank table lists anything past its own top entry — Army
+    # Support tops out at rank 6, "Sergeant Major" — so a successful advancement
+    # roll already at the top must not push the raw rank number past it. Found
+    # live: the character sheet showed "Rank 7 · Captain" for a Merchant whose
+    # table tops out at rank 6 "Captain", because the title lookup falls back to
+    # the nearest defined rank while the raw number kept climbing unbounded.
+    def test_successful_advancement_at_top_rank_does_not_exceed_it(self):
+        projection = _projection_in_army_support(rank=6)  # Army Support's top rank, "Sergeant Major"
+
+        AdvancementHandler(roll=10).apply(projection, Event(id=12, handler=AdvancementHandler(roll=10)))
+
+        assert projection.summary.rank == 6
+
+    # Army's officer rank 6 carries a SOC+1 bonus. Capping the rank number
+    # must not let that bonus be handed out again every time a later
+    # advancement roll succeeds while already at the top — it was granted
+    # once, on first reaching rank 6.
+    def test_rank_bonus_at_top_rank_is_not_re_granted_on_a_later_success(self):
+        from ceres.character.domain.career.career_data import CareerTerm
+
+        projection = _projection(characteristics={Chars.SOC: 5})
+        projection.summary.terms.append(
+            CareerTerm(career=ARMY, assignment=ARMY.assignment('Support'), commission=True, rank=6)
+        )
+        projection.summary.rank = 6
+
+        AdvancementHandler(roll=10).apply(projection, Event(id=12, handler=AdvancementHandler(roll=10)))
+
+        assert projection.summary.characteristics[Chars.SOC] == 5
+
+    # A successful advancement roll that is ALSO a forced leave (:476) and
+    # lands on an aging check (every 4 terms once 34+) queues two things in
+    # the same event: the skill-table roll the success grants, and — once
+    # aging is found due — the forced-leave muster-out setup, which clears
+    # current_career right then, before the still-outstanding skill-table
+    # roll has been answered. Found live: the referee was shown "Choose a
+    # skill table and roll 1D" and confirming it failed with "No active
+    # career", stuck in a loop with no way forward.
+    def test_promotion_skill_table_roll_still_resolves_after_forced_leave_clears_career(self):
+        projection = _projection_in_army_support(rank=5, age=30)
+        projection.summary.career_terms[-1].forced_leave = True
+
+        AdvancementHandler(roll=10).apply(projection, Event(id=12, handler=AdvancementHandler(roll=10)))
+
+        pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillTable))
+        event = pending.event_from_form({'table': pending.options[0].key, 'roll': '1'})
+        event.apply(projection, pending)  # must not raise ReplayError('No active career')
 
 
 class TestAdvancementDmChoiceHandler:

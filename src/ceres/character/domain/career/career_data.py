@@ -273,6 +273,9 @@ class RolledConnectionsGroupEntry(CareerTableEntry):
 class SkillChoiceEntry(CareerTableEntry):
     options: list[AnySkill | AdvancementDmOption] = []
     level: int = 1
+    # How the story in `text` ends for the creation history, depending on what is chosen.
+    skill_outcome: str | None = None
+    advancement_dm_outcome: str | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -292,8 +295,10 @@ class SkillChoiceEntry(CareerTableEntry):
                 pending_id=(event.id, pending_idx),
                 history_id=event.id,
                 instruction=f'Choose one skill at level {self.level}',
-                options=cast(Any, options),
+                options=options,
                 level=self.level,
+                skill_outcome=self.skill_outcome,
+                advancement_dm_outcome=self.advancement_dm_outcome,
             ),
         )
         return pending_idx + 1
@@ -316,10 +321,10 @@ class RollMishapEntry(CareerTableEntry):
     def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         from ceres.character.domain.career.career_events import PendingMishap
 
+        table_career = getattr(event.handler, 'table_career', None)
+        table = f'the {table_career.name} Mishap table' if table_career is not None else 'Mishap table'
         instruction = (
-            'Roll 1D on Mishap table (you are not ejected from this career)'
-            if not self.leave
-            else 'Roll 1D on Mishap table'
+            f'Roll 1D on {table} (you are not ejected from your career)' if not self.leave else f'Roll 1D on {table}'
         )
         projection.queue_immediate(
             PendingMishap(
@@ -327,6 +332,8 @@ class RollMishapEntry(CareerTableEntry):
                 history_id=event.id,
                 instruction=instruction,
                 stay_in_career=not self.leave,
+                # "the Mishap table" is the table of the career whose Events table this entry was rolled on.
+                table_career=table_career,
             ),
         )
         return pending_idx + 1
@@ -423,7 +430,7 @@ class GainConnectionAndSkillChoiceEntry(CareerTableEntry):
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
-                options=cast(Any, self.options),
+                options=self.options,
                 level=self.level,
             ),
         )
@@ -449,7 +456,7 @@ class GainConnectionsAndSkillChoiceEntry(CareerTableEntry):
             PendingSkillChoice(
                 pending_id=(event.id, pending_idx),
                 instruction=f'Choose one skill at level {self.level}',
-                options=cast(Any, self.options),
+                options=self.options,
                 level=self.level,
             ),
         )
@@ -954,6 +961,13 @@ class CareerData(TermData):
         char = assignment.survival.characteristic
         target = assignment.survival.target
         return PendingSurvive(pending_id=(event_id, pending_idx), instruction=f'Survive: {char} {target}+')
+
+    def specialist_tables(self) -> list[SkillTableOption]:
+        """The career's assignment skill tables, in the order the assignments are listed."""
+        return [
+            SkillTableOption(label=assignment.name, key=f'assignment{self.assignment_index(assignment)}')
+            for assignment in self.assignments
+        ]
 
     def available_tables(self, edu: int, assignment: AssignmentData | None) -> list[SkillTableOption]:
         result = [

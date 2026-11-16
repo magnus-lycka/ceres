@@ -37,7 +37,7 @@ from ceres.character.domain.career.career_events import (
     career_progress_pending,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
-from ceres.character.domain.career.common_pending import CareerSkillRollPendingBase
+from ceres.character.domain.career.common_pending import CareerChanceRollPendingBase, CareerSkillRollPendingBase
 from ceres.character.domain.career.prisoner_events import set_forced_prison_career
 from ceres.character.domain.career.rogue import Rogue
 from ceres.character.domain.career.skill_table_entries import Char, Skill, SkillChoice
@@ -154,12 +154,12 @@ class MerchantEvent5Handler(CareerHandlerBase):
 # ── event 8: legal trouble ────────────────────────────────────────────────────
 
 
-class PendingMerchantEvent8Roll(CareerSkillRollPendingBase):
+class PendingMerchantEvent8Roll(CareerChanceRollPendingBase):
     kind: Literal['merchant_event_8_roll'] = 'merchant_event_8_roll'
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
 
-        if event.modified_roll == 2:
+        if event.roll == 2:
             set_forced_prison_career(projection, 'Legal trouble — rolled 2, sent to Prisoner career.')
 
 
@@ -180,7 +180,6 @@ class MerchantEvent8Handler(CareerHandlerBase):
             PendingMerchantEvent8Roll(
                 pending_id=(event_id, pending_idx),
                 instruction='Legal trouble: roll 2D — on a natural 2 you must take the Prisoner career next term',
-                options=[],
             )
         )
         return pending_idx + 1

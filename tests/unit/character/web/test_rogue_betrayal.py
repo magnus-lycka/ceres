@@ -113,7 +113,7 @@ def test_betrayal_history_names_the_changed_relationship_and_completed_consequen
     assert 'In progress: Resolve the betrayal' in offered['history'][-1]
     resolved = choose(client, url, {'connection_index': '0', 'relationship': 'enemy', 'roll': '7'})
     assert resolved['history'][-1].endswith(
-        'Contact Vessa Koh became Enemy Vessa Koh. Prison roll 7: no forced prison career. Left Rogue.'
+        'Contact Vessa Koh became Enemy Vessa Koh. Prison roll 7: no forced prison career. Career ended.'
     )
     assert len(resolved['history']) == len(offered['history'])
 
@@ -124,7 +124,7 @@ def test_betrayal_history_records_an_unexpected_enemy_and_forced_prison(betrayal
     resolved = choose(client, url, {'relationship': 'enemy', 'roll': '2', 'name': 'Vessa'})
 
     assert resolved['history'][-1].endswith(
-        'Gained Enemy Vessa. Prison roll 2: must take Prisoner next term. Left Rogue.'
+        'Gained Enemy Vessa. Prison roll 2: must take Prisoner next term. Career ended.'
     )
 
 

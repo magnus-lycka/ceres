@@ -37,7 +37,10 @@ class SkillChoiceHandler(EventHandlerBase):
         if on_skill_chosen is not None:
             on_skill_chosen(projection, event)
             return
-        projection.grant_skill(self.skill, history_id=fulfilled_pending.history_id if fulfilled_pending else None)
+        history_id = fulfilled_pending.history_id if fulfilled_pending else None
+        if outcome := getattr(fulfilled_pending, 'skill_outcome', None):
+            projection.continue_history(history_id, outcome)
+        projection.grant_skill(self.skill, history_id=history_id)
         if projection.summary.current_career is not None:
             from ceres.character.domain.career.career_events import career_progress_pending
 
@@ -46,8 +49,11 @@ class SkillChoiceHandler(EventHandlerBase):
 
 class PendingSkillChoice(PendingInputBase):
     kind: Literal['skill_choice'] = 'skill_choice'
-    options: list[AnySkill] = Field(default_factory=list)
+    options: list[AnySkill | AdvancementDmOption] = Field(default_factory=list)
     level: int | None = None
+    # Clauses that finish the history entry's story, depending on what is chosen.
+    skill_outcome: str | None = None
+    advancement_dm_outcome: str | None = None
 
     model_config = {'arbitrary_types_allowed': True}
 

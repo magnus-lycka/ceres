@@ -205,7 +205,9 @@ class Skill(SkillTableEntryBase):
         elif len(allowed) > 1:
             self._queue_specialization_choice(projection, ctx, effective_level)
         elif effective_level is None:
-            projection.increment_skill(self._marker_instance() if self.specs else self.skill())
+            projection.increment_skill(
+                self._marker_instance() if self.specs else self.skill(), history_id=ctx.history_id
+            )
         else:
             instance = skill_with_levels(self.skill, allowed[:1], effective_level) if allowed else self.skill()
             projection.grant_skill(instance)

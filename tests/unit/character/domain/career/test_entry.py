@@ -99,6 +99,43 @@ class TestPendingCareerChoice:
         assert len(specs) == 1
         assert isinstance(specs[0], CareerChoice)
 
+    def _precareer_options(self, pending: PendingCareerChoice, proj: CharacterProjection) -> dict[str, str]:
+        (spec,) = pending.input_specs(proj)
+        assert isinstance(spec, CareerChoice)
+        return {option.name: option.entry_requirement for option in spec.precareer_options}
+
+    def test_input_specs_offers_precareers_in_first_term(self):
+        # Core p.16: pre-career education usually takes place in the first term.
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career', options=[ARMY])
+        options = self._precareer_options(pending, _projection())
+        assert options['University'] == 'EDU 6+'
+        assert options['Army Academy'] == 'END 7+'
+        assert options['School of Hard Knocks'] == 'Automatic if SOC 6-'
+
+    def test_input_specs_omits_precareers_not_available_to_the_traveller(self):
+        # A Traveller without psionics cannot enter the Psionic Community.
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career', options=[ARMY])
+        assert 'Psionic Community' not in self._precareer_options(pending, _projection())
+
+    def test_input_specs_offers_no_precareers_from_term_four(self):
+        # Core p.16: "From term four onwards, pre-career education is no longer available."
+        from ceres.character.domain.precareer.university import UniversityPreCareer
+
+        proj = _projection()
+        for _ in range(3):
+            proj.summary.terms.append(UniversityPreCareer().make_term())
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career', options=[ARMY])
+        assert self._precareer_options(pending, proj) == {}
+
+    def test_input_specs_still_offers_precareers_in_term_three(self):
+        from ceres.character.domain.precareer.university import UniversityPreCareer
+
+        proj = _projection()
+        for _ in range(2):
+            proj.summary.terms.append(UniversityPreCareer().make_term())
+        pending = PendingCareerChoice(pending_id=(1, 0), instruction='Choose a career', options=[ARMY])
+        assert 'University' in self._precareer_options(pending, proj)
+
 
 class TestPendingDraftChoice:
     def test_input_specs_with_draft_includes_roll(self):
@@ -213,3 +250,13 @@ class TestQueueCareerChoice:
         pending = next(p for p in proj.pending_inputs if isinstance(p, PendingCareerChoice))
         assert pending.options == [SCOUT]
         assert proj.forced_next_career is None
+
+    def test_forced_next_career_offers_no_precareers(self):
+        # A mandatory next career leaves no room for pre-career education instead.
+        proj = _projection()
+        proj.forced_next_career = SCOUT
+        queue_career_choice(proj, event_id=1)
+        pending = next(p for p in proj.pending_inputs if isinstance(p, PendingCareerChoice))
+        (spec,) = pending.input_specs(proj)
+        assert isinstance(spec, CareerChoice)
+        assert spec.precareer_options == []

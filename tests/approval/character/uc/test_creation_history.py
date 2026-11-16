@@ -268,7 +268,7 @@ def test_war_mishap_shows_ejection_while_the_skill_choice_is_still_outstanding()
         'Automatic mishap (rolled natural 2) in term 1',
         'Term 1 mishap (Merchant): A sudden war destroys your trade routes and contacts, '
         'forcing you to flee that region of space. Gain Gun Combat 1 or Pilot 1. '
-        'Left Merchant. In progress: Choose one skill at level 1',
+        'Career ended. In progress: Choose one skill at level 1',
     ]
 
 
@@ -537,7 +537,7 @@ def test_mishap_and_ageing_started_by_the_same_event_have_separate_outcomes():
     assert character.projection.creation_history[-2:] == [
         'Term 4 mishap (Merchant): A sudden war destroys your trade routes and contacts, '
         'forcing you to flee that region of space. Gain Gun Combat 1 or Pilot 1. '
-        'Left Merchant. In progress: Choose one skill at level 1',
+        'Career ended. In progress: Choose one skill at level 1',
         'Ageing at age 34. In progress: Roll 2D on Aging table',
     ]
 

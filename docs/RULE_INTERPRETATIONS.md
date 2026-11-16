@@ -1172,6 +1172,117 @@ Severity 6). This is how a robot already wrecked keeps taking damage toward
 destroyed — see RIC-019 for where the cascade actually stops, and why it is
 destroyed rather than wrecked.
 
+### RIC-027 A Successful Advancement Roll Cannot Raise Rank Past A Career's Top Table Entry
+
+"If you make a successful advancement roll, move to the next higher rank and
+gain an extra roll on any of the skill tables available for your career."
+(:474) The rule names no upper bound, but every career's rank table — officer
+or enlisted, base or per-assignment — stops at a specific entry, and nothing
+in the rules describes what a rank past that entry would be: no title, no
+further bonus, nothing to roll on a table for.
+
+Ceres caps the raw rank number at the highest rank key in whichever table is
+currently active (`CareerData.current_ranks`, already the officer/assignment-
+correct table). A successful roll already at the cap is not a promotion: it
+grants the extra skill-table roll the rule names — the actual mechanical
+reward — but records no "Promoted to..." history line and does not re-grant
+whatever bonus the top rank carries (several careers' top ranks carry one,
+e.g. Army and Navy officer rank 6's SOC+1).
+
+Found live: a Merchant character's sheet read "Rank 7 · Captain" — Merchant's
+table stops at rank 6, titled Captain. The title lookup already falls back to
+the nearest defined rank below the raw number, so the title looked right
+while the number kept climbing past a table that has nothing above it.
+
+### RIC-028 Pre-Career Event 4: "If You Roll 2" Means A Natural 2
+
+Pre-Career Events, result 4 (*Core Rulebook* p.17): "Roll SOC 8+. If you
+succeed, gain a Rival. If you fail, gain an Enemy. If you roll 2, you fail to
+graduate and must take the Prisoner career in your next term."
+
+The text does not say whether "roll 2" is the dice result or the total after
+the SOC DM. Ceres reads it as a natural 2 on the 2D, before the SOC DM, the
+same way the graduation roll treats a 2. A Traveller with a negative SOC DM
+who rolls a natural 3 (a modified 2) therefore suffers an ordinary failure:
+an Enemy, with graduation still rolled as normal.
+
+A natural 2 can never reach 8+ (the largest characteristic DM is +3), so it
+always also gains the Enemy. It ends the pre-career term without a graduation
+roll or graduation benefits, and the next career choice is Prisoner, with no
+alternative and no further pre-career education offered.
+
+### RIC-029 School Of Hard Knocks: The DM-2 Lasts Until A Career Is Left By Choice
+
+School of Hard Knocks graduation benefit (*Traveller Companion*, Pre-Career
+Options): "DM-2 on checks to gain promotion or commission in first career. If
+the Traveller leaves this career by choice, checks in subsequent careers are
+as normal." Promotion" is the advancement roll of any career.
+
+**The DM lasts until the Traveller leaves a career by choice.** If the DM
+simply ended with the first career, the second sentence would say nothing.
+It only has content if leaving *not* by choice means later checks are not as
+normal. Ceres reads it as:
+
+- The DM-2 applies to every advancement and commission roll, term after term,
+  from the first career after graduation onwards.
+- It ends for good when the Traveller leaves a career by choice: they decline
+  to re-enlist and muster out.
+- If the Traveller is forced out (a mishap, or an advancement roll that ends
+  the career), the DM follows them into the next career, and so on until they
+  leave one by choice. Being sent to prison, being drafted and being paroled
+  are not choices.
+
+**Changing assignment.**
+New assignments in the Agent, Citizen, Entertainer and Merchant careers are considered to be new careers, so DM ends.
+For careers where allows_assignment_change=True, changing assignment is not enough.
+
+### RIC-030 A Mishap Rolled Because Of An Event Ends The Career Unless The Event Says Otherwise
+
+Core, "Survival": "If you fail this roll, you must immediately roll on the
+Mishap table for the career. This mishap will force you to leave the career
+immediately unless otherwise stated. You will also lose the Benefit roll for
+the current term."
+
+Some events also send the Traveller to the Mishap table. Most of them add
+"but you are not ejected from this career": event 2 of every career, and Scout
+events 8 and 10. Four do not: Agent event 3, Agent event 8, Entertainer event
+8 and Noble event 8 ("roll on the Mishap table as the conspiracy collapses").
+
+Scout events 8 and 10 have the same shape as the silent ones ("If you fail,
+roll on the Mishap table") and still add the exception, so Core states the
+exception where it means it. Ceres therefore reads:
+
+1. An event that sends the Traveller to the Mishap table ejects them from the
+   career, exactly as a mishap after a failed survival roll does, unless the
+   event says they are not ejected.
+2. The Benefit roll for the term is lost as with any mishap, unless the mishap
+   entry says otherwise. Agent mishap 3 ("you may keep the Benefit roll from
+   this term") shows that losing it is the default for a mishap.
+
+**Agent event 8 (undercover).** "Roll Deception 8+. If you succeed, roll
+immediately on the Rogue or Citizen Events table and make one roll on any
+Specialist skill table for that career. If you fail, roll immediately on the
+Rogue or Citizen Mishap table."
+
+3. The player chooses Rogue or Citizen before the Deception roll, and that
+   choice holds for whichever table is then rolled on. Core would also allow
+   choosing after the roll; Ceres does not, because the Traveller goes
+   undercover in one milieu and should not pick the milder Mishap table after
+   failing.
+4. On failure, the mishap rolled on the chosen career's table ends the Agent
+   career (points 1 and 2). "Ending your career" and "forcing you to flee" in
+   those entries describe what happens to the Agent.
+5. On success, the event rolled on the chosen career's table is applied to the
+   Traveller as an Agent: "automatically promoted" is a promotion in the Agent
+   career, a DM to "your next advancement roll" applies to the Agent
+   advancement roll, and a Benefit DM "from this career" applies to Agent
+   Benefit rolls. If the borrowed event is "Disaster! Roll on the Mishap
+   table but you are not ejected", the mishap is rolled on the same borrowed
+   career's table and the Agent is not ejected.
+6. "Any Specialist skill table for that career" is one of the chosen career's
+   three assignment tables (Thief, Enforcer, Pirate, or Corporate, Worker,
+   Colonist), chosen by the player.
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

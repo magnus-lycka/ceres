@@ -4,6 +4,7 @@ from ceres.character.domain.career import MERCHANT
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
+    ChanceRollHandler,
     PendingAdvancement,
     PendingChoices,
     PendingMusterOut,
@@ -212,6 +213,21 @@ class TestMerchantEvent8:
         has_2d_roll = any(isinstance(p, PendingMerchantEvent8Roll) for p in projection.pending_inputs)
         assert has_skill_choice and has_2d_roll
 
+    # The source gives this roll no skill and no DM at all — "then roll 2D. If
+    # you roll 2, ..." (refs/core/02_traveller_creation.md:1380) — so the form
+    # must ask for nothing but the 2D total. Reusing a skill-check's pending
+    # base here once asked for a skill with no options to choose, which made
+    # the web form impossible to submit (reported live, in play).
+    def test_asks_for_the_roll_only_no_skill(self):
+        projection = replay(1, self._setup_to_event())
+        pending = next(
+            (p for p in projection.pending_inputs if isinstance(p, PendingMerchantEvent8Roll)),
+            None,
+        )
+        assert pending is not None
+        specs = pending.input_specs(projection)
+        assert [spec.name for spec in specs] == ['roll']
+
     def test_skill_choice_grants_chosen_skill(self):
         _base = self._setup_to_event()
         events = [
@@ -227,7 +243,7 @@ class TestMerchantEvent8:
         events = [
             *_base,
             Event(fulfills=(_base[-1].id, 0), handler=SkillChoiceHandler(skill=Admin())),
-            Event(fulfills=(_base[-1].id, 1), handler=SkillRollHandler(skill=Admin(), modified_roll=2)),
+            Event(fulfills=(_base[-1].id, 1), handler=ChanceRollHandler(roll=2)),
         ]
         projection = replay(1, events)
         assert projection.forced_next_career is not None
@@ -238,7 +254,7 @@ class TestMerchantEvent8:
         events = [
             *_base,
             Event(fulfills=(_base[-1].id, 0), handler=SkillChoiceHandler(skill=Admin())),
-            Event(fulfills=(_base[-1].id, 1), handler=SkillRollHandler(skill=Admin(), modified_roll=3)),
+            Event(fulfills=(_base[-1].id, 1), handler=ChanceRollHandler(roll=3)),
         ]
         projection = replay(1, events)
         assert projection.forced_next_career is None
@@ -248,7 +264,7 @@ class TestMerchantEvent8:
         events = [
             *_base,
             Event(fulfills=(_base[-1].id, 0), handler=SkillChoiceHandler(skill=Admin())),
-            Event(fulfills=(_base[-1].id, 1), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
+            Event(fulfills=(_base[-1].id, 1), handler=ChanceRollHandler(roll=7)),
         ]
         projection = replay(1, events)
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)

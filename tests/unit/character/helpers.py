@@ -17,7 +17,6 @@ from ceres.character.domain.career.career_events import (
     CareerEntryHandler,
     CharacteristicChoiceHandler,
     CommissionHandler,
-    MishapHandler,
     MusterOutHandler,
     PendingAdvancement,
     PendingAssignmentChangeChoice,
@@ -39,10 +38,8 @@ from ceres.character.domain.career.career_events import (
     ReenlistHandler,
     SkillChoiceHandler,
     SkillRollHandler,
-    SkillTableHandler,
     SurviveHandler,
     SwitchAssignmentHandler,
-    TermEventHandler,
 )
 from ceres.character.domain.career.common_pending import (
     CareerSkillChoicePendingBase,
@@ -88,9 +85,11 @@ from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerEvent,
     PendingPreCareerGraduation,
+    PendingPreCareerPrankRoll,
     PendingPreCareerSkillChoice,
     PreCareerEventHandler,
     PreCareerGraduationHandler,
+    PreCareerPrankRollHandler,
     PreCareerSkillChoiceHandler,
 )
 from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
@@ -364,13 +363,21 @@ class CharacterDriver:
 
     def mishap(self, roll: int, stay_in_career: bool = False) -> CharacterDriver:
         pending = self._find(PendingMishap)
-        return self._add(
-            Event(fulfills=pending.pending_id, handler=MishapHandler(roll=roll, stay_in_career=stay_in_career))
-        )
+        event = pending.event_from_form({'roll': str(roll)})
+        if stay_in_career:
+            event.handler.stay_in_career = True
+        return self._add(event)
 
     def term_event(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingTermEvent)
-        return self._add(Event(fulfills=pending.pending_id, handler=TermEventHandler(roll=roll)))
+        return self._add(pending.event_from_form({'roll': str(roll)}))
+
+    def next_instruction(self) -> str:
+        """What the player is asked to do next."""
+        return self.projection.pending_inputs[0].instruction
+
+    def skill_table_labels(self) -> list[str]:
+        return [option.label for option in self._find(PendingSkillTable).options]
 
     def life_event(self, roll: int) -> CharacterDriver:
         from ceres.character.domain.life_events import LifeEventHandler, PendingLifeEvent
@@ -414,6 +421,20 @@ class CharacterDriver:
         return self.career_choice(
             LifeEventCrimeLoseBenefitRoll if consequence == 'lose_benefit' else LifeEventCrimeTakePrisoner
         )
+
+    def go_undercover(self, cover: str, modified_roll: int) -> CharacterDriver:
+        """Agent event 8: pick the cover career and make the Deception roll."""
+        from ceres.character.domain.career.agent import PendingAgentEvent8Undercover
+
+        pending = self._find(PendingAgentEvent8Undercover)
+        return self._add(pending.event_from_form({'cover': cover, 'modified_roll': str(modified_roll)}))
+
+    def betrayal_mishap(self, relationship: str, roll: int, name: str = '') -> CharacterDriver:
+        """Resolve a betrayal by someone new (no Contact or Ally to turn), with the 2D prison roll."""
+        from ceres.character.domain.career.rogue import PendingRogueBetrayal
+
+        pending = self._find(PendingRogueBetrayal)
+        return self._add(pending.event_from_form({'relationship': relationship, 'roll': str(roll), 'name': name}))
 
     def betrayed_by(self, name: str, new_kind: ConnectionKind) -> CharacterDriver:
         from ceres.character.domain.life_events import PendingLifeEventBetrayalConvert
@@ -486,7 +507,7 @@ class CharacterDriver:
         pending = self._find(PendingSkillTable)
         option = next((o for o in pending.options if o.key == table or o.label.lower() == table.lower()), None)
         key = option.key if option else table
-        return self._add(Event(fulfills=pending.pending_id, handler=SkillTableHandler(table=key, roll=roll)))
+        return self._add(pending.event_from_form({'table': key, 'roll': str(roll)}))
 
     def skill_table_choice(self, skill: AnySkill) -> CharacterDriver:
         pending = self._find(PendingSkillTableChoice)
@@ -540,13 +561,42 @@ class CharacterDriver:
         pending = self._find(PendingPreCareerEvent)
         return self._add(Event(fulfills=pending.pending_id, handler=PreCareerEventHandler(roll=roll)))
 
+    def precareer_prank_roll(self, roll: int) -> CharacterDriver:
+        """Roll SOC 8+ for pre-career event 4; roll is the 2D result before the SOC DM."""
+        pending = self._find(PendingPreCareerPrankRoll)
+        return self._add(Event(fulfills=pending.pending_id, handler=PreCareerPrankRollHandler(roll=roll)))
+
     def precareer_graduation(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingPreCareerGraduation)
         return self._add(Event(fulfills=pending.pending_id, handler=PreCareerGraduationHandler(roll=roll)))
 
+    def has_precareer_graduation_roll(self) -> bool:
+        return self._find_opt(PendingPreCareerGraduation) is not None
+
+    def career_choice_options(self) -> list[CareerData]:
+        return list(self._find(PendingCareerChoice).options)
+
+    def precareer_choice_names(self) -> list[str]:
+        (spec,) = self._find(PendingCareerChoice).input_specs(self.projection)
+        return [option.name for option in spec.precareer_options]
+
     def precareer_skill(self, skill: AnySkill) -> CharacterDriver:
         pending = self._find(PendingPreCareerSkillChoice)
         return self._add(Event(fulfills=pending.pending_id, handler=PreCareerSkillChoiceHandler(skill=skill)))
+
+    def precareer_skill_options(self) -> list[str]:
+        """Names of the skills offered by the next pre-career skill choice."""
+        (spec,) = self._find(PendingPreCareerSkillChoice).input_specs(self.projection)
+        return [label for label, _value in spec.options]
+
+    def precareer_skill_choices_left(self) -> int:
+        return sum(isinstance(p, PendingPreCareerSkillChoice) for p in self.projection.pending_inputs)
+
+    def has_commission_choice(self) -> bool:
+        return self._find_opt(PendingCommissionChoice) is not None
+
+    def has_muster_out_roll(self) -> bool:
+        return self._find_opt(PendingMusterOut) is not None
 
     def muster_out(self, table: Literal['cash', 'benefits'], roll: int) -> CharacterDriver:
         pending = self._find(PendingMusterOut)
@@ -568,6 +618,10 @@ class CharacterDriver:
                 ),
             )
         )
+
+    def connection_note_prefill(self) -> str:
+        """The note the player is offered when naming the latest connection."""
+        return self._find(PendingConnectionName).note_prefill
 
     def connections_roll(self, count: int) -> CharacterDriver:
         pending = self._find(PendingConnectionsRoll)
@@ -592,12 +646,17 @@ class CharacterDriver:
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
 
     def choose_advancement_dm(self) -> CharacterDriver:
-        pending = self._find(CareerSkillChoicePendingBase)
+        pending = self._find_opt(CareerSkillChoicePendingBase) or self._find(PendingSkillChoice)
         return self._add(Event(fulfills=pending.pending_id, handler=AdvancementDmChoiceHandler()))
 
     def available_career_skill_options(self) -> list[Any]:
         pending = self._find(CareerSkillChoicePendingBase)
         return list(pending.options)
+
+    def skill_choice_labels(self) -> list[str]:
+        """What the next skill choice offers, as the player sees it."""
+        (spec,) = self._find(PendingSkillChoice).input_specs(self.projection)
+        return [label for label, _value in spec.options]
 
     def choose_skill(self, skill: AnySkill) -> CharacterDriver:
         """Resolve a PendingSkillChoice (e.g. from a mishap or life event)."""

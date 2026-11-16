@@ -138,7 +138,7 @@ lives in the test suite, and nothing is deployed. Therefore:
   - `uv run pytest --all-tests` to run everything
   - `uv run pytest --cov --cov-report=term-missing` for coverage
 - **ruff** - `uvx ruff check` and `uvx ruff format` (fix lint and formatting)
-- **ty** - `uvx ty check` (type checking)
+- **ty** - `uvx ty@0.0.80 check` (type checking)
 - **pylint duplicate-code** - Run
   `uvx pylint --disable=all --enable=duplicate-code src/ceres/ tests`
   regularly as a design smell check. Treat the output as signal, not a
@@ -201,6 +201,33 @@ Likewise in production code: event internals belong in `events.py` and
 classes. Code that mixes the two creates coupling that forces changes across
 multiple concerns when only one should need to change.
 
+## Character creation history
+
+The creation history is the Traveller's biography. It says what happened to
+this Traveller and nothing else.
+
+- **Only what happened.** Never write the rule text, the roll that was asked
+  for, or outcomes that did not occur. "Roll SOC 8+. If you succeed, gain a
+  Rival. If you fail, gain an Enemy." is a rule, not history.
+- **Story, then resolved outcome.** A table entry's `text` is the story of the
+  event only. Each decision or roll then adds what it actually led to, e.g.
+  "A supposedly harmless prank went wrong and someone got hurt, physically or
+  emotionally. Fortunately, the outcome was only a future rival."
+- **Rules live elsewhere.** What the player must roll, and what is at stake,
+  goes in the pending input's `instruction`. It shows in the history only as
+  "In progress: ..." until it is resolved, and is then replaced by the outcome.
+- **No repeated text.** A connection's note says where it came from ("A
+  supposedly harmless prank went wrong during University, term 1."); it does
+  not copy the event text.
+- **This overrides "match Core word for word".** Rule *behaviour* must match the
+  source. Text that reaches the history is written for the history.
+
+When an event's outcome is implemented, add a test of the resulting
+`creation_history` for each outcome, and read the rendered history once before
+calling the work done. Examples: `tests/approval/character/uc/test_creation_history.py`
+and `tests/unit/character/domain/precareer/test_precareer_event_table.py`.
+Background: issue #66.
+
 ## Examples
 
 The main source-derived reference cases live in `tests/approval/ships/` and
@@ -226,7 +253,7 @@ uv run pytest --all-tests                            # full suite
 uv run pytest --cov --cov-branch --all-tests --cov-report=term-missing # tests + coverage
 uvx ruff check --fix                                   # lint and auto-fix
 uvx ruff format                                        # format code
-uvx ty check                                           # type check
+uvx ty@0.0.80 check                                           # type check
 uvx pylint --disable=all --enable=duplicate-code src/ceres/ tests
 ```
 

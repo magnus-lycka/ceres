@@ -2,7 +2,7 @@
 
 import pytest
 
-from ceres.character.domain.career import AGENT
+from ceres.character.domain.career import AGENT, ROGUE
 from ceres.character.domain.career.agent import (
     AgentMishap2Accept,
     AgentMishap2Refuse,
@@ -10,7 +10,6 @@ from ceres.character.domain.career.agent import (
     AgentMishap5Contact,
     AgentMishap5Family,
     PendingAgentEvent3SkillRoll,
-    PendingAgentEvent8SkillRoll,
     PendingAgentEvent11SkillChoice,
     PendingAgentMishap3SkillRoll,
 )
@@ -56,6 +55,7 @@ from ceres.character.domain.skills import (
     Deception,
     Drive,
     Flyer,
+    Gambler,
     GunCombat,
     Investigate,
     JackOfAllTrades,
@@ -63,10 +63,12 @@ from ceres.character.domain.skills import (
     Medic,
     Persuade,
     Recon,
+    Stealth,
     Streetwise,
     Tactics,
 )
 from ceres.character.domain.sophont import VILANI
+from ceres.character.input_specs import NumberEntry, Select
 from ceres.character.mechanism.event_base import Event
 from ceres.character.mechanism.replay import replay
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver, _creation_events
@@ -370,45 +372,221 @@ class TestAgentEvent6:
 # ── event 8: undercover mission ───────────────────────────────────────────────
 
 
-class TestAgentEvent8:
-    def _setup_to_event(self) -> list:
-        return _through_term_event(event_roll=8)
+def _agent_after_event(event_roll: int) -> CharacterDriver:
+    """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5. Law Enforcement: survival END 6+, advancement INT 6+ (INT DM+1)."""
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('7869A5')
+    d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+    d.career('Agent', 'Law Enforcement', roll=12)
+    d.survive(9)
+    d.term_event(event_roll)
+    return d
 
-    def test_creates_deception_roll_pending(self):
-        projection = replay(1, self._setup_to_event())
-        pending = next(
-            (p for p in projection.pending_inputs if isinstance(p, PendingAgentEvent8SkillRoll)),
-            None,
+
+def _undercover(cover: str, deception_roll: int) -> CharacterDriver:
+    d = _agent_after_event(8)
+    d.go_undercover(cover, deception_roll)
+    return d
+
+
+def _in_agent(d: CharacterDriver) -> bool:
+    career = d.projection.summary.current_career
+    return career is not None and career.name == 'Agent'
+
+
+class TestAgentEvent8Undercover:
+    """You go undercover to investigate an enemy. Roll Deception 8+.
+
+    "If you succeed, roll immediately on the Rogue or Citizen Events table and
+    make one roll on any Specialist skill table for that career. If you fail,
+    roll immediately on the Rogue or Citizen Mishap table." Read as RIC-030.
+    """
+
+    def test_is_never_left_as_a_manual_problem(self):
+        assert _undercover('Rogue', 8).projection.summary.problems == []
+        assert _undercover('Rogue', 7).projection.summary.problems == []
+
+    # ── failure: a mishap from the cover career ends the Agent career ──────
+
+    def test_failure_applies_the_rogue_mishap_rolled(self):
+        d = _undercover('Rogue', 7)
+        d.mishap(5)  # Rogue: a detective or rival criminal vows to hunt you down. Gain an Enemy.
+        assert [type(c) for c in d.projection.summary.connections] == [Enemy]
+
+    def test_failure_applies_the_citizen_mishap_rolled(self):
+        d = _undercover('Citizen', 7)
+        d.mishap(3)  # Citizen: hard times cost you your job. Lose one SOC.
+        assert d.projection.summary.characteristics[Chars.SOC] == 4
+
+    def test_failure_ends_the_agent_career(self):
+        d = _undercover('Rogue', 7)
+        d.mishap(5)
+        assert d.projection.summary.current_career is None
+
+    def test_failure_loses_the_benefit_roll_of_the_term(self):
+        d = _undercover('Rogue', 7)
+        d.mishap(5)
+        assert not d.has_muster_out_roll()  # one term served, its only Benefit roll lost
+
+    def test_failure_with_rogue_mishap_2_sends_the_agent_to_prison(self):
+        d = _undercover('Rogue', 7)
+        d.mishap(2)  # Arrested. You must take the Prisoner career in your next term.
+        assert [career.name for career in d.career_choice_options()] == ['Prisoner']
+
+    # ── success: an event and a specialist skill roll from the cover career ─
+
+    def test_success_applies_the_rogue_event_rolled(self):
+        d = _undercover('Rogue', 8)
+        d.term_event(10)  # Rogue: you are involved in a gambling ring. Gain Gambler 1.
+        assert d.projection.summary.skill_level(Gambler) == 1
+
+    def test_success_keeps_the_agent_career(self):
+        d = _undercover('Rogue', 8)
+        d.term_event(10)
+        assert _in_agent(d)
+
+    def test_success_offers_the_specialist_tables_of_the_rogue_career(self):
+        d = _undercover('Rogue', 8)
+        assert d.skill_table_labels() == ['Thief', 'Enforcer', 'Pirate']
+
+    def test_success_offers_the_specialist_tables_of_the_citizen_career(self):
+        d = _undercover('Citizen', 8)
+        assert d.skill_table_labels() == ['Corporate', 'Worker', 'Colonist']
+
+    def test_success_grants_the_specialist_skill_rolled(self):
+        d = _undercover('Rogue', 8)
+        d.term_event(10)
+        d.skill_table('Thief', 1)  # Thief 1: Stealth
+        assert d.projection.summary.skill_level(Stealth) == 1
+
+    def test_borrowed_promotion_is_a_promotion_in_the_agent_career(self):
+        d = _undercover('Citizen', 8)
+        d.term_event(12)  # Citizen: you rise to a position of power. You are automatically promoted.
+        assert _in_agent(d)
+        assert d.projection.summary.rank == 1
+
+    def test_borrowed_advancement_dm_applies_to_the_agent_advancement_roll(self):
+        d = _undercover('Citizen', 8)
+        d.term_event(9)  # Citizen: DM+2 to your next advancement roll.
+        d.skill_table('Corporate', 2)  # Corporate 2: Admin
+        d.advancement(3)  # INT 6+: 3 + 1 + 2 = 6
+        assert d.projection.summary.rank == 1
+
+    def test_borrowed_disaster_rolls_the_cover_careers_mishap_without_ejection(self):
+        d = _undercover('Rogue', 8)
+        d.term_event(2)  # Disaster! Roll on the Mishap table but you are not ejected from this career.
+        d.mishap(5)  # Rogue mishap 5: gain an Enemy
+        assert [type(c) for c in d.projection.summary.connections] == [Enemy]
+        assert _in_agent(d)
+
+    def test_the_term_goes_on_to_advancement_after_both_rolls(self):
+        d = _undercover('Rogue', 8)
+        d.term_event(10)
+        d.skill_table('Thief', 1)
+        d.advancement(5)  # INT 6+: 5 + 1 = 6
+        assert d.projection.summary.rank == 1
+
+    # ── what the player is told matches what happens ────────────────────────
+
+    def test_cover_career_and_deception_roll_are_entered_in_one_form(self):
+        d = _agent_after_event(8)
+        assert d.next_instruction() == 'Choose a cover career and roll Deception 8+.'
+        cover, roll = d.projection.pending_inputs[0].input_specs(d.projection)
+        assert isinstance(cover, Select)
+        assert [label for label, _ in cover.options] == ['Rogue', 'Citizen']
+        assert isinstance(roll, NumberEntry)
+        assert roll.label == 'Modified roll (2D + Deception level + DMs)'
+
+    def test_the_mishap_roll_says_it_ends_the_agent_career(self):
+        d = _undercover('Rogue', 7)
+        assert d.next_instruction() == (
+            'Your cover is blown: roll 1D on the Rogue Mishap table. '
+            "This ends your Agent career and loses this term's Benefit roll."
         )
-        assert pending is not None
-        assert pending.options == [Deception()]
 
-    def test_success_adds_problem_about_cross_career_tables(self):
-        base = self._setup_to_event()
-        events = [
-            *base,
-            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Deception(), modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        assert any('Rogue or Citizen' in p for p in projection.summary.problems)
+    def test_the_event_and_skill_rolls_name_the_cover_career(self):
+        d = _undercover('Rogue', 8)
+        assert d.next_instruction() == 'Undercover: roll 2D on the Rogue Events table'
+        d.term_event(10)
+        assert d.next_instruction() == 'Undercover: choose a Rogue specialist skill table and roll 1D'
 
-    def test_failure_adds_problem_about_cross_career_mishap(self):
-        base = self._setup_to_event()
-        events = [
-            *base,
-            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Deception(), modified_roll=6)),
-        ]
-        projection = replay(1, events)
-        assert any('Rogue or Citizen' in p for p in projection.summary.problems)
+    def test_a_borrowed_disaster_names_the_cover_careers_mishap_table(self):
+        d = _undercover('Rogue', 8)
+        d.term_event(2)
+        assert d.next_instruction() == 'Roll 1D on the Rogue Mishap table (you are not ejected from your career)'
 
-    def test_creates_advancement_pending_after_roll(self):
-        base = self._setup_to_event()
-        events = [
-            *base,
-            Event(fulfills=(base[-1].id, 0), handler=SkillRollHandler(skill=Deception(), modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    def test_a_stored_roll_still_knows_whose_table_it_was_rolled_on(self):
+        d = _undercover('Rogue', 7)
+        stored = d.projection.pending_inputs[0].event_from_form({'roll': '5'}).model_dump_json()
+        reloaded = Event.model_validate_json(stored).handler
+        assert isinstance(reloaded, MishapHandler)
+        assert reloaded.table_career == ROGUE
+
+    # ── creation history ────────────────────────────────────────────────────
+
+    # Agent event 8 introduces the cover career's own text; that text is not rewritten for the Agent.
+    _STORY = 'Term 1 event (Agent): To investigate an enemy, you go undercover'
+
+    def test_history_before_the_choice_tells_only_the_story(self):
+        d = _agent_after_event(8)
+        assert d.projection.creation_history[-1].startswith(f'{self._STORY}. In progress: ')
+
+    def test_history_of_a_blown_cover(self):
+        d = _undercover('Rogue', 7)
+        d.mishap(5)
+        d.name_connection('Inspector Vance')
+        assert d.projection.creation_history[-1] == (
+            f'{self._STORY} as a rogue: '
+            'A police detective or rival criminal forces you to flee and vows to hunt you down. Career ended. '
+            'Enemy: Inspector Vance.'
+        )
+
+    def test_a_betrayal_ends_the_agent_career_not_a_rogue_career(self):
+        d = _undercover('Rogue', 7)
+        d.mishap(3)
+        d.betrayal_mishap('enemy', 7, name='Dana Okoye')
+        history = d.projection.creation_history[-1]
+        assert history.startswith(f'{self._STORY} as a rogue: Betrayed by a friend.')
+        assert history.endswith('Gained Enemy Dana Okoye. Prison roll 7: no forced prison career. Career ended.')
+
+    def test_history_of_a_successful_mission(self):
+        d = _undercover('Citizen', 8)
+        d.term_event(9)
+        d.skill_table('Corporate', 2)
+        assert d.projection.creation_history[-1] == (
+            f'{self._STORY} as a citizen: You are rewarded for your diligence or cunning. Admin increased from 0 to 1.'
+        )
+
+    def test_history_of_a_choice_made_in_a_borrowed_event(self):
+        from ceres.character.domain.career.rogue import RogueEvent6Refuse
+
+        d = _undercover('Rogue', 8)
+        d.term_event(6)
+        d.career_choice(RogueEvent6Refuse)
+        d.name_connection('Mara Voss')
+        assert d.projection.creation_history[-1].startswith(
+            f'{self._STORY} as a rogue: You have the opportunity to backstab a fellow rogue for personal gain. '
+            'You refuse. Contact: Mara Voss.'
+        )
+
+
+class TestAgentEvent3FailedInvestigation:
+    """ "If you fail, roll on the Mishap table." The event does not say the Agent stays, so they do not (RIC-030)."""
+
+    def test_the_mishap_ends_the_agent_career(self):
+        d = _agent_after_event(3)
+        d.skill_roll(Investigate(), 7)
+        d.mishap(4)  # Agent mishap 4: gain an Enemy and Deception 1
+        assert d.projection.summary.current_career is None
+
+    def test_the_mishap_roll_says_it_ends_the_agent_career(self):
+        d = _agent_after_event(3)
+        d.skill_roll(Investigate(), 7)
+        assert d.next_instruction() == (
+            'The investigation goes wrong: roll 1D on the Mishap table. '
+            "This ends your Agent career and loses this term's Benefit roll."
+        )
 
 
 # ── event 11: senior agent mentor ─────────────────────────────────────────────

@@ -12,6 +12,7 @@ from ceres.character.input_specs import (
     InfoText,
     InputSpec,
     NumberEntry,
+    PrecareerOption,
     QualificationTarget,
     Reference,
     Select,
@@ -61,6 +62,7 @@ class DraftAssignmentHandler(EventHandlerBase):
 class PendingCareerChoice(PendingInputBase):
     kind: Literal['career_choice'] = 'career_choice'
     options: list[CareerData] = Field(default_factory=list)
+    offer_precareer: bool = True
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -119,8 +121,22 @@ class PendingCareerChoice(PendingInputBase):
                     )
                     for career in self.options
                 ],
+                precareer_options=self._precareer_options(projection),
                 can_finish=bool(projection.summary.career_terms),
             )
+        ]
+
+    def _precareer_options(self, projection: CharacterProjection) -> list[PrecareerOption]:
+        from ceres.character.domain.precareer.loader import load_precareers
+
+        summary = projection.summary
+        # Core p.16: pre-career education is available in terms one to three only.
+        if not self.offer_precareer or summary.terms_started_in_pre_and_careers >= 3:
+            return []
+        return [
+            PrecareerOption(name=precareer.name, entry_requirement=precareer.entry_summary, curricula=[])
+            for precareer in load_precareers()
+            if precareer.is_available(summary)
         ]
 
 
@@ -214,6 +230,8 @@ def queue_career_choice_indexed(
     event_id: int,
     idx: int,
     instruction: str = 'Choose a career',
+    *,
+    offer_precareer: bool = True,
 ) -> None:
     from ceres.character.domain.career.loader import selectable_careers
 
@@ -221,6 +239,7 @@ def queue_career_choice_indexed(
         forced = projection.forced_next_career
         projection.forced_next_career = None
         options = [forced]
+        offer_precareer = False
         instruction = f'Next career: {forced.name} (mandatory)'
     else:
         options = sorted(selectable_careers(projection), key=lambda career: career.name)
@@ -229,9 +248,16 @@ def queue_career_choice_indexed(
             pending_id=(event_id, idx),
             instruction=instruction,
             options=options,
+            offer_precareer=offer_precareer,
         )
     )
 
 
-def queue_career_choice(projection: CharacterProjection, event_id: int, instruction: str = 'Choose a career') -> None:
-    queue_career_choice_indexed(projection, event_id, 0, instruction)
+def queue_career_choice(
+    projection: CharacterProjection,
+    event_id: int,
+    instruction: str = 'Choose a career',
+    *,
+    offer_precareer: bool = True,
+) -> None:
+    queue_career_choice_indexed(projection, event_id, 0, instruction, offer_precareer=offer_precareer)

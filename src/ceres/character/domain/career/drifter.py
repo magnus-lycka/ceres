@@ -38,6 +38,7 @@ from ceres.character.domain.career.career_events import (
 )
 from ceres.character.domain.career.common import CommonMishap1Handler
 from ceres.character.domain.career.common_pending import (
+    CareerChanceRollPendingBase,
     CareerSkillRollPendingBase,
     append_increment_existing_skill_pending,
 )
@@ -72,7 +73,7 @@ from ceres.character.mechanism.event_base import ChoiceBase, Event
 # ── Career-specific pending input types ──────────────────────────────────────
 
 
-class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
+class PendingDrifterMishap5SkillRoll(CareerChanceRollPendingBase):
     kind: Literal['drifter_mishap_5_skill_roll'] = 'drifter_mishap_5_skill_roll'
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
@@ -81,7 +82,7 @@ class PendingDrifterMishap5SkillRoll(CareerSkillRollPendingBase):
 
         projection.get_current_career()
         projection.add_connection(ConnectionKind.RIVAL, origin='A friend who turned on you')
-        if event.modified_roll == 2:
+        if event.roll == 2:
             set_forced_prison_career(projection, 'Betrayed — rolled 2, sent to Prisoner career.')
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
@@ -146,12 +147,13 @@ class DrifterEvent9Prison(ChoiceBase):
         set_forced_prison_career(projection, 'Sent to Prisoner career after a risky adventure.')
 
 
-class PendingDrifterEvent9RollSkillRoll(CareerSkillRollPendingBase):
+class PendingDrifterEvent9RollSkillRoll(CareerChanceRollPendingBase):
     kind: Literal['drifter_event_9_roll_skill_roll'] = 'drifter_event_9_roll_skill_roll'
+    dice: int = 1
 
     def resolve(self, projection: CharacterProjection, event: Event) -> None:
         career = projection.get_current_career()
-        roll = event.modified_roll
+        roll = event.roll
         if roll <= 2:
             projection.queue_deferred(
                 PendingChoices(
@@ -183,7 +185,6 @@ class DrifterEvent9Accept(ChoiceBase):
             PendingDrifterEvent9RollSkillRoll(
                 pending_id=(event.id, 0),
                 instruction='Risky adventure: roll 1D (1-2: injured or arrested, 3: injured, 4-6: bonus Benefit roll)',
-                options=[],
             )
         )
 
@@ -210,7 +211,6 @@ class DrifterMishap5Handler(CareerHandlerBase):
                 pending_id=(event_id, pending_idx),
                 instruction='Betrayed by a friend: gain a Rival. '
                 'Roll 2D — on a natural 2, must take Prisoner next term',
-                options=[],
             )
         )
         return pending_idx + 1

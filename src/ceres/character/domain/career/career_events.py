@@ -115,6 +115,9 @@ class SurviveHandler(EventHandlerBase):
             fulfilled_pending.resolve(projection, event)
 
 
+# The one history sentence for a career that ends before the Traveller chose to leave it.
+CAREER_ENDED = 'Career ended.'
+
 # ── Mishap ─────────────────────────────────────────────────────────────────────
 
 
@@ -122,19 +125,22 @@ class MishapHandler(EventHandlerBase):
     kind: Literal['mishap'] = 'mishap'
     roll: int  # 1D result
     stay_in_career: bool = False
+    table_career: CareerData | None = None  # whose Mishap table is rolled on, when not the current career's
 
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
         career = projection.get_current_career()
-        mishap = career.mishaps.get(self.roll)
+        mishap = (self.table_career or career).mishaps.get(self.roll)
         pending_idx = 0
         if mishap:
             if mishap.record_as_problem:
                 projection.summary.problems.append(mishap.text)
             projection.start_history(
                 event.id,
-                f'Term {len(projection.summary.terms)} mishap ({career.name}): {mishap.text}',
+                mishap.text
+                if self.table_career is not None
+                else f'Term {len(projection.summary.terms)} mishap ({career.name}): {mishap.text}',
                 parent=fulfilled_pending.history_id if fulfilled_pending is not None else None,
             )
             pending_idx = mishap.apply(projection, event, pending_idx)
@@ -157,7 +163,7 @@ class MishapHandler(EventHandlerBase):
             else:
                 muster_out_setup(projection, event.id, pending_idx, ejected=True)
             if mishap is not None:
-                projection.record_history(event.id, f'Left {career.name}.')
+                projection.record_history(event.id, CAREER_ENDED)
 
 
 # ── Term Event ─────────────────────────────────────────────────────────────────
@@ -166,15 +172,25 @@ class MishapHandler(EventHandlerBase):
 class TermEventHandler(EventHandlerBase):
     kind: Literal['term_event'] = 'term_event'
     roll: int  # sum of 2D
+    table_career: CareerData | None = None  # whose Events table is rolled on, when not the current career's
 
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
         career = projection.get_current_career()
-        term_event = career.events.get(self.roll)
+        term_event = (self.table_career or career).events.get(self.roll)
         pending_idx = 0
         career_handler_invoked = False
-        if term_event:
+        if term_event and self.table_career is not None:
+            # An event borrowed from another career is part of the story of the event that sent us there.
+            projection.start_history(
+                event.id,
+                term_event.text,
+                parent=fulfilled_pending.history_id if fulfilled_pending is not None else None,
+            )
+            pending_idx = term_event.apply(projection, event, pending_idx)
+            career_handler_invoked = not term_event.continues_career_progress()
+        elif term_event:
             projection.start_history(
                 event.id, f'Term {len(projection.summary.terms)} event ({career.name}): {term_event.text}'
             )
@@ -205,8 +221,7 @@ class ReenlistHandler(EventHandlerBase):
             career = projection.get_current_career()
             _start_new_career_term(projection, career, event.id)
         else:
-            purge_career_pendings(projection)
-            muster_out_setup(projection, event.id, 0)
+            _leave_career_by_choice(projection, event.id)
 
 
 # ── Skill Table ────────────────────────────────────────────────────────────────
@@ -216,11 +231,20 @@ class SkillTableHandler(EventHandlerBase):
     kind: Literal['skill_table'] = 'skill_table'
     table: str
     roll: int
+    table_career: CareerData | None = None  # whose skill table is rolled on, when not the current career's
 
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        career = projection.get_current_career()
+        # A promotion queues this roll and, when it also lands on a forced
+        # leave and a due aging check, the same event's forced-leave setup
+        # clears current_career before the player answers it — the roll was
+        # already earned by the success, and the career it draws its table
+        # from is still known (clear_current_career keeps it as last_career),
+        # so this falls back rather than refusing an already-granted roll.
+        career = self.table_career or projection.summary.latest_career
+        if career is None:
+            raise ReplayError('No active career')
         table = career.skill_table(self.table)
         if table is None:
             raise ReplayError(f'Unknown skill table: {self.table!r}')
@@ -251,6 +275,25 @@ class SkillTableEntryChosenHandler(EventHandlerBase):
 # ── Skill Roll ─────────────────────────────────────────────────────────────────
 
 
+def _resolve_then_maybe_advance(
+    projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None
+) -> None:
+    """Run the pending's own resolve(), then queue the normal advancement step
+    if nothing else is now blocking — shared by every 'roll, then move on'
+    career event, whether or not the roll used a skill.
+    """
+    career = projection.get_current_career()
+    blocking_count_before = sum(1 for p in projection.pending_inputs if p.blocking)
+    if fulfilled_pending is not None:
+        fulfilled_pending.resolve(projection, event)
+    if (
+        sum(1 for p in projection.pending_inputs if p.blocking) == blocking_count_before
+        and projection.summary.current_career is not None
+        and not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+    ):
+        projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
+
+
 class SkillRollHandler(EventHandlerBase):
     kind: Literal['skill_roll'] = 'skill_roll'
     skill: AnySkill | Chars
@@ -261,17 +304,25 @@ class SkillRollHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
+        _resolve_then_maybe_advance(projection, event, fulfilled_pending)
 
-        career = projection.get_current_career()
-        blocking_count_before = sum(1 for p in projection.pending_inputs if p.blocking)
-        if fulfilled_pending is not None:
-            fulfilled_pending.resolve(projection, event)
-        if (
-            sum(1 for p in projection.pending_inputs if p.blocking) == blocking_count_before
-            and projection.summary.current_career is not None
-            and not any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
-        ):
-            projection.queue_deferred(advancement_pending(career, projection.summary.current_assignment, event.id))
+
+class ChanceRollHandler(EventHandlerBase):
+    """A plain, unmodified dice roll for a career event — no skill, no DM.
+
+    Distinct from `SkillRollHandler`: some career events ("roll 2D, on a
+    natural 2 ...") name no skill and no modifier at all. Giving them a skill
+    to pick from `CareerSkillRollPendingBase` once asked for one anyway, with
+    no options to offer — an unsatisfiable, un-submittable form.
+    """
+
+    kind: Literal['chance_roll'] = 'chance_roll'
+    roll: int
+
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        _resolve_then_maybe_advance(projection, event, fulfilled_pending)
 
 
 # ── Assignment Change Choice ───────────────────────────────────────────────────
@@ -289,8 +340,7 @@ class AssignmentChangeChoiceHandler(EventHandlerBase):
         if self.choice == 'same':
             _start_new_career_term(projection, career, event.id)
         elif self.choice == 'muster_out':
-            purge_career_pendings(projection)
-            muster_out_setup(projection, event.id, 0)
+            _leave_career_by_choice(projection, event.id)
         else:
             current_assignment = projection.summary.current_assignment
             others = [a for a in career.assignments if a != current_assignment]
@@ -384,6 +434,13 @@ def _apply_mishap_ejection(
         projection.summary.career_terms[-1].require_muster_out().pending_setup = True
         return pending_idx + 1
     return muster_out_setup(projection, source_event_id, pending_idx, ejected=True)
+
+
+def _leave_career_by_choice(projection: CharacterProjection, event_id: int) -> None:
+    """The Traveller declines to re-enlist and musters out."""
+    purge_career_pendings(projection)
+    projection.leave_career_by_choice()
+    muster_out_setup(projection, event_id, 0)
 
 
 def purge_career_pendings(projection: CharacterProjection) -> None:
@@ -503,10 +560,14 @@ class PendingSurvive(PendingInputBase):
 
 class PendingTermEvent(PendingInputBase):
     kind: Literal['term_event'] = 'term_event'
+    table_career: CareerData | None = None
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
 
-        return Event(fulfills=self.pending_id, handler=TermEventHandler(roll=form_int(form, 'roll', 2)))
+        return Event(
+            fulfills=self.pending_id,
+            handler=TermEventHandler(roll=form_int(form, 'roll', 2), table_career=self.table_career),
+        )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='2D roll (2–12)', min=2, max=12)]
@@ -515,12 +576,15 @@ class PendingTermEvent(PendingInputBase):
 class PendingMishap(PendingInputBase):
     kind: Literal['mishap'] = 'mishap'
     stay_in_career: bool = False
+    table_career: CareerData | None = None
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
 
         return Event(
             fulfills=self.pending_id,
-            handler=MishapHandler(roll=form_int(form, 'roll', 1), stay_in_career=self.stay_in_career),
+            handler=MishapHandler(
+                roll=form_int(form, 'roll', 1), stay_in_career=self.stay_in_career, table_career=self.table_career
+            ),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
@@ -530,12 +594,15 @@ class PendingMishap(PendingInputBase):
 class PendingSkillTable(PendingInputBase):
     kind: Literal['skill_table'] = 'skill_table'
     options: list[SkillTableOption] = Field(default_factory=list)
+    table_career: CareerData | None = None
 
     def event_from_form(self, form: Mapping[str, str]) -> Event:
 
         return Event(
             fulfills=self.pending_id,
-            handler=SkillTableHandler(table=form_str(form, 'table'), roll=form_int(form, 'roll', 1)),
+            handler=SkillTableHandler(
+                table=form_str(form, 'table'), roll=form_int(form, 'roll', 1), table_career=self.table_career
+            ),
         )
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:

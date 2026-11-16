@@ -50,7 +50,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
         'Gain Gun Combat 0',
         'Honours graduates gain Carouse 1 and may increase another level 0 skill to level 1',
         'Decrease SOC by -1',
-        'DM-2 on promotion or commission checks in first career unless leaving by choice',
+        'DM-2 on promotion or commission checks until a career is left by choice',
     ]
 
     def apply_graduation(
@@ -63,13 +63,16 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
         choice_pool: list[AnySkill] = [
             skill for entry in self.skill_choices if entry.level == 0 for skill in entry.skill_options
         ]
-        for i in range(3):
+        # "Gain any three other skills listed above": only skills not held yet, so fewer if fewer remain.
+        picks = min(3, len(projection.summary.skills_not_held(choice_pool)))
+        for i in range(picks):
             projection.queue_deferred(
                 PendingPreCareerSkillChoice(
                     pending_id=(event.id, pending_idx),
                     level=0,
-                    instruction=f'School of Hard Knocks graduation: choose skill {i + 1} of 3 at level 0',
+                    instruction=f'School of Hard Knocks graduation: choose skill {i + 1} of {picks} at level 0',
                     options=choice_pool,
+                    only_new=True,
                 )
             )
             pending_idx += 1
@@ -86,10 +89,7 @@ class SchoolOfHardKnocksPreCareer(PreCareerData):
             )
             pending_idx += 1
         projection.summary.characteristics[Chars.SOC] = max(0, projection.summary.characteristics.get(Chars.SOC, 0) - 1)
-        projection.summary.problems.append(
-            'School of Hard Knocks graduation: DM-2 on all commission and promotion checks in first career '
-            '(unless you leave that career by choice). Apply manually.'
-        )
+        projection.lasting_advancement_dm -= 2  # RIC-029
         return pending_idx
 
 

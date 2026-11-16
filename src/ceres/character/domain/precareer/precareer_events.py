@@ -66,7 +66,9 @@ class PreCareerEntryHandler(EventHandlerBase):
         if terms_started >= 3:
             raise ReplayError('Pre-career education is only available in terms 1–3')
         if not precareer.prepare_entry(projection, self.roll, terms_started):
-            queue_career_choice(projection, event.id, 'Pre-career entry failed — choose a career')
+            queue_career_choice(
+                projection, event.id, 'Pre-career entry failed — choose a career', offer_precareer=False
+            )
             return
         dm = 0
         if precareer.entry is not None:
@@ -80,7 +82,9 @@ class PreCareerEntryHandler(EventHandlerBase):
                 if soc >= precareer.entry_soc_bonus_min:
                     dm += precareer.entry_soc_bonus
             if self.roll == 2 or self.roll + dm < precareer.entry.target:
-                queue_career_choice(projection, event.id, 'Pre-career entry failed — choose a career')
+                queue_career_choice(
+                    projection, event.id, 'Pre-career entry failed — choose a career', offer_precareer=False
+                )
                 return
         term = precareer.make_term()
         term.start_age = projection.summary.age
@@ -178,11 +182,44 @@ class PreCareerEventHandler(EventHandlerBase):
                 'Pre-career event 2: you may test your PSI and attempt to enter the Psion career '
                 'in any subsequent term (apply manually).'
             )
-        elif self.roll == 4:
-            projection.summary.problems.append(
-                'Pre-career event 4: roll SOC 8+ — success: gain Rival; failure: gain Enemy. '
-                'Natural 2: also fail to graduate and must take Prisoner career next term. Apply manually.'
+
+
+class PreCareerPrankRollHandler(EventHandlerBase):
+    """Resolves pre-career event 4's SOC 8+ roll (Core p.17; RIC-028 for the roll of 2)."""
+
+    kind: Literal['precareer_prank_roll'] = 'precareer_prank_roll'
+    roll: int  # 2D result (before the SOC DM)
+
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        from ceres.character.domain.career.career_events import queue_career_choice
+        from ceres.character.domain.career.prisoner import PRISONER
+        from ceres.character.domain.characteristics import Chars, ConnectionKind, characteristic_dm
+
+        term = projection.summary.current_precareer_term
+        if term is None:
+            raise ReplayError('No active pre-career')
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        origin = (
+            f'A supposedly harmless prank went wrong during {term.precareer.name}, '
+            f'term {projection.summary.terms_started_in_pre_and_careers}.'
+        )
+        dm = characteristic_dm(projection.summary.characteristics.get(Chars.SOC, 0))
+        if self.roll + dm >= 8:
+            projection.extend_history(history_id, 'Fortunately, the outcome was only a future rival.')
+            projection.add_connection(ConnectionKind.RIVAL, origin=origin, history_id=history_id)
+        else:
+            projection.extend_history(history_id, 'The outcome was a future enemy.')
+            projection.add_connection(ConnectionKind.ENEMY, origin=origin, history_id=history_id)
+        if self.roll == 2:
+            projection.extend_history(
+                history_id, 'You fail to graduate and must take the Prisoner career in your next term.'
             )
+            projection.cancel_pending(PendingPreCareerGraduation)
+            term.completed = True
+            projection.forced_next_career = PRISONER
+            queue_career_choice(projection, event.id)
 
 
 class PreCareerGraduationHandler(EventHandlerBase):
@@ -235,6 +272,7 @@ class PendingPreCareerSkillChoice(PendingInputBase):
     kind: Literal['precareer_skill_choice'] = 'precareer_skill_choice'
     level: int
     options: list[AnySkill] = Field(default_factory=list)
+    only_new: bool = False  # offer only skills the Traveller does not hold yet
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -256,7 +294,10 @@ class PendingPreCareerSkillChoice(PendingInputBase):
         return Event(fulfills=self.pending_id, handler=PreCareerSkillChoiceHandler(skill=skill))
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
-        options = [(opt.label(), opt.model_dump_json()) for opt in self._expanded_options()]
+        offered = self._expanded_options()
+        if self.only_new:
+            offered = projection.summary.skills_not_held(offered)
+        options = [(opt.label(), opt.model_dump_json()) for opt in offered]
         return [Select(name='skill', label='Choose a skill', options=options)]
 
 
@@ -269,6 +310,16 @@ class PendingPreCareerEvent(PendingInputBase):
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='2D roll (2–12)', min=2, max=12)]
+
+
+class PendingPreCareerPrankRoll(PendingInputBase):
+    kind: Literal['precareer_prank_roll'] = 'precareer_prank_roll'
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        return Event(fulfills=self.pending_id, handler=PreCareerPrankRollHandler(roll=form_int(form, 'roll', 7)))
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        return [NumberEntry(name='roll', label='2D roll (2–12), before the SOC DM', min=2, max=12)]
 
 
 class PendingPreCareerGraduation(PendingInputBase):
