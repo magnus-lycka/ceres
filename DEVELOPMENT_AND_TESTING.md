@@ -298,7 +298,7 @@ uvx ruff check --fix
 uvx ruff format
 
 # Type checking
-uvx ty check
+uvx ty@0.0.80 check
 
 # Design smell check (duplicate code)
 uvx pylint --disable=all --enable=duplicate-code src/ceres/ tests

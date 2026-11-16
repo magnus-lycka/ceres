@@ -52,9 +52,13 @@ class TestSpecialityFields:
 
 class TestSkillPropsAlignment:
     def test_astrogation_is_high_bandwidth(self):
-        _, bandwidth, _ = _skill_props_for_class(Astrogation._char_cls)
+        char_cls = Astrogation._char_cls
+        assert char_cls is not None
+        _, bandwidth, _ = _skill_props_for_class(char_cls)
         assert bandwidth == 1
 
     def test_admin_is_zero_bandwidth(self):
-        _, bandwidth, _ = _skill_props_for_class(Admin._char_cls)
+        char_cls = Admin._char_cls
+        assert char_cls is not None
+        _, bandwidth, _ = _skill_props_for_class(char_cls)
         assert bandwidth == 0

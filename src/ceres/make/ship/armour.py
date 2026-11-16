@@ -17,7 +17,7 @@ class Armour(ShipPartBase):
     cost: ClassVar[float]
 
     _cost_per_ton: ClassVar[int] = 0
-    _tonnage_consumed: ClassVar[int] = 0
+    _tonnage_consumed: ClassVar[float] = 0.0
 
     def bind(self, assembly: ShipBase) -> None:
         super().bind(assembly)
