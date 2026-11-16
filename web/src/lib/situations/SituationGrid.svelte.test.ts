@@ -10,7 +10,7 @@
  * was reserved was to be able to see whose turn it is at a glance.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { actorId, type Actor } from '$lib/schema/actor';
 import { act, addActors, emptySituation, setInitiative } from '$lib/rules/rounds/situation';

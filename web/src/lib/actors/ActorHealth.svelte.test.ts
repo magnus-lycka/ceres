@@ -6,7 +6,7 @@
  * actor. The rules behind the numbers are covered in `rules/rounds`.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { actorId, type Actor } from '$lib/schema/actor';
 import ActorHealth from './ActorHealth.svelte';

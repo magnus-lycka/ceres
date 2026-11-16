@@ -5,7 +5,7 @@
  * nothing but that situation: mid-fight the other situations are noise.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorId, UNSAVED, type Actor } from '$lib/schema/actor';
 import { beginRound, newSituation, start } from '$lib/rules/rounds/lifecycle';

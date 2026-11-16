@@ -10,7 +10,7 @@
  * and that the change is recorded as waiting to go up.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorId } from '$lib/schema/actor';
 import { library, status } from '$lib/store/session.svelte';

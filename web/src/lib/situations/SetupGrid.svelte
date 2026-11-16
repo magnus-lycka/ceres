@@ -22,6 +22,7 @@
   import { afterPaste, isPasteKey } from '$lib/grid/pasted';
   import type { Situation } from '$lib/schema/situation';
   import type { Actor, ActorId } from '$lib/schema/actor';
+  import { INI_EDITOR } from './iniEditor';
 
   let {
     situation,
@@ -71,7 +72,7 @@
     { field: 'id', header: 'Id', width: 60, editable: false },
     { field: 'name', header: 'Name', editable: false },
     { field: 'party', header: 'Party', editorType: 'text' },
-    { field: 'initiative', header: 'Ini', width: 80, editorType: 'number' },
+    { field: 'initiative', header: 'Ini', width: 80, editorType: INI_EDITOR },
   ];
 
   let api = $state<SvGridApi<TableFeatures, Row> | null>(null);

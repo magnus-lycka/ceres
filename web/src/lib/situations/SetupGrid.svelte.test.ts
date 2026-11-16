@@ -7,7 +7,7 @@
  * nothing is typed at all.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { actorId, type Actor } from '$lib/schema/actor';
 import { addActors, emptySituation, setInitiative } from '$lib/rules/rounds/situation';
@@ -79,10 +79,26 @@ describe('SetupGrid', () => {
     const screen = await show({ oninitiative });
     const cell = rowFor(screen.container, 'Sana').querySelector<HTMLElement>('td[data-col-id="initiative"]');
     await userEvent.dblClick(cell!);
-    // SvGrid's number editor is a text field with a decimal keypad, not a spinner.
-    await userEvent.fill(screen.getByRole('textbox'), '15');
+    // Initiative keeps the native spinner (IniEditor), unlike SvGrid's own
+    // number editor elsewhere: see IniEditor for why.
+    await userEvent.fill(screen.getByRole('spinbutton'), '15');
     await userEvent.keyboard('{Enter}');
     expect(oninitiative).toHaveBeenCalledWith(sana.id, 15);
+  });
+
+  // Initiative is the Effect of a DEX or INT check, so it is routinely
+  // negative, and the spinner reaches one without typing a minus sign at all.
+  it('takes a negative initiative from the spinner, no typing required', async () => {
+    const oninitiative = vi.fn();
+    const screen = await show({ oninitiative });
+    const cell = rowFor(screen.container, 'Sana').querySelector<HTMLElement>('td[data-col-id="initiative"]');
+    await userEvent.dblClick(cell!);
+    const input = screen.getByRole('spinbutton').element() as HTMLInputElement;
+    await userEvent.fill(screen.getByRole('spinbutton'), '0');
+    input.stepDown();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await userEvent.keyboard('{Enter}');
+    expect(oninitiative).toHaveBeenCalledWith(sana.id, -1);
   });
 
   it('takes a row moved to another side', async () => {

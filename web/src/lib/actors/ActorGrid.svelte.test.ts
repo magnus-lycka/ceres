@@ -11,7 +11,7 @@
  * current one.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import { actorId, type Actor, type ActorId } from '$lib/schema/actor';
 import ActorGrid from './ActorGrid.svelte';

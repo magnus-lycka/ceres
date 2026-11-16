@@ -7,7 +7,7 @@
  * be entered to what has been entered before.
  */
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { describe, expect, it, vi } from 'vitest';
 import TagPicker from './TagPicker.svelte';
 
