@@ -60,7 +60,6 @@ from ceres.character.domain.skills import (
     Medic,
     Melee,
     Navigation,
-    Persuade,
     Pilot,
     Recon,
     Stealth,
@@ -76,42 +75,31 @@ from ceres.character.mechanism.event_base import ChoiceBase, Event
 
 class MarinesMishap4Refuse(ChoiceBase):
     kind: Literal['marines_mishap_4_refuse'] = 'marines_mishap_4_refuse'
-    label: str = 'Refuse (ejected, lose Benefit, gain Contact)'
+    label: str = 'Refuse'
+    history_id: int | None = None
 
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
 
-        projection.get_current_career()
-        projection.add_connection(
-            ConnectionKind.CONTACT, origin='A fellow soldier who was part of that black ops mission'
-        )
-        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
+        projection.record_history(self.history_id, 'You refuse.')
+        # "If you refuse you are ejected from the service" — unless event 2 said otherwise (RIC-031).
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True, history_id=self.history_id)
 
 
 class MarinesMishap4Accept(ChoiceBase):
     kind: Literal['marines_mishap_4_accept'] = 'marines_mishap_4_accept'
-    label: str = 'Accept (roll Deception or Persuade 8+: success = stay, fail = ejected, lose Benefit)'
+    label: str = 'Accept (gain the lone survivor as an Enemy)'
+    history_id: int | None = None
 
     def handle(self, projection: CharacterProjection, event) -> None:
-        projection.queue_deferred(
-            PendingMarinesMishap4SkillRoll(
-                pending_id=(event.id, 0),
-                instruction='Roll Deception or Persuade 8+: success = stay in career; fail = ejected, lose Benefit',
-                options=[Deception(), Persuade()],
-            )
+        from ceres.character.domain.career.career_events import continue_career_after_mishap
+
+        projection.record_history(self.history_id, 'You accept.')
+        projection.add_connection(
+            ConnectionKind.ENEMY, origin='The lone survivor of a black ops mission', history_id=self.history_id
         )
-
-
-class PendingMarinesMishap4SkillRoll(CareerSkillRollPendingBase):
-    kind: Literal['marines_mishap_4_skill_roll'] = 'marines_mishap_4_skill_roll'
-
-    def resolve(self, projection: CharacterProjection, event: Event) -> None:
-        from ceres.character.domain.career.career_events import _apply_mishap_ejection
-
-        projection.get_current_career()
-        if event.modified_roll < 8:
-            _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
-        # success: do nothing — _apply_skill_roll auto-queues advancement
+        # "If you accept you may stay with the marines."
+        continue_career_after_mishap(projection, event.id, 0)
 
 
 class PendingMarinesEvent6SkillRoll(CareerSkillRollPendingBase):
@@ -169,11 +157,9 @@ class MarinesMishap4Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
-                instruction=(
-                    'Refuse (ejected, lose Benefit, gain Contact among other soldiers) '
-                    'or accept (roll Deception or Persuade 8+: success = stay, fail = ejected, lose Benefit)?'
-                ),
-                choices=[MarinesMishap4Refuse(), MarinesMishap4Accept()],
+                history_id=event_id,
+                instruction='Refuse the mission, or accept it and gain the lone survivor as an Enemy?',
+                choices=[MarinesMishap4Refuse(history_id=event_id), MarinesMishap4Accept(history_id=event_id)],
             )
         )
         return pending_idx + 1

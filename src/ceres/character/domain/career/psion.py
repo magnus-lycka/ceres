@@ -148,7 +148,7 @@ class PsionMishap4Accept(ChoiceBase):
 
 class PsionMishap4Refuse(ChoiceBase):
     kind: Literal['psion_mishap_4_refuse'] = 'psion_mishap_4_refuse'
-    label: str = 'Refuse (leave Psion career)'
+    label: str = 'Refuse'
 
     def handle(self, projection: CharacterProjection, event: Event) -> None:
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)

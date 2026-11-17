@@ -225,8 +225,7 @@ class CitizenMishap5Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingCitizenMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
-                instruction='Roll Streetwise 8+: success = increase any '
-                'existing skill by one level (ejected either way)',
+                instruction='Roll Streetwise 8+: on success, increase any skill you have by one level',
                 options=[Streetwise()],
             )
         )

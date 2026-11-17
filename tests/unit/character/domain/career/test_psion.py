@@ -532,6 +532,13 @@ class TestPsionEvents:
         driver.survive(7).term_event(roll)
         return driver
 
+    def test_event_two_then_refusing_unethical_work_stays_in_career(self):
+        # "Not ejected" (event 2) voids the ejection; refusing only spares the Enemy (RIC-031).
+        driver = self._event(2)
+        driver.mishap(4).career_choice(PsionMishap4Refuse)
+
+        assert driver.projection.summary.current_career is not None
+
     def test_event_two_rolls_mishap_without_ejection(self):
         driver = self._event(2)
 

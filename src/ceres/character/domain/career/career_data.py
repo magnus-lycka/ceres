@@ -1022,6 +1022,8 @@ class CareerTerm(Term):
     muster_out: MusterOut | None = Field(default_factory=MusterOut)
     forced_stay: bool = False
     forced_leave: bool = False
+    # A mishap rolled this term without ejection, whose ejection would only come after a follow-up (RIC-031).
+    mishap_keeps_career: bool = False
 
     @property
     def rank_title(self) -> tuple[str, str]:

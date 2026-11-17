@@ -130,7 +130,7 @@ class NobleMishap5Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingNobleMishap5SkillRoll(
                 pending_id=(event_id, pending_idx),
-                instruction='Roll END 8+: success = escape unhurt (ejected); fail = roll on Injury table (ejected)',
+                instruction='Roll END 8+: on failure, roll on the Injury table',
                 options=[Chars.END],
             )
         )

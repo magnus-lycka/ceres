@@ -90,14 +90,14 @@ class PendingNavyMishap3SkillRoll(CareerSkillRollPendingBase):
 
 class NavyMishap4Responsible(ChoiceBase):
     kind: Literal['navy_mishap_4_responsible'] = 'navy_mishap_4_responsible'
-    label: str = 'Accept responsibility (gain one free skill roll, ejected, lose Benefit)'
+    label: str = 'Accept responsibility (gain one free skill roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
 
         projection.get_current_career()
         projection.summary.problems.append(
             'Navy mishap 4 (responsible): you gain one free roll on the Skills and Training tables '
-            'before ejection — apply a skill table roll manually to this character.'
+            '— apply a skill table roll manually to this character.'
         )
         _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 

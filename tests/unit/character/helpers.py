@@ -636,6 +636,14 @@ class CharacterDriver:
             )
         )
 
+    def choice_instruction(self) -> str:
+        """What the next choice asks the player to decide."""
+        return self._find(PendingChoices).instruction
+
+    def choice_labels(self) -> list[str]:
+        """The options of the next choice, as the player sees them."""
+        return [choice.label for choice in self._find(PendingChoices).choices]
+
     def career_choice(self, choice_cls: type[ChoiceBase]) -> CharacterDriver:
         pending = self._find(PendingChoices)
         choice_kind = choice_cls.model_fields['kind'].default
@@ -675,6 +683,21 @@ class CharacterDriver:
     def nearly_killed(self, characteristic: Chars, roll: int) -> CharacterDriver:
         pending = self._find(PendingNearlyKilled)
         return self._add(pending.event_from_form({'characteristic': characteristic.value, 'roll': str(roll)}))
+
+    def severely_injured(self, characteristic: Chars, roll: int) -> CharacterDriver:
+        """Severe injury: reduce one physical characteristic by the 1D roll."""
+        from ceres.character.domain.health.health_events import PendingSeverelyInjured
+
+        pending = self._find(PendingSeverelyInjured)
+        return self._add(pending.event_from_form({'characteristic': characteristic.value, 'roll': str(roll)}))
+
+    def benefit_rolls_at_muster_out(self) -> int:
+        """Muster out now, taking every Benefit roll on the Cash table, and count them."""
+        rolls = 0
+        while self.has_muster_out_roll():
+            self.muster_out('cash', 1)
+            rolls += 1
+        return rolls
 
     def choose_characteristic(self, characteristic: Chars, amount: int = 1) -> CharacterDriver:
         """Resolve a PendingCharacteristicChoice (e.g. from a mishap or injury)."""

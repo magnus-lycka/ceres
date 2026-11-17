@@ -38,6 +38,8 @@ from ceres.character.domain.career.career_events import (
     PendingChoices,
     PendingMishap,
     PendingSkillChoice,
+    continue_career_after_mishap,
+    mishap_keeps_career,
     muster_out_setup,
 )
 from ceres.character.domain.career.common import CommonMishap1Handler, handle_advanced_training
@@ -85,7 +87,7 @@ from ceres.character.mechanism.event_base import ChoiceBase, Event, EventHandler
 
 class AgentMishap2Accept(ChoiceBase):
     kind: Literal['agent_mishap_2_accept'] = 'agent_mishap_2_accept'
-    label: str = 'Accept (leave without further penalty, lose Benefit roll)'
+    label: str = 'Accept the deal (no further penalty)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
         from ceres.character.domain.career.career_events import _apply_mishap_ejection
@@ -136,6 +138,9 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
         succeed = event.modified_roll >= 8
         if event.modified_roll <= 2:
             set_forced_prison_career(projection, 'Exposed as an agent — sent to Prisoner career.')
+        if mishap_keeps_career(projection):
+            continue_career_after_mishap(projection, event.id, 0)
+            return
         if not succeed and projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
         muster_out_setup(projection, event.id, 0)
@@ -304,7 +309,7 @@ class AgentMishap2Handler(CareerHandlerBase):
             PendingChoices(
                 pending_id=(event_id, pending_idx),
                 instruction=(
-                    'Accept (leave without further penalty, lose Benefit roll as normal) or Refuse '
+                    'Accept the deal (no further penalty) or Refuse '
                     '(roll twice on Injury table take lower, gain Enemy, choose skill)?'
                 ),
                 choices=[AgentMishap2Accept(), AgentMishap2Refuse()],

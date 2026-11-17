@@ -143,7 +143,8 @@
           "pending_setup": false
         },
         "forced_stay": false,
-        "forced_leave": false
+        "forced_leave": false,
+        "mishap_keeps_career": false
       },
       {
         "kind": "university",
@@ -192,7 +193,8 @@
           "pending_setup": false
         },
         "forced_stay": false,
-        "forced_leave": false
+        "forced_leave": false,
+        "mishap_keeps_career": false
       }
     ],
     "drafted": false,

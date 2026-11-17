@@ -1306,6 +1306,29 @@ Rogue or Citizen Mishap table."
    three assignment tables (Thief, Enforcer, Pirate, or Corporate, Worker,
    Colonist), chosen by the player.
 
+### RIC-031 "Not Ejected" From Event 2 Overrides Every Ejection In The Mishap, But Not Prison
+
+Event 2 of most careers reads "Disaster! Roll on the Mishap table but you are not ejected from this
+career." Some mishaps end the career only after a follow-up roll or choice, and some send the
+Traveller to prison.
+
+1. "Not ejected" voids the ejection whenever the mishap would apply it, including mishaps whose text
+   describes the departure ("forcing you to leave the planet", "you still must leave this career",
+   "ruining your career"). The Traveller stays in the career, keeps this term's Benefit roll, and makes
+   the advancement roll as usual. The rest of the mishap still applies.
+2. A mishap's choices never end the career by themselves. Ending the career is the mishap's normal
+   consequence, and event 2 voids it, whichever option is chosen. For example, Agent mishap 2 (accept
+   the deal), Marines mishap 4 (refuse the mission), Navy mishap 4 (responsible for the accident) and
+   Psion mishap 4 (refuse) all leave the Traveller in the career; the choice only decides the other
+   consequences, such as an Enemy.
+3. "Not ejected" does not protect against a prison sentence. A mishap or event that says the
+   Traveller must take the Prisoner career next term still sends them there: the current career ends
+   at the end of the term, this term's Benefit roll is kept, and the next career is Prisoner. The
+   same holds for any other event that sentences the Traveller during a career, such as the Crime life
+   event.
+4. The same applies when the mishap is rolled on another career's table, for example a "Disaster!"
+   rolled on an undercover Agent's cover career (RIC-030).
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

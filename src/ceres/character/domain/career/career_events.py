@@ -145,9 +145,11 @@ class MishapHandler(EventHandlerBase):
             )
             pending_idx = mishap.apply(projection, event, pending_idx)
         defer = mishap is not None and getattr(mishap, 'defer_ejection', False)
+        stays = self.stay_in_career or (mishap is not None and getattr(mishap, 'stay_in_career', False))
         if defer:
-            pass
-        elif self.stay_in_career or (mishap is not None and getattr(mishap, 'stay_in_career', False)):
+            if stays and projection.summary.career_terms:
+                projection.summary.career_terms[-1].mishap_keeps_career = True  # RIC-031
+        elif stays:
             projection.queue_deferred(
                 advancement_pending(career, projection.summary.current_assignment, event.id, pending_idx)
             )
@@ -421,12 +423,36 @@ def _survive_pending(career: CareerData, assignment: AssignmentData | None, even
     return career.survival_pending(assignment, event_id)
 
 
+def mishap_keeps_career(projection: CharacterProjection) -> bool:
+    """This term's mishap was rolled with "you are not ejected" (RIC-031)."""
+    terms = projection.summary.career_terms
+    return bool(terms) and terms[-1].mishap_keeps_career
+
+
+def continue_career_after_mishap(projection: CharacterProjection, source_event_id: int, pending_idx: int) -> int:
+    """The career goes on after a mishap that does not eject: the advancement roll follows (RIC-031)."""
+    projection.queue_deferred(
+        advancement_pending(
+            projection.get_current_career(), projection.summary.current_assignment, source_event_id, pending_idx
+        )
+    )
+    return pending_idx + 1
+
+
 def _apply_mishap_ejection(
     projection: CharacterProjection,
     source_event_id: int,
     pending_idx: int,
     lose_current_term: bool = True,
+    history_id: int | str | None = None,
 ) -> int:
+    """End the career after a mishap's follow-up, unless the mishap was rolled with "not ejected" (RIC-031).
+
+    `history_id` is the mishap's history occurrence; when given, the ending is told there.
+    """
+    if mishap_keeps_career(projection):
+        return continue_career_after_mishap(projection, source_event_id, pending_idx)
+    projection.record_history(history_id, CAREER_ENDED)
     if lose_current_term and projection.summary.career_terms:
         projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
     if projection.advance_age(source_event_id, pending_idx):
@@ -447,6 +473,13 @@ def purge_career_pendings(projection: CharacterProjection) -> None:
     projection.cancel_pending(*_CAREER_PHASE_PENDING_TYPES)
 
 
+def _sentenced_to_another_career(projection: CharacterProjection) -> bool:
+    """A prison sentence for the next term ends this career at the end of the term, ejected or not (RIC-031)."""
+    forced = projection.forced_next_career
+    current = projection.summary.current_career
+    return forced is not None and current is not None and forced.name != current.name
+
+
 def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx: int) -> None:
     if projection.prisoner_freed:
         projection.prisoner_freed = False
@@ -461,7 +494,7 @@ def queue_reenlist_or_aging(projection: CharacterProjection, event_id: int, idx:
         return
 
     current_term = projection.summary.career_terms[-1] if projection.summary.career_terms else None
-    forced_leave = current_term.forced_leave if current_term else False
+    forced_leave = (current_term.forced_leave if current_term else False) or _sentenced_to_another_career(projection)
     forced_stay = current_term.forced_stay if current_term else False
     aging_triggered = projection.advance_age(event_id, idx)
     if forced_leave:

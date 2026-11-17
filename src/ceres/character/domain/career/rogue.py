@@ -33,7 +33,6 @@ from ceres.character.domain.career.career_data import (
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
-    CAREER_ENDED,
     PendingChoices,
     _apply_mishap_ejection,
     career_progress_pending,
@@ -141,8 +140,7 @@ class RogueBetrayalHandler(EventHandlerBase):
             projection.record_history(history_id, 'Prison roll 2: must take Prisoner next term.')
         else:
             projection.record_history(history_id, f'Prison roll {self.roll}: no forced prison career.')
-        _apply_mishap_ejection(projection, event.id, 0)
-        projection.record_history(history_id, CAREER_ENDED)
+        _apply_mishap_ejection(projection, event.id, 0, history_id=history_id)
 
 
 class PendingRogueBetrayal(PendingInputBase):

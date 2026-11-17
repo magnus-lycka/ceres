@@ -4,11 +4,9 @@ from ceres.character.domain.career import MARINES
 from ceres.character.domain.career.career_events import (
     CareerChoiceHandler,
     CareerEntryHandler,
-    MishapHandler,
     PendingAdvancement,
     PendingChoices,
     PendingCommissionChoice,
-    PendingMusterOut,
     PendingSkillChoice,
     SkillRollHandler,
     SurviveHandler,
@@ -21,12 +19,10 @@ from ceres.character.domain.career.marines import (
     MarinesMishap4Accept,
     MarinesMishap4Refuse,
     PendingMarinesEvent6SkillRoll,
-    PendingMarinesMishap4SkillRoll,
 )
 from ceres.character.domain.character_start import BackgroundSkillsHandler, UcpHandler
 from ceres.character.domain.connection import (
     Ally,
-    Contact,
     Enemy,
     Rival,
 )
@@ -35,13 +31,11 @@ from ceres.character.domain.skills import (
     Athletics,
     Broker,
     Carouse,
-    Deception,
     Drive,
     GunCombat,
     Leadership,
     Level,
     Melee,
-    Persuade,
     Tactics,
 )
 from ceres.character.domain.sophont import VILANI
@@ -98,101 +92,68 @@ def _through_term_event(event_roll: int, assignment: str = 'Support') -> list:
 # ── mishap 4: black ops mission ───────────────────────────────────────────────
 
 
+def _marine_after_mishap_4() -> CharacterDriver:
+    """STR=7 DEX=8 END=6 INT=9 EDU=10 SOC=5. Support: survival END 5+, failed with a 2."""
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('7869A5')
+    d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+    d.career('Marines', 'Support', roll=12)
+    d.survive(2)
+    d.mishap(4)
+    return d
+
+
 class TestMarinesMishap4:
-    def _setup_to_mishap(self) -> list:
-        _ent = _enter_marines()
-        return [
-            *_ent,
-            Event(fulfills=survive_pending_id(_ent), handler=SurviveHandler(roll=4)),  # END 5+, DM+0, 4 < 5 — fail
-        ]
+    """Core: "You are ordered to take part in a black ops mission that goes against your conscience. If you
+    refuse you are ejected from the service. If you accept you may stay with the marines but gain the lone
+    survivor as an Enemy."
+    """
 
-    def test_mishap_4_creates_choice_pending(self):
-        _mish = self._setup_to_mishap()
-        events = [*_mish, Event(fulfills=(_mish[-1].id, 0), handler=MishapHandler(roll=4))]
-        projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingChoices)), None)
-        assert pending is not None
-        assert {type(c) for c in pending.choices} == {MarinesMishap4Refuse, MarinesMishap4Accept}
+    _STORY = 'Term 1 mishap (Marines): Ordered to take part in a black ops mission that goes against your conscience.'
 
-    def test_refuse_adds_contact(self):
-        _base = self._setup_to_mishap()
-        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
-        events = [
-            *_base,
-            ev6,
-            Event(
-                fulfills=(ev6.id, 0),
-                handler=CareerChoiceHandler(choice=MarinesMishap4Refuse.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-        contacts = [c for c in projection.summary.connections if isinstance(c, Contact)]
-        assert len(contacts) == 1
+    def test_the_player_chooses_to_refuse_or_accept(self):
+        d = _marine_after_mishap_4()
+        assert d.choice_instruction() == 'Refuse the mission, or accept it and gain the lone survivor as an Enemy?'
+        assert d.choice_labels() == ['Refuse', 'Accept (gain the lone survivor as an Enemy)']
 
-    def test_refuse_ends_career_and_loses_benefit(self):
-        _base = self._setup_to_mishap()
-        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
-        events = [
-            *_base,
-            ev6,
-            Event(
-                fulfills=(ev6.id, 0),
-                handler=CareerChoiceHandler(choice=MarinesMishap4Refuse.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_career is None
-        assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+    def test_refusing_ends_the_career_and_loses_this_terms_benefit_roll(self):
+        d = _marine_after_mishap_4()
+        d.career_choice(MarinesMishap4Refuse)
+        assert d.projection.summary.current_career is None
+        assert d.benefit_rolls_at_muster_out() == 0
 
-    def test_accept_creates_skill_roll(self):
-        _base = self._setup_to_mishap()
-        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
-        events = [
-            *_base,
-            ev6,
-            Event(
-                fulfills=(ev6.id, 0),
-                handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
-            ),
-        ]
-        projection = replay(1, events)
-        pending = next((p for p in projection.pending_inputs if isinstance(p, PendingMarinesMishap4SkillRoll)), None)
-        assert pending is not None
-        assert pending.options == [Deception(), Persuade()]
+    def test_refusing_gains_no_connection(self):
+        d = _marine_after_mishap_4()
+        d.career_choice(MarinesMishap4Refuse)
+        assert d.projection.summary.connections == []
 
-    def test_accept_success_continues_career(self):
-        _base = self._setup_to_mishap()
-        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
-        ev7 = Event(
-            fulfills=(ev6.id, 0),
-            handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
-        )
-        events = [
-            *_base,
-            ev6,
-            ev7,
-            Event(fulfills=(ev7.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=9)),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_career is not None
-        assert projection.summary.current_career.name == 'Marines'
+    def test_accepting_stays_in_the_career(self):
+        d = _marine_after_mishap_4()
+        d.career_choice(MarinesMishap4Accept)
+        d.name_connection('Sergeant Okafor')
+        assert d.projection.summary.current_career is not None
+        d.advancement(12)
+        assert d.projection.summary.rank == 1
 
-    def test_accept_failure_ends_career_and_loses_benefit(self):
-        _base = self._setup_to_mishap()
-        ev6 = Event(fulfills=(_base[-1].id, 0), handler=MishapHandler(roll=4))
-        ev7 = Event(
-            fulfills=(ev6.id, 0),
-            handler=CareerChoiceHandler(choice=MarinesMishap4Accept.model_fields['kind'].default),
-        )
-        events = [
-            *_base,
-            ev6,
-            ev7,
-            Event(fulfills=(ev7.id, 0), handler=SkillRollHandler(skill=Admin(), modified_roll=7)),
-        ]
-        projection = replay(1, events)
-        assert projection.summary.current_career is None
-        assert not any(isinstance(p, PendingMusterOut) for p in projection.pending_inputs)
+    def test_accepting_gains_the_lone_survivor_as_an_enemy(self):
+        d = _marine_after_mishap_4()
+        d.career_choice(MarinesMishap4Accept)
+        d.name_connection('Sergeant Okafor')
+        (enemy,) = d.projection.summary.connections
+        assert isinstance(enemy, Enemy)
+        assert enemy.name == 'Sergeant Okafor'
+
+    def test_history_of_refusing(self):
+        d = _marine_after_mishap_4()
+        d.career_choice(MarinesMishap4Refuse)
+        assert d.projection.creation_history[-1].startswith(f'{self._STORY} You refuse. Career ended.')
+
+    def test_history_of_accepting(self):
+        d = _marine_after_mishap_4()
+        d.career_choice(MarinesMishap4Accept)
+        d.name_connection('Sergeant Okafor')
+        assert d.projection.creation_history[-1] == f'{self._STORY} You accept. Enemy: Sergeant Okafor.'
 
 
 class TestMarinesDirectOutcomeRows:
