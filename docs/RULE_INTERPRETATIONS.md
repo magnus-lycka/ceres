@@ -456,15 +456,33 @@ operational design without being an invalid Ceres build.
 
 The *Traveller Companion* (2024) defines **Science**, **Art**, and **Profession** as broad skills.
 Ceres reads a broad skill as a name for a group of several related but distinct skills, not as a
-skill in itself. Each skill in the group is learned on its own, and may have its own specialisations.
+skill in itself. Each skill in the group is learned on its own, and may have its own specialities.
 A Traveller rules mention of "Science" is therefore shorthand for "Life Science, Physical Science,
 Robotic Science, Social Science or Space Science", which are the actual skills.
 
 For example, Ceres models `Space Science (Planetology)`, not `Science (Planetology)`, and does not model a
 generic `Science` skill.
 
-**Language** is a broad skill in the same way: each language is a distinct skill, not a speciality of one
-generic `Language` skill. A level in one language grants no level or familiarity in any other language.
+**Terminology.** The Companion adds a third level only for these three skills: a broad skill has
+specialities, and each speciality has sub-specialities, written `Science (life sciences/biology)`. That
+makes "speciality" mean one thing for Art, Profession and Science and another for every other skill.
+Ceres does not follow it. In Ceres, *skill* and *speciality* each keep one meaning for every skill, and
+*broad skill* is the name of a group of skills:
+
+| Companion (Art, Profession, Science) | Core (all other skills)  | Ceres (all skills)                 |
+| ------------------------------------ | ------------------------ | ---------------------------------- |
+| broad skill, e.g. Science            | —                        | broad skill, e.g. Science          |
+| speciality, e.g. life sciences       | skill, e.g. Engineer     | skill, e.g. Life Science, Engineer |
+| sub-speciality, e.g. biology         | speciality, e.g. j-drive | speciality, e.g. Biology, J-drive  |
+| `Science (life sciences/biology)`    | `Engineer (j-drive)`     | `Life Science (Biology)`           |
+
+The Companion's own rule is what makes this mapping sound: a level in one sub-speciality counts as
+level 0 in the other sub-specialities of the same speciality, and as nothing in other specialities.
+That is how a Core skill with specialities already behaves.
+
+**Language** is not one of the Companion's broad skills; Core treats each language as a speciality of
+`Language`. Ceres treats Language as a broad skill in the same way as the other three: each language is a
+distinct skill. A level in one language grants no level or familiarity in any other language.
 
 The broad skills are:
 
@@ -477,7 +495,7 @@ The broad skills are:
 
 This model applies wherever Ceres names a skill, not only during character
 creation. Expert software names the concrete skill and its optional
-specialisation, and older robot or source labels such as `Science (Planetology)`
+speciality, and older robot or source labels such as `Science (Planetology)`
 are normalised to the corresponding concrete skill, e.g. `Space Science (Planetology)`.
 
 **Implications for character creation:**
@@ -497,7 +515,7 @@ it never grants a flat skill or speciality named `Science`, `Art`,
   Researcher / Scientist rank 1 and 5) defer the grant until the player chooses
   the science.
 - A broad skill at level 0 (e.g. "Profession 0" in Colonial Upbringing) means
-  the player chooses one of its skills at level 0. No specialisation is chosen
+  the player chooses one of its skills at level 0. No speciality is chosen
   at level 0.
 - The Physician career has a separate rank table from Field Researcher /
   Scientist because the Core Rulebook lists different rank bonuses for it (rank 1

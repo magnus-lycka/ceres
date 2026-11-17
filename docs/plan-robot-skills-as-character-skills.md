@@ -22,7 +22,7 @@ The robot layer should still own robot-specific construction rules:
 The shared character skill layer should own:
 
 - canonical skill names
-- specialities and broad-skill naming policy
+- specialities and broad-skill naming policy (RIC-001)
 - display formatting
 - validation and aliases
 - source/rules notes for skill identity
@@ -94,7 +94,7 @@ The exact API can differ, but it should support:
 - `Recon`
 - `Electronics (remote ops)`
 - `Profession (domestic cleaner)`
-- broad skills such as `Space Science (Planetology)` where applicable
+- skills within a broad skill, such as `Space Science (Planetology)` (RIC-001)
 - language skills according to the current Ceres interpretation
 
 The key rule is that a skill package, a character sheet, an Expert package, and

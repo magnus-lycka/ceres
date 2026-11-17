@@ -30,7 +30,6 @@ from ceres.character.domain.career.common_pending import PendingAnySkillAtLevelO
 from ceres.character.domain.career.scholar import (
     PendingScholarEvent11,
     PendingScholarScienceChoice,
-    PendingScholarScienceChoicePreCreated,
     ScholarEvent3Accept,
     ScholarEvent3Decline,
     ScholarEvent8Accept,
@@ -262,7 +261,7 @@ class TestScholarTerm:
         assert 'INT' in adv_pending.instruction and '6' in adv_pending.instruction
 
     def test_rank_1_bonus_creates_science_choice_pending(self):
-        # Rank 1 bonus is Science 1 (player chooses which broad science) — Core p.43
+        # Rank 1 bonus is Science 1 (player chooses which science skill, RIC-001) — Core p.43
         events = _scholar_term_event(5)  # benefit_dm → direct advancement
         _append_event(events, handler=AdvancementHandler(roll=7))  # INT=9 DM+1 → 8 >= 6
         projection = replay(1, events)
@@ -282,7 +281,7 @@ class TestScholarTerm:
         projection = replay(1, events)
 
         pending = next(p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice))
-        # Core event 4: one of Medic, Science, Engineer, Electronics, Investigate — Science = any broad science
+        # Core event 4: Medic, Science, Engineer, Electronics or Investigate; Science = any science skill (RIC-001)
         assert pending.options == [
             Medic(),
             LifeScience(),
@@ -441,7 +440,7 @@ class TestScholarMishap3:
         )
         projection = replay(1, events)
 
-        # Core mishap 3: increase Science — any broad science — so a science choice pending is required
+        # Core mishap 3: increase Science — any science skill (RIC-001) — so a science choice pending is required
         assert any(isinstance(c, Enemy) for c in projection.summary.connections)
         science_pending = next(
             (p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoice)),
@@ -684,7 +683,7 @@ class TestScholarEvent11:
             None,
         )
         assert pending is not None
-        # Core event 11: increase Science by one level — any broad science — or DM+4 advancement
+        # Core event 11: increase Science by one level — any science skill (RIC-001) — or DM+4 advancement
         assert pending.options == [
             LifeScience(),
             PhysicalScience(),
@@ -894,7 +893,7 @@ class TestScholarLabShip:
 
 
 class TestScholarScienceChoicesInTables:
-    """Scholar skill table entries that are 'Science' offer all broad sciences (Core p.43)."""
+    """Scholar skill table entries that are 'Science' offer all science skills (Core p.43, RIC-001)."""
 
     def _setup_in_term_2(self, assignment: str = 'Field Researcher') -> list:
         return _scholar_one_term(assignment, reenlist=True)
@@ -919,7 +918,7 @@ class TestScholarScienceChoicesInTables:
         assert {s.skill for s in pending.options} == _SCIENCE_CLASSES
 
     def test_advanced_education_roll_1_creates_art_choice(self):
-        # Core advanced_education row 1: Art (any broad art type)
+        # Core advanced_education row 1: Art (any art skill, RIC-001)
         events = self._setup_in_term_2()
         _append_event(events, handler=SkillTableHandler(table='advanced_education', roll=1))
         projection = replay(1, events)
@@ -957,7 +956,7 @@ class TestScholarScienceChoicesInTables:
 
 
 class TestScholarMishap3ScienceChoice:
-    """Mishap 3 Science +1 is deferred until player chooses which broad science (Core p.44)."""
+    """Mishap 3 Science +1 is deferred until player chooses which science skill (Core p.44, RIC-001)."""
 
     def _setup_to_choice(self, choice_cls: type[ChoiceBase]) -> list:
         events = _scholar_mishap(3)
@@ -1073,18 +1072,17 @@ class TestScholarEvent3:
 
         assert any(isinstance(p, PendingConnectionsRoll) for p in projection.pending_inputs)
 
-    def test_accept_creates_two_science_skill_choice_pendings(self):
-        events = self._setup()
-        _append_event(
-            events,
-            handler=CareerChoiceHandler(choice=ScholarEvent3Accept.model_fields['kind'].default),
-        )
-        projection = replay(1, events)
-
-        science_pendings = [
-            p for p in projection.pending_inputs if isinstance(p, PendingScholarScienceChoicePreCreated)
-        ]
-        assert len(science_pendings) == 2
+    def test_accept_gains_a_level_in_two_science_skills(self):
+        d = _scholar_with_life_science()
+        d.survive(9)
+        d.term_event(3)
+        d.career_choice(ScholarEvent3Accept)
+        d.connections_roll(1)
+        d.name_connection('Dr Kell')
+        d.choose_career_skill(LifeScience(biology=Level(value=1)))
+        d.choose_career_skill(SpaceScience(planetology=Level(value=1)))
+        assert d.projection.summary.skill_level(LifeScience) == 1
+        assert d.projection.summary.skill_level(SpaceScience) == 1
 
     def test_accept_adds_extra_benefit_roll(self):
         events = self._setup()
@@ -1115,3 +1113,62 @@ class TestScholarEvent3:
         projection = replay(1, events)
 
         assert any(isinstance(p, PendingAdvancement) for p in projection.pending_inputs)
+
+
+# ── science choices (RIC-001) ─────────────────────────────────────────────────
+
+
+def _scholar_with_life_science() -> CharacterDriver:
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('7869A5')
+    d.background_skills([Admin(), Athletics(), Carouse(), Drive()])
+    d.career('Scholar', 'Field Researcher', roll=5)
+    d.initial_training(LifeScience())
+    return d
+
+
+class TestScholarScienceChoices:
+    """Core's "Science" is a broad skill: the player increases one of its science skills (RIC-001)."""
+
+    def test_event_3_asks_for_two_different_science_skills(self):
+        # "a level in each of any two Science skill specialties": in Ceres terms, two different science skills.
+        d = _scholar_with_life_science()
+        d.survive(9)
+        d.term_event(3)
+        d.career_choice(ScholarEvent3Accept)
+        d.connections_roll(1)
+        d.name_connection('Dr Kell')
+        assert d.career_skill_choice_instruction() == 'Choose the first science skill to increase by one level'
+        d.choose_career_skill(LifeScience(biology=Level(value=1)))
+        assert d.career_skill_choice_instruction() == (
+            'Choose a second, different science skill to increase by one level'
+        )
+        offered = d.career_skill_choice_labels()
+        assert offered
+        assert not any(label.startswith('Life Science') for label in offered)
+        assert any(label.startswith('Space Science') for label in offered)
+
+    def test_event_3_choice_label_names_science_skills(self):
+        assert ScholarEvent3Accept().label == 'Accept (two science skills +1, D3 Enemies, extra Benefit roll)'
+
+    def test_mishap_3_asks_to_increase_a_science_skill(self):
+        d = _scholar_with_life_science()
+        d.survive(2)
+        d.mishap(3)
+        d.career_choice(ScholarMishap3Openly)
+        d.name_connection('Minister Arlo')
+        assert d.career_skill_choice_instruction() == 'Increase a science skill by one level'
+
+    def test_mishap_3_choices_name_a_science_skill(self):
+        assert ScholarMishap3Openly().label == 'Continue openly (a science skill +1, gain Enemy)'
+        assert ScholarMishap3Secretly().label == 'Continue secretly (a science skill +1, SOC -2)'
+
+    def test_event_11_asks_to_increase_a_science_skill_or_take_the_dm(self):
+        d = _scholar_with_life_science()
+        d.survive(9)
+        d.term_event(11)
+        d.name_connection('Professor Imre')
+        assert d.career_skill_choice_instruction() == (
+            'Increase a science skill by one level, or DM+4 to your next advancement roll'
+        )

@@ -86,11 +86,15 @@ Traveller skills may be general or specialised.
 - A speciality at level 1+ normally grants the parent skill at level 0, allowing
   related checks without the unskilled penalty.
 
-The Traveller Companion broad skill rules make this more nuanced. Broad skills
-such as Art, Profession, and Science can have specialities and
-sub-specialities. A sub-speciality may grant level 0 within a related group but
-not across the entire broad skill. Profession is especially broad: having one
-profession does not imply competence in every other profession.
+Art, Profession, Science and Language are broad skills: names for a group of
+distinct skills, such as Life Science or Spacer Profession, rather than skills
+in themselves. Each skill in the group is gained on its own and may have its own
+specialities. A level in Life Science gives nothing in Space Science, and having
+one profession does not imply competence in any other. The Traveller Companion
+describes Art, Profession and Science with a third level (broad skill,
+speciality, sub-speciality); Ceres maps that onto ordinary skills and
+specialities so the two words mean the same for every skill. See RIC-001 in
+[RULE_INTERPRETATIONS.md](../RULE_INTERPRETATIONS.md).
 
 Some sophonts also modify skills directly. They may gain mandatory background
 skills, be unable to acquire particular skills, convert certain skill results,

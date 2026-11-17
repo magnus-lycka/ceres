@@ -192,7 +192,8 @@ classes rather than preserve them as free-form strings.
 
 Robot skill packages and source stat blocks should be encoded as skill objects.
 When the source uses a broad Traveller skill label that Ceres models through
-Traveller Companion broad skills, use the matching broad-skill class:
+Traveller Companion broad skills (RIC-001 in `docs/RULE_INTERPRETATIONS.md`), use the
+matching skill class within that broad skill:
 
 | Source label             | Ceres skill object                          |
 |--------------------------|---------------------------------------------|

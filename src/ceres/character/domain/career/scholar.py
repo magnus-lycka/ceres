@@ -85,7 +85,7 @@ def _append_scholar_science_choice(projection: CharacterProjection, event_id: in
     projection.queue_deferred(
         PendingScholarScienceChoice(
             pending_id=(event_id, idx),
-            instruction='Increase Science by one level: choose which broad science',
+            instruction='Increase a science skill by one level',
             options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
             advancement_precreated=True,
         )
@@ -94,7 +94,7 @@ def _append_scholar_science_choice(projection: CharacterProjection, event_id: in
 
 class ScholarMishap3Openly(ChoiceBase):
     kind: Literal['scholar_mishap_3_openly'] = 'scholar_mishap_3_openly'
-    label: str = 'Continue openly (Science +1, gain Enemy)'
+    label: str = 'Continue openly (a science skill +1, gain Enemy)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.add_connection(ConnectionKind.ENEMY, origin='Government officials who interfered with your research')
@@ -103,7 +103,7 @@ class ScholarMishap3Openly(ChoiceBase):
 
 class ScholarMishap3Secretly(ChoiceBase):
     kind: Literal['scholar_mishap_3_secretly'] = 'scholar_mishap_3_secretly'
-    label: str = 'Continue secretly (Science +1, SOC -2)'
+    label: str = 'Continue secretly (a science skill +1, SOC -2)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
         soc = projection.summary.characteristics.get(Chars.SOC, 0)
@@ -119,7 +119,9 @@ class ScholarMishap3Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
-                instruction='Continue openly (Science +1, Enemy) or secretly (Science +1, SOC -2)?',
+                instruction=(
+                    'Continue openly (a science skill +1, gain Enemy) or secretly (a science skill +1, SOC -2)?'
+                ),
                 choices=[ScholarMishap3Openly(), ScholarMishap3Secretly()],
             )
         )
@@ -174,9 +176,26 @@ class PendingScholarScienceChoicePreCreated(CareerSkillChoicePendingBase):
     kind: Literal['scholar_science_choice_precreated'] = 'scholar_science_choice_precreated'
 
 
+class PendingScholarEvent3FirstScience(PendingScholarScienceChoicePreCreated):
+    """Event 3's first science skill; the second must be a different science skill (RIC-001)."""
+
+    kind: Literal['scholar_event_3_first_science'] = 'scholar_event_3_first_science'
+
+    def on_skill_chosen(self, projection: CharacterProjection, event: Event) -> None:
+        super().on_skill_chosen(projection, event)
+        projection.queue_immediate(
+            PendingScholarScienceChoicePreCreated(
+                pending_id=(event.id, 0),
+                instruction='Choose a second, different science skill to increase by one level',
+                options=[skill for skill in self.options if type(skill) is not type(event.skill)],
+                advancement_precreated=True,
+            )
+        )
+
+
 class ScholarEvent3Accept(ChoiceBase):
     kind: Literal['scholar_event_3_accept'] = 'scholar_event_3_accept'
-    label: str = 'Accept (2 Science specialties + D3 Enemies + extra Benefit roll)'
+    label: str = 'Accept (two science skills +1, D3 Enemies, extra Benefit roll)'
 
     def handle(self, projection: CharacterProjection, event) -> None:
         projection.queue_deferred(
@@ -188,15 +207,14 @@ class ScholarEvent3Accept(ChoiceBase):
                 origin='Scholar event 3',
             )
         )
-        for i, label in enumerate(['first', 'second'], start=1):
-            projection.queue_deferred(
-                PendingScholarScienceChoicePreCreated(
-                    pending_id=(event.id, i),
-                    instruction=f'Choose {label} Science specialty to increase by one level',
-                    options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
-                    advancement_precreated=True,
-                )
+        projection.queue_deferred(
+            PendingScholarEvent3FirstScience(
+                pending_id=(event.id, 1),
+                instruction='Choose the first science skill to increase by one level',
+                options=cast(list[AnySkill | AdvancementDmOption], skill_instances(ScienceSkill)),
+                advancement_precreated=True,
             )
+        )
         projection.summary.career_terms[-1].require_muster_out().extra_rolls += 1
         projection.summary.narrative.append(
             'You gain an extra benefit roll at muster out (accepted research against your conscience).'
@@ -224,7 +242,7 @@ class ScholarEvent3Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingChoices(
                 pending_id=(event_id, pending_idx),
-                instruction='Accept (2 Science specialties + D3 Enemies + extra Benefit roll) or Decline?',
+                instruction='Accept (two science skills +1, D3 Enemies, extra Benefit roll) or Decline?',
                 choices=[ScholarEvent3Accept(), ScholarEvent3Decline()],
             )
         )
@@ -331,7 +349,7 @@ class ScholarEvent11Handler(CareerHandlerBase):
         projection.queue_deferred(
             PendingScholarEvent11(
                 pending_id=(event_id, pending_idx),
-                instruction='Increase Science by one level (choose which), or DM+4 to your next advancement roll',
+                instruction='Increase a science skill by one level, or DM+4 to your next advancement roll',
                 options=[*_SCIENCES, AdvancementDmOption()],
                 advancement_precreated=False,
             )

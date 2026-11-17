@@ -28,7 +28,12 @@ Characteristic DM from score:
 
 **Available skills (all at level 0):** Admin, Animals, Art, Athletics, Carouse, Drive, Electronics, Flyer, Language, Mechanic, Medic, Profession, Science, Seafarer, Streetwise, Survival, Vacc Suit.
 
-Art, Profession and Science are unspecified in the core rulebook — the player picks which speciality. The Companion expansions used in Ceres (three Art types, seven Profession types, five Science types) are directly compatible. The same broad-skill model applies to career skill table entries that list "Science", "Art", or "Profession" — see **RIC-001**.
+Art, Language, Profession and Science are broad skills: each names a group of
+distinct skills, and the player picks one skill from the group, at level 0 and
+with no speciality. Ceres uses the Companion's skills: three Art skills, six
+Profession skills, five Science skills, and one skill per language. The same
+applies to career skill table entries that list "Science", "Art", "Profession"
+or "Language". See RIC-001 in [RULE_INTERPRETATIONS.md](RULE_INTERPRETATIONS.md).
 
 Traveller is now 18 years old and ready to begin careers.
 

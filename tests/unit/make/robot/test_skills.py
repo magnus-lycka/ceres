@@ -90,9 +90,11 @@ _SPECIALISATION_SKILLS = [
     skill for skill, *_ in _STANDARD_SKILL_PACKAGES if isclass(skill) and 'level' not in skill.model_fields
 ]
 
-_BROAD_SIMPLE_SKILLS = character_skills._skill_classes(character_skills.LanguageSkill)
+# Language is a broad skill (RIC-001): each language is its own skill, with no specialities.
+_LANGUAGE_SKILLS = character_skills._skill_classes(character_skills.LanguageSkill)
 
-_BROAD_SPECIALISATION_SKILLS = {
+# The skills in each broad skill with specialities (RIC-001), keyed by broad skill.
+_SKILLS_IN_BROAD_SKILLS = {
     character_skills.ArtSkill: character_skills._skill_classes(character_skills.ArtSkill),
     character_skills.ScienceSkill: character_skills._skill_classes(character_skills.ScienceSkill),
     character_skills.ProfessionSkill: character_skills._skill_classes(character_skills.ProfessionSkill),
@@ -157,10 +159,10 @@ class TestStandardSkills:
                     expected = {f'{skill_cls.name()} ({speci})': 1}
                 assert pkg.display_entries(_DM0) == expected
 
-    def test_broad_skills_no_specialisation_2(self):
+    def test_language_skills_no_speciality_2(self):
         tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[character_skills.LanguageSkill]
         all_plus1 = {Chars.STR: 1, Chars.DEX: 1, Chars.INT: 1}
-        for skill_cls in _BROAD_SIMPLE_SKILLS:
+        for skill_cls in _LANGUAGE_SKILLS:
             facade_cls = _CHAR_TO_FACADE[skill_cls]
             pkg = facade_cls(level=2)
             assert pkg.tl == tl
@@ -168,8 +170,8 @@ class TestStandardSkills:
             assert pkg.cost == cost * 100
             assert pkg.display_entries(all_plus1) == {skill_cls.name(): 3}
 
-    def test_broad_skills_specialisation(self):
-        for skills in _BROAD_SPECIALISATION_SKILLS.values():
+    def test_skills_in_broad_skills_speciality(self):
+        for skills in _SKILLS_IN_BROAD_SKILLS.values():
             for skill_cls in skills:
                 facade_cls = _CHAR_TO_FACADE[skill_cls]
                 instance = skill_cls()

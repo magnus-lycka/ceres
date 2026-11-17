@@ -641,6 +641,15 @@ class CharacterDriver:
         choice_kind = choice_cls.model_fields['kind'].default
         return self._add(Event(fulfills=pending.pending_id, handler=CareerChoiceHandler(choice=choice_kind)))
 
+    def career_skill_choice_instruction(self) -> str:
+        """What the next career event skill choice asks the player to do."""
+        return self._find(CareerSkillChoicePendingBase).instruction
+
+    def career_skill_choice_labels(self) -> list[str]:
+        """What the next career event skill choice offers, as the player sees it."""
+        (spec,) = self._find(CareerSkillChoicePendingBase).input_specs(self.projection)
+        return [label for label, _value in spec.options]
+
     def choose_career_skill(self, skill: AnySkill) -> CharacterDriver:
         pending = self._find(CareerSkillChoicePendingBase)
         return self._add(Event(fulfills=pending.pending_id, handler=SkillChoiceHandler(skill=skill)))
