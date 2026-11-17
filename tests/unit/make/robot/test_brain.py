@@ -799,12 +799,12 @@ class TestSelfAwareBrainSkillsAndBandwidth:
         brain = SelfAwareBrain(installed_skills=(Admin(level=1),))
         assert brain.hardware_cost == 1_000_000.0
 
-    def test_level0_specialty_grant_uses_all(self):
+    def test_level0_speciality_grant_uses_all(self):
         # All Electronics specs at DM 2 (level 0 + skill_dm 2) → Electronics (All) 2
         brain = SelfAwareBrain(installed_skills=(Electronics(),))
         assert brain.display_labels({}).get('Electronics (All)') == 2
 
-    def test_level1_specialty_grant_preserved(self):
+    def test_level1_speciality_grant_preserved(self):
         # skill_dm=2; Engineer (J-Drive) level 1 + DM 2 = 3
         brain = SelfAwareBrain(installed_skills=(Engineer(j_drive=1),))
         assert brain.display_labels({}).get('Engineer (J-Drive)') == 3

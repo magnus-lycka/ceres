@@ -257,6 +257,6 @@
   },
   "annotations": {
     "cost": "Ceres Cr188,220 vs source Cr160,000 — 15% source discount untraced, see RIR-002; SIZE_3 NoneLocomotion removal credit capped at 20% BCC = -Cr80",
-    "skills": "Ceres shows implied-familiarity Electronics and Robotic Science subspecialties at level 1 (raw 0 + INT DM+1 from int_upgrade=1); source stat block omits these entries"
+    "skills": "Ceres shows implied-familiarity Electronics and Robotic Science specialities at level 1 (raw 0 + INT DM+1 from int_upgrade=1); source stat block omits these entries"
   }
 }

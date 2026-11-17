@@ -609,22 +609,22 @@ Selecting the higher result consumes the scheduled effect.
 to all benefit rolls), a "any one roll" scheduled effect is redundant and is not
 additionally applied. The effect is consumed without offering a separate choice.
 
-### RIC-005 Skill Labels Use the Achieved Specialisation Only; Level-0 Grants Are Written Without Specialisation
+### RIC-005 Skill Labels Use the Achieved Speciality Only; Level-0 Grants Are Written Without Speciality
 
 When a character gains a skill from a career table or basic training, Ceres
 represents the outcome as a single label of the form `Skill-N` or
-`Skill (Specialisation)-N`.
+`Skill (Speciality)-N`.
 
-**Specialised skills at level > 0**: Only the chosen specialisation is named.
+**Specialised skills at level > 0**: Only the chosen speciality is named.
 `Gun Combat (Slug)-1` means Slug reached level 1 in this step; the other
-specialisations (Archaic, Energy) are implicitly at whatever level they were
+specialities (Archaic, Energy) are implicitly at whatever level they were
 before (including zero). Writing them out would be `Gun Combat (Slug)-1,
 Gun Combat (Archaic)-0, Gun Combat (Energy)-0`, but that is unnecessarily
 verbose. Ceres uses the short form.
 
 **Level-0 grants**: When basic training or a similar rule grants a skill at
 level 0, the entire skill is added to the sheet without choosing a
-specialisation. Even where the source table names a specialisation — e.g.
+speciality. Even where the source table names a speciality — e.g.
 "Pilot (small craft)" in Drifter/Scavenger basic training — a level-0 grant
 means only "you now have this skill on your sheet". The result is written
 `Pilot-0`, not `Pilot (Small Craft)-0`.
@@ -1477,7 +1477,7 @@ regardless of VSM (see RIR-009), and the Athletics skill grant is always emitted
 ### RIR-011 Robot Skill Package Characteristics May Follow Speciality Task
 
 The *Robot Handbook* Standard Skill Packages table assigns one characteristic to
-each skill row regardless of specialisation. Ceres uses that row characteristic as
+each skill row regardless of speciality. Ceres uses that row characteristic as
 the default, but allows a speciality to use a different characteristic when the
 speciality's task clearly differs from the broad row's physical handling assumption.
 
@@ -1518,20 +1518,20 @@ Ceres gives no such concessions. Robot specifications can
 have listings like "Engineer (All) 2", but that's not because
 anyone bought an all-package. No such thing exists. It's just
 a compact way of writing that skill level including DM from
-impacting characteristic happened to cause all specialisations
+impacting characteristic happened to cause all specialities
 to land on the same level, in this case probably because it's
 an INT 12 brain and an Engineer 0 package.
 
-It is of course possible to buy as many specializations as
-one wants for skills with specializations, but note that this
+It is of course possible to buy as many specialities as
+one wants for skills with specialities, but note that this
 is rarely the case when we see e.g. "Electronics (All) 1" in
 a robot spec, and skill package APIs for skills with
-specialisations must explicitly list all awarded specialisations
+specialities must explicitly list all awarded specialities
 as soon as level is above 0. I.e. Something like Pilot() could
 award Pilot 0, but to get Pilot (All) 1 without INT and DEX DMs,
 the API call must look something like
 Pilot(small_craft=1, starships=1, capital_ships=1) with all awarded
-specialisations given. Note that the cost and bandwidth requirement
+specialities given. Note that the cost and bandwidth requirement
 for this is the same as for three entirely separate skills with
 the same price and bandwith, e.g. Admin(level=1), Mechanics(level=1)
 and Steward(level=1)

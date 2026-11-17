@@ -782,9 +782,9 @@ def test_apply_fixed_rank_bonus_characteristic_increases_stat():
     assert p.pending_inputs == ()
 
 
-def test_apply_fixed_rank_bonus_choice_offers_restricted_specializations():
+def test_apply_fixed_rank_bonus_choice_offers_restricted_specialitys():
     # Marine rank 0: 'Gun Combat (any) 1 or Melee (blade) 1' — Gun Combat offers
-    # every specialization, Melee only blade.
+    # every speciality, Melee only blade.
     from ceres.character.domain.career import MARINES
     from ceres.character.domain.career.career_events import PendingRankBonusChoice
     from ceres.character.input_specs import Select

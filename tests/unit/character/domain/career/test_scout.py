@@ -515,7 +515,7 @@ class TestScoutAssignmentTableCorrections:
         assert labels == ['Pilot (Small Craft)', 'Pilot (Spacecraft)']
 
     def test_courier_roll_2_offers_flyer(self):
-        # Courier roll 2 is Flyer (specialised) — player must choose a specialisation
+        # Courier roll 2 is Flyer (specialised) — player must choose a speciality
         base = self._setup_in_term_2('Courier')
         events = [
             *base,
@@ -548,7 +548,7 @@ class TestScoutAssignmentTableCorrections:
         assert projection.summary.skill_level(Navigation) is not None
 
     def test_explorer_roll_2_offers_pilot(self):
-        # Explorer roll 2 is Pilot (specialised) — player must choose a specialisation
+        # Explorer roll 2 is Pilot (specialised) — player must choose a speciality
         base = self._setup_in_term_2('Explorer')
         events = [
             *base,

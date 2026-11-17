@@ -80,7 +80,7 @@ on `CharacterProjection`:
 
 - **`queue_immediate(item, ...)`** — schedule something *immediately*, before
   all currently pending items. Use this for sub-steps of the current operation
-  that must complete before anything already in the queue: a specialisation
+  that must complete before anything already in the queue: a speciality
   choice that arises when a skill-table roll lands on an unspecialised skill,
   or additional choices generated during an event resolution.
 

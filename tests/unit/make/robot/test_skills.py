@@ -86,7 +86,7 @@ _STANDARD_SKILL_VARYING_CHAR: dict[object, dict[str, Chars | None]] = {
 
 _SIMPLE_SKILLS = [skill for skill, *_ in _STANDARD_SKILL_PACKAGES if isclass(skill) and 'level' in skill.model_fields]
 
-_SPECIALISATION_SKILLS = [
+_SPECIALITY_SKILLS = [
     skill for skill, *_ in _STANDARD_SKILL_PACKAGES if isclass(skill) and 'level' not in skill.model_fields
 ]
 
@@ -119,7 +119,7 @@ class TestStandardSkills:
     def test_skill_name_with_active_speciality_includes_speciality(self):
         assert skill_name(character_skills.Drive(wheel=Level(value=1))) == 'Drive (Wheel)'
 
-    def test_skills_no_specialisation_0(self):
+    def test_skills_no_speciality_0(self):
         for skill_cls in _SIMPLE_SKILLS:
             tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
             facade_cls = _CHAR_TO_FACADE[skill_cls]
@@ -129,7 +129,7 @@ class TestStandardSkills:
             assert pkg.cost == cost
             assert pkg.display_entries(_DM0) == {skill_cls.name(): 0}
 
-    def test_skills_no_specialisation_1(self):
+    def test_skills_no_speciality_1(self):
         all_plus1 = {Chars.STR: 1, Chars.DEX: 1, Chars.INT: 1}
         for skill_cls in _SIMPLE_SKILLS:
             tl, bw, _, cost = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
@@ -140,8 +140,8 @@ class TestStandardSkills:
             assert pkg.cost == cost * 10
             assert pkg.display_entries(all_plus1) == {skill_cls.name(): 2}
 
-    def test_skills_specialisation(self):
-        for skill_cls in _SPECIALISATION_SKILLS:
+    def test_skills_speciality(self):
+        for skill_cls in _SPECIALITY_SKILLS:
             _, _, char, _ = _STANDARD_SKILL_PACKAGE_DICT[skill_cls]
             facade_cls = _CHAR_TO_FACADE[skill_cls]
             instance = skill_cls()

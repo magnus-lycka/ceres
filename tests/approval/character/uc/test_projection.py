@@ -86,19 +86,19 @@ def test_skill_choices_fixed_level_1_when_already_at_1(snapshot):
 
 @pytest.mark.approval
 def test_skill_choices_specialised_from_missing(snapshot):
-    """Missing specialised skill produces choices for all specialties."""
+    """Missing specialised skill produces choices for all specialities."""
     assert _choices_snap(_proj(), [Animals], None) == snapshot(extension_class=_ext)
 
 
 @pytest.mark.approval
 def test_skill_choices_specialised_spec_at_level_4_excluded(snapshot):
-    """A maxed specialty is excluded; others remain available."""
+    """A maxed speciality is excluded; others remain available."""
     assert _choices_snap(_proj([Animals(handling=Level(value=4))]), [Animals], None) == snapshot(extension_class=_ext)
 
 
 @pytest.mark.approval
 def test_skill_choices_multiple_science_types(snapshot):
-    """All science specialties across five classes are returned."""
+    """All science specialities across five classes are returned."""
     assert _choices_snap(
         _proj(), [LifeScience, PhysicalScience, RoboticScience, SocialScience, SpaceScience], None
     ) == snapshot(extension_class=_ext)

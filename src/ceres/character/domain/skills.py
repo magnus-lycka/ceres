@@ -30,7 +30,7 @@ def _level(name: str | None = None):
 
 @dataclass(frozen=True)
 class SpecRef:
-    """Typed reference to one specialization (Level field) of a skill class."""
+    """Typed reference to one speciality (Level field) of a skill class."""
 
     skill_cls: type[Skill]
     field: str
@@ -71,20 +71,20 @@ class Skill(CeresModel, metaclass=_SkillMeta):
         return tuple(names)
 
     def label(self) -> str:
-        """Display label: skill name plus the active specialization, if one is set."""
+        """Display label: skill name plus the active speciality, if one is set."""
         cls = type(self)
         fields = level_fields(cls)
         if len(fields) > 1:
             active = next((f for f in fields if getattr(self, f).value > 0), None)
             if active is not None:
                 extra = cls.model_fields[active].json_schema_extra or {}
-                specialisation = str(extra.get('name') or active.replace('_', ' ').title())
-                return f'{cls.name()} ({specialisation})'
+                speciality = str(extra.get('name') or active.replace('_', ' ').title())
+                return f'{cls.name()} ({speciality})'
         return cls.name()
 
     def select_options(self, projection: CharacterProjection, level: int | None) -> list[tuple[str, str]]:
         """(label, form_value) pairs for choosing this skill. Level fields set on this
-        instance restrict the offered specializations; a bare instance offers all."""
+        instance restrict the offered specialities; a bare instance offers all."""
         cls = type(self)
         if level == 0:
             return [(cls.name(), cls().model_dump_json())]
@@ -633,7 +633,7 @@ def level_fields(skill_cls: type[Skill]) -> list[str]:
 
 
 def field_for_spec(cls: type[Skill], spec: str) -> str:
-    """Return the field name for a specialisation display name (e.g. 'Computers' → 'computers')."""
+    """Return the field name for a speciality display name (e.g. 'Computers' → 'computers')."""
     for field_name, field in cls.model_fields.items():
         if field_name in {'display_label', 'type'}:
             continue
@@ -641,7 +641,7 @@ def field_for_spec(cls: type[Skill], spec: str) -> str:
         label = str(extra.get('name') or field_name.replace('_', ' ').title())
         if label.lower() == spec.lower():
             return field_name
-    raise ValueError(f'Unknown specialisation {spec!r} for skill {cls.name()!r}')
+    raise ValueError(f'Unknown speciality {spec!r} for skill {cls.name()!r}')
 
 
 def speciality_label(skill: Skill, field_name: str) -> str:

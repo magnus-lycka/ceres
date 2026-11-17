@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def skill_with_levels(skill_cls: type[AnySkill], fields: Iterable[str], level: int = 1) -> AnySkill:
-    """Build a skill instance with runtime-chosen specialisation fields set.
+    """Build a skill instance with runtime-chosen speciality fields set.
 
     The field names are decided at runtime, so the mapping is genuinely dynamic.
     Saying so once, here, keeps a type checker from matching every key against
@@ -177,9 +177,9 @@ class Skill(SkillTableEntryBase):
     def _specs_belong_to_skill(self) -> Skill:
         for ref in self.specs or ():
             if ref.skill_cls is not self.skill:
-                raise ValueError(f'Specialization {ref!r} does not belong to {self.skill.name()}')
+                raise ValueError(f'Speciality {ref!r} does not belong to {self.skill.name()}')
             if ref.field not in level_fields(self.skill):
-                raise ValueError(f'{self.skill.name()} has no specialization {ref.field!r}')
+                raise ValueError(f'{self.skill.name()} has no speciality {ref.field!r}')
         return self
 
     def _allowed_fields(self) -> list[str]:
@@ -188,7 +188,7 @@ class Skill(SkillTableEntryBase):
         return level_fields(self.skill)
 
     def _marker_instance(self) -> AnySkill:
-        """Instance with each allowed specialization set — marks the restriction for option building.
+        """Instance with each allowed speciality set — marks the restriction for option building.
 
         The field names are chosen at runtime, so the mapping is genuinely
         dynamic: `dict[str, Any]` states that, rather than inviting a type
@@ -203,7 +203,7 @@ class Skill(SkillTableEntryBase):
         if effective_level == 0:
             projection.grant_skill(self.skill())
         elif len(allowed) > 1:
-            self._queue_specialization_choice(projection, ctx, effective_level)
+            self._queue_speciality_choice(projection, ctx, effective_level)
         elif effective_level is None:
             projection.increment_skill(
                 self._marker_instance() if self.specs else self.skill(), history_id=ctx.history_id
@@ -212,7 +212,7 @@ class Skill(SkillTableEntryBase):
             instance = skill_with_levels(self.skill, allowed[:1], effective_level) if allowed else self.skill()
             projection.grant_skill(instance)
 
-    def _queue_specialization_choice(
+    def _queue_speciality_choice(
         self, projection: CharacterProjection, ctx: SkillTableApplyContext, level: int | None
     ) -> None:
         from ceres.character.domain.career.career_events import PendingSkillTableChoice
@@ -221,7 +221,7 @@ class Skill(SkillTableEntryBase):
             PendingSkillTableChoice(
                 pending_id=ctx.next_pending_id(),
                 history_id=ctx.history_id,
-                instruction=f'Choose a specialization for {self.skill.name()}',
+                instruction=f'Choose a speciality for {self.skill.name()}',
                 options=[self._marker_instance() if self.specs else self.skill()],
                 level=level,
             )
@@ -310,7 +310,7 @@ class SkillChoice(SkillTableEntryBase):
     def _specs_belong_to_choice(self) -> SkillChoice:
         for ref in self.specs or ():
             if ref.skill_cls not in self.skills:
-                raise ValueError(f'Specialization {ref!r} does not belong to any skill in this choice')
+                raise ValueError(f'Speciality {ref!r} does not belong to any skill in this choice')
         return self
 
     def _specs_for(self, cls: type[AnySkill]) -> tuple[SpecRef, ...] | None:

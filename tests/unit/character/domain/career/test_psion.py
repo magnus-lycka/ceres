@@ -222,7 +222,7 @@ class TestPsionCareer:
         assert driver.projection.summary.characteristics[Chars.PSI] == 10
         assert driver._find(PendingAdvancement)
 
-    def test_psi_warrior_rank_one_offers_gun_combat_specialisations_then_skill_table(self):
+    def test_psi_warrior_rank_one_offers_gun_combat_specialitys_then_skill_table(self):
         driver = _psion_driver('Psi-Warrior')
         driver.survive(6).term_event(8).advancement(6)
 
@@ -250,7 +250,7 @@ class TestPsionCareer:
         assert driver.projection.summary.rank == 1
         assert driver._find(PendingSkillTable)
 
-    def test_army_rank_zero_offers_one_gun_combat_specialisation(self):
+    def test_army_rank_zero_offers_one_gun_combat_speciality(self):
         army = ARMY
         infantry = army.assignment('Infantry')
         assert infantry is not None

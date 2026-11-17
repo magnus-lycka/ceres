@@ -184,7 +184,7 @@ class TestSkillEntry:
         assert proj.summary.skill_level(Admin) == 3
 
     def test_apply_multi_spec_increment_queues_skill_table_choice(self):
-        # Electronics has multiple specialization fields; increment mode queues a choice
+        # Electronics has multiple speciality fields; increment mode queues a choice
         proj = _projection()
         Skill(Electronics).apply(proj, _ctx())
         pendings = [p for p in proj.pending_inputs if isinstance(p, PendingSkillTableChoice)]
@@ -197,7 +197,7 @@ class TestSkillEntry:
         assert proj.summary.skill_level(Electronics) is None
 
     def test_apply_multi_spec_level_zero_grants_base_skill_no_choice(self):
-        # Level-0 (basic training): grant base skill directly, no specialization choice
+        # Level-0 (basic training): grant base skill directly, no speciality choice
         proj = _projection()
         ctx = SkillTableApplyContext(event=_event(), level=0)
         Skill(Electronics).apply(proj, ctx)
@@ -214,7 +214,7 @@ class TestSkillEntry:
 
 
 class TestSkillEntrySpecs:
-    """Skill entries can restrict the specialization choice via typed SpecRefs."""
+    """Skill entries can restrict the speciality choice via typed SpecRefs."""
 
     def test_specs_default_to_none(self):
         assert Skill(Tactics).specs is None
@@ -238,7 +238,7 @@ class TestSkillEntrySpecs:
         assert [ref.field for ref in parsed.specs] == ['personal', 'sail']
         assert all(ref.skill_cls is Seafarer for ref in parsed.specs)
 
-    def test_apply_level_with_single_spec_grants_that_specialization(self):
+    def test_apply_level_with_single_spec_grants_that_speciality(self):
         # e.g. army advanced education: Tactics (military) 1
         proj = _projection()
         Skill(Tactics, level=1, specs=(Tactics.military,)).apply(proj, _ctx())
@@ -251,7 +251,7 @@ class TestSkillEntrySpecs:
         Skill(Tactics, level=1, specs=(Tactics.military,)).apply(proj, _ctx())
         assert proj.pending_inputs == ()
 
-    def test_apply_increment_with_single_spec_increments_that_specialization(self):
+    def test_apply_increment_with_single_spec_increments_that_speciality(self):
         proj = _projection()
         proj.summary.skills.append(Tactics(military=Level(value=1)))
         Skill(Tactics, specs=(Tactics.military,)).apply(proj, _ctx())
@@ -284,7 +284,7 @@ class TestSkillEntrySpecs:
         assert proj.summary.skill_level(Seafarer) == 0
         assert not any(isinstance(p, PendingSkillTableChoice) for p in proj.pending_inputs)
 
-    def test_unrestricted_multi_spec_choice_still_offers_all_specializations(self):
+    def test_unrestricted_multi_spec_choice_still_offers_all_specialitys(self):
         proj = _projection()
         Skill(Seafarer).apply(proj, _ctx())
         pending = next(p for p in proj.pending_inputs if isinstance(p, PendingSkillTableChoice))
@@ -516,7 +516,7 @@ class TestSkillChoice:
 
 
 class TestSkillChoiceSpecs:
-    """A SkillChoice spec restricts only its own class; unmentioned classes offer any specialization."""
+    """A SkillChoice spec restricts only its own class; unmentioned classes offer any speciality."""
 
     def test_specs_default_to_none(self):
         assert SkillChoice(GunCombat | Melee).specs is None

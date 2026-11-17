@@ -437,7 +437,7 @@ class TestRankBonusSkill:
     def test_specialised_skill_without_chosen_field_raises(self):
         bonus = RankBonus(skill=GunCombat(), level=2)
 
-        with pytest.raises(ReplayError, match='requires one chosen specialisation'):
+        with pytest.raises(ReplayError, match='requires one chosen speciality'):
             rank_bonus_skill(bonus)
 
 

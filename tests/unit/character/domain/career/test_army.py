@@ -288,7 +288,7 @@ class TestArmyEvent11:
         assert pending is not None
         assert any(isinstance(o, Tactics) for o in pending.options)
 
-    def test_choosing_tactics_military_grants_specialty(self):
+    def test_choosing_tactics_military_grants_speciality(self):
         d = self._setup_to_event()
         d.choose_career_skill(Tactics(military=Level(value=1)))
         tac = next((s for s in d.projection.summary.skills if isinstance(s, Tactics)), None)

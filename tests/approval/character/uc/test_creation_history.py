@@ -147,7 +147,7 @@ def test_automatic_promotion_records_rank_and_reward_while_training_remains_outs
 
 def test_promotion_training_finishes_with_the_chosen_speciality_not_the_next_term():
     character = merchant().survive(7).term_event(12).skill_table('advanced_education', 1)
-    assert character.projection.creation_history[-1].endswith('In progress: Choose a specialization for Engineer')
+    assert character.projection.creation_history[-1].endswith('In progress: Choose a speciality for Engineer')
     character.skill_table_choice(Engineer(power=Level(value=1)))
 
     assert character.projection.creation_history == [

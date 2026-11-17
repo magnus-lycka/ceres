@@ -50,7 +50,7 @@ class TestColonialUprbringingData:
 
 
 class TestColonialProfessionChoice:
-    """Profession is a broad skill: pick one Profession skill at level 0, never a specialisation (RIC-001)."""
+    """Profession is a broad skill: pick one Profession skill at level 0, never a speciality (RIC-001)."""
 
     def test_asks_for_one_skill_at_level_0(self):
         (entry,) = [e for e in _COLONIAL.skill_choices if isinstance(e, PrecareerSkillChoice)]

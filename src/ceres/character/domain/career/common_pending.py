@@ -52,7 +52,7 @@ def _build_skill_choice_select_options(
 ) -> list[tuple[str, str]]:
     """Build (display_label, form_value) pairs for career skill-choice pending inputs.
 
-    If an option has preset specialty fields (non-zero values), only those specialties
+    If an option has preset speciality fields (non-zero values), only those specialities
     are offered at the preset level (or the given level if provided).
     """
     from pydantic import TypeAdapter as _TA

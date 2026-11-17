@@ -71,17 +71,17 @@ class TestFormatStatBlockSkills:
         result = format_stat_block_skills([Admin()])
         assert 'Admin' in result  # Admin has a level field at 0
 
-    def test_specialty_skill_non_zero_shows_specialty(self):
+    def test_speciality_skill_non_zero_shows_speciality(self):
         skill = GunCombat()
         skill.slug.set(1)  # type: ignore[attr-defined]
         result = format_stat_block_skills([skill])
         assert 'Gun Combat' in result
 
-    def test_specialty_skill_all_zero_shows_base_0(self):
+    def test_speciality_skill_all_zero_shows_base_0(self):
         result = format_stat_block_skills([GunCombat()])
         assert 'Gun Combat 0' in result
 
-    def test_specialty_skill_all_same_level_shows_all(self):
+    def test_speciality_skill_all_same_level_shows_all(self):
         skill = GunCombat()
         for f in ['slug', 'energy', 'archaic']:
             getattr(skill, f).set(1)

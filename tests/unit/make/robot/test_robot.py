@@ -805,8 +805,8 @@ class TestSkillsDisplay:
         assert 'Flyer (All) 1' in robot.skills_display  # Flyer 0 + DEX DM+1 = 1
 
     def test_all_specialities_expands_when_levels_differ(self):
-        # When specialisations of the same skill are at different levels (All) cannot be used.
-        # Each specialisation must be listed individually with its actual level.
+        # When specialities of the same skill are at different levels (All) cannot be used.
+        # Each speciality must be listed individually with its actual level.
         from ceres.make.robot import AdvancedBrain
 
         brain = AdvancedBrain(
@@ -844,7 +844,7 @@ class TestSkillsDisplay:
 
     def test_pilot_all_three_specs_at_same_level_compacted(self):
         # Pilot (Small Craft) 1, Pilot (Spacecraft) 1, Pilot (Capital Ships) 1
-        # → all three specialisations present at the same level → Pilot (All) 1.
+        # → all three specialities present at the same level → Pilot (All) 1.
         from ceres.make.robot import AdvancedBrain
 
         brain = AdvancedBrain(
@@ -881,8 +881,8 @@ class TestSkillsDisplay:
         assert 'Pilot (Spacecraft) 2' in display
         assert 'Pilot (Small Craft) 1' in display
 
-    def test_pilot_partial_specialisations_not_compacted(self):
-        # Only two of three Pilot specialisations present → cannot use (All).
+    def test_pilot_partial_specialitys_not_compacted(self):
+        # Only two of three Pilot specialities present → cannot use (All).
         from ceres.make.robot import AdvancedBrain
 
         brain = AdvancedBrain(

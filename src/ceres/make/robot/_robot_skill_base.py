@@ -270,8 +270,8 @@ def _baseline_readings(named: dict[str, Readings], all_specs: tuple[str, ...]) -
 class _RobotSkill(CeresModel):
     """Base for robot skill package facades. Fields are int levels (default 0).
 
-    Level 0 = no specialisation (one base package).
-    Each field > 0 = one purchased specialisation package.
+    Level 0 = no speciality (one base package).
+    Each field > 0 = one purchased speciality package.
     """
 
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)

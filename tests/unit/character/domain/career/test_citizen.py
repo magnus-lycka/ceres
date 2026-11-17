@@ -313,7 +313,7 @@ class TestCitizenMishap5:
 
     def test_success_skill_choice_uses_existing_instances_not_fresh(self):
         # Drive(wheel=1): options must carry the existing instance so that
-        # build_skill_select_options restricts choices to the wheel specialty only.
+        # build_skill_select_options restricts choices to the wheel speciality only.
         custom_skills: list[AnySkill] = [Admin(), Athletics(), Carouse(), Drive(wheel=Level(value=1))]
         base = _enter_citizen(skills=custom_skills)
         survive = Event(fulfills=(base[-1].id, 0), handler=SurviveHandler(roll=6))

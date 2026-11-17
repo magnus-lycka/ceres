@@ -155,7 +155,7 @@ def rank_bonus_skill(bonus: RankBonus) -> AnySkill:
         return skill_cls(**{fields[0]: Level(value=bonus.level)})
     active_fields = [field for field in fields if getattr(skill, field).value > 0]
     if len(active_fields) != 1:
-        raise ReplayError(f'Specialised rank bonus {skill_cls.name()} requires one chosen specialisation')
+        raise ReplayError(f'Specialised rank bonus {skill_cls.name()} requires one chosen speciality')
     return skill_cls(**{active_fields[0]: Level(value=bonus.level)})
 
 

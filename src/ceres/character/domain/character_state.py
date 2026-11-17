@@ -489,7 +489,7 @@ class CharacterProjection(BaseModel):
                 if existing is None:
                     choices.append(cast(AnySkill, _cls()))
             elif level is None:
-                # Increment — one choice per specialization field
+                # Increment — one choice per speciality field
                 for field in fields:
                     current = getattr(existing, field).value if existing is not None else 0
                     if current < 4:

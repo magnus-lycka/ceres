@@ -55,7 +55,7 @@ def test_hudson(snapshot):
     )
     snap.annotate(
         'skills',
-        'Ceres shows implied-familiarity Pilot subspecialties (Capital Ships, Spacecraft) at level 1 '
+        'Ceres shows implied-familiarity Pilot specialities (Capital Ships, Spacecraft) at level 1 '
         'from DEX DM+1 boost; source stat block omits these entries',
     )
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

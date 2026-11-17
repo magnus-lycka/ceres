@@ -585,7 +585,7 @@ class TestPrisonerEvent9:
 
 
 class TestPrisonerEvent10:
-    def test_electronics_option_is_computers_specialty(self):
+    def test_electronics_option_is_computers_speciality(self):
         projection = replay(1, _through_term_event(event_roll=10))
         pending = next((p for p in projection.pending_inputs if isinstance(p, PendingSkillChoice)), None)
         assert pending is not None

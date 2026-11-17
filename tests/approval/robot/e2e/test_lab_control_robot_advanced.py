@@ -55,7 +55,7 @@ def test_lab_control_robot_advanced(snapshot):
     )
     snap.annotate(
         'skills',
-        'Ceres shows implied-familiarity Electronics and Robotic Science subspecialties at level 1 '
+        'Ceres shows implied-familiarity Electronics and Robotic Science specialities at level 1 '
         '(raw 0 + INT DM+1 from int_upgrade=1); source stat block omits these entries',
     )
     assert snap == snapshot(extension_class=AnnotatedJSONSnapshotExtension)

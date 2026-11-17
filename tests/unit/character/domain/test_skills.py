@@ -78,7 +78,7 @@ def test_melee_companion_specialities_are_independent_levels():
     assert skill.unarmed.value == 0
 
 
-def test_class_level_specialization_access_returns_typed_ref():
+def test_class_level_speciality_access_returns_typed_ref():
     ref = Electronics.computers
 
     assert isinstance(ref, SpecRef)
@@ -91,7 +91,7 @@ def test_spec_refs_from_different_skills_are_distinguishable():
     assert Electronics.sensors.skill_cls is Electronics  # ty: ignore[unresolved-attribute]
 
 
-def test_class_level_access_to_unknown_specialization_raises():
+def test_class_level_access_to_unknown_speciality_raises():
     with pytest.raises(AttributeError):
         _ = Electronics.submarine
 
