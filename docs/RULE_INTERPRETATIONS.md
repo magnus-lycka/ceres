@@ -452,54 +452,59 @@ operational design without being an invalid Ceres build.
 
 ## Rule Interpretations for characters and combat
 
-### RIC-001 Science, Art, Profession, And Language Are Groups Of Distinct Broad Skills
+### RIC-001 Broad Skills (Science, Art, Profession) And Language Are Groups Of Distinct Skills
 
-The *Traveller Companion* (2024) defines **Science**, **Art**, and
-**Profession** as groups of broad skills. Each broad skill is a distinct,
-top-level skill with its own specialisations; it is not a speciality of a
-generic parent skill. For example, Ceres models `Space Science (Planetology)`,
-not `Science (Planetology)`, and does not model a generic `Science` skill.
-**Language** follows the same model: each language is a distinct broad skill,
-not a speciality of one generic `Language` skill. A level in one language
-grants no level or familiarity in any other language.
+The *Traveller Companion* (2024) defines **Science**, **Art**, and **Profession** as broad skills.
+Ceres reads a broad skill as a name for a group of several related but distinct skills, not as a
+skill in itself. Each skill in the group is learned on its own, and may have its own specialisations.
+A Traveller rules mention of "Science" is therefore shorthand for "Life Science, Physical Science,
+Robotic Science, Social Science or Space Science", which are the actual skills.
 
-The groups are:
+For example, Ceres models `Space Science (Planetology)`, not `Science (Planetology)`, and does not model a
+generic `Science` skill.
 
-| Generic name | Available broad skills                                                                             |
-| ------------ | -------------------------------------------------------------------------------------------------- |
-| Science      | Life Science, Physical Science, Robotic Science, Social Science, Space Science                     |
-| Art          | Performing Art, Creative Art, Presentation Art                                                     |
-| Profession   | Colonist, Freeloader, Hostile Environment, Spacer, Sport, and Worker Profession                    |
-| Language     | One distinct skill per language, such as Language Galanglic, Language Bilanidin, or Language Zdetl |
+**Language** is a broad skill in the same way: each language is a distinct skill, not a speciality of one
+generic `Language` skill. A level in one language grants no level or familiarity in any other language.
+
+The broad skills are:
+
+- **Science**: Life Science, Physical Science, Robotic Science, Social Science, Space Science.
+- **Art**: Performing Art, Creative Art, Presentation Art.
+- **Profession**: Colonist Profession, Freeloader Profession, Hostile Environment Profession,
+  Spacer Profession, Sport Profession, Worker Profession.
+- **Language**: one distinct skill per language, such as Language Galanglic, Language Bilanidin,
+  or Language Zdetl.
 
 This model applies wherever Ceres names a skill, not only during character
-creation. Expert software names the concrete broad skill and its optional
+creation. Expert software names the concrete skill and its optional
 specialisation, and older robot or source labels such as `Science (Planetology)`
-are normalised to the corresponding concrete skill, `Space Science
-(Planetology)`.
+are normalised to the corresponding concrete skill, e.g. `Space Science (Planetology)`.
 
 **Implications for character creation:**
 
-The *Core Rulebook* (2022) career tables use the generic group names — for
+The *Core Rulebook* (2022) career tables use the broad skill names — for
 example, “Gain Science 1” or a result of “Language” on a skill table. Such an
-entry means that the player chooses one of the available broad skills in that
-group; it never grants a flat skill or speciality named `Science`, `Art`,
+entry means that the player chooses one of the skills in that broad skill;
+it never grants a flat skill or speciality named `Science`, `Art`,
 `Profession`, or `Language`.
 
 - Skill table entries that list "Science" (e.g. Scout advanced education row 5,
-  Scholar service skill row 6) offer all five broad sciences as choices; the
+  Scholar service skill row 6) offer all five science skills as choices; the
   player picks one.
 - Event or mishap text that says "increase Science by one level" (e.g. Scholar
-  event 11, Scholar mishap 3) likewise means player chooses which broad science.
+  event 11, Scholar mishap 3) likewise means the player chooses which science skill.
 - Rank bonuses listed as "Science 1" or "Science 2" (e.g. Scholar / Field
   Researcher / Scientist rank 1 and 5) defer the grant until the player chooses
   the science.
+- A broad skill at level 0 (e.g. "Profession 0" in Colonial Upbringing) means
+  the player chooses one of its skills at level 0. No specialisation is chosen
+  at level 0.
 - The Physician career has a separate rank table from Field Researcher /
   Scientist because the Core Rulebook lists different rank bonuses for it (rank 1
   = Medic 1 instead of Science 1).
 
-This avoids hard-coding a particular broad skill or speciality where the source
-only names the group.
+This avoids hard-coding a particular skill or speciality where the source
+only names the broad skill.
 
 ### RIC-002 Colonial Upbringing Lasts Exactly 8 Years (Two Standard Terms)
 

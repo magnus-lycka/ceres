@@ -67,7 +67,7 @@ class PrecareerSkillChoice(PrecareerEntryBase):
             PendingPreCareerSkillChoice(
                 pending_id=(event_id, pending_idx),
                 level=self.level,
-                instruction=f'{precareer_name}: choose one skill specialisation at level {self.level}',
+                instruction=f'{precareer_name}: choose one skill at level {self.level}',
                 options=self.skill_options,
             )
         )

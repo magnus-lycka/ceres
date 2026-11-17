@@ -3,6 +3,7 @@
 from ceres.character.domain.character_state import CharacterProjection, CharacterSummary
 from ceres.character.domain.characteristics import Chars
 from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingPreCareer
+from ceres.character.domain.precareer.precareer_data import PrecareerSkillChoice
 from ceres.character.domain.precareer.precareer_events import PendingPreCareerSkillChoice
 from ceres.character.domain.skills import JackOfAllTrades, Leadership
 from ceres.character.domain.sophont import VILANI
@@ -46,6 +47,17 @@ class TestColonialUprbringingData:
 
     def test_eleven_skill_choices(self):
         assert len(_COLONIAL.skill_choices) == 11
+
+
+class TestColonialProfessionChoice:
+    """Profession is a broad skill: pick one Profession skill at level 0, never a specialisation (RIC-001)."""
+
+    def test_asks_for_one_skill_at_level_0(self):
+        (entry,) = [e for e in _COLONIAL.skill_choices if isinstance(e, PrecareerSkillChoice)]
+        proj = _proj()
+        entry.apply('Colonial Upbringing', proj, event_id=1, pending_idx=0)
+        (pending,) = proj.pending_inputs
+        assert pending.instruction == 'Colonial Upbringing: choose one skill at level 0'
 
 
 class TestColonialGraduation:
