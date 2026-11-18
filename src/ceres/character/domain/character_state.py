@@ -513,7 +513,13 @@ class CharacterProjection(BaseModel):
                         choices.append(cast(AnySkill, _cls(**{field: Level(value=level)})))
         return choices
 
+    def _note_taught(self, skill: AnySkill) -> None:
+        """A skill gained during a pre-career term was taught by it (RIC-032)."""
+        if (term := self.summary.current_precareer_term) is not None:
+            term.note_taught(skill)
+
     def grant_skill(self, skill: AnySkill, history_id: int | str | None = None) -> None:
+        self._note_taught(skill)
         skill_cls = type(skill)
         existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
         fields = level_fields(skill_cls)
@@ -532,6 +538,7 @@ class CharacterProjection(BaseModel):
         self.record_history(history_id, f'{skill.label()} {outcome}.')
 
     def increment_skill(self, skill: AnySkill, history_id: int | str | None = None) -> None:
+        self._note_taught(skill)
         skill_cls = type(skill)
         existing = next((s for s in self.summary.skills if type(s) is skill_cls), None)
         fields = level_fields(skill_cls)

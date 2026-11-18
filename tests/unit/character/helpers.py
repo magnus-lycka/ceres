@@ -87,10 +87,12 @@ from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerGraduation,
     PendingPreCareerPrankRoll,
     PendingPreCareerSkillChoice,
+    PendingPreCareerTutorRoll,
     PreCareerEventHandler,
     PreCareerGraduationHandler,
     PreCareerPrankRollHandler,
     PreCareerSkillChoiceHandler,
+    PreCareerTutorRollHandler,
 )
 from ceres.character.domain.skills import Admin, AnySkill, Athletics, Carouse, Medic
 from ceres.character.domain.sophont import VILANI, Sophont
@@ -565,6 +567,20 @@ class CharacterDriver:
         """Roll SOC 8+ for pre-career event 4; roll is the 2D result before the SOC DM."""
         pending = self._find(PendingPreCareerPrankRoll)
         return self._add(Event(fulfills=pending.pending_id, handler=PreCareerPrankRollHandler(roll=roll)))
+
+    def precareer_tutor_options(self) -> list[str]:
+        """Names of the skills pre-career event 10's roll may be made on."""
+        spec = self._find(PendingPreCareerTutorRoll).input_specs(self.projection)[0]
+        return [label for label, _value in spec.options]
+
+    def precareer_tutor_roll(self, skill: AnySkill, modified_roll: int) -> CharacterDriver:
+        """Roll 9+ on a skill taught this term, for pre-career event 10."""
+        pending = self._find(PendingPreCareerTutorRoll)
+        return self._add(
+            Event(
+                fulfills=pending.pending_id, handler=PreCareerTutorRollHandler(skill=skill, modified_roll=modified_roll)
+            )
+        )
 
     def precareer_graduation(self, roll: int) -> CharacterDriver:
         pending = self._find(PendingPreCareerGraduation)

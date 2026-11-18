@@ -94,7 +94,97 @@
           "precareer": "Merchant Academy (Shipboard)",
           "completed": false,
           "graduated": false,
-          "honours": false
+          "honours": false,
+          "taught": [
+            {
+              "display_label": null,
+              "kind": "PILOT",
+              "small_craft": {
+                "display_label": null,
+                "value": 0
+              },
+              "spacecraft": {
+                "display_label": null,
+                "value": 0
+              },
+              "capital_ships": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "VACC_SUIT",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ATHLETICS",
+              "dexterity": {
+                "display_label": null,
+                "value": 0
+              },
+              "endurance": {
+                "display_label": null,
+                "value": 0
+              },
+              "strength": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "MECHANIC",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ENGINEER",
+              "m_drive": {
+                "display_label": null,
+                "value": 0
+              },
+              "j_drive": {
+                "display_label": null,
+                "value": 0
+              },
+              "life_support": {
+                "display_label": null,
+                "value": 0
+              },
+              "power": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ELECTRONICS",
+              "comms": {
+                "display_label": null,
+                "value": 0
+              },
+              "computers": {
+                "display_label": null,
+                "value": 0
+              },
+              "remote_ops": {
+                "display_label": null,
+                "value": 0
+              },
+              "sensors": {
+                "display_label": null,
+                "value": 0
+              }
+            }
+          ]
         }
       ],
       "drafted": false,

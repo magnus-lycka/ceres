@@ -110,7 +110,69 @@
         "precareer": "Spacer Community",
         "completed": true,
         "graduated": true,
-        "honours": false
+        "honours": false,
+        "taught": [
+          {
+            "display_label": null,
+            "kind": "VACC_SUIT",
+            "level": {
+              "display_label": null,
+              "value": 1
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "ASTROGATION",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "ELECTRONICS",
+            "comms": {
+              "display_label": null,
+              "value": 0
+            },
+            "computers": {
+              "display_label": null,
+              "value": 0
+            },
+            "remote_ops": {
+              "display_label": null,
+              "value": 0
+            },
+            "sensors": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "CAROUSE",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "PILOT",
+            "small_craft": {
+              "display_label": null,
+              "value": 0
+            },
+            "spacecraft": {
+              "display_label": null,
+              "value": 0
+            },
+            "capital_ships": {
+              "display_label": null,
+              "value": 0
+            }
+          }
+        ]
       },
       {
         "kind": "citizen_term",
@@ -164,6 +226,48 @@
         "completed": true,
         "graduated": true,
         "honours": false,
+        "taught": [
+          {
+            "display_label": null,
+            "kind": "ADMIN",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "ASTROGATION",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "CAROUSE",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "ADMIN",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          },
+          {
+            "display_label": null,
+            "kind": "ASTROGATION",
+            "level": {
+              "display_label": null,
+              "value": 0
+            }
+          }
+        ],
         "pending_skills": []
       },
       {

@@ -98,7 +98,17 @@
           "precareer": "Psionic Community",
           "completed": false,
           "graduated": false,
-          "honours": false
+          "honours": false,
+          "taught": [
+            {
+              "display_label": null,
+              "kind": "STREETWISE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            }
+          ]
         }
       ],
       "drafted": false,

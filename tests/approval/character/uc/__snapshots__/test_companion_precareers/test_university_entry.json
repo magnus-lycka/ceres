@@ -95,6 +95,7 @@
           "completed": false,
           "graduated": false,
           "honours": false,
+          "taught": [],
           "pending_skills": []
         }
       ],

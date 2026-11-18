@@ -94,7 +94,17 @@
           "precareer": "School of Hard Knocks",
           "completed": false,
           "graduated": false,
-          "honours": false
+          "honours": false,
+          "taught": [
+            {
+              "display_label": null,
+              "kind": "STREETWISE",
+              "level": {
+                "display_label": null,
+                "value": 1
+              }
+            }
+          ]
         }
       ],
       "drafted": false,

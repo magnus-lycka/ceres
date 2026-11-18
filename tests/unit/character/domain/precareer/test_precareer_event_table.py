@@ -1,10 +1,13 @@
 """Rule tests for the Pre-Career Events table (Core Rulebook p.17)."""
 
+import pytest
+
 from ceres.character.domain.career.prisoner import PRISONER
 from ceres.character.domain.characteristics import ConnectionKind
 from ceres.character.domain.precareer.university import UniversityPreCareer
-from ceres.character.domain.skills import Admin
+from ceres.character.domain.skills import Admin, Animals, AnySkill, Level, Medic, Navigation, level_fields
 from ceres.character.domain.sophont import VILANI
+from ceres.character.mechanism.errors import ReplayError
 from tests.unit.character.helpers import MOCK_WORLD, CharacterDriver
 
 
@@ -156,3 +159,120 @@ class TestEvent4CreationHistory:
         assert 'Enemy' not in history
         assert 'Prisoner' not in history
         assert 'Roll SOC' not in history
+
+
+def _student_rolling_event_10(
+    taught_at_0: AnySkill | None = None, taught_at_1: AnySkill | None = None
+) -> CharacterDriver:
+    """A first-term University student, background skill Admin 0, who has just rolled 10.
+
+    University teaches one chosen skill at level 0 and one at level 1; by default Medic 0 and Navigation 1.
+    """
+    d = CharacterDriver()
+    d.start(VILANI, MOCK_WORLD)
+    d.ucp('778827')
+    d.background_skills([Admin()])
+    d.precareer(UniversityPreCareer, roll=12)
+    d.precareer_skill(taught_at_0 or Medic())
+    d.precareer_skill(taught_at_1 or Navigation())
+    d.precareer_event(10)
+    return d
+
+
+def _skill_level(d: CharacterDriver, skill_cls: type) -> int | None:
+    held = next((s for s in d.projection.summary.skills if type(s) is skill_cls), None)
+    return None if held is None else max(getattr(held, f).value for f in level_fields(type(held)))
+
+
+class TestEvent10TutorConflict:
+    """Roll 9+ on any skill learned during this term. If successful, gain a level in the
+    skill rolled on and the tutor as a Rival (Core p.17). "Learned during this term" is
+    what the pre-career taught this term, whether or not the level went up (RIC-032).
+    """
+
+    def test_nothing_is_gained_before_the_roll(self):
+        d = _student_rolling_event_10()
+        assert _connection_kinds(d) == []
+        assert _skill_level(d, Medic) == 0
+
+    def test_offers_only_the_skills_taught_this_term(self):
+        d = _student_rolling_event_10()
+        assert d.precareer_tutor_options() == ['Medic', 'Navigation']
+
+    def test_a_background_skill_taught_again_this_term_is_offered(self):
+        d = _student_rolling_event_10(taught_at_0=Admin())
+        assert d.precareer_tutor_options() == ['Admin', 'Navigation']
+
+    def test_a_skill_learned_before_the_term_cannot_be_rolled(self):
+        d = _student_rolling_event_10()
+        with pytest.raises(ReplayError):
+            d.precareer_tutor_roll(Admin(), 9)
+
+    def test_success_gains_a_level_in_the_skill_rolled_on(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 9)
+        assert _skill_level(d, Medic) == 1
+        assert _skill_level(d, Navigation) == 1
+
+    def test_success_gains_the_tutor_as_a_rival(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 9)
+        assert _connection_kinds(d) == [ConnectionKind.RIVAL]
+
+    def test_failure_gains_nothing(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 8)
+        assert _connection_kinds(d) == []
+        assert _skill_level(d, Medic) == 0
+
+    def test_success_on_a_skill_with_specialities_asks_which_one(self):
+        d = _student_rolling_event_10(taught_at_0=Animals())
+        d.precareer_tutor_roll(Animals(), 9)
+        d.choose_skill(Animals(handling=Level(value=1)))
+        held = next(s for s in d.projection.summary.skills if isinstance(s, Animals))
+        assert held.handling.value == 1
+
+    def test_graduation_is_still_rolled(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 9)
+        d.name_connection('Tutor')
+        d.precareer_graduation(12)
+        term = d.projection.summary.precareer_terms[-1]
+        assert term.completed and term.graduated
+
+
+_STORY_10 = (
+    'Term 1 event (University): A newly arrived tutor rubs you up the wrong way '
+    'and you work hard to overturn their conclusions.'
+)
+_ORIGIN_10 = 'A newly arrived tutor whose conclusions you overturned during University, term 1.'
+
+
+class TestEvent10CreationHistory:
+    def test_before_the_roll_shows_the_story_and_the_outstanding_roll(self):
+        d = _student_rolling_event_10()
+        assert d.projection.creation_history[-1] == (
+            f'{_STORY_10} In progress: Roll 9+ on a skill taught this term; '
+            'on success, gain a level in it and the tutor as a Rival'
+        )
+
+    def test_success_tells_of_the_proof_the_skill_and_the_rival(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 9)
+        d.name_connection('Ada Kell', note=_ORIGIN_10)
+        assert d.projection.creation_history[-1] == (
+            f'{_STORY_10} You provide a truly elegant proof that soon becomes accepted as the standard approach. '
+            f'Medic increased from 0 to 1. Rival: Ada Kell — {_ORIGIN_10}'
+        )
+
+    def test_failure_tells_only_that_the_attempt_fell_short(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 8)
+        assert d.projection.creation_history[-1] == (
+            f'{_STORY_10} Your attempt to overturn their conclusions falls short.'
+        )
+
+    def test_rival_is_noted_with_where_it_came_from(self):
+        d = _student_rolling_event_10()
+        d.precareer_tutor_roll(Medic(), 9)
+        assert d.connection_note_prefill() == _ORIGIN_10

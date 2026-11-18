@@ -1,11 +1,10 @@
 from typing import Annotated, Any, ClassVar, cast
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, PlainSerializer
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer, SerializeAsAny
 
 from ceres.character.domain.career.career_data import (
     CareerTableEntry,
     CharCheck,
-    GainConnectionEntry,
     GainConnectionsEntry,
     GainSkillEntry,
     LifeEventEntry,
@@ -96,6 +95,28 @@ class PrankGoneWrongEntry(CareerTableEntry):
         return pending_idx + 1
 
 
+class TutorConflictEntry(CareerTableEntry):
+    """Pre-career event 10: roll 9+ on a skill taught this term (RIC-032).
+
+    Success gains a level in that skill and the tutor as a Rival; failure gains
+    nothing. `text` is the story; the rule is the pending roll's instruction
+    and `PreCareerTutorRollHandler`.
+    """
+
+    def apply(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
+        from ceres.character.domain.precareer.precareer_events import PendingPreCareerTutorRoll
+
+        projection.queue_immediate(
+            PendingPreCareerTutorRoll(
+                pending_id=(event.id, pending_idx),
+                history_id=event.id,
+                instruction='Roll 9+ on a skill taught this term; '
+                'on success, gain a level in it and the tutor as a Rival',
+            )
+        )
+        return pending_idx + 1
+
+
 def _skill_at_level(skill: AnySkill, level: int) -> AnySkill:
     skill_cls = type(skill)
     cls = cast(type[Any], skill_cls)
@@ -135,9 +156,8 @@ class PreCareerData(TermData):
             text='You develop a healthy interest in a hobby or other area of study.',
             level=0,
         ),
-        10: GainConnectionEntry(
-            text='A tutor rubs you up the wrong way and you overturn their conclusions.',
-            connection=ConnectionKind.RIVAL,
+        10: TutorConflictEntry(
+            text='A newly arrived tutor rubs you up the wrong way and you work hard to overturn their conclusions.',
         ),
         11: NoEffectEntry(text='War comes and a wide-ranging draft is instigated.'),
         12: NoEffectEntry(text='You gain wide-ranging recognition.'),
@@ -255,6 +275,16 @@ class PreCareerTerm(Term):
     completed: bool = False
     graduated: bool = False
     honours: bool = False
+    # Every skill this term taught, whether or not it raised the level (RIC-032).
+    taught: list[SerializeAsAny[AnySkill]] = Field(default_factory=list)
+
+    def note_taught(self, skill: AnySkill) -> None:
+        self.taught.append(skill)
+
+    def taught_skills(self, held: list[AnySkill]) -> list[AnySkill]:
+        """The held skills this term taught, in the order they are held."""
+        taught = {type(skill) for skill in self.taught}
+        return [skill for skill in held if type(skill) in taught]
 
     def apply_entry(self, projection: CharacterProjection, event: Event, pending_idx: int) -> int:
         return self.precareer.apply_entry(projection, event, pending_idx)

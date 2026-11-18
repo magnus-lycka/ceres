@@ -94,7 +94,65 @@
           "precareer": "School of Hard Knocks",
           "completed": true,
           "graduated": true,
-          "honours": true
+          "honours": true,
+          "taught": [
+            {
+              "display_label": null,
+              "kind": "STREETWISE",
+              "level": {
+                "display_label": null,
+                "value": 1
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "CAROUSE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "CAROUSE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "CAROUSE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "GUN_COMBAT",
+              "archaic": {
+                "display_label": null,
+                "value": 0
+              },
+              "energy": {
+                "display_label": null,
+                "value": 0
+              },
+              "slug": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "CAROUSE",
+              "level": {
+                "display_label": null,
+                "value": 1
+              }
+            }
+          ]
         }
       ],
       "drafted": false,

@@ -222,6 +222,61 @@ class PreCareerPrankRollHandler(EventHandlerBase):
             queue_career_choice(projection, event.id)
 
 
+class PreCareerTutorRollHandler(EventHandlerBase):
+    """Resolves pre-career event 10's roll of 9+ on a skill taught this term (Core p.17; RIC-032)."""
+
+    kind: Literal['precareer_tutor_roll'] = 'precareer_tutor_roll'
+    skill: AnySkill
+    modified_roll: int
+
+    model_config = {'arbitrary_types_allowed': True}
+
+    def apply(
+        self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
+    ) -> None:
+        from ceres.character.domain.characteristics import ConnectionKind
+
+        term = projection.summary.current_precareer_term
+        if term is None:
+            raise ReplayError('No active pre-career')
+        if not any(type(s) is type(self.skill) for s in term.taught_skills(projection.summary.skills)):
+            raise ReplayError(f'{type(self.skill).name()} was not taught this term')
+        history_id = fulfilled_pending.history_id if fulfilled_pending is not None else None
+        if self.modified_roll < 9:
+            projection.extend_history(history_id, 'Your attempt to overturn their conclusions falls short.')
+            return
+        projection.extend_history(
+            history_id, 'You provide a truly elegant proof that soon becomes accepted as the standard approach.'
+        )
+        _gain_one_level(projection, self.skill, event, history_id)
+        projection.add_connection(
+            ConnectionKind.RIVAL,
+            origin=f'A newly arrived tutor whose conclusions you overturned during {term.precareer.name}, '
+            f'term {projection.summary.terms_started_in_pre_and_careers}.',
+            history_id=history_id,
+        )
+
+
+def _gain_one_level(
+    projection: CharacterProjection, skill: AnySkill, event: Event, history_id: int | str | None
+) -> None:
+    """One level in the skill, asking which speciality when there is more than one way to take it."""
+    from ceres.character.domain.skill_events import PendingSkillChoice
+
+    candidates = projection.skill_choices([type(skill)], None)
+    if len(candidates) == 1:
+        projection.grant_skill(candidates[0], history_id=history_id)
+    elif candidates:
+        projection.queue_immediate(
+            PendingSkillChoice(
+                pending_id=(event.id, 0),
+                history_id=history_id,
+                instruction=f'Choose the {type(skill).name()} speciality to gain a level in',
+                options=[type(skill)()],
+            )
+        )
+
+
 class PreCareerGraduationHandler(EventHandlerBase):
     kind: Literal['precareer_graduation'] = 'precareer_graduation'
     roll: int  # 2D result for graduation check (before characteristic DM)
@@ -320,6 +375,31 @@ class PendingPreCareerPrankRoll(PendingInputBase):
 
     def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
         return [NumberEntry(name='roll', label='2D roll (2–12), before the SOC DM', min=2, max=12)]
+
+
+class PendingPreCareerTutorRoll(PendingInputBase):
+    kind: Literal['precareer_tutor_roll'] = 'precareer_tutor_roll'
+
+    def event_from_form(self, form: Mapping[str, str]) -> Event:
+        from pydantic import TypeAdapter
+
+        skill = TypeAdapter(AnySkill).validate_json(form_str(form, 'skill', '{}'))
+        return Event(
+            fulfills=self.pending_id,
+            handler=PreCareerTutorRollHandler(skill=skill, modified_roll=form_int(form, 'modified_roll', 0)),
+        )
+
+    def input_specs(self, projection: CharacterProjection) -> list[InputSpec]:
+        term = projection.summary.current_precareer_term
+        taught = term.taught_skills(projection.summary.skills) if term is not None else []
+        return [
+            Select(
+                name='skill',
+                label='Skill to roll',
+                options=[(type(s).name(), type(s)().model_dump_json()) for s in taught],
+            ),
+            NumberEntry(name='modified_roll', label='Modified roll (2D + skill level + DMs)', min=2, max=20),
+        ]
 
 
 class PendingPreCareerGraduation(PendingInputBase):

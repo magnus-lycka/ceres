@@ -1377,6 +1377,31 @@ Traveller to prison.
 4. The same applies when the mishap is rolled on another career's table, for example a "Disaster!"
    rolled on an undercover Agent's cover career (RIC-030).
 
+### RIC-032 "Learned During This Term" Means What The Pre-Career Taught This Term
+
+Pre-career event 10 reads "Roll 9+ on any skill you have learned during this term. If successful
+[...] Gain a level in the skill you rolled on and the tutor as a Rival." (`refs/core/02_traveller_creation.md:422`)
+
+A skill counts if the pre-career taught it this term, whether or not that raised its level. A
+background skill taught again at level 0 counts: a Traveller who takes a beginner's class in
+something they already know is exactly who argues with the tutor. A skill learned before the term,
+and not taught again in it, does not count.
+
+```python
+# whenever a skill is granted or increased while a pre-career term is in progress
+term.taught.append(skill)
+
+def tutor_options(projection, term) -> list[Skill]:
+    taught = {type(s) for s in term.taught}
+    return [s for s in projection.summary.skills if type(s) in taught]
+
+def tutor_roll(projection, skill, modified_roll: int) -> None:
+    if modified_roll >= 9:
+        gain_one_level(skill)                    # choose a speciality if the skill has them
+        projection.add_connection(RIVAL, ...)    # the tutor, on success only
+    # failure: nothing
+```
+
 ## Rule Interpretations for robots
 
 ### RIR-001 Manipulator Cost Credit — 20% BCC Cap Applied to Combined Net

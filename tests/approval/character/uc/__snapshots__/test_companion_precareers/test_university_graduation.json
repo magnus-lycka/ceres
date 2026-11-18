@@ -95,6 +95,40 @@
           "completed": true,
           "graduated": true,
           "honours": false,
+          "taught": [
+            {
+              "display_label": null,
+              "kind": "ADMIN",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ADMIN",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ADMIN",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ADMIN",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            }
+          ],
           "pending_skills": []
         }
       ],

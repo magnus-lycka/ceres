@@ -94,7 +94,73 @@
           "precareer": "Merchant Academy (Business)",
           "completed": true,
           "graduated": true,
-          "honours": false
+          "honours": false,
+          "taught": [
+            {
+              "display_label": null,
+              "kind": "ADMIN",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "ADVOCATE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "BROKER",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "STREETWISE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "DECEPTION",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "PERSUADE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "BROKER",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            },
+            {
+              "display_label": null,
+              "kind": "CAROUSE",
+              "level": {
+                "display_label": null,
+                "value": 0
+              }
+            }
+          ]
         }
       ],
       "drafted": false,
