@@ -2,7 +2,7 @@
   "data": {
     "summary": {
       "name": "Test",
-      "age": 22,
+      "age": 26,
       "sophont": {
         "name": "Humaniti",
         "ucp_stats": [
@@ -249,6 +249,18 @@
               }
             }
           ]
+        },
+        {
+          "kind": "colonial_upbringing_second",
+          "start_age": 22,
+          "event": null,
+          "mishap": null,
+          "prison": null,
+          "precareer": "Colonial Upbringing",
+          "completed": true,
+          "graduated": false,
+          "honours": false,
+          "taught": []
         }
       ],
       "drafted": false,
@@ -418,7 +430,8 @@
       "problems": [],
       "narrative": [
         "Term 1 event (Colonial Upbringing): Taking advantage of youth, you party as much as you study.",
-        "Did not graduate from Colonial Upbringing."
+        "Did not graduate from Colonial Upbringing.",
+        "Term 2 (Colonial Upbringing): Another four years of colonial life."
       ],
       "cash": 0,
       "dead": false,

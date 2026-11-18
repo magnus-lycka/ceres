@@ -551,11 +551,31 @@ applied at graduation of the first term.
 - It keeps character age deterministic during creation, which simplifies
   ageing-roll scheduling.
 
+**Who serves the second term:** END +1 and EDU −D3 are graduation benefits, so
+only a graduate loses EDU. A non-graduate, whether they failed the graduation
+roll or rolled pre-career event 3, still serves the second term. A draft
+(pre-career event 11) takes the Traveller away, so it skips the second term.
+
+```python
+def after_colonial_term(traveller, graduated: bool, drafted: bool) -> None:
+    if drafted:
+        choose_career()                    # starts at 22
+        return
+    if graduated:
+        traveller.end += 1                 # at graduation, in the first term
+    second_term(traveller)                 # mandatory, no career choice
+    traveller.age += 4                     # 22 -> 26
+    if graduated:
+        traveller.edu -= roll('D3')
+    choose_career()                        # starts at 26
+```
+
 **Consequences:**
 
-- A Colonial Upbringing character always begins their first career at age 26.
+- A Colonial Upbringing character begins their first career at age 26, unless
+  drafted.
 - The EDU −1D3 roll is resolved during the mandatory second term, not at first
-  graduation.
+  graduation, and only for a graduate.
 - The DM-2 on career entry and DM-1 on commission/promotion that the rules
   attach to Colonial Upbringing still apply throughout all subsequent careers.
 
@@ -1400,6 +1420,37 @@ def tutor_roll(projection, skill, modified_roll: int) -> None:
         gain_one_level(skill)                    # choose a speciality if the skill has them
         projection.add_connection(RIVAL, ...)    # the tutor, on success only
     # failure: nothing
+```
+
+### RIC-033 Colonial Upbringing Graduation Benefits
+
+*Traveller Companion*, Colonial Upbringing, Graduation Benefits:
+"Increase one skill already gained at level 0 to level 1. Gain any two other skills listed above at
+level 1 or increase one skill already possessed by one level. Gain Jack-of-all-Trades at level 1.
+'Honours' graduates gain Leadership 1 and may increase any other skill gained at level 0 to level 1."
+(`refs/companion/07_pre_career_options.md:31`)
+
+"Listed" means the Colonial Upbringing skill list, every Profession skill included. "Already gained at
+level 0" means a listed skill the Traveller still holds at level 0. The two skills gained at level 1
+may be specialities of the same skill; neither may be one already held at level 1 or more, since
+that would gain nothing. The alternative increase is limited to listed skills.
+
+```python
+LISTED = [Animals, Athletics, Drive, GunCombat, Mechanic, Medic, Navigation, Recon,
+          *PROFESSIONS, Seafarer, Survival]
+
+def colonial_graduation(t, honours: bool) -> None:
+    raise_to_1(choose(s for s in LISTED if t.level(s) == 0))
+    if choose_path() == TWO_SKILLS:
+        for _ in range(2):
+            gain_at_1(choose(spec for spec in specialities(LISTED) if not t.holds_at(spec, 1)))
+    else:
+        increase_by_1(choose(s for s in LISTED if t.has(s)))
+    t.grant(JackOfAllTrades(1))
+    if honours:
+        t.grant(Leadership(1))
+        raise_to_1(choose(s for s in LISTED if t.level(s) == 0))   # "any other": still at 0
+    t.end += 1                                                     # EDU -D3 follows in term 2 (RIC-002)
 ```
 
 ## Rule Interpretations for robots

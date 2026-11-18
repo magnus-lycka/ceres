@@ -81,6 +81,13 @@ from ceres.character.domain.homeworld.homeworld_events import (
     HomeworldChangeKeptHandler,
     PendingHomeworldChangeOffered,
 )
+from ceres.character.domain.precareer.colonial_upbringing import (
+    ColonialGraduationPath,
+    ColonialGraduationPathHandler,
+    ColonialSecondTermHandler,
+    PendingColonialGraduationPath,
+    PendingColonialSecondTerm,
+)
 from ceres.character.domain.precareer.precareer_data import PreCareerData
 from ceres.character.domain.precareer.precareer_events import (
     PendingPreCareerEvent,
@@ -588,6 +595,19 @@ class CharacterDriver:
 
     def has_precareer_graduation_roll(self) -> bool:
         return self._find_opt(PendingPreCareerGraduation) is not None
+
+    def has_career_choice(self) -> bool:
+        return self._find_opt(PendingCareerChoice) is not None
+
+    def colonial_graduation_path(self, path: ColonialGraduationPath) -> CharacterDriver:
+        """Colonial graduation's second benefit: two listed skills at 1, or one increase (RIC-033)."""
+        pending = self._find(PendingColonialGraduationPath)
+        return self._add(Event(fulfills=pending.pending_id, handler=ColonialGraduationPathHandler(path=path)))
+
+    def colonial_second_term(self, roll: int) -> CharacterDriver:
+        """The D3 roll for EDU lost in a Colonial Upbringing graduate's second term (RIC-002)."""
+        pending = self._find(PendingColonialSecondTerm)
+        return self._add(Event(fulfills=pending.pending_id, handler=ColonialSecondTermHandler(roll=roll)))
 
     def career_choice_options(self) -> list[CareerData]:
         return list(self._find(PendingCareerChoice).options)

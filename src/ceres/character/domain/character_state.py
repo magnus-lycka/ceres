@@ -198,6 +198,15 @@ class CharacterSummary(BaseModel):
                 return max(getattr(skill, f).value for f in fields)
         return default
 
+    def holds_at(self, skill: AnySkill, level: int) -> bool:
+        """Whether the Traveller already has `skill` at `level` or more: its speciality, when one is set."""
+        held = next((s for s in self.skills if type(s) is type(skill)), None)
+        if held is None:
+            return False
+        fields = level_fields(type(skill))
+        judged = [f for f in fields if getattr(skill, f).value > 0] or fields
+        return any(getattr(held, f).value >= level for f in judged)
+
     def skills_not_held(self, skills: Iterable[AnySkill]) -> list[AnySkill]:
         """Those of `skills` the Traveller does not hold at any level, level 0 included."""
         return [skill for skill in skills if self.skill_level(type(skill)) is None]
@@ -226,7 +235,7 @@ class CharacterSummary(BaseModel):
 
         for i, after_t in enumerate(other.terms):
             before_t = self.terms[i] if i < len(self.terms) else None
-            if isinstance(after_t, _PCT):
+            if isinstance(after_t, _PCT) and not after_t.continues_previous:
                 if before_t is None:
                     changes.append(f'Pre-career: {after_t.precareer.name}')
                 elif isinstance(before_t, _PCT) and not before_t.completed and after_t.completed:

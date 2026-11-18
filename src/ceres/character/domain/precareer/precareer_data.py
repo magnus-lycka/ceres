@@ -189,6 +189,20 @@ class PreCareerData(TermData):
     def make_term(self) -> PreCareerTerm:
         return type(self).term_class(precareer=self)
 
+    def finish_term(
+        self,
+        projection: CharacterProjection,
+        event: Event,
+        pending_idx: int,
+        *,
+        graduated: bool,
+        instruction: str,
+    ) -> None:
+        """What follows the pre-career's last term: by default, the choice of a career."""
+        from ceres.character.domain.career.entry import queue_career_choice_indexed
+
+        queue_career_choice_indexed(projection, event.id, pending_idx, instruction)
+
     def is_available(self, summary: CharacterSummary) -> bool:
         """Return True if this precareer is available for the given character."""
         return True
@@ -275,6 +289,8 @@ class PreCareerTerm(Term):
     completed: bool = False
     graduated: bool = False
     honours: bool = False
+    # A term that continues the pre-career term before it, rather than one of its own (RIC-002).
+    continues_previous: ClassVar[bool] = False
     # Every skill this term taught, whether or not it raised the level (RIC-032).
     taught: list[SerializeAsAny[AnySkill]] = Field(default_factory=list)
 

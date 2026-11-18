@@ -20,7 +20,7 @@ def _career_context_lines(summary: CharacterSummary) -> str:
 
     lines: list[str] = []
     for term in summary.terms:
-        if isinstance(term, PreCareerTerm) and term.completed:
+        if isinstance(term, PreCareerTerm) and term.completed and not term.continues_previous:
             if term.honours:
                 suffix = ' (graduated with honours)'
             elif term.graduated:

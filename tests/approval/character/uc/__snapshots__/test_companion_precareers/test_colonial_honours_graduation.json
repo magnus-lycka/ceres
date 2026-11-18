@@ -447,10 +447,7 @@
         }
       ],
       "connections": [],
-      "problems": [
-        "Colonial Upbringing graduation: decrease EDU by D3. Apply manually.",
-        "Colonial Upbringing graduation: total starting age is 22+2D3; add 2D3 extra years to current age. Apply manually."
-      ],
+      "problems": [],
       "narrative": [
         "Term 1 event (Colonial Upbringing): Taking advantage of youth, you party as much as you study.",
         "Graduated from Colonial Upbringing with honours!"
@@ -485,28 +482,8 @@
         ]
       },
       {
-        "type": "PendingPreCareerSkillChoice",
-        "kind": "precareer_skill_choice",
-        "level": 1,
-        "option_count": 16,
-        "option_types": [
-          "Animals",
-          "Athletics",
-          "ColonistProfession",
-          "Drive",
-          "FreeloaderProfession",
-          "GunCombat",
-          "HostileEnvironmentProfession",
-          "Mechanic",
-          "Medic",
-          "Navigation",
-          "Recon",
-          "Seafarer",
-          "SpacerProfession",
-          "SportProfession",
-          "Survival",
-          "WorkerProfession"
-        ]
+        "type": "PendingColonialGraduationPath",
+        "kind": "colonial_graduation_path"
       },
       {
         "type": "PendingPreCareerSkillChoice",
@@ -533,47 +510,8 @@
         ]
       },
       {
-        "type": "PendingPreCareerSkillChoice",
-        "kind": "precareer_skill_choice",
-        "level": 1,
-        "option_count": 16,
-        "option_types": [
-          "Animals",
-          "Athletics",
-          "ColonistProfession",
-          "Drive",
-          "FreeloaderProfession",
-          "GunCombat",
-          "HostileEnvironmentProfession",
-          "Mechanic",
-          "Medic",
-          "Navigation",
-          "Recon",
-          "Seafarer",
-          "SpacerProfession",
-          "SportProfession",
-          "Survival",
-          "WorkerProfession"
-        ]
-      },
-      {
-        "type": "PendingCareerChoice",
-        "kind": "career_choice",
-        "option_count": 12,
-        "option_types": [
-          "Agent",
-          "Army",
-          "Citizen",
-          "Drifter",
-          "Entertainer",
-          "Marines",
-          "Merchant",
-          "Navy",
-          "Noble",
-          "Rogue",
-          "Scholar",
-          "Scout"
-        ]
+        "type": "PendingColonialSecondTerm",
+        "kind": "colonial_second_term"
       }
     ]
   }

@@ -1,4 +1,4 @@
-from ceres.character.domain.precareer.colonial_upbringing import ColonialUprbringingTerm
+from ceres.character.domain.precareer.colonial_upbringing import ColonialSecondTerm, ColonialUprbringingTerm
 from ceres.character.domain.precareer.merchant_academy import MerchantAcademyBusinessTerm, MerchantAcademyShipboardTerm
 from ceres.character.domain.precareer.military_academy import ArmyAcademyTerm, MarineAcademyTerm, NavyAcademyTerm
 from ceres.character.domain.precareer.precareer_data import PreCareerTerm
@@ -13,6 +13,7 @@ _all_precareer_term_classes: list[type[PreCareerTerm]] = [
     MarineAcademyTerm,
     NavyAcademyTerm,
     ColonialUprbringingTerm,
+    ColonialSecondTerm,
     MerchantAcademyBusinessTerm,
     MerchantAcademyShipboardTerm,
     PsionicCommunityTerm,

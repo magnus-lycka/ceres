@@ -172,7 +172,17 @@ class PreCareerEventHandler(EventHandlerBase):
                 )
             projection.cancel_pending(PendingPreCareerGraduation)
             term.completed = True
-            queue_career_choice(projection, event.id, 'Pre-career ended (no graduation) — choose a career')
+            if self.roll == 11:
+                # Drafted or fleeing: the pre-career is over, whatever would have followed it.
+                queue_career_choice(projection, event.id, 'Pre-career ended (no graduation) — choose a career')
+            else:
+                precareer.finish_term(
+                    projection,
+                    event,
+                    0,
+                    graduated=False,
+                    instruction='Pre-career ended (no graduation) — choose a career',
+                )
             return
         pending_idx = term_event.apply(projection, event, pending_idx)
         if self.roll == 12:
@@ -284,7 +294,6 @@ class PreCareerGraduationHandler(EventHandlerBase):
     def apply(
         self, projection: CharacterProjection, event: Event, fulfilled_pending: PendingInputBase | None = None
     ) -> None:
-        from ceres.character.domain.career.career_events import queue_career_choice_indexed
         from ceres.character.domain.characteristics import characteristic_dm
 
         term = projection.summary.current_precareer_term
@@ -315,8 +324,12 @@ class PreCareerGraduationHandler(EventHandlerBase):
         term.graduated = graduated
         term.honours = honours
         term.completed = True
-        queue_career_choice_indexed(
-            projection, event.id, pending_graduation_idx, 'Pre-career complete — choose a career'
+        precareer.finish_term(
+            projection,
+            event,
+            pending_graduation_idx,
+            graduated=graduated,
+            instruction='Pre-career complete — choose a career',
         )
 
 
@@ -328,6 +341,8 @@ class PendingPreCareerSkillChoice(PendingInputBase):
     level: int
     options: list[AnySkill] = Field(default_factory=list)
     only_new: bool = False  # offer only skills the Traveller does not hold yet
+    still_at_0: bool = False  # offer only skills the Traveller holds at level 0
+    increase: bool = False  # raise a skill the Traveller holds by one level
 
     model_config = {'arbitrary_types_allowed': True}
 
@@ -352,6 +367,13 @@ class PendingPreCareerSkillChoice(PendingInputBase):
         offered = self._expanded_options()
         if self.only_new:
             offered = projection.summary.skills_not_held(offered)
+        if self.still_at_0:
+            offered = [skill for skill in offered if projection.summary.skill_level(type(skill)) == 0]
+        if self.increase:
+            offered = [skill for skill in offered if projection.summary.skill_level(type(skill)) is not None]
+        elif self.level > 0:
+            # Choosing a skill already held at this level would gain nothing.
+            offered = [skill for skill in offered if not projection.summary.holds_at(skill, self.level)]
         options = [(opt.label(), opt.model_dump_json()) for opt in offered]
         return [Select(name='skill', label='Choose a skill', options=options)]
 
