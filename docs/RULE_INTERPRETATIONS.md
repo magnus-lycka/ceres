@@ -925,15 +925,50 @@ stun damage reaches half its starting Hits (`refs/core/03_combat.md:604`), but
 does not state a duration. Ceres normalises this to the character Stun rule so
 that stun has one operational meaning for every living actor:
 
-- Stun points suppress current Hits, but cannot take them below half starting
-  Hits. For odd starting Hits, this floor is rounded down.
-- Damage beyond that floor is overflow, and incapacitates the animal for the
-  same number of rounds.
-- A later stun hit is measured against the current Hits. If lethal injury has
-  already reduced Hits to half or below, every stun point is overflow.
-- When a countdown reaches zero, stored stun continues to suppress Hits. More
-  stun then causes overflow immediately. A new countdown replaces the remaining
-  countdown only if it is longer; durations do not add.
+```python
+def stun_limit(actor) -> float:
+    # No rounding: with 9 Hits the limit is 4.5.
+    return actor.endurance if actor.kind == 'sophont' else actor.hits / 2
+
+
+def stun_hit(actor, new_stun: int) -> int | None:
+    """None: not incapacitated. Otherwise the rounds out *after* the round of the hit (RIC-022)."""
+    injury = actor.lethal_on_stun_stat + actor.stun_held + new_stun
+    limit = stun_limit(actor)
+    if injury < limit:
+        return None
+    # A hit never costs more rounds than its own stun points:
+    # lethal damage beyond the limit adds none.
+    return min(new_stun, int(injury - limit))
+
+
+def stun_room(actor) -> int:
+    """How many more stun points can be held. Hits are whole, so the floor is rounded down;
+    this rounding is display only and decides nothing in stun_hit."""
+    if actor.kind == 'sophont':
+        return max(actor.endurance - actor.lethal_on_stun_stat - actor.stun_held, 0)
+    return max(actor.hits - actor.lethal_on_stun_stat - actor.hits // 2 - actor.stun_held, 0)
+
+
+# actor.stun_held += min(new_stun, stun_room(actor))  -- the rest is not held
+```
+
+Worked cases, 9 Hits:
+
+| lethal | stun held | new stun | `stun_hit` |
+|---|---|---|---|
+| 0 | 0 | 4 | `None` |
+| 0 | 0 | 5 | `0` |
+| 0 | 0 | 6 | `1` |
+| 0 | 0 | 7 | `2` |
+| 3 | 0 | 2 | `0` |
+| 4 | 0 | 1 | `0` |
+| 6 | 0 | 1 | `1` (not 2) |
+| 0 | 5 | 1 | `1` |
+
+- When the wait is over, stored stun continues to suppress Hits, so any more
+  stun incapacitates at once (the last row above). A new wait replaces the
+  remaining one only if it reaches further; durations do not add (RIC-022).
 - One hour of rest clears both the stored stun and its countdown (`:366`).
 
 Lethal damage and stun share the displayed Hits score down to the stun floor,
@@ -1085,29 +1120,42 @@ inclusive wording: destroyed at Hits ≤ −starting Hits, for both kinds. The
 words differ by kind — dead / wrecked at 0, destroyed at −X — and are in
 `CONTEXT.md`.
 
-### RIC-022 Stun Incapacitation Counts The Round Of The Hit Only If The Target Has Not Yet Acted
+### RIC-022 Stun Incapacitation Costs The Rest Of The Round Of The Hit, Then One Round Per Point Of Excess
 
 A Stun weapon that reduces END to 0 leaves the target "incapacitated and unable
 to perform any actions for a number of rounds by which the damage exceeded their
 END" (`refs/core/03_combat.md:366`). The text does not say where the count
-starts, and the answer decides whether a one-round stun does anything to someone
-who acts early in the round.
+starts, and it makes reaching 0 the condition for being incapacitated at all.
 
-Ceres counts from the round of the hit **when the target's turn in it is still
-to come**, and from the next round when they have already acted. Someone who has
-acted has nothing left in this round to lose; someone who has not loses it, and
-that is one of the rounds they are out for. A one-round stun therefore costs a
-target who has not yet acted exactly their coming turn, and a target who has
-already acted their next one.
+Ceres reads it this way: reaching 0 incapacitates the target **for the rest of
+the round of the hit**, and the excess is the number of **further** rounds they
+are out. A hit that takes END to exactly 0 therefore costs the rest of this round
+and nothing more; it is not a no-op. Whether the target has already acted does
+not change the count. Someone who has acted still loses what is left of the
+round, which includes any reaction.
 
-Example: END 8 hit by 10 stun, two rounds of overflow, in round 3. A target who
-has not acted is out for rounds 3 and 4 and acts again in round 5. One who has
-already acted is out for rounds 4 and 5 and acts again in round 6. Someone who is
-only waiting has not acted.
+The further rounds come from `stun_hit` in RIC-015, which covers sophonts and
+animals alike. The Situation records the result like this:
 
-The wait is stored as the first round they may act in again. A later hit
-replaces it only when that reaches further; durations never add (RIC-011). An
-actor who is stunned, unconscious, dead, wrecked or destroyed is out of action:
+```python
+def incapacitate(member, hit_round: int, further_rounds: int) -> None:
+    # The first round they may act in again. Whether they had acted is irrelevant.
+    until = hit_round + 1 + further_rounds
+    # A later hit replaces the wait only when it reaches further; durations never add.
+    member.incapacitated_until = max(member.incapacitated_until or 0, until)
+
+
+def may_act(member, round_: int) -> bool:
+    return member.incapacitated_until is None or round_ >= member.incapacitated_until
+```
+
+| END | new stun | hit in round | acts again in round |
+|---|---|---|---|
+| 7 | 6 | 3 | not stunned |
+| 7 | 7 | 3 | 4 |
+| 8 | 10 | 3 | 6 |
+
+An actor who is stunned, unconscious, dead, wrecked or destroyed is out of action:
 the turn passes on without them and they do not keep the round open.
 
 ### RIC-023 The Reaction Reminder Shows The DMs Ceres Holds, And Says When It Cannot Know One
