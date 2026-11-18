@@ -1,5 +1,6 @@
 """Character HTTP contracts: exercise the interface used by Svelte."""
 
+from contextlib import closing
 import json
 import sqlite3
 
@@ -24,7 +25,7 @@ def test_unreplayable_character_can_be_listed_and_deleted_without_blocking_other
         broken_id = service.create_character('Old character', 'NPC')
         good_id = service.create_character('Ada', 'Magnus')
     # A saved log whose pending references no longer match the current domain.
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection, connection:
         payload = {'id': 2, 'fulfills': [999, 0], 'handler': MishapHandler(roll=4).model_dump(mode='json')}
         connection.execute(
             'insert into events (character_id, id, fulfills_event_id, fulfills_seq, payload) values (?, 2, 999, 0, ?)',
