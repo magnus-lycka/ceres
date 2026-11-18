@@ -292,6 +292,8 @@ class CharacterProjection(BaseModel):
     _history_positions: dict[int | str, int] = PrivateAttr(default_factory=dict)
     _history_details: set[int] = PrivateAttr(default_factory=set)
     _history_parents: dict[int | str, int | str] = PrivateAttr(default_factory=dict)
+    # This term's mishap, as (career term count, history occurrence), so its outcome can be told there.
+    _mishap_occurrence: tuple[int, int | str] | None = PrivateAttr(default=None)
 
     def start_history(self, occurrence: int | str, description: str, parent: int | str | None = None) -> None:
         if parent is not None:
@@ -301,6 +303,15 @@ class CharacterProjection(BaseModel):
         self._history_positions[occurrence] = len(self.summary.narrative)
         self.summary.narrative.append(description)
         self._history.start(occurrence, description)
+
+    def remember_mishap(self, occurrence: int | str) -> None:
+        """The history occurrence of this term's mishap, for outcomes resolved after it."""
+        self._mishap_occurrence = (len(self.summary.career_terms), occurrence)
+
+    def record_mishap_outcome(self, outcome: str) -> None:
+        """Tell an outcome of this term's mishap in its history entry."""
+        if self._mishap_occurrence is not None and self._mishap_occurrence[0] == len(self.summary.career_terms):
+            self.record_history(self._mishap_occurrence[1], outcome)
 
     def record_history(self, occurrence: int | str | None, outcome: str) -> None:
         # Table entries can also be applied on their own, without a narrative occurrence.

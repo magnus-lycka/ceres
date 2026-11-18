@@ -83,7 +83,7 @@ class MarinesMishap4Refuse(ChoiceBase):
 
         projection.record_history(self.history_id, 'You refuse.')
         # "If you refuse you are ejected from the service" — unless event 2 said otherwise (RIC-031).
-        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True, history_id=self.history_id)
+        _apply_mishap_ejection(projection, event.id, 0, lose_current_term=True)
 
 
 class MarinesMishap4Accept(ChoiceBase):

@@ -31,6 +31,7 @@ from ceres.character.domain.career.career_data import (
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
+    CAREER_ENDED,
     PendingAdvancement,
     PendingChoices,
     PendingConnectionsRoll,
@@ -139,6 +140,7 @@ class ScholarMishap5GiveUp(ChoiceBase):
         projection.cancel_pending(PendingAdvancement)
         if projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+        projection.record_mishap_outcome(CAREER_ENDED)
         if projection.advance_age(event.id, 0):
             projection.clear_current_career()
             projection.summary.career_terms[-1].require_muster_out().pending_setup = True

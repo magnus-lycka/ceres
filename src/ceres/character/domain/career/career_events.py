@@ -143,6 +143,7 @@ class MishapHandler(EventHandlerBase):
                 else f'Term {len(projection.summary.terms)} mishap ({career.name}): {mishap.text}',
                 parent=fulfilled_pending.history_id if fulfilled_pending is not None else None,
             )
+            projection.remember_mishap(event.id)
             pending_idx = mishap.apply(projection, event, pending_idx)
         defer = mishap is not None and getattr(mishap, 'defer_ejection', False)
         stays = self.stay_in_career or (mishap is not None and getattr(mishap, 'stay_in_career', False))
@@ -165,7 +166,7 @@ class MishapHandler(EventHandlerBase):
             else:
                 muster_out_setup(projection, event.id, pending_idx, ejected=True)
             if mishap is not None:
-                projection.record_history(event.id, CAREER_ENDED)
+                projection.record_mishap_outcome(CAREER_ENDED)
 
 
 # ── Term Event ─────────────────────────────────────────────────────────────────
@@ -444,15 +445,11 @@ def _apply_mishap_ejection(
     source_event_id: int,
     pending_idx: int,
     lose_current_term: bool = True,
-    history_id: int | str | None = None,
 ) -> int:
-    """End the career after a mishap's follow-up, unless the mishap was rolled with "not ejected" (RIC-031).
-
-    `history_id` is the mishap's history occurrence; when given, the ending is told there.
-    """
+    """End the career after a mishap's follow-up, unless the mishap was rolled with "not ejected" (RIC-031)."""
     if mishap_keeps_career(projection):
         return continue_career_after_mishap(projection, source_event_id, pending_idx)
-    projection.record_history(history_id, CAREER_ENDED)
+    projection.record_mishap_outcome(CAREER_ENDED)
     if lose_current_term and projection.summary.career_terms:
         projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
     if projection.advance_age(source_event_id, pending_idx):

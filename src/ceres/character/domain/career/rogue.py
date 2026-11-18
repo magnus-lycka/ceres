@@ -140,7 +140,7 @@ class RogueBetrayalHandler(EventHandlerBase):
             projection.record_history(history_id, 'Prison roll 2: must take Prisoner next term.')
         else:
             projection.record_history(history_id, f'Prison roll {self.roll}: no forced prison career.')
-        _apply_mishap_ejection(projection, event.id, 0, history_id=history_id)
+        _apply_mishap_ejection(projection, event.id, 0)
 
 
 class PendingRogueBetrayal(PendingInputBase):
@@ -270,6 +270,7 @@ class RogueEvent6Backstab(ChoiceBase):
             ConnectionKind.ENEMY, origin='A fellow rogue you betrayed', history_id=self.history_id
         )
         projection.pending_advancement_dm += 2
+        projection.record_history(self.history_id, 'Gained DM+2 to the next advancement roll.')
         projection.queue_deferred(career_progress_pending(projection, career, event.id))
 
 

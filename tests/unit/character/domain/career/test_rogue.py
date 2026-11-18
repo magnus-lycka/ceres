@@ -443,7 +443,9 @@ class TestRogueEvent6History:
         d = _pirate_after_event(6)
         d.career_choice(RogueEvent6Backstab)
         d.name_connection('Mara Voss')
-        assert d.projection.creation_history[-1].startswith(f'{self._STORY} You backstab them. Enemy: Mara Voss.')
+        assert d.projection.creation_history[-1].startswith(
+            f'{self._STORY} You backstab them. Gained DM+2 to the next advancement roll. Enemy: Mara Voss.'
+        )
 
 
 class TestRogueEvent11:

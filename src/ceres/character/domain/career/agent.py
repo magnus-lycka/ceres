@@ -35,6 +35,7 @@ from ceres.character.domain.career.career_data import (
     SkillTable,
 )
 from ceres.character.domain.career.career_events import (
+    CAREER_ENDED,
     PendingChoices,
     PendingMishap,
     PendingSkillChoice,
@@ -143,6 +144,7 @@ class PendingAgentMishap3SkillRoll(CareerSkillRollPendingBase):
             return
         if not succeed and projection.summary.career_terms:
             projection.summary.career_terms[-1].require_muster_out().lost_rolls += 1
+        projection.record_mishap_outcome(CAREER_ENDED)
         muster_out_setup(projection, event.id, 0)
 
 
